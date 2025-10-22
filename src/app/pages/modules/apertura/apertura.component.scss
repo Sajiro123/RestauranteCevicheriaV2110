@@ -1,0 +1,359 @@
+ * {
+     box-sizing: border-box;
+     font-family: Arial, sans-serif;
+ }
+
+ body {
+     background-color: #f7f9f9;
+     margin: 0;
+     padding: 40px;
+ }
+
+ .container {
+     display: flex;
+     background-color: white;
+     border-radius: 8px;
+     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+     overflow: hidden;
+     max-width: 800px;
+     margin: auto;
+ }
+
+
+
+ .left {
+     flex: 1;
+     background-color: #f9fbf9;
+     padding: 40px;
+     text-align: center;
+     border-right: 1px solid #eee;
+ }
+
+ .left img {
+     width: 50px;
+     margin-bottom: 20px;
+ }
+
+ .cerrado {
+     display: inline-block;
+     background-color: #ff4d6d;
+     color: white;
+     padding: 6px 20px;
+     border-radius: 4px;
+     font-weight: bold;
+     margin-bottom: 10px;
+ }
+
+ .left p {
+     margin: 0;
+     color: #555;
+ }
+
+ .right {
+     flex: 1;
+     padding: 40px;
+ }
+
+ .form-group {
+     margin-bottom: 20px;
+ }
+
+ label {
+     display: block;
+     margin-bottom: 8px;
+     font-weight: bold;
+     color: #333;
+ }
+
+ select,
+ input {
+     width: 100%;
+     padding: 10px;
+     border: 1px solid #ccc;
+     border-radius: 6px;
+     font-size: 16px;
+ }
+
+ .money-input {
+     display: flex;
+     align-items: center;
+     gap: 8px;
+ }
+
+ .money-input span {
+     color: #888;
+ }
+
+ .money-input input {
+     flex: 1;
+ }
+
+
+ .error small {
+     color: red;
+     font-size: 0.75rem;
+ }
+
+
+ @import url('https://fonts.googleapis.com/css2?family=Inter&family=Poppins:wght@600&display=swap');
+
+ /* Reset and base styles */
+ *,
+ *::before,
+ *::after {
+     box-sizing: border-box;
+ }
+
+
+
+ /* Heading */
+ h1 {
+     font-family: var(--font-heading);
+     font-weight: 700;
+     font-size: 2.5rem;
+     color: var(--color-primary);
+     margin-bottom: 1rem;
+     user-select: none;
+ }
+
+ p.subtitle {
+     color: var(--color-secondary);
+     font-size: 1rem;
+     margin-bottom: 2rem;
+ }
+
+ /* Form layout */
+ form {
+     display: flex;
+     flex-direction: column;
+     gap: 1.25rem;
+ }
+
+ label {
+     font-weight: 600;
+     color: var(--color-primary);
+     margin-bottom: 0.3rem;
+     display: block;
+ }
+
+ button {
+     padding: 10px;
+     font-size: 16px;
+     background-color: #f5f5f5;
+     border: none;
+     cursor: pointer;
+     text-align: left;
+ }
+
+ button:hover {
+     background-color: #ddd;
+ }
+
+ .btn {
+     width: 100%;
+     background-color: #00b86b;
+     color: white;
+     border: none;
+     padding: 12px;
+     font-size: 16px;
+     border-radius: 6px;
+     cursor: pointer;
+ }
+
+ .btn:hover {
+     background-color: #009f5e;
+ }
+
+ .gastos input[type="text"],
+ .gastos input[type="number"],
+ .gastos input[type="date"],
+ .gastos select,
+ .gastos textarea {
+     margin-top: 8px;
+ }
+
+ .gastos label {
+     margin-top: 12px;
+ }
+
+ body {
+     font-family: Arial, sans-serif;
+     max-width: 1000px;
+     margin: 0 auto;
+     padding: 20px;
+     display: flex;
+     gap: 30px;
+ }
+
+ .form-section {
+     flex: 1;
+     border: 1px solid #e0e0e0;
+     padding: 20px;
+     border-radius: 8px;
+     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+ }
+
+ .expenses-section {
+     flex: 1;
+     height: 64px;
+     border: 1px solid #e0e0e0;
+     border-radius: 8px;
+     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+ }
+
+ h1 {
+     color: #333;
+     font-size: 24px;
+     margin-top: 0;
+ }
+
+ h2 {
+     color: #555;
+     font-size: 18px;
+     margin-bottom: 20px;
+ }
+
+ .form-group {
+     margin-bottom: 15px;
+ }
+
+ label {
+     font-weight: bold;
+     display: block;
+     margin-bottom: 5px;
+ }
+
+ input,
+ select,
+ textarea {
+     width: 100%;
+     padding: 8px;
+     border: 1px solid #ddd;
+     border-radius: 4px;
+     box-sizing: border-box;
+ }
+
+ textarea {
+     height: 80px;
+     resize: vertical;
+ }
+
+ button {
+     background-color: #4CAF50;
+     color: white;
+     border: none;
+     padding: 10px 15px;
+     border-radius: 4px;
+     cursor: pointer;
+     font-size: 16px;
+ }
+
+ button:hover {
+     background-color: #45a049;
+ }
+
+ hr {
+     border: 0;
+     height: 1px;
+     background-color: #eee;
+     margin: 20px 0;
+ }
+
+ .expense-item {
+     border-bottom: 1px solid #eee;
+     padding: 15px 0;
+     margin-left: 21px;
+ }
+
+ .expense-item:last-child {
+     border-bottom: none;
+ }
+
+ .expense-desc {
+     font-weight: bold;
+     margin-bottom: 5px;
+ }
+
+ .expense-details {
+     display: flex;
+     justify-content: space-between;
+     color: #666;
+     font-size: 14px;
+     margin-bottom: 5px;
+ }
+
+ .expense-notes {
+     color: #888;
+     font-style: italic;
+     font-size: 13px;
+ }
+
+ .delete-btn {
+     background-color: #f44336;
+     color: white;
+     border: none;
+     padding: 5px 10px;
+     border-radius: 3px;
+     cursor: pointer;
+     font-size: 12px;
+     margin-top: 8px;
+ }
+
+ .delete-btn:hover {
+     background-color: #d32f2f;
+ }
+
+ .w-full {
+     background-color: #f9f8f8;
+     border-radius: 8px;
+     padding: 20px;
+     margin-bottom: 25px;
+     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+     position: relative;
+ }
+
+ .w-full::after {
+     content: "";
+     display: block;
+     height: 2px;
+     background: linear-gradient(to right, transparent, #ddd, transparent);
+     margin-top: 25px;
+ }
+
+ .w-full:last-child::after {
+     display: none;
+ }
+
+ .card-header {
+     font-weight: 700;
+     font-size: 1.3rem;
+     margin-bottom: 12px;
+ }
+
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+ body {
+     background-color: #f9fafb;
+     font-family: 'Inter', sans-serif;
+     color: #1f2937;
+     margin: 20px;
+     display: flex;
+     justify-content: center;
+     padding: 10px;
+ }
+
+ .cajaresumen .card-header {
+     font-weight: 700;
+     font-size: 1.4rem;
+     margin-bottom: 24px;
+     border-bottom: 2px solid #3b82f6;
+     /* Blue 500 */
+     padding-bottom: 8px;
+     color: #2563eb;
+     /* Blue 600 */
+ }
+
+ .card-details strong {
+     color: #1e40af;
+     /* Blue 800 */
+ }
