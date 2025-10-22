@@ -1,0 +1,277 @@
+<p-toast styleClass="text-2xl" />
+
+<div class="card" style="margin-top: 2%;">
+    <p-tabView>
+        <p-tabPanel header="Reporte General" [selected]="true">
+            <p-toolbar styleClass="gap-2 mt-5" [style]="{ 'background-color': 'rgb(31 63 111)' }">
+                <h4 class="font-medium text-surface-950 dark:text-surface-0 text-xl">Reporte Diario / Mensual</h4>
+            </p-toolbar>
+            <div class="row mt-5">
+                <div class="col-sm-12">
+                    <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
+                    <div class="col-sm-12">
+                        <p-calendar
+                            [(ngModel)]="selectedRange"
+                            [selectionMode]="'range'"
+                            [numberOfMonths]="2"
+                            class="date-range"
+                            [showButtonBar]="true"
+                            [showWeek]="false"
+                            [touchUI]="false"
+                            placeholder="Selecciona un rango"
+                            (onSelect)="handleCalendarBlur()"
+                            [style]="{ width: '300px' }"
+                        >
+                        </p-calendar>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <p-table
+                    stripedRows
+                    #dt
+                    [styleClass]="'table-sm mt-5 p-datatable-sm p-datatable-gridlines table-bordered p-datatable-striped ml-3'"
+                    columnResizeMode="expand"
+                    [value]="Clients"
+                    rowGroupMode="rowspan"
+                    [rows]="10"
+                    [paginator]="true"
+                    [tableStyle]="{ 'min-width': '5rem' }"
+                    [rowHover]="true"
+                    dataKey="idpedido"
+                    [resizableColumns]="true"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                    [showCurrentPageReport]="true"
+                >
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <td style="width:5%" pSortableColumn="fecha" style="min-width:6rem">
+                                📅Fecha
+                                <p-sortIcon field="fecha" />
+                            </td>
+                            <th pSortableColumn="dia" style="min-width:15rem" style="min-width:3rem">
+                                📅Dia
+                                <p-sortIcon field="dia" />
+                            </th>
+                            <th style="width:5%" pSortableColumn="efectivo" style="min-width:3rem">
+                                💵Efectivo
+                                <p-sortIcon field="efectivo" />
+                            </th>
+                            <th pSortableColumn="yape" style="min-width:3rem">
+                                📱Yape
+                                <p-sortIcon field="yape" />
+                            </th>
+                            <th pSortableColumn="plin" style="min-width:3rem">
+                                📱Plin
+                                <p-sortIcon field="plin" />
+                            </th>
+                            <th pSortableColumn="visa" style="min-width:3rem">
+                                💳Visa
+                                <p-sortIcon field="visa" />
+                            </th>
+                            <th pSortableColumn="total" style="min-width:2rem">
+                                Total
+                                <p-sortIcon field="total" />
+                            </th>
+                            <th style="min-width:3rem;width:3%"></th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-product>
+                        <tr>
+                            <td>{{ product.fecha }}</td>
+                            <td>{{ product.dia }}</td>
+                            <td>{{ 'S/' + product.efectivo }}</td>
+                            <td>{{ 'S/' + product.yape }}</td>
+                            <td>{{ 'S/' + product.plin }}</td>
+                            <td>{{ 'S/' + product.visa }}</td>
+                            <td>{{ 'S/' + product.total }}</td>
+                            <td>
+                                <p-button type="button" pRipple [icon]="'pi pi-eye'" [rounded]="true" [plain]="true" (click)="PdfReporteDiario(product.fecha)" />
+                            </td>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="footer">
+                        <tr *ngIf="Clients.length != 0" style="font-weight: bold;">
+                            <td colspan="2">
+                                <h4>Total General</h4>
+                            </td>
+                            <td>
+                                <h4>{{ 'S/' + (array_data_total.efectivo || 0) }}</h4>
+                            </td>
+                            <td>
+                                <h4>{{ 'S/' + (array_data_total.yape || 0) }}</h4>
+                            </td>
+                            <td>
+                                <h4>{{ 'S/' + (array_data_total.plin || 0) }}</h4>
+                            </td>
+                            <td>
+                                <h4>{{ 'S/' + (array_data_total.visa || 0) }}</h4>
+                            </td>
+                            <td>
+                                <h4>{{ 'S/' + (array_data_total.total || 0) }}</h4>
+                            </td>
+                        </tr>
+                        <tr *ngIf="Clients.length == 0">
+                            <td colspan="7" style="text-align: center;">No existe información o seleccione el rango con las fechas</td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </div>
+            <!-- <p-confirmDialog [style]="{ width: '450px' }" /> -->
+        </p-tabPanel>
+        <p-tabPanel header="Reporte Detallado">
+            <p-toolbar styleClass="gap-2 mt-5" [style]="{ 'background-color': 'rgb(31 63 111)' }">
+                <h4 class="font-medium text-surface-950 dark:text-surface-0 text-xl">Reporte Detallado Diario</h4>
+            </p-toolbar>
+            <div class="row mt-5">
+                <div class="col-sm-12">
+                    <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
+                    <div class="col-sm-12">
+                        <p-calendar [(ngModel)]="selectedRange2" placeholder="Selecciona una fecha" (onSelect)="DayCalendarBlur()" [style]="{ width: '300px' }"> </p-calendar>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <p-table
+                    stripedRows
+                    #dt
+                    [expandedRowKeys]="expandedRows"
+                    [styleClass]="'table-sm mt-5 p-datatable-sm p-datatable-gridlines table-bordered p-datatable-striped ml-3'"
+                    columnResizeMode="expand"
+                    [value]="PedidoReporte"
+                    rowGroupMode="rowspan"
+                    [rows]="10"
+                    [paginator]="true"
+                    [tableStyle]="{ 'min-width': '5rem' }"
+                    [rowHover]="true"
+                    dataKey="idpedido"
+                    [resizableColumns]="true"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                    [showCurrentPageReport]="true"
+                >
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <td style="width:3%" style="min-width:3rem"></td>
+                            <td style="width:5%" pSortableColumn="fecha" style="min-width:6rem">
+                                Fecha
+                                <p-sortIcon field="fecha" />
+                            </td>
+                            <th pSortableColumn="dia" style="min-width:15rem" style="min-width:3rem">
+                                Dia
+                                <p-sortIcon field="dia" />
+                            </th>
+                            <td style="width:5%" pSortableColumn="mesa" style="min-width:6rem">
+                                Mesa
+                                <p-sortIcon field="mesa" />
+                            </td>
+                            <th pSortableColumn="hora" style="min-width:3rem" style="min-width:3rem">
+                                Hora
+                                <p-sortIcon field="hora" />
+                            </th>
+                            <th pSortableColumn="total_pedidos" style="min-width:3rem">
+                                Total Pedidos
+                                <p-sortIcon field="total_pedidos" />
+                            </th>
+
+                            <th style="width:5%" pSortableColumn="efectivo" style="min-width:3rem">
+                                💵Efectivo
+                                <p-sortIcon field="efectivo" />
+                            </th>
+                            <th pSortableColumn="yape" style="min-width:3rem">
+                                📱Yape
+                                <p-sortIcon field="yape" />
+                            </th>
+                            <th pSortableColumn="plin" style="min-width:3rem">
+                                📱Plin
+                                <p-sortIcon field="plin" />
+                            </th>
+                            <th pSortableColumn="visa" style="min-width:3rem">
+                                💳Visa
+                                <p-sortIcon field="visa" />
+                            </th>
+                            <th pSortableColumn="total" style="min-width:3rem">
+                                Total
+                                <p-sortIcon field="total" />
+                            </th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-product let-expanded="expanded">
+                        <tr>
+                            <td>
+                                <p-button type="button" pRipple [pRowToggler]="product" [text]="true" [rounded]="true" [plain]="true" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
+                            </td>
+                            <td>{{ product.fecha }}</td>
+                            <td>{{ product.dia }}</td>
+                            <td>{{ product.mesa == 0 ? 'Delivery' : product.mesa }}</td>
+                            <td>{{ product.hora }}</td>
+                            <td>{{ product.total_pedidos }}</td>
+                            <td>{{ 'S/' + product.efectivo }}</td>
+                            <td>{{ 'S/' + product.yape }}</td>
+                            <td>{{ 'S/' + product.plin }}</td>
+                            <td>{{ 'S/' + product.visa }}</td>
+                            <td>{{ 'S/' + product.total }}</td>
+                        </tr>
+                    </ng-template>
+
+                    <ng-template #expandedrow let-product>
+                        <tr>
+                            <td colspan="7">
+                                <div class="p-4">
+                                    <h5>{{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Delivery ' }}</h5>
+                                    <p-table [value]="product.pedidodetalle" dataKey="idpedidodetalle">
+                                        <ng-template #header>
+                                            <tr>
+                                                <th>Lugarpedido</th>
+                                                <th>Plato <p-sortIcon field="nombre" /></th>
+                                                <th>Cantidad <p-sortIcon field="cantidad" /></th>
+                                                <th>Precio Unitario</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </ng-template>
+                                        <ng-template #body let-productodetalle>
+                                            <tr>
+                                                <td>{{ product.mesa == 0 ? 'Delivery' : productodetalle.lugarpedido == 1 ? 'llevar' : 'Mesa' }}</td>
+                                                <td>{{ productodetalle.producto.nombre }}</td>
+                                                <td>{{ productodetalle.cantidad }}</td>
+                                                <td>{{ productodetalle.precioU }}</td>
+                                                <td>{{ productodetalle.total }}</td>
+                                            </tr></ng-template
+                                        >
+
+                                        <!-- <ng-template #emptymessage>
+                        <tr>
+                            <td colspan="6">There are no order for this product yet.</td>
+                        </tr>
+                    </ng-template> -->
+                                    </p-table>
+                                </div>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </div>
+            <!-- <p-confirmDialog [style]="{ width: '450px' }" /> -->
+        </p-tabPanel>
+    </p-tabView>
+</div>
+<p-dialog
+    [position]="'top'"
+    [(visible)]="PDF_Dialog"
+    [style]="{ width: '500px', height: '880px' }"
+    (onHide)="PDF_Dialog = false"
+    [closeOnEscape]="true"
+    header="Imprimir Cliente"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    styleClass="p-fluid"
+>
+    <div class="pdf-container">
+        <iframe *ngIf="pdfUrl" [src]="pdfUrl" width="100%" height="650px" frameborder="0"></iframe>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button styleClass="p-button-raised p-button-danger" label="Cerrar" icon="pi pi-times" (onClick)="hideDialogPdf()" [style]="{ 'margin-left': '20px', 'margin-top': '55px;' }"></p-button>
+    </ng-template>
+</p-dialog>
+
+<p-confirmDialog [style]="{ width: '450px' }" />

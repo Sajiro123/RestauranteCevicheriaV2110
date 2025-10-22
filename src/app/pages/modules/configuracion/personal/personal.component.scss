@@ -1,0 +1,54 @@
+.card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+}
+
+.p-datatable {
+    font-size: 14px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.p-datatable thead th {
+    background-color: #f4f6f9;
+    color: #2d3436;
+    font-weight: 600;
+    text-align: left;
+}
+
+.p-datatable tbody td {
+    padding: 10px;
+    color: #333;
+}
+
+.p-datatable tbody tr:hover {
+    background-color: #f0f8ff;
+    cursor: pointer;
+}
+
+.p-dialog .p-dialog-content {
+    padding: 1.5rem;
+}
+
+.ng-invalid.ng-touched {
+    border-color: #e74c3c;
+}
+
+.text-red-500 {
+    color: #e74c3c;
+    font-size: 0.875rem;
+}
+
+.grid {
+    display: grid;
+}
+
+.grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.gap-4 {
+    gap: 1rem;
+}

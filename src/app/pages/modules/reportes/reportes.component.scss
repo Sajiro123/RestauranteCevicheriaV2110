@@ -1,0 +1,83 @@
+/* Estilo general de la tarjeta */
+.card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+    margin-top: 2%;
+}
+
+/* Título del toolbar */
+p-toolbar h4 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: white
+}
+
+p-toolbar {
+    border-bottom: 1px solid #dee2e6;
+    padding: 10px 20px;
+}
+
+/* Espaciado para el calendar */
+p-calendar {
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+/* Tabla general */
+.p-datatable {
+    font-size: 14px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.p-datatable thead th {
+    background-color: #f4f6f9;
+    color: #2d3436;
+    font-weight: 600;
+    text-align: left;
+}
+
+.p-datatable tbody td {
+    padding: 10px;
+    color: #333;
+}
+
+.p-datatable tfoot td {
+    background-color: #f1f2f6;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* Filas al pasar el mouse */
+.p-datatable tbody tr:hover {
+    background-color: #f0f8ff;
+    cursor: pointer;
+}
+
+/* Bordes personalizados */
+.table-bordered td,
+.table-bordered th {
+    border: 1px solid #dee2e6;
+}
+
+/* Ajuste de columnas */
+.p-datatable th,
+.p-datatable td {
+    white-space: nowrap;
+}
+
+/* Ajuste de la paginación */
+.p-paginator {
+    background-color: #fff;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+}
+
+h4 {
+    margin: 0;
+    font-weight: 600;
+    color: rgb(200, 55, 55);
+}

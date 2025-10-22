@@ -1,0 +1,1 @@
+RunHiddenConsole.exe iniciar-angular.bat
