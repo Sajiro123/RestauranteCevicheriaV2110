@@ -113,7 +113,15 @@ export class SupabaseService {
           *,
           producto:idproducto(nombre, categoria:idcategoria(nombre))
         ),
-        persona:idmozo(nombres,idpersona)
+        persona:idmozo(nombres,idpersona),
+        vales:vales_delivery!idpedido(
+          id,
+          codigo,
+          descripcion,
+          estado,
+          fecha_creacion,
+          fecha_vencimiento
+        )
       `
             )
             .eq('fecha', fechaPeru)
@@ -246,6 +254,12 @@ export class SupabaseService {
 
     async getCategoriasGastos() {
         const { data, error } = await this.supabase.from('categoriagastos').select('*').is('deleted', null).order('descripcion');
+
+        return { success: !error, data, error };
+    }
+
+    async getTrabajadores() {
+        const { data, error } = await this.supabase.from('persona').select('*').is('deleted', null);
 
         return { success: !error, data, error };
     }

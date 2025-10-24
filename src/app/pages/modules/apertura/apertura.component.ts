@@ -33,16 +33,7 @@ export class AperturaComponent {
         .join('-');
     Resumenventahoy: any = [];
     isSubmitting = false;
-    trabajadoresList: { id: number; nombre: string }[] = [
-        { id: 1, nombre: 'Juan Pérez' },
-        { id: 2, nombre: 'María García' },
-        { id: 3, nombre: 'Carlos López' },
-        { id: 4, nombre: 'Ana Martínez' },
-        { id: 5, nombre: 'Luis Rodríguez' },
-        { id: 6, nombre: 'Sofia Torres' },
-        { id: 7, nombre: 'Diego Ramírez' },
-        { id: 8, nombre: 'Laura Fernández' }
-    ];
+    trabajadoresList: any[] = [];
 
     constructor(private AperturaService_: AperturaService, private pedidoService_: PedidoService, private fb: FormBuilder, private messageService: MessageService, private confirmationService: ConfirmationService, private cd: ChangeDetectorRef) {
         this.cajaForm = this.fb.group({
@@ -83,6 +74,7 @@ export class AperturaComponent {
         this.fecha_actual = fechaFormateada.replace(' de ', ' de ').replace(' de ', ' del ');
         this.ListAperturaNow();
         this.ListGastos();
+        this.ListarTrabajadores();
     }
 
     GuardarCaja(data: any) {
@@ -197,12 +189,23 @@ export class AperturaComponent {
                         }
 
                         this.data_apertura.push(response.data[0]);
+
+                        // Convertir trabajadores de string a array de números
+                        let trabajadoresArray: number[] = [];
+                        if (response.data[0]?.trabajadores) {
+                            trabajadoresArray = response.data[0].trabajadores
+                                .split(',')
+                                .map((id: string) => parseInt(id.trim()))
+                                .filter((id: number) => !isNaN(id));
+                        }
+
                         this.cajaForm.patchValue({
                             caja: 1,
                             responsable: response.data[0]?.responsable,
                             monto: response.data[0]?.total,
                             turno: 'Mañana',
-                            estado: response.data[0]?.estado
+                            estado: response.data[0]?.estado,
+                            trabajadores: trabajadoresArray
                         });
                     } else {
                         this.cajaForm.enable();
@@ -259,6 +262,18 @@ export class AperturaComponent {
                 }
                 this.ListCategoriasGastos();
                 this.ListarReporteHoy();
+            } else {
+                alert('Hubo un problema al conectar con el servidor');
+            }
+        });
+    }
+
+    ListarTrabajadores() {
+        this.AperturaService_.ListarTrabajadores().subscribe((response) => {
+            if (response.success) {
+                if (response.data) {
+                    this.trabajadoresList = response.data;
+                }
             } else {
                 alert('Hubo un problema al conectar con el servidor');
             }

@@ -268,6 +268,17 @@
                         </div>
                     </div>
                 </li>
+                <li>
+                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'vouchers';selector = true">
+                        <div class="icon green" aria-hidden="true">
+                            <i class="fa-solid fa-ticket"></i>
+                        </div>
+                        <div class="text-content">
+                            <p class="title">Vouchers</p>
+                            <p class="subtitle">Gestión de vales de delivery y descuentos.</p>
+                        </div>
+                    </div>
+                </li>
             </ul>
         </section>
     </div>
@@ -283,5 +294,9 @@
         *ngIf="seleccciontext == 'personal'" 
         (backToMain)="selector = false; seleccciontext = ''">
     </app-personal>
+    <app-vouchers 
+        *ngIf="seleccciontext == 'vouchers'" 
+        (backToMain)="selector = false; seleccciontext = ''">
+    </app-vouchers>
 
 </div>

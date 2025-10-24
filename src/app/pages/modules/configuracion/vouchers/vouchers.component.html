@@ -1,0 +1,165 @@
+<div class="card">
+    <p-toast />
+
+    <div class="flex items-center mb-4">
+        <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
+            class="mr-4" pTooltip="Volver a Configuración" />
+        <h2 class="text-2xl font-semibold text-surface-900 dark:text-surface-0 m-0">
+            Gestión de Vouchers
+        </h2>
+    </div>
+
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col gap-1">
+                    <label for="fechaInicio" class="text-xs font-semibold">Fecha Inicio</label>
+                    <p-datepicker 
+                        [(ngModel)]="fechaInicio" 
+                        dateFormat="dd/mm/yy" 
+                        [showIcon]="true"
+                        (onSelect)="onDateChange()"
+                        placeholder="Fecha inicio"
+                        [style]="{ width: '160px' }"
+                    />
+                </div>
+                
+                <div class="flex flex-col gap-1">
+                    <label for="fechaFin" class="text-xs font-semibold">Fecha Fin</label>
+                    <p-datepicker 
+                        [(ngModel)]="fechaFin" 
+                        dateFormat="dd/mm/yy" 
+                        [showIcon]="true"
+                        (onSelect)="onDateChange()"
+                        placeholder="Fecha fin"
+                        [style]="{ width: '160px' }"
+                    />
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label for="estado" class="text-xs font-semibold">Estado</label>
+                    <p-select 
+                        [(ngModel)]="selectedEstado" 
+                        [options]="estadoOptions" 
+                        optionLabel="label"
+                        placeholder="Todos los estados" 
+                        [showClear]="true" 
+                        (onChange)="onEstadoChange()"
+                        [style]="{ width: '180px' }"
+                    />
+                </div>
+
+                <div class="flex items-end">
+                    <p-button 
+                        label="Limpiar Filtros" 
+                        icon="pi pi-filter-slash" 
+                        severity="secondary"
+                        [outlined]="true"
+                        (onClick)="clearFilters()" 
+                    />
+                </div>
+            </div>
+        </ng-template>
+
+        <ng-template #end>
+            <p-button 
+                label="Actualizar" 
+                icon="pi pi-refresh" 
+                severity="info"
+                (onClick)="loadVouchers()" 
+                [loading]="loading"
+            />
+        </ng-template>
+    </p-toolbar>
+
+    <p-table 
+        #dt 
+        [value]="filteredVouchers" 
+        [rows]="10" 
+        [paginator]="true"
+        [globalFilterFields]="['codigo', 'descripcion', 'estadoLabel']" 
+        [tableStyle]="{ 'min-width': '75rem' }"
+        [rowHover]="true" 
+        dataKey="id"
+        [loading]="loading"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} vouchers"
+        [showCurrentPageReport]="true" 
+        [rowsPerPageOptions]="[10, 20, 30, 50]"
+    >
+        <ng-template #caption>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <h5 class="m-0">Lista de Vouchers</h5>
+                    <p-tag [value]="'Total: ' + filteredVouchers.length" severity="info" />
+                </div>
+                <p-iconfield>
+                    <p-inputicon styleClass="pi pi-search" />
+                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="codigo" style="min-width:12rem">
+                    Código
+                    <p-sortIcon field="codigo" />
+                </th>
+                <th pSortableColumn="descripcion" style="min-width:16rem">
+                    Descripción
+                    <p-sortIcon field="descripcion" />
+                </th>
+                <th pSortableColumn="estado" style="min-width:10rem">
+                    Estado
+                    <p-sortIcon field="estado" />
+                </th>
+                <th pSortableColumn="fecha_creacion" style="min-width:12rem">
+                    Fecha Creación
+                    <p-sortIcon field="fecha_creacion" />
+                </th>
+                <th pSortableColumn="fecha_uso" style="min-width:12rem">
+                    Fecha Uso
+                    <p-sortIcon field="fecha_uso" />
+                </th>
+                <th pSortableColumn="fecha_vencimiento" style="min-width:12rem">
+                    Fecha Vencimiento
+                    <p-sortIcon field="fecha_vencimiento" />
+                </th>
+                <th pSortableColumn="idpedido" style="min-width:8rem">
+                    ID Pedido
+                    <p-sortIcon field="idpedido" />
+                </th>
+            </tr>
+        </ng-template>
+
+        <ng-template #body let-voucher>
+            <tr>
+                <td style="min-width:12rem">
+                    <strong>{{ voucher.codigo }}</strong>
+                </td>
+                <td style="min-width:16rem">{{ voucher.descripcion || '-' }}</td>
+                <td style="min-width:10rem">
+                    <p-tag 
+                        [value]="voucher.estadoLabel" 
+                        [severity]="getEstadoSeverity(voucher.estado)"
+                    />
+                </td>
+                <td style="min-width:12rem">{{ formatDate(voucher.fecha_creacion) }}</td>
+                <td style="min-width:12rem">{{ formatDate(voucher.fecha_uso) }}</td>
+                <td style="min-width:12rem">{{ formatDate(voucher.fecha_vencimiento) }}</td>
+                <td style="min-width:8rem">{{ voucher.idpedido || '-' }}</td>
+            </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+            <tr>
+                <td colspan="7" class="text-center">
+                    <div class="flex flex-col items-center justify-center py-8">
+                        <i class="pi pi-ticket text-6xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500 text-lg">No se encontraron vouchers con los filtros aplicados</p>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

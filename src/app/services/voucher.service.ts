@@ -17,7 +17,7 @@ export interface ValeDelivery {
     providedIn: 'root'
 })
 export class VoucherService {
-    constructor(private supabaseService: SupabaseService) {}
+    constructor(private supabaseService: SupabaseService) { }
 
     async createVoucher(descripcion: string, idpedido: number, diasVencimiento: number = 30): Promise<{ success: boolean; data?: any; error?: any }> {
         try {
@@ -149,7 +149,7 @@ export class VoucherService {
             const { data, error } = await this.supabaseService.client
                 .from('vales_delivery')
                 .update({
-                    estado: 0,
+                    estado: 2,
                     fecha_uso: new Date().toISOString()
                 })
                 .eq('codigo', codigo)
@@ -166,7 +166,27 @@ export class VoucherService {
 
     async searchVoucher(codigo: string): Promise<{ success: boolean; data?: any; error?: any }> {
         try {
-            const { data, error } = await this.supabaseService.client.from('vales_delivery').select('*').eq('codigo', codigo).is('deleted', null).single();
+            const { data, error } = await this.supabaseService.client
+                .from('vales_delivery')
+                .select(`
+                    *,
+                    pedido:idpedido(
+                        idpedido,
+                        fecha,
+                        total,
+                        persona:idmozo(nombres,idpersona),
+                        pedidodetalle(
+                            *,
+                            producto:idproducto(
+                                nombre,
+                                categoria:idcategoria(nombre)
+                            )
+                        )
+                    )
+                `)
+                .eq('codigo', codigo)
+                .is('deleted', null)
+                .single();
 
             if (error || !data) {
                 return { success: false, error: error ?? { message: 'No se encontró el voucher' } };
