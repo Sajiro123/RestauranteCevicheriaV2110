@@ -80,11 +80,6 @@ import { CommonModule } from '@angular/common';
                             </div>
                             
                             <div class="flex justify-between">
-                                <span class="font-medium">Cliente:</span>
-                                <span>{{ getClienteName(voucherInfo.persona) }}</span>
-                            </div>
-                            
-                            <div class="flex justify-between">
                                 <span class="font-medium">Fecha de creación:</span>
                                 <span>{{ voucherInfo.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}</span>
                             </div>
@@ -101,31 +96,79 @@ import { CommonModule } from '@angular/common';
                                     [severity]="getEstadoSeverity(voucherInfo.estado)" />
                             </div>
                             
-                                <!-- <p *ngIf="foundVoucher.pedido"><strong>Pedido:</strong> #{{ foundVoucher.pedido.idpedido }} - Mesa {{ foundVoucher.pedido.mesa }}</p>
-                                <p *ngIf="foundVoucher.pedido && foundVoucher.pedido.cliente"><strong>Cliente:</strong> {{ foundVoucher.pedido.cliente }}</p>
-                                <p *ngIf="foundVoucher.pedido"><strong>Total Pedido:</strong> {{ foundVoucher.pedido.total | currency:'S/ ' }}</p> -->
                             <div class="flex justify-between" *ngIf="voucherInfo.fecha_uso">
                                 <span class="font-medium">Fecha de uso:</span>
                                 <span>{{ voucherInfo.fecha_uso | date:'dd/MM/yyyy HH:mm' }}</span>
                             </div>
+                            
+                            <!-- Información del pedido -->
+                            <div *ngIf="voucherInfo.pedido" class="mt-4 pt-4 border-t border-gray-300">
+                                <h5 class="font-semibold text-gray-700 mb-2">Pedido Relacionado</h5>
+                                <div class="space-y-1 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">ID Pedido:</span>
+                                        <span>#{{ voucherInfo.pedido.idpedido }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Fecha:</span>
+                                        <span>{{ voucherInfo.pedido.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium">Total:</span>
+                                        <span class="font-semibold">{{ voucherInfo.pedido.total | currency:'S/ ' }}</span>
+                                    </div>
+                                    <div class="flex justify-between" *ngIf="voucherInfo.pedido.mozo">
+                                        <span class="font-medium">Mozo:</span>
+                                        <span>{{ voucherInfo.pedido.mozo.nombres }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Detalles del pedido -->
+                                <div *ngIf="voucherInfo.pedido.pedidodetalle && voucherInfo.pedido.pedidodetalle.length > 0" class="mt-3">
+                                    <h6 class="font-semibold text-gray-600 mb-2 text-xs">Productos del Pedido:</h6>
+                                    <div class="bg-white rounded border border-gray-200 max-h-40 overflow-y-auto">
+                                        <div *ngFor="let detalle of voucherInfo.pedido.pedidodetalle" class="px-2 py-1.5 border-b border-gray-100 last:border-b-0">
+                                            <div class="flex justify-between items-start text-xs">
+                                                <div class="flex-1">
+                                                    <div class="font-medium text-gray-800">{{ detalle.producto?.nombre || 'Producto' }}</div>
+                                                    <div class="text-gray-500 text-xs" *ngIf="detalle.producto?.categoria">
+                                                        {{ detalle.producto.categoria.nombre }}
+                                                    </div>
+                                                </div>
+                                                <div class="text-right ml-2">
+                                                    <div class="text-gray-600">x{{ detalle.cantidad || 1 }}</div>
+                                                    <div class="font-semibold" *ngIf="detalle.precio">S/ {{ detalle.precio }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <!-- Botón para usar el vale si está activo -->
-                        <div class="mt-4" *ngIf="voucherInfo.estado === 1 && !isVoucherExpired(voucherInfo.fecha_vencimiento)">
+                        <!-- Botón para usar el vale si está activo y no vencido -->
+                        <div class="mt-4" *ngIf="voucherInfo.estado == '1' && !isVoucherExpired(voucherInfo.fecha_vencimiento)">
                             <p-button 
                                 label="Usar Vale" 
                                 icon="pi pi-check" 
                                 severity="success"
                                 [loading]="isUsingVoucher"
                                 (onClick)="useVoucher()" 
-                                class="w-full" />
+                                styleClass="w-full" />
+                        </div>
+                        
+                        <!-- Mensaje si el vale ya fue usado -->
+                        <div class="mt-4" *ngIf="voucherInfo.estado == '2'">
+                            <div class="bg-gray-200 text-gray-700 p-3 rounded text-center font-medium">
+                                ✓ Este vale ya ha sido utilizado
+                            </div>
                         </div>
                         
                         <!-- Mensaje si el vale está vencido -->
-                        <div class="mt-4" *ngIf="isVoucherExpired(voucherInfo.fecha_vencimiento)">
-                            <p class="text-red-600 text-center font-medium">
+                        <div class="mt-4" *ngIf="voucherInfo.estado == '1' && isVoucherExpired(voucherInfo.fecha_vencimiento)">
+                            <div class="bg-red-100 text-red-700 p-3 rounded text-center font-medium">
                                 ⚠️ Este vale ha expirado
-                            </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -219,6 +262,28 @@ export class AppFooter {
     async useVoucher() {
         if (!this.voucherInfo) return;
 
+        // Validar que el vale esté disponible (estado 1)
+        if (this.voucherInfo.estado != 1) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Vale no disponible',
+                detail: 'Este vale ya ha sido utilizado',
+                life: 5000
+            });
+            return;
+        }
+
+        // Validar que el vale no esté vencido
+        if (this.isVoucherExpired(this.voucherInfo.fecha_vencimiento)) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Vale vencido',
+                detail: 'Este vale ha expirado y no puede ser utilizado',
+                life: 5000
+            });
+            return;
+        }
+
         this.isUsingVoucher = true;
 
         try {
@@ -233,7 +298,7 @@ export class AppFooter {
                 });
 
                 // Actualizar la información del vale
-                this.voucherInfo.estado = 0;
+                this.voucherInfo.estado = 2;
                 this.voucherInfo.fecha_uso = new Date().toISOString();
             } else {
                 this.messageService.add({
@@ -256,17 +321,14 @@ export class AppFooter {
         }
     }
 
-    getClienteName(persona: any): string {
-        if (!persona) return 'Cliente no especificado';
-        return `${persona.nombres} ${persona.apellidopat} ${persona.apellidomat}`;
+    getEstadoLabel(estado: any): string {
+        if (estado === '1') return 'Disponible';
+        if (estado === '2') return 'Usado';
+        return 'Desconocido';
     }
 
-    getEstadoLabel(estado: number): string {
-        return estado == 1 ? 'Activo' : 'Usado';
-    }
-
-    getEstadoSeverity(estado: number): string {
-        return estado == 1 ? 'success' : 'secondary';
+    getEstadoSeverity(estado: any): string {
+        return estado === '1' ? 'success' : 'secondary';
     }
 
     isVoucherExpired(fechaVencimiento: string): boolean {

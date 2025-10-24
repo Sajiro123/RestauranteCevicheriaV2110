@@ -68,7 +68,7 @@ export class PersonalComponent {
                     *,
                     perfil:idperfil(nombre)
                 `)
-                .is('deleted',null)
+                .is('deleted', null)
                 .order('nombres');
 
             if (error) throw error;
@@ -125,7 +125,7 @@ export class PersonalComponent {
 
     editPersona(persona: any) {
         this.persona = { ...persona };
-        
+
         // Format birthday for date input
         let cumpleanos = '';
         if (persona.cumpleanos) {
@@ -266,7 +266,7 @@ export class PersonalComponent {
         return estado ? estado.label : '';
     }
 
-    getEstadoSeverity(idestado: number): string {
-        return idestado === 1 ? 'success' : 'danger';
+    getEstadoSeverity(idestado: any): string {
+        return idestado === '1' ? 'success' : 'danger';
     }
 }

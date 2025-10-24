@@ -1,15 +1,9 @@
 <div class="card">
     <p-toast />
-    
+
     <div class="flex items-center mb-4">
-        <p-button 
-            icon="pi pi-arrow-left" 
-            [rounded]="true" 
-            [outlined]="true" 
-            severity="secondary"
-            (onClick)="goBack()"
-            class="mr-4"
-            pTooltip="Volver a Configuración" />
+        <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
+            class="mr-4" pTooltip="Volver a Configuración" />
         <h2 class="text-2xl font-semibold text-surface-900 dark:text-surface-0 m-0">
             Gestión de Productos
         </h2>
@@ -17,43 +11,25 @@
 
     <p-toolbar styleClass="mb-6">
         <ng-template #start>
-            <p-button 
-                label="Nuevo Producto" 
-                icon="pi pi-plus" 
-                severity="secondary" 
-                class="mr-2" 
+            <p-button label="Nuevo Producto" icon="pi pi-plus" severity="secondary" class="mr-2"
                 (onClick)="openNew()" />
         </ng-template>
-        
+
         <ng-template #end>
             <div class="flex items-center gap-2">
-                <p-select 
-                    [(ngModel)]="selectedCategory"
-                    [options]="categorias" 
-                    optionLabel="nombre" 
-                    placeholder="Filtrar por categoría"
-                    [showClear]="true"
-                    (onChange)="onCategoryChange()"
-                    (onClear)="clearCategoryFilter()"
-                    [style]="{ width: '200px' }" />
+                <p-select [(ngModel)]="selectedCategory" [options]="categorias" optionLabel="nombre"
+                    placeholder="Filtrar por categoría" [showClear]="true" (onChange)="onCategoryChange()"
+                    (onClear)="clearCategoryFilter()" [style]="{ width: '200px' }" />
             </div>
         </ng-template>
     </p-toolbar>
 
-    <p-table
-        #dt
-        [value]="filteredProductos"
-        [rows]="10"
-        [paginator]="true"
-        [globalFilterFields]="['nombre', 'acronimo', 'categoria.nombre']"
-        [tableStyle]="{ 'min-width': '75rem' }"
-        [(selection)]="selectedProductos"
-        [rowHover]="true"
-        dataKey="idproducto"
+    <p-table #dt [value]="filteredProductos" [rows]="10" [paginator]="true"
+        [globalFilterFields]="['nombre', 'acronimo', 'categoria.nombre']" [tableStyle]="{ 'min-width': '75rem' }"
+        [(selection)]="selectedProductos" [rowHover]="true" dataKey="idproducto"
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} productos"
-        [showCurrentPageReport]="true"
-        [rowsPerPageOptions]="[10, 20, 30]">
-        
+        [showCurrentPageReport]="true" [rowsPerPageOptions]="[10, 20, 30]">
+
         <ng-template #caption>
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
@@ -64,15 +40,11 @@
                 </div>
                 <p-iconfield>
                     <p-inputicon styleClass="pi pi-search" />
-                    <input 
-                        pInputText 
-                        type="text" 
-                        (input)="onGlobalFilter(dt, $event)" 
-                        placeholder="Buscar..." />
+                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar..." />
                 </p-iconfield>
             </div>
         </ng-template>
-        
+
         <ng-template #header>
             <tr>
                 <th pSortableColumn="nombre" style="min-width:16rem">
@@ -94,7 +66,7 @@
                 <th style="min-width:12rem">Acciones</th>
             </tr>
         </ng-template>
-        
+
         <ng-template #body let-producto>
             <tr>
                 <td style="min-width:16rem">{{ producto.nombre }}</td>
@@ -102,124 +74,73 @@
                 <td>{{ producto.preciounitario | currency:'S/ ' }}</td>
                 <td>{{ producto.categoria?.nombre || 'Sin categoría' }}</td>
                 <td>
-                    <p-button 
-                        icon="pi pi-pencil" 
-                        class="mr-2" 
-                        [rounded]="true" 
-                        [outlined]="true" 
+                    <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
                         (click)="editProducto(producto)" />
-                    <p-button 
-                        icon="pi pi-trash" 
-                        severity="danger" 
-                        [rounded]="true" 
-                        [outlined]="true" 
+                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
                         (click)="deleteProducto(producto)" />
                 </td>
             </tr>
         </ng-template>
     </p-table>
 
-    <p-dialog 
-        [(visible)]="productoDialog" 
-        [style]="{ width: '450px' }" 
-        [header]="isEditing ? 'Editar Producto' : 'Nuevo Producto'" 
-        [modal]="true"
-        [formGroup]="productoForm">
-        
+    <p-dialog [(visible)]="productoDialog" [style]="{ width: '450px' }"
+        [header]="isEditing ? 'Editar Producto' : 'Nuevo Producto'" [modal]="true" [formGroup]="productoForm">
+
         <ng-template #content>
             <div class="flex flex-col gap-6">
                 <div>
                     <label for="nombre" class="block font-bold mb-3">Nombre *</label>
-                    <input 
-                        type="text" 
-                        pInputText 
-                        id="nombre" 
-                        formControlName="nombre"
-                        required 
-                        autofocus 
-                        fluid 
+                    <input type="text" pInputText id="nombre" formControlName="nombre" required autofocus fluid
                         [class.ng-invalid]="productoForm.get('nombre')?.invalid && submitted" />
-                    <small 
-                        class="text-red-500" 
-                        *ngIf="submitted && productoForm.get('nombre')?.errors?.['required']">
+                    <small class="text-red-500" *ngIf="submitted && productoForm.get('nombre')?.errors?.['required']">
                         El nombre es requerido.
                     </small>
-                    <small 
-                        class="text-red-500" 
-                        *ngIf="submitted && productoForm.get('nombre')?.errors?.['minlength']">
+                    <small class="text-red-500" *ngIf="submitted && productoForm.get('nombre')?.errors?.['minlength']">
                         El nombre debe tener al menos 2 caracteres.
                     </small>
                 </div>
 
                 <div>
+                    <label for="idcategoria" class="block font-bold mb-3">Categoría *</label>
+                    <p-select formControlName="idcategoria" inputId="idcategoria" [options]="categorias"
+                        optionLabel="nombre" optionValue="idcategoria" placeholder="Seleccione una categoría" fluid
+                        [class.ng-invalid]="productoForm.get('idcategoria')?.invalid && submitted" />
+                    <small class="text-red-500"
+                        *ngIf="submitted && productoForm.get('idcategoria')?.errors?.['required']">
+                        La categoría es requerida.
+                    </small>
+                </div>
+                <div>
                     <label for="acronimo" class="block font-bold mb-3">Acrónimo *</label>
-                    <input 
-                        type="text" 
-                        pInputText 
-                        id="acronimo" 
-                        formControlName="acronimo"
-                        required 
-                        fluid 
+                    <input type="text" pInputText id="acronimo" formControlName="acronimo" required fluid
                         [class.ng-invalid]="productoForm.get('acronimo')?.invalid && submitted" />
-                    <small 
-                        class="text-red-500" 
-                        *ngIf="submitted && productoForm.get('acronimo')?.errors?.['required']">
+                    <small class="text-red-500" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['required']">
                         El acrónimo es requerido.
                     </small>
                 </div>
 
                 <div>
                     <label for="preciounitario" class="block font-bold mb-3">Precio *</label>
-                    <p-inputnumber 
-                        id="preciounitario" 
-                        formControlName="preciounitario"
-                        mode="currency" 
-                        currency="PEN" 
-                        locale="es-PE" 
-                        fluid 
+                    <p-inputnumber id="preciounitario" formControlName="preciounitario" mode="currency" currency="PEN"
+                        locale="es-PE" fluid
                         [class.ng-invalid]="productoForm.get('preciounitario')?.invalid && submitted" />
-                    <small 
-                        class="text-red-500" 
+                    <small class="text-red-500"
                         *ngIf="submitted && productoForm.get('preciounitario')?.errors?.['required']">
                         El precio es requerido.
                     </small>
-                    <small 
-                        class="text-red-500" 
+                    <small class="text-red-500"
                         *ngIf="submitted && productoForm.get('preciounitario')?.errors?.['min']">
                         El precio debe ser mayor o igual a 0.
                     </small>
                 </div>
 
-                <div>
-                    <label for="idcategoria" class="block font-bold mb-3">Categoría *</label>
-                    <p-select 
-                        formControlName="idcategoria"
-                        inputId="idcategoria" 
-                        [options]="categorias" 
-                        optionLabel="nombre" 
-                        optionValue="idcategoria"
-                        placeholder="Seleccione una categoría" 
-                        fluid 
-                        [class.ng-invalid]="productoForm.get('idcategoria')?.invalid && submitted" />
-                    <small 
-                        class="text-red-500" 
-                        *ngIf="submitted && productoForm.get('idcategoria')?.errors?.['required']">
-                        La categoría es requerida.
-                    </small>
-                </div>
+
             </div>
         </ng-template>
 
         <ng-template #footer>
-            <p-button 
-                label="Cancelar" 
-                icon="pi pi-times" 
-                text 
-                (click)="hideDialog()" />
-            <p-button 
-                label="Guardar" 
-                icon="pi pi-check" 
-                (click)="saveProducto()" />
+            <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" />
+            <p-button label="Guardar" icon="pi pi-check" (click)="saveProducto()" />
         </ng-template>
     </p-dialog>
 

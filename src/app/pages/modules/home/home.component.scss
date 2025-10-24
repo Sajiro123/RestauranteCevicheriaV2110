@@ -9,6 +9,40 @@ body {
     color: #222;
 }
 
+.mesa.seleccionada {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.pedido-card.seleccionada_delivery {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+/* Make tables responsive */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Improve scrollbars for admin UX */
+::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 999px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0;
+        padding: 0.5rem;
+    }
+}
+
 .colorDashboar {
     height: 115px;
     border: 2px solid #ddd;
@@ -107,11 +141,11 @@ tbody tr {
 }
 
 .grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    /* Cambiado a 5 por fila */
-    gap: 10px;
-    margin-top: 20px;
+    // display: grid;
+    // grid-template-columns: repeat(5, 1fr);
+    // /* Cambiado a 5 por fila */
+    // gap: 10px;
+    // margin-top: 20px;
 }
 
 .mesa {
@@ -465,15 +499,18 @@ body {
 
 .tab-container {
     display: flex;
-    border-bottom: 1px solid #d1d5db; /* línea gris clara */
+    border-bottom: 1px solid #d1d5db;
+    /* línea gris clara */
     max-width: 500px;
     margin: 20px auto;
     border-radius: 6px 6px 0 0;
     overflow: hidden;
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
 }
+
 .tab {
-    flex: 1; /* cada tab ocupa igual espacio */
+    flex: 1;
+    /* cada tab ocupa igual espacio */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -482,25 +519,33 @@ body {
     cursor: pointer;
     user-select: none;
     font-size: 14px;
-    color: #374151; /* texto gris oscuro */
+    color: #374151;
+    /* texto gris oscuro */
     background-color: white;
-    border-right: 1px solid #d1d5db; /* separador vertical */
+    border-right: 1px solid #d1d5db;
+    /* separador vertical */
     transition: background-color 0.2s ease;
 }
+
 .tab:last-child {
-    border-right: none; /* quitar borde del último */
+    border-right: none;
+    /* quitar borde del último */
 }
+
 .tab.active {
     background-color: #000000;
     color: white;
 }
+
 .tab.active svg {
     fill: white;
 }
+
 .tab svg {
     width: 20px;
     height: 20px;
     margin-bottom: 4px;
-    fill: #6b7280; /* icono gris */
+    fill: #6b7280;
+    /* icono gris */
     transition: fill 0.2s ease;
 }

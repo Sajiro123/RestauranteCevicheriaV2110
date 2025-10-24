@@ -1088,12 +1088,28 @@ export class HomeComponent {
     }
 
     openVoucherDialog() {
+        // Check if voucher already exists for this order
+        const currentPedido = this.getPedidosDeMesa(this.mesaSeleccionada?.numero, this.pedido_mesa_status, this.mesaSeleccionada)[0];
+        
+        if (currentPedido && currentPedido['vales'] && currentPedido['vales'].length > 0) {
+            // Voucher exists, download it instead
+            this.generatedVoucher = currentPedido['vales'][0];
+            this['downloadExistingQR']();
+            return;
+        }
+        
+        // No voucher exists, show dialog to create one
         this.voucherForm.reset();
         this.voucherForm.patchValue({
             descripcion: 'Vale de delivery',
             diasVencimiento: 30
         });
         this.voucherDialog = true;
+    }
+
+    hasVoucher(pedido: any): boolean {
+        debugger
+        return pedido && pedido['vales'] && pedido['vales'].length > 0;
     }
 
     hideVoucherDialog() {
@@ -1218,29 +1234,169 @@ export class HomeComponent {
         }
     }
 
-    downloadQR() {
+    async downloadQR() {
         if (this.qrCodeSvg && this.generatedVoucher) {
-            // Create a blob from the SVG
-            const svgBlob = new Blob([this.qrCodeSvg], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(svgBlob);
+            try {
+                // Generate QR code as data URL
+                const qrDataUrl = await QRCode.toDataURL(this.generatedVoucher.codigo, {
+                    width: 200,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#ffffff'
+                    }
+                });
 
-            // Create download link
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `vale-delivery-${this.generatedVoucher.codigo}.svg`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                // Create PDF
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
 
-            // Clean up
-            URL.revokeObjectURL(url);
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const centerX = pageWidth / 2;
+                let y = 20;
 
-            this.messageService.add({
-                severity: 'success',
-                summary: 'Descarga',
-                detail: 'QR descargado correctamente',
-                life: 3000
-            });
+                // Title
+                doc.setFontSize(20);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Vale de Delivery', centerX, y, { align: 'center' });
+                y += 15;
+
+                // Code
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Código: ${this.generatedVoucher.codigo}`, centerX, y, { align: 'center' });
+                y += 10;
+
+                // Description
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'normal');
+                doc.text(this.generatedVoucher.descripcion || '', centerX, y, { align: 'center' });
+                y += 15;
+
+                // QR Code
+                const qrSize = 80;
+                const qrX = centerX - qrSize / 2;
+                doc.addImage(qrDataUrl, 'PNG', qrX, y, qrSize, qrSize);
+                y += qrSize + 15;
+
+                // Details
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'normal');
+                const validUntil = new Date(this.generatedVoucher.fecha_vencimiento).toLocaleDateString('es-PE');
+                doc.text(`Válido hasta: ${validUntil}`, centerX, y, { align: 'center' });
+                y += 8;
+                doc.text(`Estado: ${this.generatedVoucher.estado == 1 ? 'Activo' : 'Usado'}`, centerX, y, { align: 'center' });
+
+                // Convert PDF to blob URL
+                const pdfBlob = doc.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(pdfUrl);
+
+                // Show PDF dialog
+                this.PDF_Dialog = true;
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'PDF Generado',
+                    detail: 'QR generado en PDF correctamente',
+                    life: 3000
+                });
+            } catch (error) {
+                console.error('Error generating QR PDF:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al generar el PDF del QR',
+                    life: 3000
+                });
+            }
+        }
+    }
+
+    async downloadExistingQR() {
+        if (this.generatedVoucher) {
+            try {
+                // Generate QR code as data URL
+                const qrDataUrl = await QRCode.toDataURL(this.generatedVoucher.codigo, {
+                    width: 200,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#ffffff'
+                    }
+                });
+
+                // Create PDF
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const centerX = pageWidth / 2;
+                let y = 20;
+
+                // Title
+                doc.setFontSize(20);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Vale de Delivery', centerX, y, { align: 'center' });
+                y += 15;
+
+                // Code
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Código: ${this.generatedVoucher.codigo}`, centerX, y, { align: 'center' });
+                y += 10;
+
+                // Description
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'normal');
+                doc.text(this.generatedVoucher.descripcion || 'Vale de delivery', centerX, y, { align: 'center' });
+                y += 15;
+
+                // QR Code
+                const qrSize = 80;
+                const qrX = centerX - qrSize / 2;
+                doc.addImage(qrDataUrl, 'PNG', qrX, y, qrSize, qrSize);
+                y += qrSize + 15;
+
+                // Details
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'normal');
+                const validUntil = new Date(this.generatedVoucher.fecha_vencimiento).toLocaleDateString('es-PE');
+                doc.text(`Válido hasta: ${validUntil}`, centerX, y, { align: 'center' });
+                y += 8;
+                doc.text(`Estado: ${this.generatedVoucher.estado == 1 ? 'Disponible' : 'Usado'}`, centerX, y, { align: 'center' });
+
+                // Convert PDF to blob URL
+                const pdfBlob = doc.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(pdfUrl);
+
+                // Show PDF dialog
+                this.PDF_Dialog = true;
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'QR Descargado',
+                    detail: 'Vale QR generado correctamente',
+                    life: 3000
+                });
+            } catch (error) {
+                console.error('Error generating QR PDF:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Error al generar el PDF del QR',
+                    life: 3000
+                });
+            }
         }
     }
 

@@ -8,7 +8,8 @@
 
                 <img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" alt="Cerrado" />
                 <div class="cerrado" *ngIf="data_apertura.length == 0">CERRADO</div>
-                <div class="cerrado" *ngIf="data_apertura.length > 0 && cajaForm.get('estado')?.value == 1">ABIERTO</div>
+                <div class="cerrado" *ngIf="data_apertura.length > 0 && cajaForm.get('estado')?.value == 1">ABIERTO
+                </div>
                 <div class="cerrado" *ngIf="cajaForm.get('estado')?.value == 2">CAJA CERRADA YA EXISTE</div>
 
                 <br />
@@ -53,28 +54,24 @@
                         <option value="Yordy">Yordy</option>
                         <option value="Alex">Alex</option>
                     </select>
-                    <div *ngIf="cajaForm.get('responsable')?.touched && cajaForm.get('responsable')?.invalid" class="error">
-                        <small *ngIf="cajaForm.get('responsable')?.errors?.['required']">El responsable es obligatorio</small>
+                    <div *ngIf="cajaForm.get('responsable')?.touched && cajaForm.get('responsable')?.invalid"
+                        class="error">
+                        <small *ngIf="cajaForm.get('responsable')?.errors?.['required']">El responsable es
+                            obligatorio</small>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="trabajadores">Personal de Trabajo Hoy</label>
-                    <p-multiSelect
-                        formControlName="trabajadores"
-                        [options]="trabajadoresList"
-                        optionLabel="nombre"
-                        optionValue="id"
-                        placeholder="Seleccione trabajadores"
-                        [showToggleAll]="true"
-                        [filter]="true"
-                        filterPlaceholder="Buscar..."
-                        display="chip"
-                        styleClass="w-full"
+                    <label for="trabajadores">Personal en Campo</label>
+                    <p-multiSelect formControlName="trabajadores" [options]="trabajadoresList" optionLabel="nombres"
+                        optionValue="idpersona" placeholder="Seleccione trabajadores" [showToggleAll]="true"
+                        [filter]="true" filterPlaceholder="Buscar..." display="chip" styleClass=" md:w-auto h-10"
                         id="trabajadores">
                     </p-multiSelect>
-                    <div *ngIf="cajaForm.get('trabajadores')?.touched && cajaForm.get('trabajadores')?.invalid" class="error">
-                        <small *ngIf="cajaForm.get('trabajadores')?.errors?.['required']">Debe seleccionar al menos un trabajador</small>
+                    <div *ngIf="cajaForm.get('trabajadores')?.touched && cajaForm.get('trabajadores')?.invalid"
+                        class="error">
+                        <small *ngIf="cajaForm.get('trabajadores')?.errors?.['required']">Debe seleccionar al menos un
+                            trabajador</small>
                     </div>
                 </div>
 
@@ -87,11 +84,14 @@
                     </div>
                     <div *ngIf="cajaForm.get('monto')?.touched && cajaForm.get('monto')?.invalid" class="error">
                         <small *ngIf="cajaForm.get('monto')?.errors?.['required']">El monto es obligatorio</small>
-                        <small *ngIf="cajaForm.get('monto')?.errors?.['min']">El monto debe ser mayor o igual a 0</small>
+                        <small *ngIf="cajaForm.get('monto')?.errors?.['min']">El monto debe ser mayor o igual a
+                            0</small>
                     </div>
                 </div>
 
-                <button class="btn" type="submit" [disabled]="cajaForm.invalid" style="cursor: pointer;" *ngIf="texto_estado_caja != 'Caja ya se Cerro (Hoy)'" (click)="GuardarCaja(data_apertura.length)">{{ texto_estado_caja }}</button>
+                <button class="btn" type="submit" [disabled]="cajaForm.invalid" style="cursor: pointer;"
+                    *ngIf="texto_estado_caja != 'Caja ya se Cerro (Hoy)'" (click)="GuardarCaja(data_apertura.length)">{{
+                    texto_estado_caja }}</button>
             </div>
         </div>
         <div class="w-full gastos" [formGroup]="GastosForm">
@@ -100,11 +100,13 @@
                 <p class="subtitle">Ingrese los detalles del gasto para el sistema de comida.</p>
                 <div>
                     <label for="expenseName">Descripción del gasto</label>
-                    <input formControlName="descripcion" type="text" id="expenseName" name="expenseName" placeholder="Ejemplo: Compra de verduras" required />
+                    <input formControlName="descripcion" type="text" id="expenseName" name="expenseName"
+                        placeholder="Ejemplo: Compra de verduras" required />
                 </div>
                 <div>
                     <label for="amount">Monto (PEN)</label>
-                    <input formControlName="monto" type="number" id="amount" name="amount" placeholder="Ejemplo: 15.50" step="0.01" min="0" required required />
+                    <input formControlName="monto" type="number" id="amount" name="amount" placeholder="Ejemplo: 15.50"
+                        step="0.01" min="0" required required />
                 </div>
                 <!-- <div>
                     <label for="date">Fecha</label>
@@ -121,10 +123,12 @@
                 </div>
                 <div>
                     <label for="notes">Notas (opcional)</label>
-                    <textarea formControlName="notas" rows="3" cols="20" fluid pTextarea id="notes" name="notes" placeholder="Comentarios adicionales..."></textarea>
+                    <textarea formControlName="notas" rows="3" cols="20" fluid pTextarea id="notes" name="notes"
+                        placeholder="Comentarios adicionales..."></textarea>
                 </div>
 
-                <button style="margin-top: 47px;" pButton type="submit" [disabled]="isSubmitting || GastosForm.invalid" class="btn" (click)="GuardarGastos()">Registrar Gasto</button>
+                <button style="margin-top: 47px;" pButton type="submit" [disabled]="isSubmitting || GastosForm.invalid"
+                    class="btn" (click)="GuardarGastos()">Registrar Gasto</button>
             </main>
         </div>
 
@@ -146,11 +150,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="expenses-total" style="margin-top: 20px; font-weight: bold;font-size: 14px;" *ngIf="GastosList.length > 0">
+                <div class="expenses-total" style="margin-top: 20px; font-weight: bold;font-size: 14px;"
+                    *ngIf="GastosList.length > 0">
                     Total de categoria: <br /><br />
                     {{ resumenGastosPorCategoria() }}
                 </div>
-                <div class="expenses-total" style="margin-top: 20px; font-weight: bold; font-size: 20px;" *ngIf="GastosList.length > 0">
+                <div class="expenses-total" style="margin-top: 20px; font-weight: bold; font-size: 20px;"
+                    *ngIf="GastosList.length > 0">
                     Total de gastos: S/
                     {{ totalGastos() | number : '1.2-2' }}
                 </div>
@@ -168,7 +174,8 @@
                         <p><strong>Visa:</strong> S/{{ data.visa }}</p>
                         <p><strong>Efectivo:</strong> S/{{ data.efectivo }}</p>
                         <hr />
-                        <h4>Total: S/ {{ (data.yape || 0) + (data.plin || 0) + (data.visa || 0) + (data.efectivo || 0) | number : '1.2-2' }}</h4>
+                        <h4>Total: S/ {{ (data.yape || 0) + (data.plin || 0) + (data.visa || 0) + (data.efectivo || 0) |
+                            number : '1.2-2' }}</h4>
                         <p><strong>Gastos:</strong> S/{{ totalGastos() | number : '1.2-2' }}</p>
                         <p><strong>Caja inicial:</strong> S/ {{ cajaForm.get('monto')?.value }}</p>
                     </div>

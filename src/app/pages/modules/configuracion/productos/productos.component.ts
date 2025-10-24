@@ -56,6 +56,7 @@ export class ProductosComponent {
                 `
                 )
                 .is('deleted', null)
+                .not('preciounitario', 'is', null)
                 .order('nombre');
 
             if (error) throw error;
@@ -73,7 +74,7 @@ export class ProductosComponent {
 
     onCategoryChange() {
         if (this.selectedCategory) {
-            this.filteredProductos = this.productos.filter(producto => 
+            this.filteredProductos = this.productos.filter(producto =>
                 producto.idcategoria === this.selectedCategory.idcategoria
             );
         } else {

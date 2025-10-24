@@ -4,7 +4,7 @@ import { Observable, from } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AperturaService {
-    constructor(private supabaseService: SupabaseService) {}
+    constructor(private supabaseService: SupabaseService) { }
 
     ListarAperturaHoy(): Observable<any> {
         return from(this.supabaseService.getAperturaHoy());
@@ -19,16 +19,23 @@ export class AperturaService {
     }
 
     registrarCaja(value: any): Observable<any> {
+        debugger
         const now = new Date();
         const fechaPeru = now.toLocaleDateString('en-CA', {
             timeZone: 'America/Lima'
         });
+        var trabajadores = "";
 
+        value.trabajadores.forEach((element: any) => {
+            trabajadores += element + ",";
+        });
+        trabajadores = trabajadores.replace(/,\s*$/, "");
         const aperturaData = {
             fecha: fechaPeru,
             total: value.monto,
             estado: 1,
             responsable: value.responsable,
+            trabajadores: trabajadores,
             id_created_at: 1
         };
 
@@ -59,5 +66,9 @@ export class AperturaService {
             timeZone: 'America/Lima'
         });
         return from(this.supabaseService.cerrarCaja(fechaPeru));
+    }
+
+    ListarTrabajadores(): Observable<any> {
+        return from(this.supabaseService.getTrabajadores());
     }
 }
