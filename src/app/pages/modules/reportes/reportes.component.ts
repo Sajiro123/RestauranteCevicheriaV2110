@@ -33,7 +33,7 @@ export class ReportesComponent {
     PDF_Dialog: boolean = false;
     pdfUrl: SafeResourceUrl | null = null;
     fecha_actual: any;
-    constructor(private PedidoService: PedidoService, private sanitizer: DomSanitizer, private AperturaService_: AperturaService, private messageService: MessageService) {}
+    constructor(private PedidoService: PedidoService, private sanitizer: DomSanitizer, private AperturaService_: AperturaService, private messageService: MessageService) { }
 
     expandAll() {
         this.expandedRows = this.PedidoReporte.reduce((acc, p) => (acc[p.id] = true) && acc, {});
@@ -271,7 +271,7 @@ export class ReportesComponent {
                         if (element.fecha != undefined) {
                             element.fecha = new Date(element.fecha).toISOString().split('T')[0]; // Formato YYYY-MM-DD
                             var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-                            var numeroDia = new Date(element.fecha).getDay() + 1;
+                            var numeroDia = Math.floor(new Date(element.fecha).getDay() + 1);
                             var nombreDia = dias[numeroDia];
                             element.dia = nombreDia;
                         }

@@ -919,6 +919,9 @@ export class HomeComponent {
                     this.mozoDialog = true;
                     this.selectedMozo = [];
                 }
+            } else {
+                this.NuevoPedido.idmozo = 1;
+                this.selectedMozo = { idmozo: 1, nombre: 'Delivery' };
             }
         } else {
             this.NuevoPedido.delivery = 0;
@@ -1090,14 +1093,14 @@ export class HomeComponent {
     openVoucherDialog() {
         // Check if voucher already exists for this order
         const currentPedido = this.getPedidosDeMesa(this.mesaSeleccionada?.numero, this.pedido_mesa_status, this.mesaSeleccionada)[0];
-        
+
         if (currentPedido && currentPedido['vales'] && currentPedido['vales'].length > 0) {
             // Voucher exists, download it instead
             this.generatedVoucher = currentPedido['vales'][0];
             this['downloadExistingQR']();
             return;
         }
-        
+
         // No voucher exists, show dialog to create one
         this.voucherForm.reset();
         this.voucherForm.patchValue({

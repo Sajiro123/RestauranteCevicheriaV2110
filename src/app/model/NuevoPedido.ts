@@ -20,7 +20,7 @@ export interface NuevoPedido {
     efectivo: number;
     cliente?: string | null;
     delivery?: number | null;
-    idmozo?: number;
+    idmozo?: number | null;
     fecha?: string;
     mesa?: string;
 }
