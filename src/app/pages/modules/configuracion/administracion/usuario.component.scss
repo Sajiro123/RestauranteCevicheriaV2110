@@ -1,0 +1,89 @@
+/* Estilos para el formulario */
+.field {
+  margin-bottom: 1.5rem;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+/* Estilos para mensajes de error */
+.p-error {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+/* Estilos responsivos */
+@media screen and (max-width: 768px) {
+  .p-datatable-wrapper {
+    overflow-x: auto;
+  }
+  
+  .p-datatable-table {
+    min-width: 768px;
+  }
+  
+  .p-dialog {
+    width: 95% !important;
+    max-width: 500px;
+  }
+}
+
+/* Estilos para el toolbar */
+.p-toolbar {
+  border-radius: 8px;
+  padding: 1rem;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para la tabla */
+.p-datatable .p-datatable-header {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-width: 1px 0 1px 0;
+  padding: 1rem 1rem;
+  font-weight: 600;
+}
+
+.p-datatable .p-sortable-column {
+  font-weight: 600;
+}
+
+.p-datatable .p-sortable-column:not(.p-highlight):hover {
+  background: var(--surface-hover);
+}
+
+.p-datatable .p-sortable-column.p-highlight {
+  background: var(--highlight-bg);
+  color: var(--highlight-text-color);
+}
+
+/* Estilos para los botones de acción */
+.p-button-icon-only {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+/* Estilos para el diálogo */
+.p-dialog .p-dialog-content {
+  padding: 1.5rem;
+}
+
+.p-dialog .p-dialog-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--surface-border);
+}
+
+/* Estilos para las etiquetas */
+.p-tag {
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+}
+
+/* Estilos para el campo de búsqueda */
+.p-icon-field {
+  width: 100%;
+  max-width: 300px;
+}

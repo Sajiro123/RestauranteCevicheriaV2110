@@ -5,7 +5,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling } from '@angular/router';
 import Aura from '@primeng/themes/aura';
 import { providePrimeNG } from 'primeng/config';
-import { appRoutes } from './app.routes';
+import { appRoutes } from './app/app.routes';
 
 export const appConfig: ApplicationConfig = {
     providers: [

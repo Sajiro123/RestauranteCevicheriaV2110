@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { SupabaseService } from './supabase.service';
 import { Router, ActivatedRoute } from '@angular/router';
+import { MenuService } from '../pages/service/menu.service';
 
 export interface User {
     idusuario: number;
@@ -9,6 +10,7 @@ export interface User {
     nombre: string;
     email?: string;
     rol?: string;
+    idperfil?: number;
 }
 
 @Injectable({
@@ -21,7 +23,8 @@ export class AuthService {
     public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
     constructor(
-        private supabaseService: SupabaseService, 
+        private supabaseService: SupabaseService,
+        @Inject(MenuService) private menuService: MenuService,
         private router: Router
     ) {
         // Verificar si hay una sesión guardada al inicializar
@@ -65,11 +68,19 @@ export class AuthService {
                 username: data.username,
                 nombre: data.nombre,
                 email: data.email,
-                rol: data.rol
+                rol: data.rol,
+                idperfil: data.idperfil
             };
 
+            // Fetch menu data for this user profile
+            const menuData = await this.fetchAndStoreMenuData(data.idperfil);
+
             // Guardar usuario en localStorage para persistencia
-            localStorage.setItem('currentUser', JSON.stringify(user));
+            const userData = {
+                ...user,
+                menuData: menuData // Include menu data in user object
+            };
+            localStorage.setItem('currentUser', JSON.stringify(userData));
 
             // Actualizar observables
             this.currentUserSubject.next(user);
@@ -88,9 +99,30 @@ export class AuthService {
         }
     }
 
+    private async fetchAndStoreMenuData(idperfil: number) {
+        try {
+            const { data, error } = await this.menuService.getMenuByPerfil(idperfil);
+
+            if (error) {
+                console.error('Error fetching menu data:', error);
+                return [];
+            }
+
+            // Store menu data in localStorage
+            const menuData = data || [];
+            localStorage.setItem('userMenuData', JSON.stringify(menuData));
+
+            return menuData;
+        } catch (error) {
+            console.error('Error fetching menu data:', error);
+            return [];
+        }
+    }
+
     logout(redirectToLogin: boolean = true) {
         // Limpiar localStorage
         localStorage.removeItem('currentUser');
+        localStorage.removeItem('userMenuData');
 
         // Actualizar observables
         this.currentUserSubject.next(null);
@@ -117,9 +149,14 @@ export class AuthService {
     }
 
     // Método para redirigir después del login exitoso
-    redirectAfterLogin(returnUrl?: string) {
+    redirectAfterLogin(returnUrl?: string, idperfil?: number) {
         if (returnUrl && returnUrl !== '/auth/login') {
-            this.router.navigate([returnUrl]);
+            if (idperfil == 4 || idperfil == 1) {
+                this.router.navigate(['/mesas']);
+            } else {
+                this.router.navigate([returnUrl]);
+            }
+
         } else {
             this.router.navigate(['/']);
         }

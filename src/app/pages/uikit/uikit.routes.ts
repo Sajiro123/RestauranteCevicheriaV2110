@@ -18,27 +18,21 @@ import { HomeComponent } from '../modules/home/home.component';
 import { AperturaComponent } from '../modules/apertura/apertura.component';
 import { ReportesComponent } from '../modules/reportes/reportes.component';
 import { ConfiguracionComponent } from '../modules/configuracion/configuracion.component';
+import { MenuListComponent } from '../modules/configuracion/menu/menu-list/menu-list.component';
+import { MenuFormComponent } from '../modules/configuracion/menu/menu-form/menu-form/menu-form.component';
+import { PerfilPermisosComponent } from '../modules/configuracion/menu/perfil-permisos/perfil-permisos.component';
+import { UsuarioComponent } from '../modules/configuracion/administracion/usuario.component';
 
 export default [
-    // { path: 'button', data: { breadcrumb: 'Button' }, component: ButtonDemo },
-    // { path: 'charts', data: { breadcrumb: 'Charts' }, component: ChartDemo },
-    // { path: 'file', data: { breadcrumb: 'File' }, component: FileDemo },
     { path: 'formlayout', data: { breadcrumb: 'Form Layout' }, component: FormLayoutDemo },
     { path: 'home', data: { breadcrumb: 'Home' }, component: HomeComponent },
     { path: 'apertura', data: { breadcrumb: 'Apertura' }, component: AperturaComponent },
     { path: 'reportes', data: { breadcrumb: 'Reportes' }, component: ReportesComponent },
-    { path: 'configuration', data: { breadcrumb: 'configuration' }, component: ConfiguracionComponent }
+    { path: 'configuration', data: { breadcrumb: 'configuration' }, component: ConfiguracionComponent },
+    { path: 'menulista', data: { breadcrumb: 'menulista' }, component: MenuListComponent },
+    { path: 'perfilpermiso', data: { breadcrumb: 'Perfil Permiso' }, component: PerfilPermisosComponent },
+    { path: 'usuario', data: { breadcrumb: 'Usuario' }, component: UsuarioComponent },
+    { path: 'mesas', data: { breadcrumb: 'Mesas' }, component: HomeComponent },
 
-    // { path: 'input', data: { breadcrumb: 'Input' }, component: InputDemo },
-    // { path: 'list', data: { breadcrumb: 'List' }, component: ListDemo },
-    // { path: 'media', data: { breadcrumb: 'Media' }, component: MediaDemo },
-    // { path: 'message', data: { breadcrumb: 'Message' }, component: MessagesDemo },
-    // { path: 'misc', data: { breadcrumb: 'Misc' }, component: MiscDemo },
-    // { path: 'panel', data: { breadcrumb: 'Panel' }, component: PanelsDemo },
-    // { path: 'timeline', data: { breadcrumb: 'Timeline' }, component: TimelineDemo },
-    // { path: 'table', data: { breadcrumb: 'Table' }, component: TableDemo },
-    // { path: 'overlay', data: { breadcrumb: 'Overlay' }, component: OverlayDemo },
-    // { path: 'tree', data: { breadcrumb: 'Tree' }, component: TreeDemo },
-    // { path: 'menu', data: { breadcrumb: 'Menu' }, component: MenuDemo },
-    // { path: '**', redirectTo: '/notfound' }
+
 ] as Routes;

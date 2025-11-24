@@ -1,0 +1,139 @@
+<div class="card" style="width: 110% !important;">
+
+    <p-toast />
+
+    <div class="flex items-center mb-4">
+        <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
+            class="mr-4" pTooltip="Volver a Configuración" />
+        <h2 class="text-2xl font-semibold text-surface-900 dark:text-surface-0 m-0">Gestión de Usuarios</h2>
+    </div>
+
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <p-button label="Nuevo Usuario" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
+        </ng-template>
+    </p-toolbar>
+
+    <p-table #dt [value]="usuarios" [rows]="10" [paginator]="true" [loading]="loading"
+        [globalFilterFields]="['nombre', 'username']" [tableStyle]="{ 'min-width': '75rem' }"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} usuarios" [showCurrentPageReport]="true"
+        [rowsPerPageOptions]="[10, 20, 30]">
+        <ng-template #caption>
+            <div class="flex items-center justify-between">
+                <h5 class="m-0">Gestionar Usuarios</h5>
+                <p-iconfield>
+                    <p-inputicon styleClass="pi pi-search" />
+                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="idusuario" style="min-width:8rem">
+                    ID
+                    <p-sortIcon field="idusuario" />
+                </th>
+                <th pSortableColumn="nombre" style="min-width:15rem">
+                    Nombre
+                    <p-sortIcon field="nombre" />
+                </th>
+                <th pSortableColumn="username" style="min-width:12rem">
+                    Usuario
+                    <p-sortIcon field="username" />
+                </th>
+                <th pSortableColumn="idperfil" style="min-width:12rem">
+                    Perfil
+                    <p-sortIcon field="idperfil" />
+                </th>
+                <th pSortableColumn="estado" style="min-width:10rem">
+                    Estado
+                    <p-sortIcon field="estado" />
+                </th>
+                <th style="min-width:12rem">Acciones</th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-usuario>
+            <tr>
+                <td>{{ usuario.idusuario }}</td>
+                <td>{{ usuario.nombre }}</td>
+                <td>{{ usuario.username }}</td>
+                <td>{{ findPerfilName(usuario.idperfil) }}</td>
+                <td>
+                    <p-tag [value]="usuario.estado == 1 ? 'Activo' : 'Inactivo'"
+                        [severity]="usuario.estado == 1 ? 'success' : 'danger'" />
+                </td>
+                <td>
+                    <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
+                        (click)="editUsuario(usuario)" />
+                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                        (click)="deleteUsuario(usuario)" />
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="6" class="text-center">No se encontraron usuarios.</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-dialog [(visible)]="usuarioDialog" [style]="{ width: '500px' }"
+    [header]="selectedUsuario?.idusuario ? 'Editar Usuario' : 'Nuevo Usuario'" [modal]="true" styleClass="p-fluid">
+    <ng-template #content>
+        <div class="flex flex-col gap-6">
+            <div>
+                <label for="nombre" class="block font-bold mb-3">Nombre Completo *</label>
+                <input type="text" pInputText id="nombre" [(ngModel)]="selectedUsuario!.nombre" required autofocus fluid
+                    [class.ng-invalid]="submitted && !selectedUsuario?.nombre" />
+                <small class="text-red-500" *ngIf="submitted && !selectedUsuario?.nombre">El nombre es
+                    requerido.</small>
+            </div>
+
+            <div>
+                <label for="username" class="block font-bold mb-3">Nombre de Usuario *</label>
+                <input type="text" pInputText id="username" [(ngModel)]="selectedUsuario!.username" required fluid
+                    [class.ng-invalid]="submitted && !selectedUsuario?.username" />
+                <small class="text-red-500" *ngIf="submitted && !selectedUsuario?.username">El nombre de usuario es
+                    requerido.</small>
+            </div>
+
+            <div *ngIf="!selectedUsuario?.idusuario">
+                <label for="password" class="block font-bold mb-3">Contraseña</label>
+                <input type="password" pInputText id="password" [(ngModel)]="selectedUsuario!.password" fluid />
+                <small class="text-500">La contraseña por defecto es "123456" si no se especifica.</small>
+            </div>
+
+            <div *ngIf="selectedUsuario?.idusuario" class="field">
+                <label for="newPassword" class="block font-bold mb-3">Nueva Contraseña</label>
+                <input type="password" pInputText id="newPassword" [(ngModel)]="selectedUsuario!.newPassword" fluid />
+                <small class="text-500">Deje en blanco si no desea cambiar la contraseña.</small>
+            </div>
+
+            <div>
+                <label for="idperfil" class="block font-bold mb-3">Perfil *</label>
+                <p-dropdown [options]="perfiles" [(ngModel)]="selectedUsuario!.idperfil" optionLabel="nombre"
+                    optionValue="idperfil" placeholder="Seleccione un perfil" [showClear]="true" fluid
+                    [class.ng-invalid]="submitted && !selectedUsuario?.idperfil">
+                </p-dropdown>
+                <small class="text-red-500" *ngIf="submitted && !selectedUsuario?.idperfil">El perfil es
+                    requerido.</small>
+            </div>
+
+            <div>
+                <label for="estado" class="block font-bold mb-3">Estado</label>
+                <p-select [options]="[{label: 'Activo', value: 1}, {label: 'Inactivo', value: 0}]"
+                    [(ngModel)]="selectedUsuario!.estado" optionLabel="label" optionValue="value"
+                    placeholder="Seleccione un estado" fluid>
+                </p-select>
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-template #footer>
+        <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" />
+        <p-button label="Guardar" icon="pi pi-check" (click)="saveUsuario()" />
+    </ng-template>
+</p-dialog>
+
+<p-confirmdialog [style]="{ width: '450px' }" />

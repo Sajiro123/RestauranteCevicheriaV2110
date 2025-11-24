@@ -267,6 +267,6 @@ export class PersonalComponent {
     }
 
     getEstadoSeverity(idestado: any): string {
-        return idestado === '1' ? 'success' : 'danger';
+        return idestado == '1' ? 'success' : 'danger';
     }
 }

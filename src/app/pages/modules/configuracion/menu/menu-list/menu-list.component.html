@@ -1,0 +1,52 @@
+<div class="card" style="width: 250% !important;">
+    <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
+        class="mr-4" pTooltip="Volver a Configuración" />
+    <h2 class="text-2xl font-semibold text-surface-900 dark:text-surface-0 m-0 ml-6 mt-4">Gestión de Menù Perfiles</h2>
+
+    <p-toolbar styleClass="mb-4 mt-6">
+        <ng-template #start>
+            <p-button label="Nuevo Menú" icon="pi pi-plus" (click)="add()" />
+        </ng-template>
+    </p-toolbar>
+
+    <p-table [value]="menus" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+        <ng-template #header>
+            <tr>
+                <th>Nombre</th>
+                <th>Ruta</th>
+                <th>Sub</th>
+                <th>Orden</th>
+                <th>Activo</th>
+                <th>Acciones</th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-menu>
+            <tr>
+                <td>{{ menu.nombre }}</td>
+                <td>{{ menu.ruta }}</td>
+                <td>{{ menu.es_submenu ? 'Sí' : 'No' }}</td>
+                <td>{{ menu.orden }}</td>
+                <td>{{ menu.activo ? 'Sí' : 'No' }}</td>
+                <td>
+                    <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
+                        (click)="edit(menu)" />
+                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                        (click)="remove(menu.idmenu)" />
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- Diálogo para agregar/editar menú -->
+<p-dialog [(visible)]="showDialog" [style]="{ width: '520px' }" [modal]="true" [draggable]="false" [resizable]="false"
+    (onHide)="onDialogClose()">
+    <ng-template #header>
+        <h2>{{ selectedMenu ? 'Editar Menú' : 'Nuevo Menú' }}</h2>
+    </ng-template>
+
+    <ng-template #content>
+        <app-menu-form [data]="selectedMenu" (onSave)="onDialogSave()" (onClose)="onDialogClose()">
+        </app-menu-form>
+    </ng-template>
+</p-dialog>

@@ -112,6 +112,7 @@ export class Login {
             const { username, password } = this.loginForm.value;
 
             try {
+                debugger
                 const result = await this.authService.login(username, password);
 
                 if (result.success) {
@@ -124,7 +125,7 @@ export class Login {
 
                     // Redirigir al dashboard después de un breve delay
                     setTimeout(() => {
-                        this.authService.redirectAfterLogin(this.returnUrl);
+                        this.authService.redirectAfterLogin(this.returnUrl, result.user?.idperfil);
                     }, 1000);
                 } else {
                     this.messageService.add({

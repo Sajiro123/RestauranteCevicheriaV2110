@@ -19,9 +19,13 @@ import { Popover } from 'primeng/popover';
 import { UniquePipe } from '../../../model/util/unique.pipe';
 import { OrderByPipe } from '../../../model/util/order-by.pipe';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { AuthService } from '../../../services/auth.service';
+import { Router } from '@angular/router';
+
 @Component({
     selector: 'app-home',
-    imports: [CommonModule, ImportsModule, FormsModule, UniquePipe, OrderByPipe], // <-- Add this
+    // Remove duplicate imports that are already in ImportsModule
+    imports: [CommonModule, ImportsModule, UniquePipe, OrderByPipe],
     providers: [MessageService, ConfirmationService],
     templateUrl: './home.component.html',
     styleUrl: './home.component.scss'
@@ -36,6 +40,7 @@ export class HomeComponent {
     selectedToppings: { idtopings: number; nombre: string }[] = []; // O puedes inicializar con algunos seleccionados
     isDropdownOpen = false;
     selectedMozo: any = null;
+    private authSubscription: any;
 
     @ViewChild('responsableTextarea') responsableTextarea!: ElementRef;
     multiselectToppings: any[] = [];
@@ -132,6 +137,12 @@ export class HomeComponent {
     isGeneratingVoucher: boolean = false;
     generatedVoucher: any = null;
     qrCodeSvg: string = '';
+
+    // Move table properties
+    moveTableDialog: boolean = false;
+    targetMesa: Mesa | null = null;
+    availableMesas: Mesa[] = [];
+
     constructor(
         private confirmationService: ConfirmationService,
         private homeService: HomeService,
@@ -140,7 +151,9 @@ export class HomeComponent {
         private cd: ChangeDetectorRef,
         private sanitizer: DomSanitizer,
         private fb: FormBuilder,
-        private voucherService: VoucherService
+        private voucherService: VoucherService,
+        private authService: AuthService,
+        private router: Router
     ) {
         this.voucherForm = this.fb.group({
             descripcion: ['Vale de delivery'],
@@ -151,9 +164,40 @@ export class HomeComponent {
     ngOnInit(): void {
         // 👇 inicializamos en el constructor
         // LoaderComponent.isLoading = true; // Set loading state to true
-        this.cargarMesas();
-        this.ListarToppings();
-        this.loadMozos();
+
+        // Verificar autenticación al inicializar el componente
+        this.checkAuthentication();
+
+        // Subscribe to authentication state changes
+        this.authSubscription = this.authService.isAuthenticated$.subscribe(
+            (authenticated: boolean) => {
+                if (!authenticated) {
+                    this.router.navigate(['/auth/login']);
+                }
+            }
+        );
+
+        // Only proceed with initialization if user is authenticated
+        if (this.authService.isAuthenticated()) {
+            this.cargarMesas();
+            this.ListarToppings();
+            this.loadMozos();
+        }
+    }
+
+    ngOnDestroy(): void {
+        if (this.authSubscription) {
+            this.authSubscription.unsubscribe();
+        }
+    }
+
+    private checkAuthentication(): void {
+        if (!this.authService.isAuthenticated()) {
+            // Use setTimeout to ensure navigation happens after the component is fully initialized
+            setTimeout(() => {
+                this.router.navigate(['/auth/login']);
+            }, 0);
+        }
     }
 
     selectMozo(mozo: any) {
@@ -847,7 +891,7 @@ export class HomeComponent {
 
     async ListarPedidos(): Promise<void> {
         this.Pedidos = [];
-        await this.PedidoService.ListarPedidosMesa().subscribe(
+        this.PedidoService.ListarPedidosMesa().subscribe(
             (response) => {
                 if (response.success) {
                     this.Pedidos = response.data;
@@ -937,8 +981,11 @@ export class HomeComponent {
             }
         }
 
+        // Fix: Ensure timeout callback properly handles component state
         setTimeout(() => {
-            this.isLoading = false;
+            if (this.isLoading) {
+                this.isLoading = false;
+            }
         }, 300);
     }
     loadImageBase64(path: string): Promise<string> {
@@ -1712,7 +1759,8 @@ export class HomeComponent {
                     // alert('No hay pedidos en esta mesa');
                 }
             } else if (this.mesaSeleccionada) {
-                [];
+                // Fix: Return empty array instead of undefined expression
+                return [];
             }
         }
         return [];
@@ -1975,7 +2023,8 @@ export class HomeComponent {
         const index = this.NuevoPedido.pedidodetalle.findIndex((detalle) => detalle.idpedido === pedidosdetalle.idpedido);
         // this.NuevoPedido.pedidodetalle[index].idtopings = [{ idtopings: 0, nombre: '' }]; // Inicializar con un objeto por defecto
 
-        this.isDropdownOpen = this.isDropdownOpen;
+        // Fix for potential infinite loop - was: this.isDropdownOpen = this.isDropdownOpen;
+        this.isDropdownOpen = !this.isDropdownOpen;
         op.toggle(event);
         this.cargarToppingsSeleccionados(pedidosdetalle);
     }
