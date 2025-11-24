@@ -1,0 +1,96 @@
+<div class="card" style="width: 340% !important;">
+  <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
+    class="mr-4" pTooltip="Volver a Configuración" />
+  <div class="flex justify-content-between align-items-center mb-4 mt-6">
+    <h2 class="text-900 font-bold text-2xl">Gestión de Permisos por Perfil</h2>
+  </div>
+
+  <div class="grid">
+    <div class="col-12 md:col-6">
+      <div class="p-fluid">
+        <div class="field">
+          <label for="perfil" class="font-medium text-900 block mb-2">Seleccionar Perfil</label>
+          <p-dropdown [(ngModel)]="selectedPerfil" [options]="perfiles" optionLabel="nombre" optionValue="idperfil"
+            placeholder="Seleccione un perfil" (onChange)="onPerfilChange()" [style]="{ width: '100%' }"
+            appendTo="body">
+          </p-dropdown>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4" *ngIf="selectedPerfil && menus.length > 0">
+    <div class="flex justify-content-between align-items-center mb-4">
+      <h3 class="text-900 font-bold text-xl">Permisos de Menú</h3>
+      <span class="text-500">{{ menus.length }} menús disponibles</span>
+    </div>
+
+    <div class="overflow-auto">
+      <p-table [value]="menus" styleClass="p-datatable-striped p-datatable-sm" [paginator]="true" [rows]="10"
+        [showCurrentPageReport]="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} menús">
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="font-medium">Menú</th>
+            <th class="text-center font-medium" style="width: 15%">Ver</th>
+            <th class="text-center font-medium" style="width: 15%">Editar</th>
+            <th class="text-center font-medium" style="width: 15%">Eliminar</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-m>
+          <tr>
+            <td>
+              <span class="font-medium">{{m.nombre}}</span>
+            </td>
+            <td class="text-center">
+              <p-checkbox [(ngModel)]="m.permisos.puede_ver" binary="true"
+                (onChange)="togglePermiso(m, 'puede_ver', $event.checked)" [trueValue]="true" [falseValue]="false"
+                [binary]="true">
+                <ng-template pTemplate="icon">
+                  <i class="pi pi-check"></i>
+                </ng-template>
+              </p-checkbox>
+            </td>
+            <td class="text-center">
+              <p-checkbox [(ngModel)]="m.permisos.puede_editar" binary="true"
+                (onChange)="togglePermiso(m, 'puede_editar', $event.checked)" [trueValue]="true" [falseValue]="false"
+                [binary]="true">
+                <ng-template pTemplate="icon">
+                  <i class="pi pi-pencil"></i>
+                </ng-template>
+              </p-checkbox>
+            </td>
+            <td class="text-center">
+              <p-checkbox [(ngModel)]="m.permisos.puede_eliminar" binary="true"
+                (onChange)="togglePermiso(m, 'puede_eliminar', $event.checked)" [trueValue]="true" [falseValue]="false"
+                [binary]="true">
+                <ng-template pTemplate="icon">
+                  <i class="pi pi-trash"></i>
+                </ng-template>
+              </p-checkbox>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <div class="card mt-4" *ngIf="selectedPerfil && menus.length === 0">
+    <div class="flex justify-content-center align-items-center py-8">
+      <div class="text-center">
+        <i class="pi pi-info-circle text-600 text-5xl mb-3"></i>
+        <h3 class="text-900 font-bold text-xl mb-2">No hay menús disponibles</h3>
+        <p class="text-600">No se encontraron menús para asignar permisos.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4" *ngIf="!selectedPerfil">
+    <div class="flex justify-content-center align-items-center py-8">
+      <div class="text-center">
+        <i class="pi pi-users text-600 text-5xl mb-3"></i>
+        <h3 class="text-900 font-bold text-xl mb-2">Seleccione un perfil</h3>
+        <p class="text-600">Por favor seleccione un perfil para gestionar sus permisos de menú.</p>
+      </div>
+    </div>
+  </div>
+</div>

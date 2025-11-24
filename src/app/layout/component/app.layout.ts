@@ -66,7 +66,11 @@ export class AppLayout {
 
     private checkAuthentication() {
         if (!this.authService.isAuthenticated()) {
-            this.authService.logout(true);
+            this.authService.logout(false); // Don't redirect to login yet
+            // Use setTimeout to ensure navigation happens after the component is fully initialized
+            setTimeout(() => {
+                this.router.navigate(['/auth/login']);
+            }, 0);
         }
     }
 

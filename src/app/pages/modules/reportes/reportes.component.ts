@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, ViewChild } from '@angular/core';
 import { ImportsModule } from '../../imports';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PedidoService } from '../../service/pedido.service';
 import { Table } from 'primeng/table';
 import { ES_LOCALE } from '../../../model/util/calendar';
@@ -13,7 +13,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
     selector: 'app-reportes',
-    imports: [CommonModule, ImportsModule, FormsModule], // <-- Add this
+    imports: [CommonModule, ImportsModule, FormsModule, ReactiveFormsModule], // <-- Add ReactiveFormsModule
     providers: [MessageService, ConfirmationService],
     templateUrl: './reportes.component.html',
     styleUrl: './reportes.component.scss'
@@ -33,6 +33,19 @@ export class ReportesComponent {
     PDF_Dialog: boolean = false;
     pdfUrl: SafeResourceUrl | null = null;
     fecha_actual: any;
+    
+    // Add properties for the edit modal
+    Cobrar_Dialog: boolean = false;
+    Pedido_cobrar: any = {
+        idpedido: 0,
+        delivery: 0,
+        yape: 0,
+        efectivo: 0,
+        visa: 0,
+        plin: 0,
+        total: 0
+    };
+
     constructor(private PedidoService: PedidoService, private sanitizer: DomSanitizer, private AperturaService_: AperturaService, private messageService: MessageService) { }
 
     expandAll() {
@@ -67,6 +80,55 @@ export class ReportesComponent {
             this.showReporteDay(this.formatDateToMySQL(new Date(this.selectedRange2)));
         } else {
             console.log('No se ha completado el rango de fechas');
+        }
+    }
+
+    // Add the Editar function
+    Editar(pedido: any) {
+        this.Cobrar_Dialog = true;
+        this.Pedido_cobrar = {
+            idpedido: pedido.idpedido,
+            delivery: pedido.delivery || 0,
+            yape: pedido.yape || 0,
+            efectivo: pedido.efectivo || 0,
+            visa: pedido.visa || 0,
+            plin: pedido.plin || 0,
+            total: pedido.total || 0
+        };
+    }
+
+    // Add the hideDialog function
+    hideDialog() {
+        this.Cobrar_Dialog = false;
+    }
+
+    // Add the CobrarPedido function
+    CobrarPedido(pedido: any) {
+        const total_ingresado = Number(pedido.yape || 0) + Number(pedido.visa || 0) + Number(pedido.plin || 0) + Number(pedido.efectivo || 0);
+        
+        if (total_ingresado == pedido.total) {
+            this.PedidoService.CobrarPedido(pedido).subscribe((response) => {
+                // Update the pedido in the list
+                const index = this.PedidoReporte.findIndex(p => p.idpedido === pedido.idpedido);
+                if (index !== -1) {
+                    this.PedidoReporte[index] = { ...this.PedidoReporte[index], ...pedido };
+                }
+                
+                this.Cobrar_Dialog = false;
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Successful',
+                    detail: 'Se ha cobrado correctamente el pedido',
+                    life: 3000
+                });
+            });
+        } else {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Aviso importante',
+                detail: 'No coincide los montos al cobrar con el total',
+                life: 3000
+            });
         }
     }
 

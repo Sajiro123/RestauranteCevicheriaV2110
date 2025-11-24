@@ -1,0 +1,47 @@
+<div class="flex flex-col gap-6" [formGroup]="form">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="col-span-2">
+            <label for="nombre" class="block font-bold mb-3">Nombre *</label>
+            <input type="text" pInputText id="nombre" formControlName="nombre" required autofocus fluid
+                [class.ng-invalid]="form.get('nombre')?.invalid && form.get('nombre')?.touched" />
+            <small class="text-red-500" >
+                El nombre es requerido.
+            </small>
+        </div>
+
+        <div class="col-span-2">
+            <label for="icono" class="block font-bold mb-3">Icono</label>
+            <input type="text" pInputText id="icono" formControlName="icono" fluid />
+        </div>
+
+        <div class="col-span-2">
+            <label for="ruta" class="block font-bold mb-3">Ruta</label>
+            <input type="text" pInputText id="ruta" formControlName="ruta" fluid />
+        </div>
+
+        <div>
+            <label for="idmenu_padre" class="block font-bold mb-3">ID Menu Padre</label>
+            <p-inputnumber id="idmenu_padre" formControlName="idmenu_padre" fluid />
+        </div>
+
+        <div>
+            <label for="orden" class="block font-bold mb-3">Orden</label>
+            <p-inputnumber id="orden" formControlName="orden" fluid />
+        </div>
+
+        <div>
+            <label for="es_submenu" class="block font-bold mb-3">Es Submenu</label>
+            <p-checkbox id="es_submenu" formControlName="es_submenu" binary="true" />
+        </div>
+
+        <div>
+            <label for="activo" class="block font-bold mb-3">Activo</label>
+            <p-checkbox id="activo" formControlName="activo" binary="true" />
+        </div>
+    </div>
+    
+    <div class="flex justify-content-end gap-2 mt-4">
+        <p-button label="Cancelar" icon="pi pi-times" text (click)="close()" />
+        <p-button label="Guardar" icon="pi pi-check" (click)="save()" />
+    </div>
+</div>
