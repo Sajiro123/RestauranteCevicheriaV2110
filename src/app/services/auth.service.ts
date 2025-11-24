@@ -151,7 +151,7 @@ export class AuthService {
     // Método para redirigir después del login exitoso
     redirectAfterLogin(returnUrl?: string, idperfil?: number) {
         if (returnUrl && returnUrl !== '/auth/login') {
-            if (idperfil == 4 || idperfil == 1) {
+            if (idperfil == 3 || idperfil == 1) {
                 this.router.navigate(['/mesas']);
             } else {
                 this.router.navigate([returnUrl]);
