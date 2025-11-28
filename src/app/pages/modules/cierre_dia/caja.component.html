@@ -1,0 +1,153 @@
+<div class="card">
+  <h2 class="text-2xl font-bold mb-6 text-gray-800">Registro Caja Semanal</h2>
+
+  <div class="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <button (click)="openNew()"
+      class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
+      Nuevo Registro
+    </button>
+
+    <div class="flex flex-col sm:flex-row gap-2">
+      <div class="flex items-center">
+        <label class="mr-2 text-sm font-medium text-gray-700">Desde:</label>
+        <input type="date" [(ngModel)]="fechaInicio"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          (change)="filtrarPorRangoFechas()">
+      </div>
+
+      <div class="flex items-center">
+        <label class="mr-2 text-sm font-medium text-gray-700">Hasta:</label>
+        <input type="date" [(ngModel)]="fechaFin"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          (change)="filtrarPorRangoFechas()">
+      </div>
+
+      <button (click)="limpiarFiltros()"
+        class="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-200 text-sm">
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  <p-dialog [(visible)]="displayDialog" [style]="{width: '35vw'}" [maximizable]="true" [modal]="true"
+    [draggable]="false" [resizable]="false" header="{{editingId ? 'Editar Registro' : 'Nuevo Registro'}}"
+    [closeOnEscape]="true">
+
+    <form (ngSubmit)="save()" class="bg-white rounded-lg p-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Semana (Auto)</label>
+            <input type="number" [(ngModel)]="form.semana" name="semana" readonly
+              class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Trabajo</label>
+            <input type="text" [(ngModel)]="form.trabajo" name="trabajo" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+            <input type="date" [(ngModel)]="form.fecha" name="fecha" required (change)="onDateChange($event)"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="button" (click)="autocompleteFromReport()" [disabled]="!form.fecha"
+              class="mt-2 px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200 disabled:opacity-50">
+              Autocompletar desde Reportes
+            </button>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Día (Auto)</label>
+            <input type="text" [value]="getDayName(form.dia)" readonly
+              class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
+            <input type="hidden" [(ngModel)]="form.dia" name="dia">
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Yape</label>
+            <input type="number" step="0.01" [(ngModel)]="form.yape" name="yape"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Efectivo</label>
+            <input type="number" step="0.01" [(ngModel)]="form.efectivo" name="efectivo"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tarjeta</label>
+            <input type="number" step="0.01" [(ngModel)]="form.tarjeta" name="tarjeta"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Gastos</label>
+            <input type="number" step="0.01" [(ngModel)]="form.gastos" name="gastos"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+        <textarea [(ngModel)]="form.notas" name="notas"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          rows="3"></textarea>
+      </div>
+
+      <div class="flex justify-end space-x-3 mt-6">
+        <button type="button" (click)="hideDialog()"
+          class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-200">
+          Cancelar
+        </button>
+        <button type="submit"
+          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
+          {{ editingId ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </p-dialog>
+
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semana</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trabajo</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Día</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Yape</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Efectivo</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarjeta</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gastos</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <tr *ngFor="let c of cajasFiltradas" class="hover:bg-gray-50">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.semana }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.trabajo }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.fecha }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ getDayName(c.dia) }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.yape | number:'1.2-2' }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.efectivo | number:'1.2-2' }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.tarjeta | number:'1.2-2' }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ c.total | number:'1.2-2' }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.gastos | number:'1.2-2' }}</td>
+          <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{{ c.notas }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <button (click)="edit(c)" class="text-blue-600 hover:text-blue-900 mr-3">Editar</button>
+            <button (click)="delete(c.id!)" class="text-red-600 hover:text-red-900">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -33,7 +33,8 @@ export class ProductosComponent {
             nombre: ['', [Validators.required, Validators.minLength(2)]],
             preciounitario: [0, [Validators.required, Validators.min(0)]],
             idcategoria: ['', Validators.required],
-            acronimo: ['', [Validators.required, Validators.maxLength(10)]]
+            acronimo: ['', [Validators.required, Validators.maxLength(10)]],
+            numero_carta: [0, [Validators.required, Validators.min(0)]]
         });
     }
 
@@ -57,7 +58,7 @@ export class ProductosComponent {
                 )
                 .is('deleted', null)
                 .not('preciounitario', 'is', null)
-                .order('nombre');
+                .order('numero_carta');
 
             if (error) throw error;
             this.productos = data || [];
@@ -113,6 +114,7 @@ export class ProductosComponent {
     editProducto(producto: any) {
         this.producto = { ...producto };
         this.productoForm.patchValue({
+            numero_carta: producto.numero_carta,
             nombre: producto.nombre,
             preciounitario: producto.preciounitario,
             idcategoria: producto.idcategoria,
@@ -134,7 +136,7 @@ export class ProductosComponent {
             icon: 'pi pi-exclamation-triangle',
             accept: async () => {
                 try {
-                    const { error } = await this.supabaseService.client.from('producto').update({ deleted: fechaPeru }).eq('idproducto', producto.idproducto);
+                    const { error } = await this.supabaseService.client.from('producto').update({ deleted: 1 }).eq('idproducto', producto.idproducto);
 
                     if (error) throw error;
 
@@ -171,7 +173,8 @@ export class ProductosComponent {
                             nombre: formData.nombre,
                             preciounitario: formData.preciounitario,
                             idcategoria: formData.idcategoria,
-                            acronimo: formData.acronimo
+                            acronimo: formData.acronimo,
+                            numero_carta: formData.numero_carta
                         })
                         .eq('idproducto', this.producto.idproducto);
 
@@ -188,7 +191,8 @@ export class ProductosComponent {
                         nombre: formData.nombre,
                         preciounitario: formData.preciounitario,
                         idcategoria: formData.idcategoria,
-                        acronimo: formData.acronimo
+                        acronimo: formData.acronimo,
+                        numero_carta: formData.numero_carta
                     });
 
                     if (error) throw error;

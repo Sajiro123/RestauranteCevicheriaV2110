@@ -63,6 +63,10 @@
                     Categoría
                     <p-sortIcon field="categoria.nombre" />
                 </th>
+                <th pSortableColumn="categoria.nombre" style="min-width:12rem">
+                    N°Carta
+                    <p-sortIcon field="categoria.nombre" />
+                </th>
                 <th style="min-width:12rem">Acciones</th>
             </tr>
         </ng-template>
@@ -73,6 +77,8 @@
                 <td>{{ producto.acronimo }}</td>
                 <td>{{ producto.preciounitario | currency:'S/ ' }}</td>
                 <td>{{ producto.categoria?.nombre || 'Sin categoría' }}</td>
+                <td>{{ producto.numero_carta }}</td>
+
                 <td>
                     <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
                         (click)="editProducto(producto)" />
@@ -132,6 +138,11 @@
                         *ngIf="submitted && productoForm.get('preciounitario')?.errors?.['min']">
                         El precio debe ser mayor o igual a 0.
                     </small>
+                </div>
+
+                <div>
+                    <label for="numero_carta" class="block font-bold mb-3">N° Carta *</label>
+                    <p-inputnumber id="numero_carta" formControlName="numero_carta" fluid />
                 </div>
 
 
