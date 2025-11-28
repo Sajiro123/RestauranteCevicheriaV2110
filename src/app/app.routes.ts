@@ -9,6 +9,7 @@ import { PermisoGuard } from './guards/permiso.guard';
 import { ProductosComponent } from './pages/modules/configuracion/productos/productos.component';
 import { MenuListComponent } from './pages/modules/configuracion/menu/menu-list/menu-list.component';
 import { Notfound } from './pages/notfound/notfound';
+import { CajaComponent } from './pages/modules/cierre_dia/caja.component';
 
 export const appRoutes: Routes = [
     {
@@ -27,6 +28,8 @@ export const appRoutes: Routes = [
             { path: 'configuracion', loadChildren: () => import('./pages/modules/configuracion/configuracion.routes'), canActivate: [AuthGuard] },
             { path: 'menulista', loadChildren: () => import('./pages/modules/configuracion/menu/menu-list/menu-list.component').then(m => m.MenuListComponent), canActivate: [PermisoGuard], data: { menuRuta: 'menulista' } },
             { path: 'menuperfil', loadChildren: () => import('./pages/modules/configuracion/menu/perfil-permisos/perfil-permisos.component').then(m => m.PerfilPermisosComponent), canActivate: [PermisoGuard], data: { menuRuta: 'menuperfil' } },
+            { path: 'caja', loadChildren: () => import('./pages/modules/cierre_dia/caja.routes'), canActivate: [AuthGuard] },
+
         ]
     },
     { path: 'landing', component: Landing },
