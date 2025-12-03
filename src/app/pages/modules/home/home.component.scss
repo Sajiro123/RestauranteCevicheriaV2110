@@ -549,3 +549,118 @@ body {
     /* icono gris */
     transition: fill 0.2s ease;
 }
+
+/* Mesa card styles */
+.mesa-card {
+    width: 100%;
+    min-height: 160px;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+}
+
+.mesa-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    border-color: #3b82f6;
+}
+
+.mesa-card.seleccionada {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.mesa-card.ocupada {
+    background: #fee2e2;
+    border-color: #fecaca;
+}
+
+.mesa-card.libre {
+    background: #ffffff;
+    border-color: #bbf7d0;
+}
+
+.mesa-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.mesa-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.mesa-estado {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.mesa-estado.ocupada {
+    background-color: #ef4444;
+}
+
+.mesa-estado.libre {
+    background-color: #22c55e;
+}
+
+.mesa-numero {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.mesa-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mesa-details.libre {
+    justify-content: center;
+    align-items: center;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.detail-item .pi {
+    font-size: 14px;
+    margin-right: 6px;
+    color: #4b5563;
+}
+
+.detail-text {
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Segundo Piso mesa card */
+.mesa-card[data-piso="2"] {
+    background: #f0f9ff;
+    border-color: #bae6fd;
+}
+
+.mesa-card[data-piso="2"].ocupada {
+    background: #fee2e2;
+    border-color: #fecaca;
+}
+
+.mesa-card[data-piso="2"].libre {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}

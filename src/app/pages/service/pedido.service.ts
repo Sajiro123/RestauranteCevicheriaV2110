@@ -28,6 +28,11 @@ export class PedidoService {
         return { data, error };
     }
 
+    updatePedidoMesa(idpedido: number, mesa: number): Observable<any> {
+        const updateData = { mesa };
+        return from(this.supabaseService.updatePedido(idpedido, updateData));
+    }
+
     async insertarPedidoCompleto(pedido: any, detalles: any[]) {
         const total = detalles.reduce((sum: number, product: { preciounitario: number; cantidad: number }) => sum + product.preciounitario * product.cantidad, 0);
 
