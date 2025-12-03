@@ -246,6 +246,23 @@ export class SupabaseService {
         return { success: !error, data, error };
     }
 
+    async getGastosApp(fecha: string) {
+        const { data, error } = await this.supabase
+            .from('gastos')
+            .select(
+                `
+        *,
+        categoriagastos:idcategoriagastos(descripcion)
+      `
+            )
+            .eq('fecha', fecha)
+            .is('deleted', null)
+            .eq('app', '1')
+            .order('created_at', { ascending: false });
+
+        return { success: !error, data, error };
+    }
+
     async insertGasto(gastoData: any) {
         const { data, error } = await this.supabase.from('gastos').insert(gastoData).select();
 

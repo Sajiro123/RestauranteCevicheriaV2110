@@ -10,358 +10,450 @@
     <p>Cargando...</p>
 </div>
 
-<div class="max-w-full mx-auto">
-    <!-- Card container: modern admin panel look -->
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row">
-        <!-- Left column: tabs (Mesas / Delivery) -->
-        <aside class="w-full md:w-1/2 lg:w-3/5 overflow-x-hidden">
-            <!-- <aside class="w-full md:w-1/2 lg:w-3/5 border-r border-gray-100 p-4"> -->
+<!-- Card container: modern admin panel look -->
+<div class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row">
+    <!-- Left column: tabs (Mesas / Delivery) -->
+    <aside class="w-full md:w-1/2 lg:w-3/5 overflow-x-hidden">
+        <!-- <aside class="w-full md:w-1/2 lg:w-3/5 border-r border-gray-100 p-4"> -->
 
-            <div class="h-full flex flex-col gap-4">
-                <!-- Keep original content for tabs and mesas delivered inside -->
-                <div class="prose max-w-none">
-                    <div class="card">
-                        <div class="" style="max-width: 100%;">
-                            <!-- IZQUIERDA: MESAS -->
-                            <p-tabView class="p-tablist">
-                                <p-tabPanel header="Mesas" [selected]="true">
-                                    <div class="mesas w-full">
-                                        <div
-                                            class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-2 mt-5">
-                                            <ng-container *ngFor="let mesa of mesas">
-                                                <div class="mesa " (click)="seleccionarMesa(mesa)"
-                                                    *ngIf="mesa.numero != '0'" [ngClass]="{
-                                        seleccionada: mesaSeleccionada?.numero == mesa.numero
+        <div class="h-full flex flex-col gap-4">
+            <!-- Keep original content for tabs and mesas delivered inside -->
+            <div class="prose max-w-none">
+                <div class="card">
+                    <div class="" style="max-width: 100%;">
+                        <!-- IZQUIERDA: MESAS -->
+                        <p-tabView class="p-tablist">
+                            <p-tabPanel header="Primer Piso" [selected]="true">
+                                <div class="mesas w-full">
+                                    <div
+                                        class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-2 mt-5">
+                                        <ng-container *ngFor="let mesa of mesas">
+                                            <div class="mesa-card" (click)="seleccionarMesa(mesa)"
+                                                *ngIf="mesa.numero != '0' && mesa.piso == '1'" [ngClass]="{
+                                        seleccionada: mesaSeleccionada?.numero == mesa.numero,
+                                        ocupada: estadomesa[mesa.numero].value === 1,
+                                        libre: estadomesa[mesa.numero].value === 0
                                     }">
-                                                    <div class="circulo">
-                                                        <div class="estado" [ngClass]="{
-                                                ocupada: estadomesa[mesa.numero].value === 1,
-                                                libre: estadomesa[mesa.numero].value === 0
-                                            }"></div>
-                                                        <div class="texto">Mesa Nº{{ mesa.numero }}</div>
+                                                <div class="mesa-content">
+                                                    <div class="mesa-header">
+                                                        <div class="mesa-estado" [ngClass]="{
+                                                                ocupada: estadomesa[mesa.numero].value === 1,
+                                                                libre: estadomesa[mesa.numero].value === 0
+                                                            }"></div>
+                                                        <div class="mesa-numero">Mesa {{ mesa.numero }}</div>
+                                                    </div>
+
+                                                    <!-- Mesa details when occupied -->
+                                                    <div class="mesa-details"
+                                                        *ngIf="estadomesa[mesa.numero].value === 1">
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-clock"></i>
+                                                            <span class="detail-text">{{
+                                                                getTiempoTranscurrido(mesa.numero) }}</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-shopping-cart"></i>
+                                                            <span class="detail-text">{{ getNumeroPedidos(mesa.numero)
+                                                                }} pedidos</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-user"></i>
+                                                            <span class="detail-text">{{
+                                                                getNombreMozopedido(mesa.numero) }}</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-dollar"></i>
+                                                            <span class="detail-text"> {{ getTotalMesa(mesa.numero)
+                                                                }}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Mesa details when free -->
+                                                    <div class="mesa-details libre"
+                                                        *ngIf="estadomesa[mesa.numero].value == 0">
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-check-circle"></i>
+                                                            <span class="detail-text">Disponible</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </ng-container>
-                                        </div>
+                                            </div>
+                                        </ng-container>
                                     </div>
-                                </p-tabPanel>
-                                <p-tabPanel header="Delivery">
-                                    <div class="text-right mb-4">
-                                        <p-button [label]="'NUEVO DELIVERY'"
-                                            (click)="seleccionarMesa({ numero: '0', estado: '0', pedidos: [] })"
-                                            severity="info" icon="pi pi-phone" size="large"> </p-button>
+                                </div>
+                            </p-tabPanel>
+                            <p-tabPanel header="Segundo Piso">
+                                <div class="mesas w-full">
+                                    <div
+                                        class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-2 mt-5">
+                                        <ng-container *ngFor="let mesa of mesas">
+                                            <div class="mesa-card" (click)="seleccionarMesa(mesa)"
+                                                *ngIf="mesa.numero != '0' && mesa.piso == '2'" [ngClass]="{
+                                        seleccionada: mesaSeleccionada?.numero == mesa.numero,
+                                        ocupada: estadomesa[mesa.numero].value === 1,
+                                        libre: estadomesa[mesa.numero].value === 0
+                                    }">
+                                                <div class="mesa-content">
+                                                    <div class="mesa-header">
+                                                        <div class="mesa-estado" [ngClass]="{
+                                                                ocupada: estadomesa[mesa.numero].value === 1,
+                                                                libre: estadomesa[mesa.numero].value === 0
+                                                            }"></div>
+                                                        <div class="mesa-numero">Mesa {{ mesa.numero }}</div>
+                                                    </div>
+
+                                                    <!-- Mesa details when occupied -->
+                                                    <div class="mesa-details"
+                                                        *ngIf="estadomesa[mesa.numero].value === 1">
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-clock"></i>
+                                                            <span class="detail-text">{{
+                                                                getTiempoTranscurrido(mesa.numero) }}</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-shopping-cart"></i>
+                                                            <span class="detail-text">{{ getNumeroPedidos(mesa.numero)
+                                                                }} pedidos</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-user"></i>
+                                                            <span class="detail-text">{{
+                                                                getNombreMozopedido(mesa.numero) }}</span>
+                                                        </div>
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-dollar"></i>
+                                                            <span class="detail-text"> {{ getTotalMesa(mesa.numero)
+                                                                }}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Mesa details when free -->
+                                                    <div class="mesa-details libre"
+                                                        *ngIf="estadomesa[mesa.numero].value == 0">
+                                                        <div class="detail-item">
+                                                            <i class="pi pi-check-circle"></i>
+                                                            <span class="detail-text">Disponible</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </ng-container>
                                     </div>
-                                    <div class="mesas md:shrink-0">
-                                        <div
-                                            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-2">
-                                            <ng-container
-                                                *ngFor="let pedido of Pedidos | unique : 'idpedido' | orderBy : 'idpedido' : true">
-                                                <div class="pedido-card" *ngIf="+pedido.mesa === 0" [ngClass]="{
+                                </div>
+                            </p-tabPanel>
+                            <p-tabPanel header="Delivery">
+                                <div class="text-right mb-4">
+                                    <p-button [label]="'NUEVO DELIVERY'"
+                                        (click)="seleccionarMesa({ numero: '0', estado: '0', pedidos: [] })"
+                                        severity="info" icon="pi pi-phone" size="large"> </p-button>
+                                </div>
+                                <div class="mesas md:shrink-0">
+                                    <div
+                                        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-2">
+                                        <ng-container
+                                            *ngFor="let pedido of Pedidos | unique : 'idpedido' | orderBy : 'idpedido' : true">
+                                            <div class="pedido-card" *ngIf="+pedido.mesa === 0" [ngClass]="{
                                         seleccionada_delivery: mesaSeleccionada?.idpedido === pedido.idpedido
                                     }" (click)="seleccionarMesa({ numero: '0', estado: '0', pedidos: [], idpedido: pedido.idpedido })">
-                                                    <div class="header">
-                                                        <div class="numero-pedido">{{ '#' + pedido.idpedido }}</div>
-                                                    </div>
-                                                    <div class="cliente">
-                                                        <h2>{{ pedido.cliente }}</h2>
-                                                        <div class="hora">{{ pedido.pedido_hora }}</div>
-                                                    </div>
-                                                    <div class="acciones">
-                                                        <div class="btn btn-editar">Editar</div>
-                                                    </div>
+                                                <div class="header">
+                                                    <div class="numero-pedido">{{ '#' + pedido.idpedido }}</div>
                                                 </div>
-                                            </ng-container>
-                                        </div>
+                                                <div class="cliente">
+                                                    <h2>{{ pedido.cliente }}</h2>
+                                                    <div class="hora">{{ pedido.pedido_hora }}</div>
+                                                </div>
+                                                <div class="acciones">
+                                                    <div class="btn btn-editar">Editar</div>
+                                                </div>
+                                            </div>
+                                        </ng-container>
                                     </div>
-                                </p-tabPanel>
-                            </p-tabView>
-                        </div>
+                                </div>
+                            </p-tabPanel>
+                        </p-tabView>
                     </div>
                 </div>
             </div>
-        </aside>
+        </div>
+    </aside>
 
-        <!-- Right column: detalle de pedidos -->
-        <main class="w-full md:w-1/2 lg:w-3/5 p-4">
-            <div class="space-y-4">
-                <!-- Responsive header area and action tabs -->
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <!-- CENTRO: DETALLE DE PEDIDOS -->
-                    <div class="detalle md:shrink-0 ml-auto" *ngIf="pedido_mesa_status">
-                        <div *ngFor="let numMesa of mesas" style="margin-left: 15px">
-                            <div *ngIf="mesaSeleccionada?.numero == numMesa.numero" class="mt-5">
-                                <h2 class="text-red-600 font-bold text-center" style="margin-top: -24px;">
-                                    {{ numMesa.numero == '0' ? 'Delivery' : 'Mesa ' + numMesa.numero }}
-                                    &nbsp; <p-button icon="pi pi-file-pdf" severity="danger"
-                                        (onClick)="imprimirpedidodialog(Pedidos)" />
-                                    <p *ngIf="NuevoPedido.idmozo" style="color: #000000;
+    <!-- Right column: detalle de pedidos -->
+    <main class="w-full md:w-1/2 lg:w-3/5 p-4">
+        <div class="space-y-4">
+            <!-- Responsive header area and action tabs -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <!-- CENTRO: DETALLE DE PEDIDOS -->
+                <div class="detalle md:shrink-0 ml-auto" *ngIf="pedido_mesa_status">
+                    <div *ngFor="let numMesa of mesas" style="margin-left: 15px">
+                        <div *ngIf="mesaSeleccionada?.numero == numMesa.numero" class="mt-5">
+                            <h2 class="text-red-600 font-bold text-center" style="margin-top: -24px;">
+                                {{ numMesa.numero == '0' ? 'Delivery' : 'Mesa ' + numMesa.numero }}
+                                &nbsp; <p-button icon="pi pi-file-pdf" severity="danger"
+                                    (onClick)="imprimirpedidodialog(Pedidos)" />
+                                <p *ngIf="NuevoPedido.idmozo" style="color: #000000;
                     font-size: 23px;
                     font-weight:bold;
                     margin-top: 5px;
                     font-family: 'Poppins';">
-                                        MOZO : {{ getNombreMozo(NuevoPedido.idmozo) }}
-                                    </p>
-                                </h2>
+                                    MOZO : {{ getNombreMozo(NuevoPedido.idmozo) }}
+                                </p>
+                            </h2>
 
-                                <div class="grid grid-cols-3 sm:grid-cols-5 gap-3 ">
-                                    <div class="tab active" role="tab" aria-selected="true" tabindex="0"
-                                        (click)="editar(numMesa, NuevoPedido)"><i class="material-icons">edit</i>Editar
-                                    </div>
-                                    <div class="tab active" role="tab" aria-selected="true" tabindex="0"
-                                        (click)="generatePDF(NuevoPedido)"><i
-                                            class="material-icons">description</i>Ticket</div>
-                                    <div class="tab active" role="tab" aria-selected="true" tabindex="0"
-                                        (click)="generateCocinaPDF(NuevoPedido)"><i
-                                            class="material-icons">restaurant</i> Cocina</div>
-                                    <div class="tab active" role="tab" aria-selected="true" tabindex="0"
-                                        (click)="CobrarDialog(numMesa, NuevoPedido)"><i
-                                            class="material-icons fa-solid fa-money-bill-wave"></i>Cobrar
-                                    </div>
-                                    <div class="tab active" role="tab" aria-selected="true" tabindex="0"
-                                        (click)="openVoucherDialog()">
-                                        <i class="material-icons">qr_code_2</i>
-                                        <br />{{ 'Codigo Qr' }}
-                                    </div>
-                                    <div class="tab active" role="tab" aria-selected="true" tabindex="0"
-                                        (click)="deletepedidoModal()"><i
-                                            class="material-icons fa-solid fa-trash"></i>Cancelar</div>
+                            <div class="grid grid-cols-3 sm:grid-cols-5 gap-3 ">
+                                <div class="tab active" role="tab" aria-selected="true" tabindex="0"
+                                    (click)="editar(numMesa, NuevoPedido)"><i class="material-icons">edit</i>Editar
                                 </div>
-                                <br />
-                                <br />
-
-                                <table
-                                    class="table-auto w-full h-auto border-collapse border border-gray-400 text-center">
-                                    <thead>
-                                        <tr class="">
-                                            <th class="border border-gray-300">Cantidad</th>
-                                            <th class="border border-gray-300">Categoria</th>
-                                            <th class="border border-gray-300">Pedido</th>
-                                            <th class="border border-gray-300">Lugar</th>
-                                            <th class="border border-gray-300">Precio U.</th>
-                                            <th class="border border-gray-300">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <ng-container
-                                            *ngFor="let pedido of getPedidosDeMesa(numMesa.numero, pedido_mesa_status, mesaSeleccionada)">
-                                            <ng-container
-                                                *ngIf="pedido.pedidodetalle && pedido.pedidodetalle.length > 0">
-                                                <tr class="border border-gray-300"
-                                                    *ngFor="let detalle of pedido.pedidodetalle">
-                                                    <td>{{ detalle.cantidad ?? 0 }}</td>
-                                                    <td>{{ detalle.producto?.categoria?.nombre ?? 'Sin
-                                                        categoría' }}</td>
-                                                    <td>{{ detalle.producto?.nombre ?? 'Producto sin nombre'
-                                                        }}</td>
-                                                    <td>{{ detalle.lugarpedido == '1' || detalle.lugarpedido
-                                                        == 1 ? 'Llevar' : 'Mesa' }}</td>
-                                                    <td>{{ detalle.precioU | currency : 'S/ ' }}</td>
-                                                    <td>{{ (detalle.cantidad ?? 0) * (detalle.precioU ?? 0)
-                                                        | currency : 'S/ ' }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td colspan="5" class="text-right font-bold">
-                                                        <h3>Total</h3>
-                                                    </td>
-                                                    <td class="font-bold">
-                                                        <h3>
-                                                            {{ 'S/' + calculateTotalPedidos(numMesa.numero,
-                                                            pedido_mesa_status, mesaSeleccionada) }}
-                                                        </h3>
-                                                    </td>
-                                                </tr>
-                                            </ng-container>
-
-                                            <ng-container
-                                                *ngIf="!pedido.pedidodetalle || pedido.pedidodetalle.length === 0">
-                                                <tr class="border border-gray-300">
-                                                    <td colspan="7" class="text-center text-gray-500 py-4">
-                                                        No hay detalles para este pedido</td>
-                                                </tr>
-                                            </ng-container>
-                                        </ng-container>
-                                    </tbody>
-                                </table>
-                                <!-- <hr class="my-4 border-gray-300" /> -->
+                                <div class="tab active" role="tab" aria-selected="true" tabindex="0"
+                                    (click)="generatePDF(NuevoPedido)"><i class="material-icons">description</i>Ticket
+                                </div>
+                                <div class="tab active" role="tab" aria-selected="true" tabindex="0"
+                                    (click)="generateCocinaPDF(NuevoPedido)"><i class="material-icons">restaurant</i>
+                                    Cocina</div>
+                                <div class="tab active" role="tab" aria-selected="true" tabindex="0"
+                                    (click)="CobrarDialog(numMesa, NuevoPedido)"><i
+                                        class="material-icons fa-solid fa-money-bill-wave"></i>Cobrar
+                                </div>
+                                <div class="tab active" role="tab" aria-selected="true" tabindex="0"
+                                    (click)="openVoucherDialog()">
+                                    <i class="material-icons">qr_code_2</i>
+                                    <br />{{ 'Codigo Qr' }}
+                                </div>
+                                <div class="tab active" role="tab" aria-selected="true" tabindex="0"
+                                    (click)="moveTableModal()"><i
+                                        class="material-icons fa-solid fa-arrows-alt"></i>Mover Mesa</div>
+                                <div class="tab active" role="tab" aria-selected="true" tabindex="0"
+                                    (click)="deletepedidoModal()"><i
+                                        class="material-icons fa-solid fa-trash"></i>Cancelar</div>
                             </div>
+                            <br />
+                            <br />
+
+                            <table class="table-auto w-full h-auto border-collapse border border-gray-400 text-center">
+                                <thead>
+                                    <tr class="">
+                                        <th class="border border-gray-300">Cantidad</th>
+                                        <th class="border border-gray-300">Categoria</th>
+                                        <th class="border border-gray-300">Pedido</th>
+                                        <th class="border border-gray-300">Lugar</th>
+                                        <th class="border border-gray-300">Precio U.</th>
+                                        <th class="border border-gray-300">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ng-container
+                                        *ngFor="let pedido of getPedidosDeMesa(numMesa.numero, pedido_mesa_status, mesaSeleccionada)">
+                                        <ng-container *ngIf="pedido.pedidodetalle && pedido.pedidodetalle.length > 0">
+                                            <tr class="border border-gray-300"
+                                                *ngFor="let detalle of pedido.pedidodetalle">
+                                                <td>{{ detalle.cantidad ?? 0 }}</td>
+                                                <td>{{ detalle.producto?.categoria?.nombre ?? 'Sin
+                                                    categoría' }}</td>
+                                                <td>{{ detalle.producto?.nombre ?? 'Producto sin nombre'
+                                                    }}</td>
+                                                <td>{{ detalle.lugarpedido == '1' || detalle.lugarpedido
+                                                    == 1 ? 'Llevar' : 'Mesa' }}</td>
+                                                <td>{{ detalle.precioU | currency : 'S/ ' }}</td>
+                                                <td>{{ (detalle.cantidad ?? 0) * (detalle.precioU ?? 0)
+                                                    | currency : 'S/ ' }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="5" class="text-right font-bold">
+                                                    <h3>Total</h3>
+                                                </td>
+                                                <td class="font-bold">
+                                                    <h3>
+                                                        {{ 'S/' + calculateTotalPedidos(numMesa.numero,
+                                                        pedido_mesa_status, mesaSeleccionada) }}
+                                                    </h3>
+                                                </td>
+                                            </tr>
+                                        </ng-container>
+
+                                        <ng-container
+                                            *ngIf="!pedido.pedidodetalle || pedido.pedidodetalle.length === 0">
+                                            <tr class="border border-gray-300">
+                                                <td colspan="7" class="text-center text-gray-500 py-4">
+                                                    No hay detalles para este pedido</td>
+                                            </tr>
+                                        </ng-container>
+                                    </ng-container>
+                                </tbody>
+                            </table>
+                            <!-- <hr class="my-4 border-gray-300" /> -->
                         </div>
                     </div>
+                </div>
 
-                    <div class="detalle md:shrink-0 ml-auto" *ngIf="!pedido_mesa_status && mesaSeleccionada">
-                        <div class="flex" style="margin-left: 14px;">
-                            <div class="w-14 text-left mt-4 mr-1"
-                                *ngIf="NuevoPedido.pedidodetalle.length > 0 && tipomodal == 'Editar'">
-                                <p-button (click)="returntoMesas()" severity="info">
-                                    <i class="fa-solid fa-arrow-left" style="font-size: 35px;cursor: pointer;"></i>
-                                </p-button>
-                            </div>
-                            <div class="w-14 text-left mt-4 ml-6">
-                                <p-button (click)="showModal()">
-                                    <i class="fa-solid fa-calculator" style="font-size: 35px;cursor: pointer;"></i>
-                                </p-button>
-                            </div>
+                <div class="detalle md:shrink-0 ml-auto" *ngIf="!pedido_mesa_status && mesaSeleccionada">
+                    <div class="flex" style="margin-left: 14px;">
+                        <div class="w-14 text-left mt-4 mr-1"
+                            *ngIf="NuevoPedido.pedidodetalle.length > 0 && tipomodal == 'Editar'">
+                            <p-button (click)="returntoMesas()" severity="info">
+                                <i class="fa-solid fa-arrow-left" style="font-size: 35px;cursor: pointer;"></i>
+                            </p-button>
+                        </div>
+                        <div class="w-14 text-left mt-4 ml-6">
+                            <p-button (click)="showModal()">
+                                <i class="fa-solid fa-calculator" style="font-size: 35px;cursor: pointer;"></i>
+                            </p-button>
+                        </div>
 
-                            <div class="w-32 flex-auto text-center">
-                                <h2 class="text-red-600">
-                                    {{ this.mesaSeleccionada.numero == '0' ? 'Delivery' : 'Pedido de Mesa '
-                                    + this.mesaSeleccionada.numero }}
-                                </h2>
-                                <p *ngIf="NuevoPedido.idmozo" style="color: #000000;
+                        <div class="w-32 flex-auto text-center">
+                            <h2 class="text-red-600">
+                                {{ this.mesaSeleccionada.numero == '0' ? 'Delivery' : 'Pedido de Mesa '
+                                + this.mesaSeleccionada.numero }}
+                            </h2>
+                            <p *ngIf="NuevoPedido.idmozo" style="color: #000000;
                         font-size: 20px;
                         font-weight:bold;
                         margin-top: -14px;
                         font-family: 'Poppins';">
-                                    MOZO : {{ getNombreMozo(NuevoPedido.idmozo) }}
-                                </p>
-                            </div>
+                                MOZO : {{ getNombreMozo(NuevoPedido.idmozo) }}
+                            </p>
                         </div>
-                        <div class="container" *ngIf="selectedMozo?.length != 0 && pedido_mesa_status == false">
-                            <div class="summary">
-                                <table
-                                    class="table-auto w-full h-auto border-collapse border border-gray-400 text-center">
-                                    <thead>
-                                        <tr>
-                                            <th>Producto</th>
-                                            <th>Cantidad</th>
-                                            <th>Llevar</th>
-                                            <th>Precio</th>
-                                            <th>Total</th>
-                                            <th>Acciones</th>
-                                            <th></th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <ng-container
-                                            *ngFor="let pedidosnew of NuevoPedido.pedidodetalle; let i = index">
-                                            <tr *ngIf="pedidosnew.total != 0">
-                                                <td>
-                                                    <div style="display: flex; flex-direction: column;">
-                                                        <span>{{ pedidosnew.nombre }}</span>
-                                                        <div
-                                                            style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px;">
-                                                            @for (topping of pedidosnew.idtopings; track
-                                                            topping.idtopings) {
-                                                            <p-tag *ngIf="topping.idtopings != 0">
-                                                                <div>{{ topping.nombre }}</div>
-                                                            </p-tag>
-                                                            }
+                    </div>
+                    <div class="container" *ngIf="selectedMozo?.length != 0 && pedido_mesa_status == false">
+                        <div class="summary">
+                            <table class="table-auto w-full h-auto border-collapse border border-gray-400 text-center">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Llevar</th>
+                                        <th>Precio</th>
+                                        <th>Total</th>
+                                        <th>Acciones</th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <ng-container *ngFor="let pedidosnew of NuevoPedido.pedidodetalle; let i = index">
+                                        <tr *ngIf="pedidosnew.total != 0">
+                                            <td>
+                                                <div style="display: flex; flex-direction: column;">
+                                                    <span>{{ pedidosnew.nombre }}</span>
+                                                    <div
+                                                        style="margin-top: 5px; display: flex; flex-wrap: wrap; gap: 5px;">
+                                                        @for (topping of pedidosnew.idtopings; track
+                                                        topping.idtopings) {
+                                                        <p-tag *ngIf="topping.idtopings != 0">
+                                                            <div>{{ topping.nombre }}</div>
+                                                        </p-tag>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <button (click)="incrementnewPedido(pedidosnew)">+</button>
+                                                {{ pedidosnew.cantidad }}
+                                                <button (click)="decrementnewPedido(pedidosnew)">-</button>
+                                            </td>
+                                            <td>
+                                                <p-toggleSwitch [(ngModel)]="pedidosnew.lugarpedido" [trueValue]="'1'"
+                                                    [falseValue]="'0'">
+                                                </p-toggleSwitch>
+                                            </td>
+                                            <td>
+                                                <input (keypress)="onlyNumberKey($event)"
+                                                    (keyup)="pricechange(pedidosnew)" type="text" style="width: 50px;"
+                                                    pInputText id="name" [(ngModel)]="pedidosnew.preciounitario"
+                                                    required autofocus fluid />
+                                            </td>
+                                            <td>S/ {{ pedidosnew.total }}</td>
+                                            <td>
+                                                <button (click)="remove(pedidosnew)" class="btn btn-danger"
+                                                    (click)="trashPedido(pedidosnew)"><i
+                                                        class="fa-solid fa-trash"></i></button>
+                                            </td>
+                                            <td>
+                                                <div class="flex flex-wrap gap-2">
+                                                    <p-button type="button" class="btn btn-danger"
+                                                        (click)="toggleDataTable(op2, $event, pedidosnew)">
+                                                        <i class="fa-solid fa-gear"></i></p-button>
+                                                    <p-popover #op2 id="overlay_panel"
+                                                        [style]="{ width: '650px', height: '400px' }">
+                                                        <div class="flex justify-end mt-6">
+                                                            <div style="margin-right: 100px !important;"
+                                                                class="font-semibold text-xl">
+                                                                Seleccionar Opciones :</div>
+
+                                                            <p-button label="Cerrar" icon="pi pi-times"
+                                                                (onClick)="op2.hide()" class="mr-2" />
+                                                            <p-button label="Guardar" icon="pi pi-save"
+                                                                (onClick)="agregarToppingsPedido(pedidosnew, op2, i)"
+                                                                severity="danger" />
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <button (click)="incrementnewPedido(pedidosnew)">+</button>
-                                                    {{ pedidosnew.cantidad }}
-                                                    <button (click)="decrementnewPedido(pedidosnew)">-</button>
-                                                </td>
-                                                <td>
-                                                    <p-toggleSwitch [(ngModel)]="pedidosnew.lugarpedido"
-                                                        [trueValue]="'1'" [falseValue]="'0'">
-                                                    </p-toggleSwitch>
-                                                </td>
-                                                <td>
-                                                    <input (keypress)="onlyNumberKey($event)"
-                                                        (keyup)="pricechange(pedidosnew)" type="text"
-                                                        style="width: 50px;" pInputText id="name"
-                                                        [(ngModel)]="pedidosnew.preciounitario" required autofocus
-                                                        fluid />
-                                                </td>
-                                                <td>S/ {{ pedidosnew.total }}</td>
-                                                <td>
-                                                    <button (click)="remove(pedidosnew)" class="btn btn-danger"
-                                                        (click)="trashPedido(pedidosnew)"><i
-                                                            class="fa-solid fa-trash"></i></button>
-                                                </td>
-                                                <td>
-                                                    <div class="flex flex-wrap gap-2">
-                                                        <p-button type="button" class="btn btn-danger"
-                                                            (click)="toggleDataTable(op2, $event, pedidosnew)">
-                                                            <i class="fa-solid fa-gear"></i></p-button>
-                                                        <p-popover #op2 id="overlay_panel"
-                                                            [style]="{ width: '650px', height: '400px' }">
-                                                            <div class="flex justify-end mt-6">
-                                                                <div style="margin-right: 100px !important;"
-                                                                    class="font-semibold text-xl">
-                                                                    Seleccionar Opciones :</div>
 
-                                                                <p-button label="Cerrar" icon="pi pi-times"
-                                                                    (onClick)="op2.hide()" class="mr-2" />
-                                                                <p-button label="Guardar" icon="pi pi-save"
-                                                                    (onClick)="agregarToppingsPedido(pedidosnew, op2, i)"
-                                                                    severity="danger" />
-                                                            </div>
+                                                        <p-multiselect #multiselect [options]="multiselectToppings"
+                                                            [(ngModel)]="selectedToppings" class="w-full mt-6"
+                                                            placeholder="Seleccionar más de uno" optionLabel="nombre"
+                                                            display="chip" [filter]="true" [dataKey]="'idtopings'">
+                                                            <ng-template pTemplate="selectedItems" let-toppings>
+                                                                @for (topping of toppings; track
+                                                                topping.idtopings) {
+                                                                <div
+                                                                    class="inline-flex items-center py-1 px-2 bg-primary text-primary-contrast rounded-border mr-2">
+                                                                    <div>{{ topping.nombre }}</div>
+                                                                </div>
+                                                                }
+                                                            </ng-template>
 
-                                                            <p-multiselect #multiselect [options]="multiselectToppings"
-                                                                [(ngModel)]="selectedToppings" class="w-full mt-6"
-                                                                placeholder="Seleccionar más de uno"
-                                                                optionLabel="nombre" display="chip" [filter]="true"
-                                                                [dataKey]="'idtopings'">
-                                                                <ng-template pTemplate="selectedItems" let-toppings>
-                                                                    @for (topping of toppings; track
-                                                                    topping.idtopings) {
-                                                                    <div
-                                                                        class="inline-flex items-center py-1 px-2 bg-primary text-primary-contrast rounded-border mr-2">
-                                                                        <div>{{ topping.nombre }}</div>
-                                                                    </div>
-                                                                    }
-                                                                </ng-template>
+                                                            <ng-template pTemplate="item" let-topping>
+                                                                <div class="flex items-center">
+                                                                    <div>{{ topping.nombre }}</div>
+                                                                </div>
+                                                            </ng-template>
+                                                        </p-multiselect>
+                                                    </p-popover>
+                                                    <p-toast />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </ng-container>
+                                </tbody>
+                            </table>
+                            <div class="text-right mt-4">
+                                <h3>Total: S/{{ total() }}</h3>
+                            </div>
 
-                                                                <ng-template pTemplate="item" let-topping>
-                                                                    <div class="flex items-center">
-                                                                        <div>{{ topping.nombre }}</div>
-                                                                    </div>
-                                                                </ng-template>
-                                                            </p-multiselect>
-                                                        </p-popover>
-                                                        <p-toast />
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </ng-container>
-                                    </tbody>
-                                </table>
-                                <div class="text-right mt-4">
-                                    <h3>Total: S/{{ total() }}</h3>
-                                </div>
+                            <div class="text-right mt-4">
+                                <input id="cliente" type="text" [(ngModel)]="NuevoPedido.cliente" pInputText
+                                    *ngIf="NuevoPedido.delivery == 1"
+                                    style="width: 328px;margin-right: 61px !important;"
+                                    placeholder="Nombre del cliente (opcional)" required autofocus fluid />
+                                <p-button [label]="tipomodal == 'Registrar' ? 'REGISTRAR PEDIDO' : 'EDITAR PEDIDO'"
+                                    (click)="FunctionButtonPedido(NuevoPedido)" severity="success"
+                                    [style]="{ width: '207px', 'text-align': 'center' }" class="btn btn-success">
+                                </p-button>
+                            </div>
 
-                                <div class="text-right mt-4">
-                                    <input id="cliente" type="text" [(ngModel)]="NuevoPedido.cliente" pInputText
-                                        *ngIf="NuevoPedido.delivery == 1"
-                                        style="width: 328px;margin-right: 61px !important;"
-                                        placeholder="Nombre del cliente (opcional)" required autofocus fluid />
-                                    <p-button [label]="tipomodal == 'Registrar' ? 'REGISTRAR PEDIDO' : 'EDITAR PEDIDO'"
-                                        (click)="FunctionButtonPedido(NuevoPedido)" severity="success"
-                                        [style]="{ width: '207px', 'text-align': 'center' }" class="btn btn-success">
-                                    </p-button>
-                                </div>
+                            <textarea [(ngModel)]="comentarios" pTextarea placeholder="Mensaje de impresión en Cocina."
+                                rows="3"></textarea>
 
-                                <textarea [(ngModel)]="comentarios" pTextarea
-                                    placeholder="Mensaje de impresión en Cocina." rows="3"></textarea>
-
-                                <div class="input-group mt-4 modal-body">
-                                    <p-iconfield>
-                                        <p-inputicon styleClass="pi pi-search" />
-                                        <input pInputText type="text" name="plato" id="idplatotext"
-                                            (keypress)="AddKeyPress($event, buscarPlato)"
-                                            placeholder="Ingresar nombre del plato"
-                                            class="h-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                            [(ngModel)]="buscarPlato" />
-                                    </p-iconfield>
-                                </div>
-                                <div class="col-md-12 modal-body">
-                                    <div class="" style="overflow: scroll; height: 300px;">
-                                        <table class="table table-hover table-sm" id="listarPlatos">
-                                            <tbody></tbody>
-                                        </table>
-                                    </div>
+                            <div class="input-group mt-4 modal-body">
+                                <p-iconfield>
+                                    <p-inputicon styleClass="pi pi-search" />
+                                    <input pInputText type="text" name="plato" id="idplatotext"
+                                        (keypress)="AddKeyPress($event, buscarPlato)"
+                                        placeholder="Ingresar nombre del plato"
+                                        class="h-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        [(ngModel)]="buscarPlato" />
+                                </p-iconfield>
+                            </div>
+                            <div class="col-md-12 modal-body">
+                                <div class="" style="overflow: scroll; height: 300px;">
+                                    <table class="table table-hover table-sm" id="listarPlatos">
+                                        <tbody></tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
 </div>
 <!-- Modal CALCULTOR-->
 <p-dialog [(visible)]="displayModalCalculator" [modal]="true" [breakpoints]="{ '960px': '60vw', '640px': '90vw' }"
@@ -593,7 +685,7 @@
     <ng-template pTemplate="content">
         <div class="px-6 py-4">
             <div class="mb-4">
-                <h4 class="text-lg font-semibold text-gray-800 mb-2">Mesa {{ mesaSeleccionada?.numero }}</h4>
+                <h4 class="text-lg font-semibold text-gray-8800 mb-2">Mesa {{ mesaSeleccionada?.numero }}</h4>
                 <p class="text-sm text-gray-600">Seleccione el mozo que atenderá esta mesa</p>
             </div>
 
@@ -630,3 +722,27 @@
     </ng-template>
 </p-dialog>
 <p-confirmDialog [style]="{ width: '450px' }" />
+
+<!-- Move Table Dialog -->
+<p-dialog [(visible)]="moveTableDialog" [modal]="true" [breakpoints]="{ '960px': '75vw', '640px': '90vw' }"
+    [style]="{ width: '50vw', 'max-width': '500px' }" header="Mover Pedido a Otra Mesa">
+    <div class="w-full">
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="targetMesa">
+                Seleccione la mesa de destino:
+            </label>
+            <p-dropdown [options]="availableMesas" [(ngModel)]="targetMesa" optionLabel="numero"
+                placeholder="Seleccione una mesa" [style]="{ width: '100%' }" appendTo="body">
+                <ng-template pTemplate="item" let-mesa>
+                    <div>Mesa {{ mesa.numero }}</div>
+                </ng-template>
+            </p-dropdown>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button label="Cancelar" icon="pi pi-times" (click)="moveTableDialog = false"
+            class="p-button-text"></p-button>
+        <p-button label="Mover Pedido" icon="pi pi-check" (click)="moveTable()" severity="primary"></p-button>
+    </ng-template>
+</p-dialog>

@@ -27,7 +27,7 @@ export class CajaService {
     const { data, error } = await this.supabase
       .from('caja_semanal')
       .select('*')
-      .order('fecha', { ascending: false });
+      .order('fecha', { ascending: true });
 
     return { data, error };
   }

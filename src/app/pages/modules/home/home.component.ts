@@ -864,7 +864,7 @@ export class HomeComponent {
                 if (response.success) {
                     this.mesas = response.data;
                     this.mesas.forEach((element: any) => {
-                        this.estadomesa.push({ mesa: element.numero, value: 0 });
+                        this.estadomesa.push({ mesa: element.numero, value: 0, piso: element.piso });
                     });
                     await this.ListarPedidos();
                 } else {
@@ -916,6 +916,49 @@ export class HomeComponent {
         );
     }
 
+    getTiempoTranscurrido(numeroMesa: string): string {
+        // Find the pedido for this mesa
+        const pedido = this.Pedidos.find(p => p.mesa === numeroMesa);
+        if (pedido && pedido['created_at']) {
+            const createdTime = new Date(pedido['created_at']);
+            const currentTime = new Date();
+            const diffMinutes = Math.floor((currentTime.getTime() - createdTime.getTime()) / 60000);
+            return `${diffMinutes} min`;
+        }
+        return '0 min';
+    }
+
+    // Helper method to get number of pedidos for a mesa
+    getNumeroPedidos(numeroMesa: string): number {
+        // Count pedidos for this mesa
+        const pedidos = this.Pedidos.filter(p => p.mesa === numeroMesa) as any;
+        return pedidos[0].pedidodetalle.reduce((sum: number, element: any) => sum + element.cantidad, 0);
+    }
+
+    // Helper method to get mozo name for a mesa
+    getNombreMozopedido(numeroMesa: string): string {
+        // Find the pedido for this mesa
+        const pedido = this.Pedidos.find(p => p.mesa === numeroMesa);
+        if (pedido && pedido.persona && pedido.persona.nombres) {
+            // Return first name and first letter of last name
+            const nombres = pedido.persona.nombres.split(' ');
+            if (nombres.length > 1) {
+                return `${nombres[0]} ${nombres[1].charAt(0)}.`;
+            }
+            return nombres[0];
+        }
+        return 'Sin mozo';
+    }
+
+    // Helper method to get total amount for a mesa
+    getTotalMesa(numeroMesa: string): string {
+        // Find all pedidos for this mesa and sum their totals
+        const pedidos = this.Pedidos.filter(p => p.mesa === numeroMesa);
+        const total = pedidos.reduce((sum, pedido) => {
+            return sum + (pedido.total || 0);
+        }, 0);
+        return total.toFixed(2);
+    }
     seleccionarMesa(mesa: Mesa): void {
         debugger;
         this.isLoading = true;
@@ -1011,7 +1054,7 @@ export class HomeComponent {
         this.isLoading = true;
         this.loadImageBase64('assets/img/logo.png').then((base64Logo) => {
             this.PedidoService.ShowProductosPdf(pedido.idpedido).subscribe((response) => {
-                var inicial = 115;
+                var inicial = 125;
                 var items = response.data.length;
 
                 const increments = [
@@ -1051,13 +1094,13 @@ export class HomeComponent {
 
                 // Encabezado
                 doc.setFontSize(12);
-                doc.text('CEVICHERIA WILLY GOURMET', centerX, y, { align: 'center' });
+                doc.text('EL PUERTO CEVICHERO', centerX, y, { align: 'center' });
                 y += 3.5;
                 doc.setFontSize(8);
 
                 doc.text('Nota de Venta: 000-95', centerX, y, { align: 'center' });
                 y += 3.5;
-                doc.text('RUC.: 01234567A', centerX, y, { align: 'center' });
+                doc.text('RUC.: 20614776928', centerX, y, { align: 'center' });
                 y += 3.5;
                 doc.text('Av.Victor Malazques Mr Lt10 Pachamac-Manchay', centerX, y, { align: 'center' });
                 y += 3.5;
@@ -1454,6 +1497,112 @@ export class HomeComponent {
         this.eliminarPedidoDialog = true;
         this.motivo = '';
         this.responsable = '';
+    }
+
+    moveTableModal() {
+        // Load available mesas that are not the current one and are free (estado = '0')
+        this.availableMesas = this.mesas.filter(mesa =>
+            mesa.numero !== this.mesaSeleccionada?.numero && mesa.estado === '0'
+        );
+
+        // If there are no available mesas, show a message
+        if (this.availableMesas.length === 0) {
+            this.messageService.add({
+                severity: 'info',
+                summary: 'No hay mesas disponibles',
+                detail: 'No hay otras mesas disponibles para mover este pedido',
+                life: 3000
+            });
+            return;
+        }
+
+        this.moveTableDialog = true;
+        this.targetMesa = null;
+    }
+
+    moveTable() {
+        if (!this.targetMesa) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Por favor seleccione una mesa de destino',
+                life: 3000
+            });
+            return;
+        }
+
+        // Check if the target mesa is already occupied
+        const targetMesaOccupied = this.Pedidos.some(pedido =>
+            pedido.mesa === this.targetMesa!.numero &&
+            pedido.idpedido !== this.NuevoPedido.idpedido
+        );
+
+        if (targetMesaOccupied) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Mesa ocupada',
+                detail: 'La mesa seleccionada ya está ocupada por otro pedido',
+                life: 3000
+            });
+            return;
+        }
+
+        // Update the pedido with the new mesa number
+        this.PedidoService.updatePedidoMesa(this.NuevoPedido.idpedido, parseInt(this.targetMesa.numero)).subscribe({
+            next: (response) => {
+                if (response.success) {
+                    // Update the mesa states
+                    // Set the current mesa to free (estado = '0')
+                    if (this.mesaSeleccionada) {
+                        const currentMesa = this.mesas.find(m => m.numero === this.mesaSeleccionada!.numero);
+                        if (currentMesa) {
+                            currentMesa.estado = '0';
+                        }
+                    }
+
+                    // Set the target mesa to occupied (estado = '1')
+                    this.targetMesa!.estado = '1';
+
+                    // Update the pedido's mesa number
+                    const pedido = this.Pedidos.find(p => p.idpedido === this.NuevoPedido.idpedido);
+                    if (pedido) {
+                        pedido.mesa = this.targetMesa!.numero;
+                    }
+
+                    // Update the mesa selection
+                    this.mesaSeleccionada = this.targetMesa;
+
+                    // Close the dialog
+                    this.moveTableDialog = false;
+
+                    // Refresh the view
+                    this.cargarMesas();
+
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Éxito',
+                        detail: 'El pedido se ha movido correctamente a la mesa ' + this.targetMesa!.numero,
+                        life: 3000
+                    });
+                } else {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: response.error?.message || 'Error al mover el pedido',
+                        life: 3000
+                    });
+                }
+            },
+            error: (error) => {
+                console.error('Error moving table:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Ocurrió un error al mover el pedido: ' + error.message,
+                    life: 3000
+                });
+            }
+        });
     }
 
     generateCocinaPDF(pedido: any) {

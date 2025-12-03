@@ -18,6 +18,10 @@ export class AperturaService {
         return from(this.supabaseService.getGastos(fecha));
     }
 
+    ListGastosApp(fecha: string): Observable<any> {
+        return from(this.supabaseService.getGastosApp(fecha));
+    }
+
     registrarCaja(value: any): Observable<any> {
         debugger
         const now = new Date();
