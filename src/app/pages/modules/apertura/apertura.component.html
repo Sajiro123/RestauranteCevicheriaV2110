@@ -63,10 +63,19 @@
 
                 <div class="form-group">
                     <label for="trabajadores">Personal en Campo</label>
-                    <p-multiSelect formControlName="trabajadores" [options]="trabajadoresList" optionLabel="nombres"
-                        optionValue="idpersona" placeholder="Seleccione trabajadores" [showToggleAll]="true"
-                        [filter]="true" filterPlaceholder="Buscar..." display="chip" styleClass=" md:w-auto h-10"
-                        id="trabajadores">
+                    <p-multiSelect 
+                        formControlName="trabajadores" 
+                        [options]="trabajadoresList" 
+                        optionLabel="nombres"
+                        optionValue="idpersona" 
+                        placeholder="Seleccione trabajadores" 
+                        [showToggleAll]="true"
+                        [filter]="true" 
+                        filterPlaceholder="Buscar..." 
+                        display="chip" 
+                        id="trabajadores"
+                        [maxSelectedLabels]="trabajadoresList.length"
+                        selectedItemsLabel="{0} trabajadores seleccionados">
                     </p-multiSelect>
                     <div *ngIf="cajaForm.get('trabajadores')?.touched && cajaForm.get('trabajadores')?.invalid"
                         class="error">

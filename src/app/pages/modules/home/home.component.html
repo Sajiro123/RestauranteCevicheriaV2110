@@ -4,14 +4,36 @@
     /* Small utility tweaks to preserve some original class names and give better admin UX */
 </style>
 <p-toast styleClass="text-2xl" />
-<div class="loader" *ngIf="isLoading">
+<div class="loader" *ngIf="isLoading || verificandoCaja">
     <div class="spinner"></div>
     <br />
-    <p>Cargando...</p>
+    <p>{{ verificandoCaja ? 'Verificando caja...' : 'Cargando...' }}</p>
+</div>
+
+<!-- Show message if caja is not open -->
+<div *ngIf="!verificandoCaja && !cajaAbierta"
+    class="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div
+        class="text-center p-12 bg-white rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 hover:shadow-3xl">
+        <div class="mb-8">
+            <i class="pi pi-exclamation-triangle text-8xl text-red-500 mb-6 animate-pulse"></i>
+            <h1 class="text-5xl font-bold text-gray-800 mb-4">¡Falta abrir caja!</h1>
+            <p class="text-2xl text-gray-600 mb-8 leading-relaxed">Para poder tomar pedidos es necesario abrir la caja
+                del día.</p>
+        </div>
+        <button
+            class="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-2xl py-5 px-10 rounded-full transition-all duration-300 ease-in-out transform hover:scale-110 hover:shadow-xl shadow-lg"
+            (click)="irAApertura()">
+            <i class="pi pi-arrow-right mr-3"></i>Ir a Abrir Caja
+        </button>
+        <div class="mt-8 text-gray-500 text-lg">
+            <p>¿Necesitas ayuda? Contacta al administrador del sistema</p>
+        </div>
+    </div>
 </div>
 
 <!-- Card container: modern admin panel look -->
-<div class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row">
+<div *ngIf="cajaAbierta" class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row">
     <!-- Left column: tabs (Mesas / Delivery) -->
     <aside class="w-full md:w-1/2 lg:w-3/5 overflow-x-hidden">
         <!-- <aside class="w-full md:w-1/2 lg:w-3/5 border-r border-gray-100 p-4"> -->
@@ -513,11 +535,43 @@
                         class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
                 </div>
             </div>
+            <div class="mt-4">
+                <label class="block text-sm font-semibold text-gray-800 mb-2">
+                    Pago en su totalidad:
+                </label>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3"
+                    style="color: black; font-weight: bold;">
+
+                    <button class="bg-green-600 text-black py-2 rounded-md shadow hover:bg-green-700"
+                        (click)="pagarTodo('efectivo')">
+                        💵 Todo en Efectivo
+                    </button>
+
+                    <button class="bg-blue-600 text-black py-2 rounded-md shadow hover:bg-blue-700"
+                        (click)="pagarTodo('visa')">
+                        💳 Todo con Visa
+                    </button>
+
+                    <button class="bg-purple-600 text-black py-2 rounded-md shadow hover:bg-purple-700"
+                        (click)="pagarTodo('yape')">
+                        📱 Todo con Yape
+                    </button>
+
+                    <button class="bg-indigo-600 text-black py-2 rounded-md shadow hover:bg-indigo-700"
+                        (click)="pagarTodo('plin')">
+                        📱 Todo con Plin
+                    </button>
+
+                </div>
+            </div>
             <div>
                 <label for="total" class="block text-sm font-semibold text-gray-800">Total</label>
                 <input id="total" type="number" disabled [(ngModel)]="Pedido_cobrar.total"
                     class="w-full mt-1 bg-gray-100 border border-gray-300 text-blue-600 font-bold text-lg rounded-md px-3 py-2 cursor-not-allowed" />
             </div>
+
+
         </div>
     </ng-template>
 
@@ -690,7 +744,7 @@
             </div>
 
             <div class="space-y-3">
-                <div *ngFor="let mozo of mozos"
+                <div *ngFor="let mozo of mozosSeleccionadosApertura"
                     class="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-all"
                     [class.bg-blue-100]="selectedMozo?.idpersona === mozo.idpersona"
                     [class.border-blue-500]="selectedMozo?.idpersona === mozo.idpersona" (click)="selectMozo(mozo)">
