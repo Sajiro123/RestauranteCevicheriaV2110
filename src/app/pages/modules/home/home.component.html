@@ -33,7 +33,7 @@
 </div>
 
 <!-- Card container: modern admin panel look -->
-<div *ngIf="cajaAbierta" class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row">
+<div *ngIf="cajaAbierta " class="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row">
     <!-- Left column: tabs (Mesas / Delivery) -->
     <aside class="w-full md:w-1/2 lg:w-3/5 overflow-x-hidden">
         <!-- <aside class="w-full md:w-1/2 lg:w-3/5 border-r border-gray-100 p-4"> -->
@@ -50,8 +50,8 @@
                                     <div
                                         class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-2 mt-5">
                                         <ng-container *ngFor="let mesa of mesas">
-                                            <div class="mesa-card" (click)="seleccionarMesa(mesa)"
-                                                *ngIf="mesa.numero != '0' && mesa.piso == '1'" [ngClass]="{
+                                            <div class="mesa-card" (click)="seleccionarMesa(mesa)" 
+                                                *ngIf="mesa.numero != '0' && mesa.piso == '1' && mozosSeleccionadosApertura.length > 0" [ngClass]="{
                                         seleccionada: mesaSeleccionada?.numero == mesa.numero,
                                         ocupada: estadomesa[mesa.numero].value === 1,
                                         libre: estadomesa[mesa.numero].value === 0

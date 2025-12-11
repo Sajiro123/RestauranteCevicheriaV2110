@@ -11,7 +11,7 @@ import { AperturaService } from '../../service/apertura.service';
 import { Products } from '../../../model/Products';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NuevoPedido } from '../../../model/NuevoPedido';
-import { concat, forkJoin, switchMap } from 'rxjs';
+import { concat, forkJoin, switchMap, timeout } from 'rxjs';
 import { NuevoPedidodetalle } from '../../../model/NuevoPedidodetalle';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { jsPDF } from 'jspdf';
@@ -208,25 +208,32 @@ export class HomeComponent {
                 }
             }
         );
-        await this.loadMozos();
 
-        // Only proceed with initialization if user is authenticated
-        if (this.authService.isAuthenticated()) {
-            this.verificarCajaAbierta().then(() => {
-                if (this.cajaAbierta) {
-                    this.cargarMesas();
-                    this.ListarToppings();
-                    var Trabajadores_Array = this.AperturaHoy[0].trabajadores.split(',').map((id: string) => parseInt(id.trim()));
-                    // Filter mozos to only include those in Trabajadores_Array
-                    debugger
-                    if (this.mozos && this.mozos.length > 0) {
-                        this.mozosSeleccionadosApertura = this.mozos.filter((mozo: any) => {
-                            return Trabajadores_Array.includes(mozo.idpersona);
-                        });
-                    }
+        this.loadMozos().then(() => {
+            setTimeout(() => {
+                if (this.authService.isAuthenticated()) {
+                    this.verificarCajaAbierta().then(() => {
+                        if (this.cajaAbierta) {
+                            this.cargarMesas();
+                            this.ListarToppings();
+                            var Trabajadores_Array = this.AperturaHoy[0].trabajadores.split(',').map((id: string) => parseInt(id.trim()));
+                            // Filter mozos to only include those in Trabajadores_Array
+                            debugger
+                            if (this.mozos && this.mozos.length > 0) {
+                                this.mozosSeleccionadosApertura = this.mozos.filter((mozo: any) => {
+                                    return Trabajadores_Array.includes(mozo.idpersona);
+                                });
+                            }
+                        }
+                    });
                 }
-            });
-        }
+
+            }, 1000);
+            // Only proceed with initialization if user is authenticated
+
+        });
+
+
     }
 
     ngOnDestroy(): void {
