@@ -7,6 +7,7 @@ import { PedidoService } from '../../service/pedido.service';
 import * as _ from 'lodash';
 import { VoucherService } from '../../../services/voucher.service';
 import { ImportsModule } from '../../imports';
+import { AperturaService } from '../../service/apertura.service';
 import { Products } from '../../../model/Products';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NuevoPedido } from '../../../model/NuevoPedido';
@@ -37,6 +38,7 @@ export class HomeComponent {
     @ViewChild('multiselect', { static: true }) multiselect!: ElementRef;
     @Input() isLoading: boolean = false; // Para activar/desactivar el loader
     pedido_seleccionado: any;
+    AperturaHoy: any;
     selectedToppings: { idtopings: number; nombre: string }[] = []; // O puedes inicializar con algunos seleccionados
     isDropdownOpen = false;
     selectedMozo: any = null;
@@ -49,6 +51,8 @@ export class HomeComponent {
     pedidosSeleccionados: any[] = [];
     isPanelVisible = true;
     mozos: any = [];
+    mozosSeleccionadosApertura: any = [];
+
     mesas: Mesa[] = [];
     Pedidos: Pedido[] = [];
     estadomesa: any = [];
@@ -133,7 +137,7 @@ export class HomeComponent {
     // Voucher QR properties
     voucherDialog: boolean = false;
     qrDialog: boolean = false;
-    voucherForm: FormGroup; // 👈 ya no usamos "!"
+    voucherForm: FormGroup; //
     isGeneratingVoucher: boolean = false;
     generatedVoucher: any = null;
     qrCodeSvg: string = '';
@@ -142,6 +146,33 @@ export class HomeComponent {
     moveTableDialog: boolean = false;
     targetMesa: Mesa | null = null;
     availableMesas: Mesa[] = [];
+
+    // Caja status properties
+    cajaAbierta: boolean = false;
+    verificandoCaja: boolean = true;
+
+    async verificarCajaAbierta(): Promise<void> {
+        return new Promise((resolve) => {
+            this.aperturaService.ListarAperturaHoy().subscribe((response) => {
+
+                if (response.success && response.data && response.data.length > 0) {
+                    this.AperturaHoy = response.data;
+
+                    // Check if caja is open (estado === 1 or estado === 2)
+                    this.cajaAbierta = response.data[0].estado == 1 || response.data[0].estado == 2;
+                    this.verificandoCaja = false;
+
+                } else {
+                    this.cajaAbierta = false;
+                }
+                resolve();
+            });
+        });
+    }
+
+    irAApertura(): void {
+        this.router.navigate(['/apertura']);
+    }
 
     constructor(
         private confirmationService: ConfirmationService,
@@ -153,7 +184,8 @@ export class HomeComponent {
         private fb: FormBuilder,
         private voucherService: VoucherService,
         private authService: AuthService,
-        private router: Router
+        public router: Router,
+        private aperturaService: AperturaService
     ) {
         this.voucherForm = this.fb.group({
             descripcion: ['Vale de delivery'],
@@ -161,7 +193,7 @@ export class HomeComponent {
         });
     }
 
-    ngOnInit(): void {
+    async ngOnInit(): Promise<void> {
         // 👇 inicializamos en el constructor
         // LoaderComponent.isLoading = true; // Set loading state to true
 
@@ -176,12 +208,24 @@ export class HomeComponent {
                 }
             }
         );
+        await this.loadMozos();
 
         // Only proceed with initialization if user is authenticated
         if (this.authService.isAuthenticated()) {
-            this.cargarMesas();
-            this.ListarToppings();
-            this.loadMozos();
+            this.verificarCajaAbierta().then(() => {
+                if (this.cajaAbierta) {
+                    this.cargarMesas();
+                    this.ListarToppings();
+                    var Trabajadores_Array = this.AperturaHoy[0].trabajadores.split(',').map((id: string) => parseInt(id.trim()));
+                    // Filter mozos to only include those in Trabajadores_Array
+                    debugger
+                    if (this.mozos && this.mozos.length > 0) {
+                        this.mozosSeleccionadosApertura = this.mozos.filter((mozo: any) => {
+                            return Trabajadores_Array.includes(mozo.idpersona);
+                        });
+                    }
+                }
+            });
         }
     }
 
@@ -853,6 +897,20 @@ export class HomeComponent {
     }
 
     getNombreMozo(idmozo: any): any {
+        debugger
+
+        var Trabajadores_Array = this.AperturaHoy[0].trabajadores.split(',').map((id: string) => parseInt(id.trim()));
+
+        // Filter mozos to only include those in Trabajadores_Array
+        if (this.mozos && this.mozos.length > 0) {
+
+            this.mozos = this.mozos.filter((mozo: any) => {
+                return Trabajadores_Array.includes(mozo.idpersona);
+            });
+        }
+
+
+
         const mozo = this.mozos.find((m: { idpersona: number }) => m.idpersona === idmozo);
         return mozo ? mozo.nombres : '';
     }
@@ -933,6 +991,18 @@ export class HomeComponent {
         // Count pedidos for this mesa
         const pedidos = this.Pedidos.filter(p => p.mesa === numeroMesa) as any;
         return pedidos[0].pedidodetalle.reduce((sum: number, element: any) => sum + element.cantidad, 0);
+    }
+
+    pagarTodo(metodo: 'efectivo' | 'visa' | 'yape' | 'plin') {
+
+        // Reiniciar todos
+        this.Pedido_cobrar.efectivo = 0;
+        this.Pedido_cobrar.visa = 0;
+        this.Pedido_cobrar.yape = 0;
+        this.Pedido_cobrar.plin = 0;
+
+        // Colocar el total en el método elegido
+        this.Pedido_cobrar[metodo] = this.Pedido_cobrar.total;
     }
 
     // Helper method to get mozo name for a mesa

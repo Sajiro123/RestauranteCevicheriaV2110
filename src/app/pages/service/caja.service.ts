@@ -33,6 +33,20 @@ export class CajaService {
   }
 
   // ============================
+  // 📌 LISTAR POR RANGO DE FECHAS
+  // ============================
+  async getByDateRange(startDate: string, endDate: string) {
+    const { data, error } = await this.supabase
+      .from('caja_semanal')
+      .select('*')
+      .gte('fecha', startDate)
+      .lte('fecha', endDate)
+      .order('fecha', { ascending: true });
+
+    return { data, error };
+  }
+
+  // ============================
   // 📌 OBTENER POR ID
   // ============================
   async getById(id: number) {
