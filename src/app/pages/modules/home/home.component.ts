@@ -157,13 +157,13 @@ export class HomeComponent {
 
                 if (response.success && response.data && response.data.length > 0) {
                     this.AperturaHoy = response.data;
-
                     // Check if caja is open (estado === 1 or estado === 2)
                     this.cajaAbierta = response.data[0].estado == 1 || response.data[0].estado == 2;
                     this.verificandoCaja = false;
-
                 } else {
                     this.cajaAbierta = false;
+                    this.verificandoCaja = false;
+
                 }
                 resolve();
             });
@@ -212,13 +212,13 @@ export class HomeComponent {
         this.loadMozos().then(() => {
             setTimeout(() => {
                 if (this.authService.isAuthenticated()) {
+
                     this.verificarCajaAbierta().then(() => {
                         if (this.cajaAbierta) {
                             this.cargarMesas();
                             this.ListarToppings();
                             var Trabajadores_Array = this.AperturaHoy[0].trabajadores.split(',').map((id: string) => parseInt(id.trim()));
                             // Filter mozos to only include those in Trabajadores_Array
-                            debugger
                             if (this.mozos && this.mozos.length > 0) {
                                 this.mozosSeleccionadosApertura = this.mozos.filter((mozo: any) => {
                                     return Trabajadores_Array.includes(mozo.idpersona);
