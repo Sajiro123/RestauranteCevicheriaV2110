@@ -208,7 +208,7 @@ export class HomeComponent {
                 }
             }
         );
-
+    // perdiendo una rama por yordy
         this.loadMozos().then(() => {
             setTimeout(() => {
                 if (this.authService.isAuthenticated()) {
