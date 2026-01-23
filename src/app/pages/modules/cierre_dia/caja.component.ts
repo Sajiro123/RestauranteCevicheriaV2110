@@ -34,31 +34,32 @@ export class CajaComponent implements OnInit {
 
   ngOnInit(): void {
     // Don't load data initially - wait for user to enter date range
-    // this.loadData();
+    // this.loadData(); // Removed initial load
   }
 
-  loadData() {
-    this.cajaService.getAll().then((res) => {
+  // Load data for specific date range
+  loadData(startDate: string, endDate: string) {
+    this.cajaService.getByDateRange(startDate, endDate).then((res) => {
       this.cajas = res.data || [];
       this.cajasFiltradas = [...this.cajas];
-      // Load gastosApp values for all dates
-      this.loadAllGastosAppValues();
+      // Load gastosApp values for the filtered dates
+      this.loadGastosAppValuesForFilteredDates();
     });
   }
 
-  // Load gastosApp values for all dates in the dataset
-  async loadAllGastosAppValues() {
+  // Load gastosApp values for filtered dates only
+  async loadGastosAppValuesForFilteredDates() {
     // Clear existing values
     this.gastosAppValues = {};
 
-    // Get unique dates
-    const uniqueDates = [...new Set(this.cajas.map(caja => caja.fecha))];
-
-    // Load gastosApp for each date
-    for (const fecha of uniqueDates) {
-      this.gastosAppValues[fecha] = await this.getGastosAppForDate(fecha);
+    // Load gastosApp for each date in the filtered data
+    for (const caja of this.cajasFiltradas) {
+      this.gastosAppValues[caja.fecha] = await this.getGastosAppForDate(caja.fecha);
     }
   }
+
+  // Remove the old method since we don't need to load all dates anymore
+  // loadAllGastosAppValues() method is no longer needed
 
   resetForm(): Caja {
     return {
@@ -105,18 +106,8 @@ export class CajaComponent implements OnInit {
       return;
     }
 
-    // Load data if not already loaded
-    if (this.cajas.length === 0) {
-      this.loadData();
-    }
-
-    const inicio = new Date(this.fechaInicio);
-    const fin = new Date(this.fechaFin);
-
-    this.cajasFiltradas = this.cajas.filter(caja => {
-      const fechaCaja = new Date(caja.fecha);
-      return fechaCaja >= inicio && fechaCaja <= fin;
-    });
+    // Load data for the specified date range
+    this.loadData(this.fechaInicio, this.fechaFin);
   }
 
   // Clear date filters
@@ -232,28 +223,28 @@ export class CajaComponent implements OnInit {
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
       doc.text('RESUMEN FINANCIERO', 20, finalYGastos + 20);
-      
+
       // Add a line under the header
       doc.setDrawColor(200, 200, 200);
       doc.line(20, finalYGastos + 22, 190, finalYGastos + 22);
-      
+
       doc.setFontSize(10);
       doc.text(`Ganancia Bruta: S/. ${gananciaBruta.toFixed(2)}`, 20, finalYGastos + 35);
       doc.text(`Ganancia Neta: S/. ${gananciaNeta.toFixed(2)}`, 20, finalYGastos + 42);
       doc.text(`Porcentaje de Ganancia: ${porcentajeGanancia.toFixed(2)}%`, 20, finalYGastos + 49);
       doc.text(`Food Cost: ${foodCost.toFixed(2)}%`, 20, finalYGastos + 56);
-      
+
       // Add expense types breakdown with improved design
       const expenseDetailsStartY = finalYGastos + 70;
-      
+
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('DETALLE DE GASTOS POR TIPO:', 20, expenseDetailsStartY);
-      
+
       // Add a line under the header
       doc.setDrawColor(200, 200, 200);
       doc.line(20, expenseDetailsStartY + 2, 190, expenseDetailsStartY + 2);
-      
+
       // Calculate totals by expense type
       const gastosByType: { [key: string]: number } = {};
       gastosData.forEach(item => {
@@ -261,37 +252,37 @@ export class CajaComponent implements OnInit {
         const monto = parseFloat(item[3]); // Monto column
         gastosByType[tipo] = (gastosByType[tipo] || 0) + monto;
       });
-      
+
       // Display expense types and their totals with improved formatting
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       let yPos = expenseDetailsStartY + 12;
-      
+
       // Draw table header for expense details
       doc.setFillColor(245, 245, 245);
       doc.rect(20, yPos, 170, 8, 'F');
       doc.setFont('helvetica', 'bold');
       doc.text('TIPO DE GASTO', 25, yPos + 6);
       doc.text('TOTAL', 160, yPos + 6);
-      
+
       yPos += 10;
-      
+
       // Draw expense details
       Object.keys(gastosByType).forEach(tipo => {
         const total = gastosByType[tipo];
-        
+
         // Alternate row colors for better readability
         if ((yPos / 10) % 2 === 0) {
           doc.setFillColor(250, 250, 250);
           doc.rect(20, yPos - 2, 170, 8, 'F');
         }
-        
+
         doc.setFont('helvetica', 'normal');
         doc.text(tipo, 25, yPos + 6);
         doc.text(`S/. ${total.toFixed(2)}`, 160, yPos + 6);
         yPos += 8;
       });
-      
+
       // Add total expenses with emphasis
       yPos += 5;
       doc.setFont('helvetica', 'bold');
@@ -299,35 +290,35 @@ export class CajaComponent implements OnInit {
       doc.line(20, yPos, 190, yPos); // Top line
       doc.line(20, yPos + 10, 190, yPos + 10); // Bottom line
       doc.text(`TOTAL GASTOS: S/. ${totalGastos.toFixed(2)}`, 25, yPos + 7);
-      
+
       // NEW RESUMEN SEMANAL SECTION
       const ventasTotales = totalIngresos;
       const gastosTotales = totalGastos;
       const gananciaNetaReal = gananciaBruta;
-      
+
       // Calculate new position after expense details
       let resumenSemanalPosition = yPos + 25;
-       
+
       // Add RESUMEN SEMANAL section with better spacing and design
       // Check if we have enough space on the current page, if not, add a new page
       const pageHeight = doc.internal.pageSize.height;
       const requiredSpace = 60; // Approximate space needed for this section
-      
+
       if (resumenSemanalPosition + requiredSpace > pageHeight - 20) {
         doc.addPage();
         resumenSemanalPosition = 20; // Reset position for new page
       }
-      
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(16);
       doc.setTextColor(0, 0, 0);
       doc.text('RESUMEN SEMANAL', 20, resumenSemanalPosition);
-      
+
       // Add a line under the header
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(1);
       doc.line(20, resumenSemanalPosition + 2, 190, resumenSemanalPosition + 2);
-       
+
       // Add summary items with proper spacing and formatting
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
@@ -499,14 +490,20 @@ export class CajaComponent implements OnInit {
   save() {
     if (this.editingId) {
       this.cajaService.update(this.editingId, this.form).then(() => {
-        this.loadData();
+        // Reload data for current date range if set
+        if (this.fechaInicio && this.fechaFin) {
+          this.loadData(this.fechaInicio, this.fechaFin);
+        }
         this.editingId = null;
         this.form = this.resetForm();
         this.displayDialog = false;
       });
     } else {
       this.cajaService.create(this.form).then(() => {
-        this.loadData();
+        // Reload data for current date range if set
+        if (this.fechaInicio && this.fechaFin) {
+          this.loadData(this.fechaInicio, this.fechaFin);
+        }
         this.form = this.resetForm();
         this.displayDialog = false;
       });
@@ -521,7 +518,12 @@ export class CajaComponent implements OnInit {
 
   delete(id: number) {
     if (confirm('¿Eliminar registro?')) {
-      this.cajaService.delete(id).then(() => this.loadData());
+      this.cajaService.delete(id).then(() => {
+        // Reload data for current date range if set
+        if (this.fechaInicio && this.fechaFin) {
+          this.loadData(this.fechaInicio, this.fechaFin);
+        }
+      });
     }
   }
 

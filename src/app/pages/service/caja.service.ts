@@ -63,9 +63,12 @@ export class CajaService {
   // 📌 INSERTAR
   // ============================
   async create(item: Caja) {
+    // Remove total field if present since it's a generated column
+    const { total, ...insertData } = item;
+
     const { data, error } = await this.supabase
       .from('caja_semanal')
-      .insert(item)
+      .insert(insertData)
       .select();
 
     return { data, error };
@@ -75,9 +78,12 @@ export class CajaService {
   // 📌 ACTUALIZAR
   // ============================
   async update(id: number, item: Partial<Caja>) {
+    // Remove total field if present since it's a generated column
+    const { total, ...updateData } = item;
+
     const { data, error } = await this.supabase
       .from('caja_semanal')
-      .update(item)
+      .update(updateData)
       .eq('id', id)
       .select();
 
