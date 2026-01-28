@@ -30,7 +30,7 @@ interface CustomMenuItem extends MenuItem {
                             <i class="pi pi-fw pi-arrow-right redirect-indicator"></i>
                         </a>
                     </li>
-                    
+
                     <!-- Show non-redirectOnly items with their children -->
                     <li app-menuitem *ngIf="!item['redirectOnly']" [item]="item" [index]="j" [root]="true"></li>
                 </ng-container>
@@ -54,34 +54,34 @@ interface CustomMenuItem extends MenuItem {
             margin: 0.25rem 0;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        
+
         .redirect-link:hover {
             background: linear-gradient(to right, var(--primary-100) 0%, var(--primary-50) 100%);
             color: var(--primary-700);
             transform: translateX(3px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
+
         .redirect-link:focus {
             box-shadow: inset 0 0 0 1px var(--focus-ring-color), 0 0 0 2px var(--focus-ring-color-transparent);
         }
-        
+
         .redirect-link .layout-menuitem-icon {
             margin-right: 0.75rem;
             color: var(--primary-color);
             font-size: 1.1rem;
         }
-        
+
         .redirect-link .layout-menuitem-text {
             font-weight: 600;
             flex-grow: 1;
             letter-spacing: 0.2px;
         }
-        
+
         .redirect-link:hover .layout-menuitem-text {
             color: var(--primary-800);
         }
-        
+
         .redirect-link .redirect-indicator {
             font-size: 0.8rem;
             margin-left: auto;
@@ -89,12 +89,12 @@ interface CustomMenuItem extends MenuItem {
             opacity: 0.7;
             transition: transform 0.3s ease;
         }
-        
+
         .redirect-link:hover .redirect-indicator {
             transform: translateX(2px);
             opacity: 1;
         }
-        
+
         .layout-menuitem {
             margin-bottom: 3px;
         }
@@ -112,9 +112,9 @@ export class AppMenu {
         // Try to get menu data from localStorage first
         const storedMenuData = localStorage.getItem('userMenuData');
         const idperfil = JSON.parse(localStorage.getItem('currentUser') || '{}').idperfil || 0;
-        
+
         let menuData: any[] = [];
-        
+
         if (storedMenuData) {
             // Use cached menu data
             try {
@@ -153,18 +153,38 @@ export class AppMenu {
         // Handle case when data is null or undefined
         const menuData = data || [];
         console.log('Menu data from service:', menuData);
-        
+
         // Store in localStorage for future use
         localStorage.setItem('userMenuData', JSON.stringify(menuData));
-        
+
         return menuData;
     }
 
     handleRedirect(item: CustomMenuItem, event: Event) {
         event.preventDefault();
         console.log('Redirecting to:', item.routerLink);
+
         if (item.routerLink && item.routerLink.length > 0) {
-            this.router.navigate([item.routerLink[0]]);
+            const route = item.routerLink[0];
+
+            // Handle external URLs
+            if (route.startsWith('http')) {
+                window.location.href = route;
+                return;
+            }
+
+            // Handle internal Angular routes
+            // Remove leading slash if present and ensure proper navigation
+            const cleanRoute = route.startsWith('/') ? route.substring(1) : route;
+
+            // Navigate relative to current route or use absolute path
+            if (cleanRoute.includes('/')) {
+                // If it's a full path like '/empresa', navigate absolutely
+                this.router.navigateByUrl(cleanRoute);
+            } else {
+                // If it's just 'empresa', navigate relatively
+                this.router.navigate([cleanRoute]);
+            }
         }
     }
 

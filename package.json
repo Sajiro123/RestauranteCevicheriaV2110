@@ -7,7 +7,9 @@
         "build": "ng build",
         "watch": "ng build --watch --configuration development",
         "format": "prettier --write \"**/*.{js,mjs,ts,mts,d.ts,html}\" --cache",
-        "test": "ng test"
+        "test": "ng test",
+        "deploy-logo": "node scripts/deploy-logo.js",
+        "save-logo": "node scripts/save-logo.js"
     },
     "private": true,
     "dependencies": {

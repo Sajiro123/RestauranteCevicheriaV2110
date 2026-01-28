@@ -8,32 +8,38 @@ import { ES_LOCALE } from '../../../model/util/calendar';
 import { TabsModule } from 'primeng/tabs';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import jsPDF from 'jspdf';
-import { AperturaService } from '../../service/apertura.service'; // <-- Add this import
+import { AperturaService } from '../../service/apertura.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { Router } from '@angular/router';
+import { validateSession } from '../../../model/util/functionscompartidas';
 
 @Component({
     selector: 'app-reportes',
-    imports: [CommonModule, ImportsModule, FormsModule, ReactiveFormsModule], // <-- Add ReactiveFormsModule
+    imports: [CommonModule, ImportsModule, FormsModule, ReactiveFormsModule],
     providers: [MessageService, ConfirmationService],
     templateUrl: './reportes.component.html',
     styleUrl: './reportes.component.scss'
 })
 export class ReportesComponent {
     selectedRange: Date[] = [];
-    selectedRange2: Date | null = null; // Initialize selectedRange2 as null
+    selectedRange2: Date | null = null;
     expandedRows = {};
     esLocale = ES_LOCALE;
     selectedDates: Date[] = [];
-    @ViewChild('dt') dt!: Table; // Use the Table type from PrimeNGç
-    Clients: any[] = []; // Initialize Clients as an empty array
-    PedidoDetalle: any[] = []; // Initialize PedidoDetalle as an empty array
-    PedidoReporte: any[] = []; // Initialize PedidoReporte as an empty array
+    @ViewChild('dt') dt!: Table;
+    Clients: any[] = [];
+    PedidoDetalle: any[] = [];
+    PedidoReporte: any[] = [];
     array_data = [] as any;
     array_data_total: any = {};
     PDF_Dialog: boolean = false;
     pdfUrl: SafeResourceUrl | null = null;
     fecha_actual: any;
-    
+
+    // Date restrictions for calendar
+    minDate!: Date;
+    maxDate!: Date;
+
     // Add properties for the edit modal
     Cobrar_Dialog: boolean = false;
     Pedido_cobrar: any = {
@@ -46,7 +52,36 @@ export class ReportesComponent {
         total: 0
     };
 
-    constructor(private PedidoService: PedidoService, private sanitizer: DomSanitizer, private AperturaService_: AperturaService, private messageService: MessageService) { }
+    constructor(
+        private PedidoService: PedidoService,
+        private sanitizer: DomSanitizer,
+        private AperturaService_: AperturaService,
+        private messageService: MessageService,
+        private router: Router
+    ) {
+        // Validate session - will redirect to login if invalid
+        if (!validateSession(this.router)) {
+            return;
+        }
+
+        const idperfil = JSON.parse(localStorage.getItem('currentUser') || '{}').idperfil || 0;
+
+        if (idperfil != 1) {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            this.minDate = yesterday;
+            this.maxDate = today;
+        } else {
+            // For admin users, allow all dates by not setting restrictions
+            this.minDate = undefined as unknown as Date;
+            this.maxDate = undefined as unknown as Date;
+        }
+
+        // Set date restrictions: only today and yesterday allowed
+
+    }
 
     expandAll() {
         this.expandedRows = this.PedidoReporte.reduce((acc, p) => (acc[p.id] = true) && acc, {});
@@ -105,7 +140,7 @@ export class ReportesComponent {
     // Add the CobrarPedido function
     CobrarPedido(pedido: any) {
         const total_ingresado = Number(pedido.yape || 0) + Number(pedido.visa || 0) + Number(pedido.plin || 0) + Number(pedido.efectivo || 0);
-        
+
         if (total_ingresado == pedido.total) {
             this.PedidoService.CobrarPedido(pedido).subscribe((response) => {
                 // Update the pedido in the list
@@ -113,7 +148,7 @@ export class ReportesComponent {
                 if (index !== -1) {
                     this.PedidoReporte[index] = { ...this.PedidoReporte[index], ...pedido };
                 }
-                
+
                 this.Cobrar_Dialog = false;
                 this.messageService.add({
                     severity: 'success',

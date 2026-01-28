@@ -37,7 +37,7 @@
     <!-- Left column: tabs (Mesas / Delivery) -->
     <aside class="w-full md:w-1/2 lg:w-3/5 overflow-x-hidden">
         <!-- <aside class="w-full md:w-1/2 lg:w-3/5 border-r border-gray-100 p-4"> -->
-<!-- aca tambien  -->
+        <!-- aca tambien  -->
         <div class="h-full flex flex-col gap-4">
             <!-- Keep original content for tabs and mesas delivered inside -->
             <div class="prose max-w-none">
@@ -50,8 +50,9 @@
                                     <div
                                         class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-2 mt-5">
                                         <ng-container *ngFor="let mesa of mesas">
-                                            <div class="mesa-card" (click)="seleccionarMesa(mesa)" 
-                                                *ngIf="mesa.numero != '0' && mesa.piso == '1' && mozosSeleccionadosApertura.length > 0" [ngClass]="{
+                                            <div class="mesa-card" (click)="seleccionarMesa(mesa)"
+                                                *ngIf="mesa.numero != '0' && mesa.piso == '1' && mozosSeleccionadosApertura.length > 0"
+                                                [ngClass]="{
                                         seleccionada: mesaSeleccionada?.numero == mesa.numero,
                                         ocupada: estadomesa[mesa.numero].value === 1,
                                         libre: estadomesa[mesa.numero].value === 0
@@ -336,7 +337,10 @@
                     </div>
                     <div class="container" *ngIf="selectedMozo?.length != 0 && pedido_mesa_status == false">
                         <div class="summary">
-                            <table class="table-auto w-full h-auto border-collapse border border-gray-400 text-center">
+                            <table
+                                class="table-auto w-full border-collapse border border-gray-400 text-center responsive-table">
+
+                                <!-- <table class="table-auto w-full h-auto border-collapse border border-gray-400 text-center"> -->
                                 <thead>
                                     <tr>
                                         <th>Producto</th>
@@ -352,7 +356,7 @@
                                 <tbody>
                                     <ng-container *ngFor="let pedidosnew of NuevoPedido.pedidodetalle; let i = index">
                                         <tr *ngIf="pedidosnew.total != 0">
-                                            <td>
+                                            <td data-label="Producto">
                                                 <div style="display: flex; flex-direction: column;">
                                                     <span>{{ pedidosnew.nombre }}</span>
                                                     <div
@@ -366,29 +370,35 @@
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>
+                                            <!-- <td>
+                                                <button (click)="incrementnewPedido(pedidosnew)">+</button>
+                                                {{ pedidosnew.cantidad }}
+                                                <button (click)="decrementnewPedido(pedidosnew)">-</button>
+                                            </td> -->
+
+                                            <td data-label="Cantidad">
                                                 <button (click)="incrementnewPedido(pedidosnew)">+</button>
                                                 {{ pedidosnew.cantidad }}
                                                 <button (click)="decrementnewPedido(pedidosnew)">-</button>
                                             </td>
-                                            <td>
+                                            <td data-label="Llevar">
                                                 <p-toggleSwitch [(ngModel)]="pedidosnew.lugarpedido" [trueValue]="'1'"
                                                     [falseValue]="'0'">
                                                 </p-toggleSwitch>
                                             </td>
-                                            <td>
+                                            <td data-label="Precio">
                                                 <input (keypress)="onlyNumberKey($event)"
                                                     (keyup)="pricechange(pedidosnew)" type="text" style="width: 50px;"
                                                     pInputText id="name" [(ngModel)]="pedidosnew.preciounitario"
                                                     required autofocus fluid />
                                             </td>
-                                            <td>S/ {{ pedidosnew.total }}</td>
-                                            <td>
+                                            <td data-label="Total">S/ {{ pedidosnew.total }}</td>
+                                            <td data-label="Acciones">
                                                 <button (click)="remove(pedidosnew)" class="btn btn-danger"
                                                     (click)="trashPedido(pedidosnew)"><i
                                                         class="fa-solid fa-trash"></i></button>
                                             </td>
-                                            <td>
+                                            <td data-label="Opciones">
                                                 <div class="flex flex-wrap gap-2">
                                                     <p-button type="button" class="btn btn-danger"
                                                         (click)="toggleDataTable(op2, $event, pedidosnew)">
@@ -435,24 +445,25 @@
                                     </ng-container>
                                 </tbody>
                             </table>
-                            <div class="text-right mt-4">
-                                <h3>Total: S/{{ total() }}</h3>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                <div class="text-right mt-4">
+                                    <h3>Total: S/{{ total() }}</h3>
+                                </div>
+
+                                <div class="text-right mt-4">
+                                    <input id="cliente" type="text" [(ngModel)]="NuevoPedido.cliente" pInputText
+                                        *ngIf="NuevoPedido.delivery == 1"
+                                        style="width: 328px;margin-right: 61px !important;"
+                                        placeholder="Nombre del cliente (opcional)" required autofocus fluid />
+                                    <p-button [label]="tipomodal == 'Registrar' ? 'REGISTRAR PEDIDO' : 'EDITAR PEDIDO'"
+                                        (click)="FunctionButtonPedido(NuevoPedido)" severity="success"
+                                        [style]="{ width: '207px', 'text-align': 'center' }" class="btn btn-success">
+                                    </p-button>
+                                </div>
+
+                                <textarea [(ngModel)]="comentarios" pTextarea
+                                    placeholder="Mensaje de impresión en Cocina." rows="3"></textarea>
                             </div>
-
-                            <div class="text-right mt-4">
-                                <input id="cliente" type="text" [(ngModel)]="NuevoPedido.cliente" pInputText
-                                    *ngIf="NuevoPedido.delivery == 1"
-                                    style="width: 328px;margin-right: 61px !important;"
-                                    placeholder="Nombre del cliente (opcional)" required autofocus fluid />
-                                <p-button [label]="tipomodal == 'Registrar' ? 'REGISTRAR PEDIDO' : 'EDITAR PEDIDO'"
-                                    (click)="FunctionButtonPedido(NuevoPedido)" severity="success"
-                                    [style]="{ width: '207px', 'text-align': 'center' }" class="btn btn-success">
-                                </p-button>
-                            </div>
-
-                            <textarea [(ngModel)]="comentarios" pTextarea placeholder="Mensaje de impresión en Cocina."
-                                rows="3"></textarea>
-
                             <div class="input-group mt-4 modal-body">
                                 <p-iconfield>
                                     <p-inputicon styleClass="pi pi-search" />

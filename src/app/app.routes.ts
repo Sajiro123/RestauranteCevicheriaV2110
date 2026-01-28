@@ -10,7 +10,7 @@ import { ProductosComponent } from './pages/modules/configuracion/productos/prod
 import { MenuListComponent } from './pages/modules/configuracion/menu/menu-list/menu-list.component';
 import { Notfound } from './pages/notfound/notfound';
 import { CajaComponent } from './pages/modules/cierre_dia/caja.component';
-
+import { EmpresaComponent } from './pages/modules/empresa/empresa.component';
 export const appRoutes: Routes = [
     {
         path: '',
@@ -29,6 +29,7 @@ export const appRoutes: Routes = [
             { path: 'menulista', loadChildren: () => import('./pages/modules/configuracion/menu/menu-list/menu-list.component').then(m => m.MenuListComponent), canActivate: [PermisoGuard], data: { menuRuta: 'menulista' } },
             { path: 'menuperfil', loadChildren: () => import('./pages/modules/configuracion/menu/perfil-permisos/perfil-permisos.component').then(m => m.PerfilPermisosComponent), canActivate: [PermisoGuard], data: { menuRuta: 'menuperfil' } },
             { path: 'caja', loadChildren: () => import('./pages/modules/cierre_dia/caja.routes'), canActivate: [AuthGuard] },
+            { path: 'empresa', loadChildren: () => import('./pages/modules/empresa/empresa.routes'), canActivate: [AuthGuard] },
 
         ]
     },

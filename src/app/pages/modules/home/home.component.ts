@@ -208,7 +208,7 @@ export class HomeComponent {
                 }
             }
         );
-    // perdiendo una rama por yordy
+        // perdiendo una rama por yordy
         this.loadMozos().then(() => {
             setTimeout(() => {
                 if (this.authService.isAuthenticated()) {
@@ -706,7 +706,6 @@ export class HomeComponent {
                 return;
             }
 
-            debugger;
             try {
                 // 1️⃣ Preparamos los datos
                 const pedido = this.NuevoPedido;
@@ -737,6 +736,7 @@ export class HomeComponent {
                         this.seleccionarMesa(this.mesaSeleccionada);
                     }
                 }, 1000);
+                debugger;
 
                 this.messageService.add({
                     severity: 'success',
@@ -744,6 +744,11 @@ export class HomeComponent {
                     detail: 'Pedido ingresado correctamente',
                     life: 3000
                 });
+
+                setTimeout(() => {
+                    this.generateCocinaPDF(data);
+                }, 1000);
+
             } catch (error) {
                 console.error('Error en el proceso completo:', error);
 
@@ -818,7 +823,6 @@ export class HomeComponent {
     }
 
     editar(mesa: Mesa, pedido: NuevoPedido): void {
-        debugger;
         this.buscarPlato = '';
         this.pedido_mesa_status = false;
         if (mesa.numero == '0') {
@@ -904,7 +908,6 @@ export class HomeComponent {
     }
 
     getNombreMozo(idmozo: any): any {
-        debugger
 
         var Trabajadores_Array = this.AperturaHoy[0].trabajadores.split(',').map((id: string) => parseInt(id.trim()));
 
@@ -1037,7 +1040,6 @@ export class HomeComponent {
         return total.toFixed(2);
     }
     seleccionarMesa(mesa: Mesa): void {
-        debugger;
         this.isLoading = true;
         this.LimpiarNuevoPedido(false);
 
@@ -1278,7 +1280,6 @@ export class HomeComponent {
     }
 
     hasVoucher(pedido: any): boolean {
-        debugger
         return pedido && pedido['vales'] && pedido['vales'].length > 0;
     }
 
@@ -1686,7 +1687,6 @@ export class HomeComponent {
         this.isLoading = true; // Activar el loader
 
         this.PedidoService.ShowProductosPdf(pedido.idpedido).subscribe((response) => {
-            debugger;
             this.estadopedido = 0;
             var inicial = 100;
             var items = response.data.length;

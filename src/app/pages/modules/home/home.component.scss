@@ -664,3 +664,47 @@ body {
     background: #f0fdf4;
     border-color: #bbf7d0;
 }
+
+
+/* Tablet y móvil */
+@media (max-width: 1024px) {
+
+    .responsive-table thead {
+        display: none;
+    }
+
+    .responsive-table,
+    .responsive-table tbody,
+    .responsive-table tr,
+    .responsive-table td {
+         width: 100%;
+    }
+
+    .responsive-table tr {
+        margin-bottom: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 10px;
+        background: #fff;
+    }
+
+    .responsive-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px;
+        text-align: right;
+        border-bottom: 1px solid #eee;
+    }
+
+    .responsive-table td:last-child {
+        border-bottom: none;
+    }
+
+    .responsive-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-align: left;
+        color: #555;
+    }
+}

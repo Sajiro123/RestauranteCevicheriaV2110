@@ -45,6 +45,7 @@ export class SupabaseService {
         categoria:idcategoria(nombre)
       `
             )
+            .gt('preciounitario', 0)
             .is('deleted', null)
             .order('nombre');
 
@@ -65,6 +66,7 @@ export class SupabaseService {
                 )
                 .eq(type, searchTerm)
                 .is('deleted', null)
+                .gt('preciounitario', 0)
                 .order('nombre');
         } else if (type == 'nombre') {
             query = await this.supabase
@@ -77,6 +79,7 @@ export class SupabaseService {
                 )
                 .ilike(type, `%${searchTerm}%`)
                 .is('deleted', null)
+                .gt('preciounitario', 0)
                 .order('nombre');
         } else {
             query = await this.supabase
@@ -87,6 +90,7 @@ export class SupabaseService {
         categoria:idcategoria(nombre)
     `
                 )
+                .gt('preciounitario', 0)
                 .is('deleted', null)
                 .order('nombre');
         }
