@@ -22,6 +22,7 @@ import { MenuListComponent } from '../modules/configuracion/menu/menu-list/menu-
 import { MenuFormComponent } from '../modules/configuracion/menu/menu-form/menu-form/menu-form.component';
 import { PerfilPermisosComponent } from '../modules/configuracion/menu/perfil-permisos/perfil-permisos.component';
 import { UsuarioComponent } from '../modules/configuracion/administracion/usuario.component';
+import { EmpresaComponent } from '../modules/empresa/empresa.component';
 
 export default [
     { path: 'formlayout', data: { breadcrumb: 'Form Layout' }, component: FormLayoutDemo },
@@ -33,6 +34,6 @@ export default [
     { path: 'perfilpermiso', data: { breadcrumb: 'Perfil Permiso' }, component: PerfilPermisosComponent },
     { path: 'usuario', data: { breadcrumb: 'Usuario' }, component: UsuarioComponent },
     { path: 'mesas', data: { breadcrumb: 'Mesas' }, component: HomeComponent },
-
+    { path: 'empresa', data: { breadcrumb: 'Empresa' }, component: EmpresaComponent },
 
 ] as Routes;

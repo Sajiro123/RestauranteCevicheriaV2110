@@ -1,5 +1,4 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -7,6 +6,7 @@ import { StyleClassModule } from 'primeng/styleclass';
 import { AppConfigurator } from './app.configurator';
 import { AuthService, User } from '../../services/auth.service';
 import { LayoutService } from '../service/layout.service';
+import { EmpresaService } from '../../pages/service/empresa.service';
 import { ImportsModule } from '../../pages/imports';
 
 @Component({
@@ -19,8 +19,8 @@ import { ImportsModule } from '../../pages/imports';
                 <i class="pi pi-bars"></i>
             </button>
             <a class="layout-topbar-logo" routerLink="/">
-            <img src="assets/img/logo.png" width="25%" />
-                <span style="width: 100% !important;">Cevicheria Willy Norteño Sac</span>
+            <img [src]="empresaLogo" width="25%" />
+                <span style="width: 100% !important;">{{empresaNombre}}</span>
             </a>
         </div>
 
@@ -50,10 +50,10 @@ import { ImportsModule } from '../../pages/imports';
                     <i class="pi pi-user text-primary"></i>
                     <span class="text-surface-900 dark:text-surface-0 font-medium">{{ currentUser.nombre }}</span>
                 </div>
-                <p-button 
-                    icon="pi pi-sign-out" 
-                    [rounded]="true" 
-                    [text]="true" 
+                <p-button
+                    icon="pi pi-sign-out"
+                    [rounded]="true"
+                    [text]="true"
                     severity="secondary"
                     (click)="logout()"
                     pTooltip="Cerrar Sesión"
@@ -67,34 +67,62 @@ import { ImportsModule } from '../../pages/imports';
 
             <div class="layout-topbar-menu hidden lg:block">
                 <div class="layout-topbar-menu-content">
-                    <button type="button" class="layout-topbar-action">
-                        <i class="pi pi-calendar"></i>
-                        <span>Calendar</span>
-                    </button>
-                    <button type="button" class="layout-topbar-action">
-                        <i class="pi pi-inbox"></i>
-                        <span>Messages</span>
-                    </button>
-                    <button type="button" class="layout-topbar-action">
-                        <i class="pi pi-user"></i>
-                        <span>Profile</span>
+                    <button type="button" class="layout-topbar-action" *ngIf="showProfileButton" (click)="navigateToEmpresa()">
+                        <i class="pi pi-building"></i>
+                        <span>Empresa</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>`
 })
-export class AppTopbar {
+export class AppTopbar implements OnInit {
     items!: MenuItem[];
     currentUser: User | null = null;
+    showProfileButton: boolean = false;
+    empresaLogo: string = 'assets/img/logo.png';
+    empresaNombre: string = 'Sistema';
 
-    constructor(public layoutService: LayoutService, private authService: AuthService, private router: Router) {}
+    constructor(
+        public layoutService: LayoutService,
+        private authService: AuthService,
+        private empresaService: EmpresaService
+    ) {
+        // Get current user perfil
+        const idperfil = JSON.parse(localStorage.getItem('currentUser') || '{}').idperfil || 0;
+        this.showProfileButton = idperfil === 1;
+    }
 
-    ngOnInit() {
-        // Suscribirse a cambios del usuario actual
+    async ngOnInit() {
+        await this.loadEmpresaData();
+
+        // Subscribe to current user changes
         this.authService.currentUser$.subscribe((user) => {
             this.currentUser = user;
         });
+    }
+
+    async loadEmpresaData() {
+        try {
+            const response = await this.empresaService.getAll();
+            if (response.data && response.data.length > 0) {
+                const empresa = response.data[0];
+                this.empresaNombre = empresa.nombre_empresa || 'Sistema';
+
+                // Check for custom logo in localStorage
+                const savedLogo = localStorage.getItem('logo');
+                if (savedLogo) {
+                    this.empresaLogo = savedLogo;
+                } else if (empresa.imagen) {
+                    this.empresaLogo = empresa.imagen;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading empresa data:', error);
+            // Fallback to default values
+            this.empresaNombre = 'Sistema';
+            this.empresaLogo = 'assets/img/logo.png';
+        }
     }
 
     toggleDarkMode() {
@@ -103,5 +131,10 @@ export class AppTopbar {
 
     logout() {
         this.authService.logout();
+    }
+
+    navigateToEmpresa() {
+        // Navigate to empresa page
+        window.location.href = '/empresa';
     }
 }

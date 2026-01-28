@@ -159,7 +159,6 @@ export class PedidoService {
     }
 
     ReporteProductoDetalle(parameters: string): Observable<any> {
-        debugger;
         return from(
             this.supabaseService.client
                 .from('pedido')
@@ -251,7 +250,6 @@ export class PedidoService {
             type = '';
         }
 
-        debugger;
         if (type === 'nombre') {
             return from(this.supabaseService.searchProductos(value, type));
         } else if (type === 'numero_carta') {
@@ -270,7 +268,6 @@ export class PedidoService {
     }
 
     insertPedido(arraypedido: NuevoPedido, mesa: string, comentario: string): Observable<any> {
-        debugger;
         arraypedido.pedidodetalle = arraypedido.pedidodetalle.filter((element: any) => element.idproducto !== 0);
         var idmozo = arraypedido.idmozo;
 

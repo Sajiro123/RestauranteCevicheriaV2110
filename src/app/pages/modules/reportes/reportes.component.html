@@ -13,7 +13,8 @@
                         <p-calendar [(ngModel)]="selectedRange" [selectionMode]="'range'" [numberOfMonths]="2"
                             class="date-range" [showButtonBar]="true" [showWeek]="false" [touchUI]="false"
                             placeholder="Selecciona un rango" (onSelect)="handleCalendarBlur()"
-                            [style]="{ width: '300px' }">
+                            [style]="{ width: '300px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
+                            [minDate]="minDate" [maxDate]="maxDate">
                         </p-calendar>
                     </div>
                 </div>
@@ -113,7 +114,8 @@
                     <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
                     <div class="col-sm-12">
                         <p-calendar [(ngModel)]="selectedRange2" placeholder="Selecciona una fecha"
-                            (onSelect)="DayCalendarBlur()" [style]="{ width: '300px' }"> </p-calendar>
+                            (onSelect)="DayCalendarBlur()" [style]="{ width: '300px' }" [appendTo]="'body'"
+                            [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate"> </p-calendar>
                     </div>
                 </div>
             </div>
