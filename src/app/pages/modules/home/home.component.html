@@ -302,41 +302,43 @@
                                     </ng-container>
                                 </tbody>
                             </table>
-                            <!-- <hr class="my-4 border-gray-300" /> -->
                         </div>
+                        <!-- <hr class="my-4 border-gray-300" /> -->
                     </div>
                 </div>
+            </div>
 
-                <div class="detalle md:shrink-0 ml-auto" *ngIf="!pedido_mesa_status && mesaSeleccionada">
-                    <div class="flex" style="margin-left: 14px;">
-                        <div class="w-14 text-left mt-4 mr-1"
-                            *ngIf="NuevoPedido.pedidodetalle.length > 0 && tipomodal == 'Editar'">
-                            <p-button (click)="returntoMesas()" severity="info">
-                                <i class="fa-solid fa-arrow-left" style="font-size: 35px;cursor: pointer;"></i>
-                            </p-button>
-                        </div>
-                        <div class="w-14 text-left mt-4 ml-6">
-                            <p-button (click)="showModal()">
-                                <i class="fa-solid fa-calculator" style="font-size: 35px;cursor: pointer;"></i>
-                            </p-button>
-                        </div>
+            <div class="detalle md:shrink-0 ml-auto" *ngIf="!pedido_mesa_status && mesaSeleccionada">
+                <div class="flex" style="margin-left: 14px;">
+                    <div class="w-14 text-left mt-4 mr-1"
+                        *ngIf="NuevoPedido.pedidodetalle.length > 0 && tipomodal == 'Editar'">
+                        <p-button (click)="returntoMesas()" severity="info">
+                            <i class="fa-solid fa-arrow-left" style="font-size: 35px;cursor: pointer;"></i>
+                        </p-button>
+                    </div>
+                    <div class="w-14 text-left mt-4 ml-6">
+                        <p-button (click)="showModal()">
+                            <i class="fa-solid fa-calculator" style="font-size: 35px;cursor: pointer;"></i>
+                        </p-button>
+                    </div>
 
-                        <div class="w-32 flex-auto text-center">
-                            <h2 class="text-red-600">
-                                {{ this.mesaSeleccionada.numero == '0' ? 'Delivery' : 'Pedido de Mesa '
-                                + this.mesaSeleccionada.numero }}
-                            </h2>
-                            <p *ngIf="NuevoPedido.idmozo" style="color: #000000;
+                    <div class="w-32 flex-auto text-center">
+                        <h2 class="text-red-600">
+                            {{ this.mesaSeleccionada.numero == '0' ? 'Delivery' : 'Pedido de Mesa '
+                            + this.mesaSeleccionada.numero }}
+                        </h2>
+                        <p *ngIf="NuevoPedido.idmozo" style="color: #000000;
                         font-size: 20px;
                         font-weight:bold;
                         margin-top: -14px;
                         font-family: 'Poppins';">
-                                MOZO : {{ getNombreMozo(NuevoPedido.idmozo) }}
-                            </p>
-                        </div>
+                            MOZO : {{ getNombreMozo(NuevoPedido.idmozo) }}
+                        </p>
                     </div>
-                    <div class="container" *ngIf="selectedMozo?.length != 0 && pedido_mesa_status == false">
-                        <div class="summary">
+                </div>
+                <div class="container" *ngIf="selectedMozo?.length != 0 && pedido_mesa_status == false">
+                    <div class="summary">
+                        <div class="table-responsive-wrapper">
                             <table
                                 class="table-auto w-full border-collapse border border-gray-400 text-center responsive-table">
 
