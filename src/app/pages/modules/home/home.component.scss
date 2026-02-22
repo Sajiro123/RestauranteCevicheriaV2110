@@ -666,45 +666,226 @@ body {
 }
 
 
-/* Tablet y móvil */
+/* Tablet y móvil - Compact Two-Line Layout */
 @media (max-width: 1024px) {
 
-    .responsive-table thead {
-        display: none;
+    .table-responsive-wrapper {
+        display: block; 
+        width: 100%;
+        overflow: visible;
+        margin: 0;
+        box-shadow: none;
+        background: transparent;
     }
 
-    .responsive-table,
-    .responsive-table tbody,
-    .responsive-table tr,
-    .responsive-table td {
-         width: 100%;
-    }
+    .responsive-table {
+        width: 100%;
+        display: block;
 
-    .responsive-table tr {
-        margin-bottom: 1rem;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        padding: 10px;
-        background: #fff;
-    }
+        thead {
+            display: none !important;
+        }
 
-    .responsive-table td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px;
-        text-align: right;
-        border-bottom: 1px solid #eee;
-    }
+        tbody {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
-    .responsive-table td:last-child {
-        border-bottom: none;
-    }
+        tr {
+            display: flex;
+            flex-wrap: wrap;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            padding: 8px 12px;
+            border: 1px solid #f3f4f6;
+            align-items: center;
+            justify-content: space-between; // Help space out items
+        }
 
-    .responsive-table td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        text-align: left;
-        color: #555;
+        td {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+            border: none;
+            font-size: 0.9rem;
+            flex: 0 0 auto;
+
+             &:last-child { border: none; }
+            &::before { display: none; }
+        }
+
+        // --- ROW 1: Name + Actions ---
+        
+        // 1. Product Name (Left)
+        // Adjust width to leave space for actions
+        td[data-label="Producto"] {
+            order: 1;
+            flex: 1 1 auto; // Grow to fill space
+            max-width: calc(100% - 90px); // Leave ~90px for action buttons
+            justify-content: flex-start;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 6px;
+
+            div {
+                width: 100%;
+                white-space: nowrap; 
+                overflow: hidden;
+                text-overflow: ellipsis; // Prevent long names breaking layout
+                
+                span {
+                    font-size: 1rem;
+                    font-weight: 700;
+                    color: #111827;
+                    display: block;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                
+                div { margin-top: 0; } // tags
+            }
+        }
+
+        // 2. Acciones (Trash) - Top Right
+        td[data-label="Acciones"] {
+            order: 2;
+            margin-left: auto; // Push to right
+            padding-bottom: 6px;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 6px;
+            
+            button {
+                width: 32px;
+                height: 32px;
+                padding: 0;
+                border: none;
+                border-radius: 8px;
+                background: #fee2e2;
+                color: #ef4444;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        // 3. Opciones (Gear) - Top Right
+        td[data-label="Opciones"] {
+            order: 3;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 6px;
+            margin-left: 4px; // Spacing from trash
+            padding-right: 0; // Ensure no extra padding
+
+            // Target the wrapper div properly
+            > div.flex {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0;
+                padding: 0;
+            }
+
+            // Target the p-button inside
+            p-button {
+                 display: block;
+                 width: 32px !important;
+                 height: 47px !important;
+                 margin-top: -16px;
+                 ::ng-deep button {
+                     width: 100% !important;
+                     height: 100% !important;
+                     min-width: 32px !important;
+                     padding: 0 !important;
+                     display: flex !important;
+                     align-items: center !important;
+                     justify-content: center !important;
+                     background: #6366f1 !important; // Indigo
+                     border: none !important;
+                     border-radius: 8px !important;
+                     
+                     .p-button-icon {
+                         font-size: 1rem !important;
+                         margin: 0 !important;
+                     }
+                     .p-button-label {
+                         display: none !important;
+                     }
+                 }
+            }
+        }
+        
+        // --- ROW 2: Controls ---
+        
+        // 4. Cantidad (Group buttons and text)
+        td[data-label="Cantidad"] {
+            order: 4;
+            flex-grow: 1; // Take available space
+            justify-content: flex-start; // Keep tightly grouped left
+            gap: 8px; // Space between buttons and number
+            
+            // The text node (number) is direct child, flex handles it well if aligned center
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1f2937;
+margin-top: -27px;
+            button {
+                width: 32px;
+                height: 32px;
+                background: #f3f4f6;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 1.2rem;
+                display: flex;
+                align-items: center;
+                
+                justify-content: center;
+                border: 1px solid #e5e7eb;
+                margin: 0; // Remove margin, use gap
+                color: #374151;
+                
+                &:active {
+                    background: #e5e7eb;
+                    transform: scale(0.95);
+                }
+            }
+        }
+
+        // 5. Llevar
+        td[data-label="Llevar"] {
+            order: 5;
+            margin: 0 8px;
+            
+            // Adjust toggle size if needed? usually fixed by component
+        }
+        
+        // 6. Precio
+        td[data-label="Precio"] {
+            order: 6;
+            
+            input {
+                width: 55px !important;
+                padding: 4px;
+                font-size: 0.9rem;
+                text-align: center;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+            }
+        }
+        
+        // 7. Total
+        td[data-label="Total"] {
+            order: 7;
+            font-weight: 800;
+            color: #059669;
+            margin-left: 8px;
+            font-size: 1rem;
+        }
+
+        // Hide empty rows
+        tr:empty { display: none; }
     }
 }
