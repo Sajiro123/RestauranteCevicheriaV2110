@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 :host {
     display: block;
     font-family: 'Inter', sans-serif;
@@ -46,7 +44,9 @@
     gap: 0.25rem;
     min-height: 280px;
     border: 1px solid rgba(226, 232, 240, 0.6);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    transition:
+        box-shadow 0.3s ease,
+        transform 0.3s ease;
     overflow: hidden;
     position: relative;
 
@@ -148,7 +148,9 @@
     place-items: center;
     color: white;
     font-size: 0.95rem;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
 
     &.orange {
         background: linear-gradient(135deg, #f59e0b, #f97316);
