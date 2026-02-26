@@ -237,6 +237,230 @@
 </div>
 <!-- <p-confirmDialog [style]="{ width: '450px' }" /> -->
 </p-tabPanel>
+<p-tabPanel header="Reporte Eliminados">
+    <p-toolbar styleClass="gap-2 mt-5" [style]="{ 'background-color': 'rgb(31 63 111)' }">
+        <h4 class="font-medium text-surface-950 dark:text-surface-0 text-xl">Reporte Eliminados Diario</h4>
+    </p-toolbar>
+    <div class="row mt-5">
+        <div class="col-sm-12">
+            <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
+            <div class="col-sm-12">
+                <p-calendar [(ngModel)]="selectedRange3" [selectionMode]="'range'" [numberOfMonths]="2"
+                    placeholder="Selecciona un rango" (onSelect)="DayCalendarBlurEliminados()"
+                    [style]="{ width: '300px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
+                    [minDate]="minDate" [maxDate]="maxDate"> </p-calendar>
+            </div>
+        </div>
+    </div>
+    <div>
+        <p-table stripedRows #dtEliminados [expandedRowKeys]="expandedRowsEliminados"
+            [styleClass]="'table-sm mt-5 p-datatable-sm p-datatable-gridlines table-bordered p-datatable-striped ml-3'"
+            columnResizeMode="expand" [value]="PedidoReporteEliminados" rowGroupMode="rowspan" [rows]="10"
+            [paginator]="true" [tableStyle]="{ 'min-width': '5rem' }" [rowHover]="true" dataKey="idpedido"
+            [resizableColumns]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+            [showCurrentPageReport]="true">
+            <ng-template pTemplate="header">
+                <tr>
+                    <td style="width:3%" style="min-width:3rem"></td>
+                    <td style="width:5%" pSortableColumn="fecha" style="min-width:6rem">
+                        Fecha
+                        <p-sortIcon field="fecha" />
+                    </td>
+                    <th pSortableColumn="dia" style="min-width:15rem" style="min-width:3rem">
+                        Dia
+                        <p-sortIcon field="dia" />
+                    </th>
+                    <td style="width:5%" pSortableColumn="mesa" style="min-width:6rem">
+                        Mesa
+                        <p-sortIcon field="mesa" />
+                    </td>
+                    <th pSortableColumn="hora" style="min-width:3rem" style="min-width:3rem">
+                        Hora
+                        <p-sortIcon field="hora" />
+                    </th>
+                    <th pSortableColumn="total_pedidos" style="min-width:3rem">
+                        Total Pedidos
+                        <p-sortIcon field="total_pedidos" />
+                    </th>
+
+                    <th pSortableColumn="motivo" style="min-width:10rem">
+                        Motivo
+                        <p-sortIcon field="motivo" />
+                    </th>
+                    <th pSortableColumn="responsable" style="min-width:6rem">
+                        Responsable
+                        <p-sortIcon field="responsable" />
+                    </th>
+                    <th pSortableColumn="total" style="min-width:3rem">
+                        Total
+                        <p-sortIcon field="total" />
+                    </th>
+                    <th></th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-product let-expanded="expanded">
+                <tr>
+                    <td>
+                        <p-button type="button" pRipple [pRowToggler]="product" [text]="true" [rounded]="true"
+                            [plain]="true" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
+                    </td>
+                    <td>{{ product.fecha }}</td>
+                    <td>{{ product.dia }}</td>
+                    <td>{{ product.mesa == 0 ? 'Delivery' : product.mesa }}</td>
+                    <td>{{ product.hora }}</td>
+                    <td>{{ product.total_pedidos }}</td>
+                    <td>{{ product.motivo }}</td>
+                    <td>{{ product.responsable }}</td>
+                    <td>{{ 'S/' + product.total }}</td>
+                    <td>
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template #expandedrow let-product>
+                <tr>
+                    <td colspan="7">
+                        <div class="p-4">
+                            <h5>{{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Delivery ' }}</h5>
+                            <p-table [value]="product.pedidodetalle" dataKey="idpedidodetalle">
+                                <ng-template #header>
+                <tr>
+                    <th>Lugarpedido</th>
+                    <th>Plato <p-sortIcon field="nombre" /></th>
+                    <th>Cantidad <p-sortIcon field="cantidad" /></th>
+                    <th>Precio Unitario</th>
+                    <th>Total</th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-productodetalle>
+                <tr>
+                    <td>{{ product.mesa == 0 ? 'Delivery' : productodetalle.lugarpedido == 1 ? 'llevar' : 'Mesa'
+                        }}</td>
+                    <td>{{ productodetalle.producto.nombre }}</td>
+                    <td>{{ productodetalle.cantidad }}</td>
+                    <td>{{ productodetalle.precioU }}</td>
+                    <td>{{ productodetalle.total }}</td>
+                </tr>
+            </ng-template>
+
+            <!-- <ng-template #emptymessage>
+                        <tr>
+                            <td colspan="6">There are no order for this product yet.</td>
+                        </tr>
+                    </ng-template> -->
+        </p-table>
+    </div>
+    </td>
+    </tr>
+    </ng-template>
+    </p-table>
+    </div>
+    <!-- <p-confirmDialog [style]="{ width: '450px' }" /> -->
+</p-tabPanel>
+<p-tabPanel header="Pedidos Sin Cobrar">
+    <p-toolbar styleClass="gap-2 mt-5" [style]="{ 'background-color': 'rgb(31 63 111)' }">
+        <h4 class="font-medium text-surface-950 dark:text-surface-0 text-xl">Reporte Pedidos Sin Cobrar</h4>
+    </p-toolbar>
+    <div class="row mt-5">
+        <div class="col-sm-12">
+            <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Rango de Fecha:</b></p>
+            <div class="col-sm-12">
+                <p-calendar [(ngModel)]="selectedRange4" [selectionMode]="'range'" [numberOfMonths]="2"
+                    placeholder="Selecciona un rango" (onSelect)="DayCalendarBlurSinCobrar()"
+                    [style]="{ width: '300px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
+                    [minDate]="minDate" [maxDate]="maxDate"> </p-calendar>
+            </div>
+        </div>
+    </div>
+    <div>
+        <p-table stripedRows #dtSinCobrar [expandedRowKeys]="expandedRowsSinCobrar"
+            [styleClass]="'table-sm mt-5 p-datatable-sm p-datatable-gridlines table-bordered p-datatable-striped ml-3'"
+            columnResizeMode="expand" [value]="PedidoReporteSinCobrar" rowGroupMode="rowspan" [rows]="10"
+            [paginator]="true" [tableStyle]="{ 'min-width': '5rem' }" [rowHover]="true" dataKey="idpedido"
+            [resizableColumns]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+            [showCurrentPageReport]="true">
+            <ng-template pTemplate="header">
+                <tr>
+                    <td style="width:3%" style="min-width:3rem"></td>
+                    <td style="width:5%" pSortableColumn="fecha" style="min-width:6rem">
+                        Fecha
+                        <p-sortIcon field="fecha" />
+                    </td>
+                    <th pSortableColumn="dia" style="min-width:15rem" style="min-width:3rem">
+                        Dia
+                        <p-sortIcon field="dia" />
+                    </th>
+                    <td style="width:5%" pSortableColumn="mesa" style="min-width:6rem">
+                        Mesa
+                        <p-sortIcon field="mesa" />
+                    </td>
+                    <th pSortableColumn="hora" style="min-width:3rem" style="min-width:3rem">
+                        Hora
+                        <p-sortIcon field="hora" />
+                    </th>
+                    <th pSortableColumn="total_pedidos" style="min-width:3rem">
+                        Num. Pedidos
+                        <p-sortIcon field="total_pedidos" />
+                    </th>
+                    <th pSortableColumn="total" style="min-width:3rem">
+                        Total por Cobrar
+                        <p-sortIcon field="total" />
+                    </th>
+                    <th></th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-product let-expanded="expanded">
+                <tr>
+                    <td>
+                        <p-button type="button" pRipple [pRowToggler]="product" [text]="true" [rounded]="true"
+                            [plain]="true" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
+                    </td>
+                    <td>{{ product.fecha }}</td>
+                    <td>{{ product.dia }}</td>
+                    <td>{{ product.mesa == 0 ? 'Delivery' : product.mesa }}</td>
+                    <td>{{ product.hora }}</td>
+                    <td>{{ product.total_pedidos }}</td>
+                    <td>{{ 'S/' + product.total }}</td>
+                    <td>
+                        <p-button type="button" [text]="true" [rounded]="true" [plain]="true"
+                            [icon]="'pi pi-spin pi-cog'" (click)="Editar(product)" />
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template #expandedrow let-product>
+                <tr>
+                    <td colspan="7">
+                        <div class="p-4">
+                            <h5>{{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Delivery ' }}</h5>
+                            <p-table [value]="product.pedidodetalle" dataKey="idpedidodetalle">
+                                <ng-template #header>
+                <tr>
+                    <th>Lugarpedido</th>
+                    <th>Plato <p-sortIcon field="nombre" /></th>
+                    <th>Cantidad <p-sortIcon field="cantidad" /></th>
+                    <th>Precio Unitario</th>
+                    <th>Total</th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-productodetalle>
+                <tr>
+                    <td>{{ product.mesa == 0 ? 'Delivery' : productodetalle.lugarpedido == 1 ? 'llevar' : 'Mesa'
+                        }}</td>
+                    <td>{{ productodetalle.producto.nombre }}</td>
+                    <td>{{ productodetalle.cantidad }}</td>
+                    <td>{{ productodetalle.precioU }}</td>
+                    <td>{{ productodetalle.total }}</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+    </td>
+    </tr>
+    </ng-template>
+    </p-table>
+    </div>
+</p-tabPanel>
 </p-tabView>
 </div>
 <p-dialog [position]="'top'" [(visible)]="PDF_Dialog" [style]="{ width: '500px', height: '880px' }"

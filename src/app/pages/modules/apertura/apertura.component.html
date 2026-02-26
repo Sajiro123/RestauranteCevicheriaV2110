@@ -1,196 +1,253 @@
 <p-toast styleClass="text-2xl" />
 
-<div class="card">
-    <div class="grid grid-cols-1 sm:grid-cols-4">
-        <div class="w-full" [formGroup]="cajaForm">
-            <div class="left">
-                <h1>CAJA</h1>
+<div class="apertura-container">
+    <!-- 3-Column Layout -->
+    <div class="three-col-layout">
 
-                <img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" alt="Cerrado" />
-                <div class="cerrado" *ngIf="data_apertura.length == 0">CERRADO</div>
-                <div class="cerrado" *ngIf="data_apertura.length > 0 && cajaForm.get('estado')?.value == 1">ABIERTO
+        <!-- LEFT: Estado de Caja -->
+        <div class="col-left" [formGroup]="cajaForm">
+            <div class="estado-card">
+                <div class="estado-header">
+                    <i class="pi pi-info-circle"></i>
+                    <span>Estado de Caja</span>
                 </div>
-                <div class="cerrado" *ngIf="cajaForm.get('estado')?.value == 2">CAJA CERRADA YA EXISTE</div>
 
-                <br />
+                <div class="estado-badge" [ngClass]="{
+                    'badge-open': data_apertura.length > 0 && cajaForm.get('estado')?.value == 1,
+                    'badge-closed': cajaForm.get('estado')?.value == 2,
+                    'badge-none': data_apertura.length == 0
+                }">
+                    <span class="badge-label">ESTADO ACTUAL</span>
+                    <span class="badge-value" *ngIf="data_apertura.length == 0">
+                        <span class="dot dot-red"></span> Cerrado
+                    </span>
+                    <span class="badge-value" *ngIf="data_apertura.length > 0 && cajaForm.get('estado')?.value == 1">
+                        <span class="dot dot-green"></span> Abierto
+                    </span>
+                    <span class="badge-value" *ngIf="cajaForm.get('estado')?.value == 2">
+                        <span class="dot dot-gray"></span> Cerrado (Hoy)
+                    </span>
+                </div>
 
-                <span style="font-weight: bold;">({{ fecha_actual }})</span>
+                <div class="estado-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Turno</span>
+                        <span class="detail-value">{{ cajaForm.get('turno')?.value || '—' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Responsable</span>
+                        <span class="detail-value">{{ cajaForm.get('responsable')?.value || '—' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Monto Apertura</span>
+                        <span class="detail-value accent">S/ {{ cajaForm.get('monto')?.value || '0.00' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Fecha</span>
+                        <span class="detail-value">{{ fecha_actual }}</span>
+                    </div>
+                </div>
 
-                <p *ngIf="data_apertura.length == 0">
-                    Ingrese los datos,<br />
-                    para abrir una caja
-                </p>
-            </div>
-
-            <div class="right">
-                <div class="form-group">
-                    <label for="caja">Caja</label>
-                    <select formControlName="caja" id="caja">
-                        <option value="">Seleccionar</option>
+                <!-- Hidden selects for form values -->
+                <div style="display: none;">
+                    <select formControlName="caja">
                         <option value="1">Caja 1</option>
                     </select>
-                    <div *ngIf="cajaForm.get('caja')?.touched && cajaForm.get('caja')?.invalid" class="error">
-                        <small *ngIf="cajaForm.get('caja')?.errors?.['required']">La caja es obligatoria</small>
+                    <input formControlName="estado" />
+                </div>
+
+                <!-- Form fields when caja is NOT open yet -->
+                <div class="estado-form" *ngIf="data_apertura.length == 0">
+                    <div class="form-group">
+                        <label>Seleccionar Turno</label>
+                        <div class="turnos-grid">
+                            <button type="button" class="turno-btn"
+                                [class.active]="cajaForm.get('turno')?.value === 'Mañana'"
+                                (click)="cajaForm.get('turno')?.setValue('Mañana')">
+                                <i class="pi pi-sun"></i><span>Mañana</span>
+                            </button>
+                            <button type="button" class="turno-btn"
+                                [class.active]="cajaForm.get('turno')?.value === 'Tarde'"
+                                (click)="cajaForm.get('turno')?.setValue('Tarde')">
+                                <i class="pi pi-cloud"></i><span>Tarde</span>
+                            </button>
+                            <button type="button" class="turno-btn"
+                                [class.active]="cajaForm.get('turno')?.value === 'Noche'"
+                                (click)="cajaForm.get('turno')?.setValue('Noche')">
+                                <i class="pi pi-moon"></i><span>Noche</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="turno">Turno</label>
-                    <select formControlName="turno" id="turno">
-                        <option value="">Seleccionar</option>
-                        <option value="Mañana">Mañana</option>
-                        <option value="Noche">Noche</option>
-                    </select>
-                    <div *ngIf="cajaForm.get('turno')?.touched && cajaForm.get('turno')?.invalid" class="error">
-                        <small *ngIf="cajaForm.get('turno')?.errors?.['required']">El turno es obligatorio</small>
+                    <div class="form-group">
+                        <label>Responsable</label>
+                        <select formControlName="responsable">
+                            <option value="">Seleccionar</option>
+                            <option value="Sully">Sully</option>
+                            <option value="Yordy">Yordy</option>
+                            <option value="Alex">Alex</option>
+                        </select>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="responsable">Responsable</label>
-                    <select formControlName="responsable" id="responsable">
-                        <option value="">Seleccionar</option>
-                        <option value="Sully">Sully</option>
-                        <option value="Yordy">Yordy</option>
-                        <option value="Alex">Alex</option>
-                    </select>
-                    <div *ngIf="cajaForm.get('responsable')?.touched && cajaForm.get('responsable')?.invalid"
-                        class="error">
-                        <small *ngIf="cajaForm.get('responsable')?.errors?.['required']">El responsable es
-                            obligatorio</small>
+                    <div class="form-group">
+                        <label>Personal en Campo</label>
+                        <p-multiSelect formControlName="trabajadores" [options]="trabajadoresList" optionLabel="nombres"
+                            optionValue="idpersona" placeholder="Seleccione trabajadores" [showToggleAll]="true"
+                            [filter]="true" filterPlaceholder="Buscar..." display="chip" id="trabajadores"
+                            [style]="{ width: '100%' }" [maxSelectedLabels]="trabajadoresList.length"
+                            selectedItemsLabel="{0} trabajadores seleccionados">
+                        </p-multiSelect>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="trabajadores">Personal en Campo</label>
-                    <p-multiSelect 
-                        formControlName="trabajadores" 
-                        [options]="trabajadoresList" 
-                        optionLabel="nombres"
-                        optionValue="idpersona" 
-                        placeholder="Seleccione trabajadores" 
-                        [showToggleAll]="true"
-                        [filter]="true" 
-                        filterPlaceholder="Buscar..." 
-                        display="chip" 
-                        id="trabajadores"
-                        [maxSelectedLabels]="trabajadoresList.length"
-                        selectedItemsLabel="{0} trabajadores seleccionados">
-                    </p-multiSelect>
-                    <div *ngIf="cajaForm.get('trabajadores')?.touched && cajaForm.get('trabajadores')?.invalid"
-                        class="error">
-                        <small *ngIf="cajaForm.get('trabajadores')?.errors?.['required']">Debe seleccionar al menos un
-                            trabajador</small>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Ingrese monto de apertura</label>
-                    <div class="money-input">
-                        <span>S/</span>
-                        <input formControlName="monto" type="number" placeholder="0.00" />
-                        <span>Soles</span>
-                    </div>
-                    <div *ngIf="cajaForm.get('monto')?.touched && cajaForm.get('monto')?.invalid" class="error">
-                        <small *ngIf="cajaForm.get('monto')?.errors?.['required']">El monto es obligatorio</small>
-                        <small *ngIf="cajaForm.get('monto')?.errors?.['min']">El monto debe ser mayor o igual a
-                            0</small>
-                    </div>
-                </div>
-
-                <button class="btn" type="submit" [disabled]="cajaForm.invalid" style="cursor: pointer;"
-                    *ngIf="texto_estado_caja != 'Caja ya se Cerro (Hoy)'" (click)="GuardarCaja(data_apertura.length)">{{
-                    texto_estado_caja }}</button>
-            </div>
-        </div>
-        <div class="w-full gastos" [formGroup]="GastosForm">
-            <main class="card main" role="main" aria-label="Formulario de ingreso de gastos de comida">
-                <h1>Registrar Gastos</h1>
-                <p class="subtitle">Ingrese los detalles del gasto para el sistema de comida.</p>
-                <div>
-                    <label for="expenseName">Descripción del gasto</label>
-                    <input formControlName="descripcion" type="text" id="expenseName" name="expenseName"
-                        placeholder="Ejemplo: Compra de verduras" required />
-                </div>
-                <div>
-                    <label for="amount">Monto (PEN)</label>
-                    <input formControlName="monto" type="number" id="amount" name="amount" placeholder="Ejemplo: 15.50"
-                        step="0.01" min="0" required required />
-                </div>
-                <!-- <div>
-                    <label for="date">Fecha</label>
-                    <input formControlName="fecha" type="date" id="date" name="date" required aria-required="true" />
-                </div> -->
-                <div>
-                    <label for="category">Categoría</label>
-                    <select formControlName="categoria" id="category" name="category" required>
-                        <option value="" selected>Seleccione una categoría</option>
-                        <option value="{{ list.idcategoriagastos }}" *ngFor="let list of CategoriaGastosList">
-                            {{ list.descripcion }}
-                        </option>
-                    </select>
-                </div>
-                <div>
-                    <label for="notes">Notas (opcional)</label>
-                    <textarea formControlName="notas" rows="3" cols="20" fluid pTextarea id="notes" name="notes"
-                        placeholder="Comentarios adicionales..."></textarea>
-                </div>
-
-                <button style="margin-top: 47px;" pButton type="submit" [disabled]="isSubmitting || GastosForm.invalid"
-                    class="btn" (click)="GuardarGastos()">Registrar Gasto</button>
-            </main>
-        </div>
-
-        <div class="w-full gastos" style="width: 100%;" *ngIf="GastosList.length > 0">
-            <main class="card main" role="main" aria-label="Formulario de ingreso de gastos de comida">
-                <h1>Mis Gastos</h1>
-                <div style="overflow: scroll;height: 480px;margin-left: -25px;margin-right: -28px;">
-                    <div class="expenses-section" *ngFor="let gasto of GastosList">
-                        <div class="expense-item">
-                            <div class="expense-desc">{{ gasto.descripcion | uppercase }}</div>
-                            <div class="expense-details">
-                                <span style="color: red;">S/ {{ gasto.monto | number : '1.2-2' }}</span>
-                                <span class="expense-notes">{{ gasto.notas == 'null' ? '' : gasto.notas }}</span>
-                                <span style="margin-right: 20px;">
-                                    {{ getCategoriaDescripcion(gasto.idcategoriagastos) }}
-                                </span>
-                            </div>
-                            <!-- <button class="delete-btn" (click)="eliminarGasto(gasto)">Eliminar</button> -->
+                    <div class="form-group">
+                        <label>Monto de Apertura</label>
+                        <div class="monto-wrapper">
+                            <div class="currency">S/</div>
+                            <input formControlName="monto" type="number" placeholder="0.00" />
                         </div>
                     </div>
                 </div>
-                <div class="expenses-total" style="margin-top: 20px; font-weight: bold;font-size: 14px;"
-                    *ngIf="GastosList.length > 0">
-                    Total de categoria: <br /><br />
-                    {{ resumenGastosPorCategoria() }}
+
+                <!-- Workers display when caja IS open -->
+                <div class="workers-display" *ngIf="data_apertura.length > 0">
+                    <label>Personal en Campo</label>
+                    <p-multiSelect formControlName="trabajadores" [options]="trabajadoresList" optionLabel="nombres"
+                        optionValue="idpersona" placeholder="—" [showToggleAll]="true" [filter]="true"
+                        filterPlaceholder="Buscar..." display="chip" id="trabajadores-display"
+                        [style]="{ width: '100%' }" [maxSelectedLabels]="trabajadoresList.length"
+                        selectedItemsLabel="{0} trabajadores seleccionados">
+                    </p-multiSelect>
                 </div>
-                <div class="expenses-total" style="margin-top: 20px; font-weight: bold; font-size: 20px;"
-                    *ngIf="GastosList.length > 0">
-                    Total de gastos: S/
-                    {{ totalGastos() | number : '1.2-2' }}
-                </div>
-            </main>
+
+                <button class="btn-action" type="button" [disabled]="cajaForm.invalid"
+                    *ngIf="texto_estado_caja != 'Caja ya se Cerro (Hoy)'" (click)="GuardarCaja(data_apertura.length)">
+                    <i class="pi" [ngClass]="{
+                        'pi-lock-open': data_apertura.length == 0,
+                        'pi-lock': data_apertura.length > 0
+                    }"></i>
+                    {{ data_apertura.length == 0 ? 'Abrir Caja del Día' : 'Cerrar Caja del Día' }}
+                </button>
+            </div>
         </div>
 
-        <div class="w-full cajaresumen" style="width: 100%;" *ngIf="GastosList.length > 0 && estado_caja == 2">
-            <main class="card main" role="main" aria-label="Formulario de ingreso de gastos de comida">
-                <h1>Caja Resumen</h1>
-                <div class="card">
-                    <div class="card-header">Fecha: {{ fecha_actual }}</div>
-                    <div class="card-details" *ngFor="let data of Resumenventahoy">
-                        <p><strong>Yape:</strong> S/ {{ data.yape }}</p>
-                        <p><strong>Plin:</strong> S/ {{ data.plin }}</p>
-                        <p><strong>Visa:</strong> S/{{ data.visa }}</p>
-                        <p><strong>Efectivo:</strong> S/{{ data.efectivo }}</p>
-                        <hr />
-                        <h4>Total: S/ {{ (data.yape || 0) + (data.plin || 0) + (data.visa || 0) + (data.efectivo || 0) |
-                            number : '1.2-2' }}</h4>
-                        <p><strong>Gastos:</strong> S/{{ totalGastos() | number : '1.2-2' }}</p>
-                        <p><strong>Caja inicial:</strong> S/ {{ cajaForm.get('monto')?.value }}</p>
+        <!-- CENTER: Registrar Gastos + Lista -->
+        <div class="col-center" *ngIf="estado_caja == 1">
+            <!-- Registrar Gastos Form -->
+            <div class="gastos-card" [formGroup]="GastosForm">
+                <div class="card-title-row">
+                    <div class="card-icon"><i class="pi pi-file-edit"></i></div>
+                    <h2>Registrar Gastos</h2>
+                </div>
+
+                <div class="gastos-form">
+                    <div class="form-group">
+                        <label>Descripción del Gasto</label>
+                        <input formControlName="descripcion" type="text"
+                            placeholder="Ej: Compra de insumos de limpieza" />
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Monto (S/)</label>
+                            <div class="monto-wrapper">
+                                <div class="currency">S/</div>
+                                <input formControlName="monto" type="number" placeholder="0.00" step="0.01" min="0" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Categoría</label>
+                            <select formControlName="categoria">
+                                <option value="">Seleccione</option>
+                                <option value="{{ list.idcategoriagastos }}" *ngFor="let list of CategoriaGastosList">
+                                    {{ list.descripcion }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notas Adicionales</label>
+                        <textarea formControlName="notas" rows="3" placeholder="Detalles adicionales..."></textarea>
+                    </div>
+                    <button class="btn-register" type="button" [disabled]="isSubmitting || GastosForm.invalid"
+                        (click)="GuardarGastos()">
+                        <i class="pi pi-plus-circle"></i> Registrar Egreso
+                    </button>
+                </div>
+            </div>
+
+            <!-- Últimos Movimientos / Mis Gastos -->
+            <div class="movimientos-card" *ngIf="GastosList.length > 0">
+                <div class="card-title-row">
+                    <h2>Últimos Movimientos</h2>
+                </div>
+                <div class="movimientos-table">
+                    <div class="table-header">
+                        <span>DESCRIPCIÓN</span>
+                        <span>CATEGORÍA</span>
+                        <span>MONTO</span>
+                    </div>
+                    <div class="table-body">
+                        <div class="table-row" *ngFor="let gasto of GastosList">
+                            <span class="row-desc">{{ gasto.descripcion | uppercase }}</span>
+                            <span class="row-cat">
+                                <span class="cat-badge">{{ getCategoriaDescripcion(gasto.idcategoriagastos) }}</span>
+                            </span>
+                            <span class="row-amount">-S/ {{ gasto.monto | number : '1.2-2' }}</span>
+                        </div>
                     </div>
                 </div>
-            </main>
+                <div class="movimientos-footer">
+                    <span>Total de gastos:</span>
+                    <span class="total-amount">S/ {{ totalGastos() | number : '1.2-2' }}</span>
+                </div>
+            </div>
         </div>
+
+        <!-- RIGHT: Resumen del Día -->
+        <div class="col-right">
+            <div class="resumen-card">
+                <div class="card-title-row">
+                    <div class="card-icon orange"><i class="pi pi-chart-bar"></i></div>
+                    <h2>Resumen del Día</h2>
+                </div>
+
+                <div class="resumen-grid" *ngFor="let data of Resumenventahoy">
+                    <div class="resumen-box">
+                        <span class="resumen-label">Efectivo</span>
+                        <span class="resumen-value">S/ {{ data.efectivo || 0 | number : '1.2-2' }}</span>
+                    </div>
+                    <div class="resumen-box">
+                        <span class="resumen-label">Yape / Plin</span>
+                        <span class="resumen-value">S/ {{ (data.yape || 0) + (data.plin || 0) | number : '1.2-2'
+                            }}</span>
+                    </div>
+                    <div class="resumen-box">
+                        <span class="resumen-label">Tarjeta</span>
+                        <span class="resumen-value">S/ {{ data.visa || 0 | number : '1.2-2' }}</span>
+                    </div>
+                    <div class="resumen-box red">
+                        <span class="resumen-label">Gastos (Egresos)</span>
+                        <span class="resumen-value">-S/ {{ totalGastos() | number : '1.2-2' }}</span>
+                    </div>
+                </div>
+
+                <div class="gran-total" *ngFor="let data of Resumenventahoy">
+                    <div class="gran-total-inner">
+                        <div>
+                            <span class="gt-label">GRAN TOTAL NETO</span>
+                            <span class="gt-value">S/ {{ (data.yape || 0) + (data.plin || 0) + (data.visa || 0) +
+                                (data.efectivo || 0) - totalGastos() | number : '1.2-2' }}</span>
+                        </div>
+                        <i class="pi pi-wallet gt-icon"></i>
+                    </div>
+                </div>
+
+                <div class="resumen-extra" *ngIf="estado_caja == 2">
+                    <div class="detail-row">
+                        <span>Caja Inicial</span>
+                        <span>S/ {{ cajaForm.get('monto')?.value }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
+
 <p-confirmDialog [style]="{ width: '450px' }" />

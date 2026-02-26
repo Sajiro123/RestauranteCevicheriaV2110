@@ -24,7 +24,7 @@ export class SupabaseService {
 
     // Mesa operations
     async getMesas() {
-        const { data, error } = await this.supabase.from('mesa').select('*').is('deleted', null).order('numero');
+        const { data, error } = await this.supabase.from('mesa').select('*').is('deleted', null).eq('estado', 1).order('numero');
 
         return { success: !error, data, error };
     }
@@ -156,6 +156,12 @@ export class SupabaseService {
         return { success: !error, data, error };
     }
 
+    async updateEstadoCocina(idpedido: number, estado_cocina: number) {
+        const { data, error } = await this.supabase.from('pedido').update({ estado_cocina }).eq('idpedido', idpedido);
+
+        return { success: !error, data, error };
+    }
+
     async deletePedido(idpedido: number, motivo: string, responsable: string) {
         const now = new Date();
         const fechaPeru = now.toLocaleDateString('en-CA', {
@@ -280,7 +286,7 @@ export class SupabaseService {
     }
 
     async getTrabajadores() {
-        const { data, error } = await this.supabase.from('persona').select('*').is('deleted', null);
+        const { data, error } = await this.supabase.from('persona').select('*').is('deleted', null).eq('idestado', 1);
 
         return { success: !error, data, error };
     }

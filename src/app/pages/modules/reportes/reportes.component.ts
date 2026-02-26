@@ -23,13 +23,19 @@ import { validateSession } from '../../../model/util/functionscompartidas';
 export class ReportesComponent {
     selectedRange: Date[] = [];
     selectedRange2: Date | null = null;
+    selectedRange3: Date[] = [];
+    selectedRange4: Date[] = [];
     expandedRows = {};
+    expandedRowsEliminados = {};
+    expandedRowsSinCobrar = {};
     esLocale = ES_LOCALE;
     selectedDates: Date[] = [];
     @ViewChild('dt') dt!: Table;
     Clients: any[] = [];
     PedidoDetalle: any[] = [];
     PedidoReporte: any[] = [];
+    PedidoReporteEliminados: any[] = [];
+    PedidoReporteSinCobrar: any[] = [];
     array_data = [] as any;
     array_data_total: any = {};
     PDF_Dialog: boolean = false;
@@ -113,6 +119,28 @@ export class ReportesComponent {
     DayCalendarBlur() {
         if (this.selectedRange2) {
             this.showReporteDay(this.formatDateToMySQL(new Date(this.selectedRange2)));
+        } else {
+            console.log('No se ha completado el rango de fechas');
+        }
+    }
+
+    DayCalendarBlurEliminados() {
+        if (this.selectedRange3.length === 2 && this.selectedRange3[1] != null) {
+            this.showReporteDayEliminados({
+                fechainicio: this.formatDateToMySQL(new Date(this.selectedRange3[0])),
+                fechafin: this.formatDateToMySQL(new Date(this.selectedRange3[1]))
+            });
+        } else {
+            console.log('No se ha completado el rango de fechas');
+        }
+    }
+
+    DayCalendarBlurSinCobrar() {
+        if (this.selectedRange4.length === 2 && this.selectedRange4[1] != null) {
+            this.showReporteDaySinCobrar({
+                fechainicio: this.formatDateToMySQL(new Date(this.selectedRange4[0])),
+                fechafin: this.formatDateToMySQL(new Date(this.selectedRange4[1]))
+            });
         } else {
             console.log('No se ha completado el rango de fechas');
         }
@@ -388,6 +416,86 @@ export class ReportesComponent {
                             // this.PedidoDetalle = pedidodetalle;
                             debugger;
                             this.PedidoReporte = this.PedidoReporte.map((pedido: any) => {
+                                const detalle = response2.data.filter((d: any) => d.idpedido === pedido.idpedido);
+                                return {
+                                    ...pedido,
+                                    pedidodetalle: detalle.length > 0 ? detalle[0].pedidodetalle : []
+                                };
+                            });
+                        } else {
+                            alert('Error al intentar consultar los detalles del producto');
+                        }
+                    });
+                } else {
+                    alert('Error al intentar consultar');
+                }
+            },
+            (error: any) => {
+                console.error('Error al intentar consultar', error);
+                alert('Hubo un problema al conectar con el servidor');
+            }
+        );
+    }
+
+    showReporteDayEliminados(parameters: any) {
+        this.PedidoReporteEliminados = [];
+        this.PedidoService.ShowPedidosFechaEliminados(parameters).subscribe(
+            async (response: { success: any; data: any[] }) => {
+                if (response.success) {
+                    response.data.forEach((element: any) => {
+                        if (element.fecha != undefined) {
+                            element.fecha = new Date(element.fecha).toISOString().split('T')[0]; // Formato YYYY-MM-DD
+                            var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+                            var numeroDia = Math.floor(new Date(element.fecha).getDay() + 1);
+                            var nombreDia = dias[numeroDia];
+                            element.dia = nombreDia;
+                        }
+                    });
+                    this.PedidoReporteEliminados = response.data;
+
+                    await this.PedidoService.ReporteProductoDetalleEliminados(parameters).subscribe((response2: { success: any; data: any[] }) => {
+                        if (response2.success) {
+                            this.PedidoReporteEliminados = this.PedidoReporteEliminados.map((pedido: any) => {
+                                const detalle = response2.data.filter((d: any) => d.idpedido === pedido.idpedido);
+                                return {
+                                    ...pedido,
+                                    pedidodetalle: detalle.length > 0 ? detalle[0].pedidodetalle : []
+                                };
+                            });
+                        } else {
+                            alert('Error al intentar consultar los detalles del producto');
+                        }
+                    });
+                } else {
+                    alert('Error al intentar consultar');
+                }
+            },
+            (error: any) => {
+                console.error('Error al intentar consultar', error);
+                alert('Hubo un problema al conectar con el servidor');
+            }
+        );
+    }
+
+    showReporteDaySinCobrar(parameters: any) {
+        this.PedidoReporteSinCobrar = [];
+        this.PedidoService.ShowPedidosFechaSinCobrar(parameters).subscribe(
+            async (response: { success: any; data: any[] }) => {
+                if (response.success) {
+                    response.data.forEach((element: any) => {
+                        if (element.fecha != undefined) {
+                            element.fecha = new Date(element.fecha).toISOString().split('T')[0]; // Formato YYYY-MM-DD
+                            var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+                            var numeroDia = Math.floor(new Date(element.fecha).getDay() + 1);
+                            var nombreDia = dias[numeroDia];
+                            element.dia = nombreDia;
+                        }
+                    });
+                    this.PedidoReporteSinCobrar = response.data;
+
+                    await this.PedidoService.ReporteProductoDetalleSinCobrar(parameters).subscribe((response2: { success: any; data: any[] }) => {
+                        if (response2.success) {
+                            this.PedidoReporteSinCobrar = this.PedidoReporteSinCobrar.map((pedido: any) => {
                                 const detalle = response2.data.filter((d: any) => d.idpedido === pedido.idpedido);
                                 return {
                                     ...pedido,

@@ -1,5 +1,8 @@
 @use 'mixins' as *;
 
+/* ============================================
+   SIDEBAR CONTAINER
+   ============================================ */
 .layout-sidebar {
     position: fixed;
     width: 20rem;
@@ -12,23 +15,128 @@
     transition:
         transform var(--layout-section-transition-duration),
         left var(--layout-section-transition-duration);
-    background-color: var(--surface-overlay);
-    border-radius: var(--content-border-radius);
-    padding: 0.5rem 1.5rem;
+    background-color: #ffffff;
+    border-radius: 14px;
+    padding: 0.5rem 1rem;
+    border: 1px solid #eef0f4;
+    box-shadow:
+        0 1px 4px rgba(0, 0, 0, 0.04),
+        0 4px 16px rgba(0, 0, 0, 0.03);
+
+    &::-webkit-scrollbar {
+        width: 3px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: #d4d8e0;
+        border-radius: 10px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background-color: #b0b6c2;
+    }
 }
 
+/* Dark mode override */
+:root[class*='app-dark'] .layout-sidebar {
+    background-color: var(--surface-overlay);
+    border-color: var(--surface-border);
+}
+
+/* ============================================
+   USER PROFILE
+   ============================================ */
+.sidebar-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.15rem 0.5rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid #f0f1f5;
+
+    .user-avatar {
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #c5d0e6, #e6ddd4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #5a6378;
+        font-weight: 700;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+
+        .user-name {
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: #1a1d26;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+        }
+
+        .user-role {
+            font-size: 0.76rem;
+            color: #8c92a4;
+            font-weight: 400;
+        }
+    }
+}
+
+:root[class*='app-dark'] .sidebar-user-profile {
+    border-bottom-color: var(--surface-border);
+
+    .user-avatar {
+        background: linear-gradient(135deg, #3b4358, #4a4845);
+        color: #c5cad6;
+    }
+
+    .user-info .user-name {
+        color: var(--text-color);
+    }
+
+    .user-info .user-role {
+        color: var(--text-color-secondary);
+    }
+}
+
+/* ============================================
+   MENU
+   ============================================ */
 .layout-menu {
     margin: 0;
     padding: 0;
     list-style-type: none;
 
+    /* Section header "Modulos" / "SHORTCUTS" etc. */
+    > .layout-menuitem-root-text {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #9ca3b4;
+        margin: 1.5rem 0 0.4rem 0;
+        padding: 0 0.75rem;
+        letter-spacing: 1px;
+    }
+
     .layout-root-menuitem {
         > .layout-menuitem-root-text {
-            font-size: 0.857rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
-            font-weight: 700;
-            color: var(--text-color);
-            margin: 0.75rem 0;
+            font-weight: 600;
+            color: #9ca3b4;
+            margin: 1.5rem 0 0.4rem 0;
+            padding: 0 0.75rem;
+            letter-spacing: 1px;
         }
 
         > a {
@@ -54,6 +162,90 @@
         }
     }
 
+    /* ============================================
+       DIRECT CHILD ITEMS (app.menu.ts redirect + regular)
+       ============================================ */
+    > .layout-menuitem,
+    > li {
+        > a,
+        > .redirect-link {
+            display: flex;
+            align-items: center;
+            position: relative;
+            outline: 0 none;
+            color: #3d4355;
+            cursor: pointer;
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            transition:
+                background-color 0.15s ease,
+                color 0.15s ease;
+            text-decoration: none;
+            margin: 1px 0;
+            font-size: 0.88rem;
+
+            .layout-menuitem-icon {
+                margin-right: 0.75rem;
+                font-size: 1.05rem;
+                color: #7c8394;
+                width: 1.25rem;
+                text-align: center;
+                transition: color 0.15s ease;
+            }
+
+            .layout-menuitem-text {
+                font-weight: 500;
+                letter-spacing: 0.1px;
+                flex-grow: 1;
+            }
+
+            .layout-submenu-toggler {
+                font-size: 75%;
+                margin-left: auto;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                color: #b0b6c2;
+            }
+
+            .redirect-indicator {
+                font-size: 0.7rem;
+                margin-left: auto;
+                color: #b0b6c2;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+
+            &.active-route {
+                background-color: #eef1f8;
+                color: #2d3548;
+                font-weight: 600;
+
+                .layout-menuitem-icon {
+                    color: #4f6ef7;
+                }
+            }
+
+            &:hover {
+                background-color: #f5f6fa;
+                color: #2d3548;
+
+                .layout-menuitem-icon {
+                    color: #5a6378;
+                }
+
+                .redirect-indicator {
+                    opacity: 1;
+                }
+            }
+
+            &:focus {
+                @include focused-inset();
+            }
+        }
+    }
+
+    /* ============================================
+       NESTED SUBMENU ITEMS
+       ============================================ */
     ul {
         margin: 0;
         padding: 0;
@@ -64,31 +256,49 @@
             align-items: center;
             position: relative;
             outline: 0 none;
-            color: var(--text-color);
+            color: #3d4355;
             cursor: pointer;
-            padding: 0.75rem 1rem;
-            border-radius: var(--content-border-radius);
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
             transition:
-                background-color var(--element-transition-duration),
-                box-shadow var(--element-transition-duration);
+                background-color 0.15s ease,
+                color 0.15s ease;
+            font-size: 0.88rem;
 
             .layout-menuitem-icon {
-                margin-right: 0.5rem;
+                margin-right: 0.75rem;
+                font-size: 1.05rem;
+                color: #7c8394;
+                width: 1.25rem;
+                text-align: center;
+                transition: color 0.15s ease;
+            }
+
+            .layout-menuitem-text {
+                font-weight: 500;
+                letter-spacing: 0.1px;
             }
 
             .layout-submenu-toggler {
                 font-size: 75%;
                 margin-left: auto;
-                transition: transform var(--element-transition-duration);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                color: #b0b6c2;
             }
 
             &.active-route {
-                font-weight: 700;
-                color: var(--primary-color);
+                background-color: #eef1f8;
+                color: #2d3548;
+                font-weight: 600;
+
+                .layout-menuitem-icon {
+                    color: #4f6ef7;
+                }
             }
 
             &:hover {
-                background-color: var(--surface-hover);
+                background-color: #f5f6fa;
+                color: #2d3548;
             }
 
             &:focus {
@@ -96,27 +306,50 @@
             }
         }
 
-        // Styles for our redirect links
+        /* Redirect links in nested menus */
         .redirect-link {
             display: flex;
             align-items: center;
             position: relative;
             outline: 0 none;
-            color: var(--text-color);
+            color: #3d4355;
             cursor: pointer;
-            padding: 0.75rem 1rem;
-            border-radius: var(--content-border-radius);
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
             transition:
-                background-color var(--element-transition-duration),
-                box-shadow var(--element-transition-duration);
+                background-color 0.15s ease,
+                color 0.15s ease;
             text-decoration: none;
+            font-size: 0.88rem;
 
             .layout-menuitem-icon {
-                margin-right: 0.5rem;
+                margin-right: 0.75rem;
+                font-size: 1.05rem;
+                color: #7c8394;
+                width: 1.25rem;
+                text-align: center;
+            }
+
+            .layout-menuitem-text {
+                font-weight: 500;
+                flex-grow: 1;
+            }
+
+            .redirect-indicator {
+                font-size: 0.7rem;
+                margin-left: auto;
+                color: #b0b6c2;
+                opacity: 0;
+                transition: opacity 0.2s ease;
             }
 
             &:hover {
-                background-color: var(--surface-hover);
+                background-color: #f5f6fa;
+                color: #2d3548;
+
+                .redirect-indicator {
+                    opacity: 1;
+                }
             }
 
             &:focus {
@@ -124,9 +357,10 @@
             }
         }
 
+        /* Nested indentation */
         ul {
             overflow: hidden;
-            border-radius: var(--content-border-radius);
+            border-radius: 8px;
 
             li {
                 a {
@@ -167,6 +401,81 @@
     }
 }
 
+/* ============================================
+   DARK MODE MENU OVERRIDES
+   ============================================ */
+:root[class*='app-dark'] {
+    .layout-menu {
+        > .layout-menuitem-root-text,
+        .layout-root-menuitem > .layout-menuitem-root-text {
+            color: var(--text-color-secondary);
+        }
+
+        > .layout-menuitem > a,
+        > .layout-menuitem > .redirect-link,
+        > li > a,
+        ul a,
+        ul .redirect-link {
+            color: var(--text-color);
+
+            .layout-menuitem-icon {
+                color: var(--text-color-secondary);
+            }
+
+            &.active-route {
+                background-color: color-mix(in srgb, var(--primary-color) 12%, transparent 88%);
+                color: var(--text-color);
+
+                .layout-menuitem-icon {
+                    color: var(--primary-color);
+                }
+            }
+
+            &:hover {
+                background-color: var(--surface-hover);
+                color: var(--text-color);
+            }
+        }
+    }
+}
+
+/* ============================================
+   SIDEBAR FOOTER
+   ============================================ */
+.sidebar-footer {
+    padding: 0.85rem 0.75rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid #f0f1f5;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.35;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+        opacity: 0.6;
+    }
+
+    .sidebar-footer-icon {
+        font-size: 0.8rem;
+        color: #7c8394;
+    }
+
+    .sidebar-footer-text {
+        font-size: 0.7rem;
+        color: #7c8394;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+}
+
+:root[class*='app-dark'] .sidebar-footer {
+    border-top-color: var(--surface-border);
+}
+
+/* ============================================
+   SUBMENU ANIMATIONS
+   ============================================ */
 .layout-submenu-enter-from,
 .layout-submenu-leave-to {
     max-height: 0;

@@ -38,65 +38,12 @@ interface CustomMenuItem extends MenuItem {
         </ul>
     `,
     styles: [`
-        .redirect-link {
-            display: flex;
-            align-items: center;
-            position: relative;
-            outline: 0 none;
-            color: var(--text-color);
-            cursor: pointer;
-            padding: 0.85rem 1.25rem;
-            border-radius: var(--content-border-radius);
-            transition: all 0.2s ease;
-            text-decoration: none;
-            background: linear-gradient(to right, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.0) 100%);
-            border-left: 3px solid var(--primary-color);
-            margin: 0.25rem 0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .redirect-link:hover {
-            background: linear-gradient(to right, var(--primary-100) 0%, var(--primary-50) 100%);
-            color: var(--primary-700);
-            transform: translateX(3px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .redirect-link:focus {
-            box-shadow: inset 0 0 0 1px var(--focus-ring-color), 0 0 0 2px var(--focus-ring-color-transparent);
-        }
-
-        .redirect-link .layout-menuitem-icon {
-            margin-right: 0.75rem;
-            color: var(--primary-color);
-            font-size: 1.1rem;
-        }
-
-        .redirect-link .layout-menuitem-text {
-            font-weight: 600;
-            flex-grow: 1;
-            letter-spacing: 0.2px;
-        }
-
-        .redirect-link:hover .layout-menuitem-text {
-            color: var(--primary-800);
-        }
-
-        .redirect-link .redirect-indicator {
-            font-size: 0.8rem;
-            margin-left: auto;
-            color: var(--primary-color);
-            opacity: 0.7;
-            transition: transform 0.3s ease;
-        }
-
-        .redirect-link:hover .redirect-indicator {
-            transform: translateX(2px);
-            opacity: 1;
+        :host {
+            display: block;
         }
 
         .layout-menuitem {
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
     `]
 })
