@@ -38,7 +38,7 @@ export class AperturaComponent {
     constructor(private AperturaService_: AperturaService, private pedidoService_: PedidoService, private fb: FormBuilder, private messageService: MessageService, private confirmationService: ConfirmationService, private cd: ChangeDetectorRef) {
         this.cajaForm = this.fb.group({
             estado: [1],
-            caja: ['', Validators.required],
+            caja: ['1', Validators.required],
             turno: ['', Validators.required],
             responsable: ['', Validators.required],
             trabajadores: [[], Validators.required],

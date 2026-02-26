@@ -13,6 +13,10 @@ export class PedidoService {
         return from(this.supabaseService.deletePedido(id, motivo, responsable));
     }
 
+    updateEstadoCocina(id: number, estado_cocina: number): Observable<any> {
+        return from(this.supabaseService.updateEstadoCocina(id, estado_cocina));
+    }
+
     async editarPedidoCompleto(pedido: any, detalles: any[]) {
         const total = detalles.reduce((sum: number, product: { preciounitario: number; cantidad: number }) => sum + product.preciounitario * product.cantidad, 0);
 
@@ -158,6 +162,127 @@ export class PedidoService {
         );
     }
 
+    ShowPedidosFechaEliminados(parameters: any): Observable<any> {
+        return from(
+            this.supabaseService.client
+                .from('pedido')
+                .select('mesa, idpedido, fecha, descuento, total, total_pedidos, yape, plin, efectivo, visa, created_at,motivo,responsable')
+                .eq('estado', '0')
+                .gte('fecha', parameters.fechainicio)
+                .lte('fecha', parameters.fechafin)
+                .order('idpedido', { ascending: false })
+                .then(({ data, error }: { data: any; error: any }) => {
+                    if (data) {
+                        data.forEach((item: any) => {
+                            const date = new Date(item.created_at);
+                            item.hora = date.toLocaleTimeString('es-PE', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            });
+                        });
+                    }
+                    return { success: !error, data, error };
+                })
+        );
+    }
+
+
+    ReporteProductoDetalleEliminados(parameters: any): Observable<any> {
+        return from(
+            this.supabaseService.client
+                .from('pedido')
+                .select(
+                    `
+            idpedido,
+            descuento,
+            comentario,
+            mesa,
+            total,
+            fecha,
+            pedidodetalle(
+                opcionespedido,
+                pedido_estado,
+                lugarpedido,
+                idproducto,
+                cantidad,
+                precioU,
+                total,
+                producto(
+                    idcategoria,
+                    nombre
+                )
+            )
+        `
+                )
+                .eq('estado', '0')
+                .gte('fecha', parameters.fechainicio)
+                .lte('fecha', parameters.fechafin)
+                .order('mesa')
+                .then(({ data, error }: { data: any; error: any }) => ({ success: !error, data, error }))
+        );
+    }
+
+    ShowPedidosFechaSinCobrar(parameters: any): Observable<any> {
+        return from(
+            this.supabaseService.client
+                .from('pedido')
+                .select('mesa, idpedido, fecha, descuento, total, total_pedidos, yape, plin, efectivo, visa, created_at')
+                .eq('estado', '1')
+                .gte('fecha', parameters.fechainicio)
+                .lte('fecha', parameters.fechafin)
+                .order('idpedido', { ascending: false })
+                .then(({ data, error }: { data: any; error: any }) => {
+                    if (data) {
+                        data.forEach((item: any) => {
+                            const date = new Date(item.created_at);
+                            item.hora = date.toLocaleTimeString('es-PE', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false
+                            });
+                        });
+                    }
+                    return { success: !error, data, error };
+                })
+        );
+    }
+
+    ReporteProductoDetalleSinCobrar(parameters: any): Observable<any> {
+        return from(
+            this.supabaseService.client
+                .from('pedido')
+                .select(
+                    `
+            idpedido,
+            descuento,
+            comentario,
+            mesa,
+            total,
+            fecha,
+            pedidodetalle(
+                opcionespedido,
+                pedido_estado,
+                lugarpedido,
+                idproducto,
+                cantidad,
+                precioU,
+                total,
+                producto(
+                    idcategoria,
+                    nombre
+                )
+            )
+        `
+                )
+                .eq('estado', '1')
+                .gte('fecha', parameters.fechainicio)
+                .lte('fecha', parameters.fechafin)
+                .order('mesa')
+                .then(({ data, error }: { data: any; error: any }) => ({ success: !error, data, error }))
+        );
+    }
+
     ReporteProductoDetalle(parameters: string): Observable<any> {
         return from(
             this.supabaseService.client
@@ -239,7 +364,7 @@ export class PedidoService {
         }
     }
 
-    constructor(private supabaseService: SupabaseService, private router: Router) {}
+    constructor(private supabaseService: SupabaseService, private router: Router) { }
 
     ListarPedidosMesa(): Observable<any> {
         return from(this.supabaseService.getPedidosHoy());
