@@ -581,9 +581,11 @@
                             </div>
                         </div>
 
-                        <!-- PRICE -->
-                        <div class="w-[15%] text-right text-slate-600 text-sm xl:text-[15px] font-bold flex-shrink-0">
-                            {{ pedidosnew.preciounitario }}
+                        <!-- PRICE (editable) -->
+                        <div class="w-[15%] flex justify-end items-center flex-shrink-0">
+                            <input type="number" [(ngModel)]="pedidosnew.preciounitario"
+                                (ngModelChange)="pricechange(pedidosnew)" min="0.01" step="0.01"
+                                class="w-[70px] xl:w-[80px] text-right text-slate-600 text-sm xl:text-[15px] font-bold bg-transparent border border-transparent hover:border-slate-200 focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-200 rounded px-1 py-0.5 outline-none transition-all" />
                         </div>
 
                         <!-- TOTAL -->
