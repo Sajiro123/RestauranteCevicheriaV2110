@@ -1,89 +1,142 @@
-/* Estilos para el formulario */
-.field {
-  margin-bottom: 1.5rem;
+/* ===== DIALOG STYLING ===== */
+::ng-deep .p-dialog {
+    border-radius: 16px !important;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+
+    .p-dialog-header {
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        color: white !important;
+        padding: 1.25rem 1.5rem !important;
+        border-bottom: none !important;
+
+        .p-dialog-title {
+            font-weight: 700 !important;
+            font-size: 1.1rem !important;
+            color: white !important;
+        }
+
+        .p-dialog-header-icon {
+            color: #bfdbfe !important;
+            border-radius: 50% !important;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.2) !important;
+                color: #eff6ff !important;
+            }
+        }
+    }
+
+    .p-dialog-content {
+        padding: 1.75rem 1.5rem !important;
+        background: #ffffff !important;
+    }
+
+    .p-dialog-footer {
+        padding: 1rem 1.5rem !important;
+        background: #f8fafc !important;
+        border-top: 1px solid #e2e8f0 !important;
+    }
 }
 
-.field:last-child {
-  margin-bottom: 0;
+/* ===== DIALOG FORM ===== */
+.dialog-form {
+    padding: 0;
 }
 
-/* Estilos para mensajes de error */
-.p-error {
-  display: block;
-  margin-top: 0.25rem;
+.field-group {
+    margin-bottom: 1.25rem;
+    flex: 1;
 }
 
-/* Estilos responsivos */
+.field-label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.hint-text {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+}
+
+/* ===== TABLE BADGES ===== */
+.id-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #dbeafe, #eff6ff);
+    color: #2563eb;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.username-tag {
+    display: inline-block;
+    background-color: #f1f5f9;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+/* ===== TABLE OVERRIDES ===== */
+::ng-deep .p-datatable {
+    font-size: 0.9rem;
+
+    .p-datatable-thead > tr > th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .p-datatable-tbody > tr > td {
+        padding: 0.6rem 0.75rem;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .p-datatable-tbody > tr:hover {
+        background-color: #f8fafc !important;
+    }
+}
+
+/* ===== VALIDATION ===== */
+.ng-invalid.ng-touched {
+    border-color: #e74c3c;
+}
+
+.text-red-500 {
+    color: #e74c3c;
+    font-size: 0.875rem;
+}
+
+/* ===== RESPONSIVE ===== */
 @media screen and (max-width: 768px) {
-  .p-datatable-wrapper {
-    overflow-x: auto;
-  }
-  
-  .p-datatable-table {
-    min-width: 768px;
-  }
-  
-  .p-dialog {
-    width: 95% !important;
-    max-width: 500px;
-  }
-}
+    ::ng-deep .p-dialog {
+        width: 95% !important;
+        max-width: 550px;
+    }
 
-/* Estilos para el toolbar */
-.p-toolbar {
-  border-radius: 8px;
-  padding: 1rem;
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Estilos para la tabla */
-.p-datatable .p-datatable-header {
-  background: var(--surface-card);
-  border: 1px solid var(--surface-border);
-  border-width: 1px 0 1px 0;
-  padding: 1rem 1rem;
-  font-weight: 600;
-}
-
-.p-datatable .p-sortable-column {
-  font-weight: 600;
-}
-
-.p-datatable .p-sortable-column:not(.p-highlight):hover {
-  background: var(--surface-hover);
-}
-
-.p-datatable .p-sortable-column.p-highlight {
-  background: var(--highlight-bg);
-  color: var(--highlight-text-color);
-}
-
-/* Estilos para los botones de acción */
-.p-button-icon-only {
-  width: 2.5rem;
-  height: 2.5rem;
-}
-
-/* Estilos para el diálogo */
-.p-dialog .p-dialog-content {
-  padding: 1.5rem;
-}
-
-.p-dialog .p-dialog-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--surface-border);
-}
-
-/* Estilos para las etiquetas */
-.p-tag {
-  font-weight: 500;
-  padding: 0.25rem 0.75rem;
-}
-
-/* Estilos para el campo de búsqueda */
-.p-icon-field {
-  width: 100%;
-  max-width: 300px;
+    .field-row {
+        grid-template-columns: 1fr;
+    }
 }

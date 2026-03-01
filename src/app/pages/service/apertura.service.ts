@@ -72,6 +72,14 @@ export class AperturaService {
         return from(this.supabaseService.cerrarCaja(fechaPeru));
     }
 
+    eliminarGasto(idgastos: number): Observable<any> {
+        return from(this.supabaseService.softDeleteGasto(idgastos));
+    }
+
+    editarGasto(idgastos: number, data: any): Observable<any> {
+        return from(this.supabaseService.updateGasto(idgastos, data));
+    }
+
     ListarTrabajadores(): Observable<any> {
         return from(this.supabaseService.getTrabajadores());
     }

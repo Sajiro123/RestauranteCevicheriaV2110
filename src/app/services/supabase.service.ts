@@ -279,6 +279,18 @@ export class SupabaseService {
         return { success: !error, data, error };
     }
 
+    async softDeleteGasto(idgastos: number) {
+        const { data, error } = await this.supabase.from('gastos').update({ deleted: 1 }).eq('idgastos', idgastos);
+
+        return { success: !error, data, error };
+    }
+
+    async updateGasto(idgastos: number, gastoData: any) {
+        const { data, error } = await this.supabase.from('gastos').update(gastoData).eq('idgastos', idgastos);
+
+        return { success: !error, data, error };
+    }
+
     async getCategoriasGastos() {
         const { data, error } = await this.supabase.from('categoriagastos').select('*').is('deleted', null).order('descripcion');
 

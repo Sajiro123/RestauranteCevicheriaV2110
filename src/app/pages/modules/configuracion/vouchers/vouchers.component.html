@@ -1,4 +1,4 @@
-<div class="card">
+<div class="card" style="width: 340% !important;">
     <p-toast />
 
     <div class="flex items-center mb-4">
@@ -14,78 +14,41 @@
             <div class="flex items-center gap-3">
                 <div class="flex flex-col gap-1">
                     <label for="fechaInicio" class="text-xs font-semibold">Fecha Inicio</label>
-                    <p-datepicker 
-                        [(ngModel)]="fechaInicio" 
-                        dateFormat="dd/mm/yy" 
-                        [showIcon]="true"
-                        (onSelect)="onDateChange()"
-                        placeholder="Fecha inicio"
-                        [style]="{ width: '160px' }"
-                    />
+                    <p-datepicker [(ngModel)]="fechaInicio" dateFormat="dd/mm/yy" [showIcon]="true"
+                        (onSelect)="onDateChange()" placeholder="Fecha inicio" [style]="{ width: '160px' }" />
                 </div>
-                
+
                 <div class="flex flex-col gap-1">
                     <label for="fechaFin" class="text-xs font-semibold">Fecha Fin</label>
-                    <p-datepicker 
-                        [(ngModel)]="fechaFin" 
-                        dateFormat="dd/mm/yy" 
-                        [showIcon]="true"
-                        (onSelect)="onDateChange()"
-                        placeholder="Fecha fin"
-                        [style]="{ width: '160px' }"
-                    />
+                    <p-datepicker [(ngModel)]="fechaFin" dateFormat="dd/mm/yy" [showIcon]="true"
+                        (onSelect)="onDateChange()" placeholder="Fecha fin" [style]="{ width: '160px' }" />
                 </div>
 
                 <div class="flex flex-col gap-1">
                     <label for="estado" class="text-xs font-semibold">Estado</label>
-                    <p-select 
-                        [(ngModel)]="selectedEstado" 
-                        [options]="estadoOptions" 
-                        optionLabel="label"
-                        placeholder="Todos los estados" 
-                        [showClear]="true" 
-                        (onChange)="onEstadoChange()"
-                        [style]="{ width: '180px' }"
-                    />
+                    <p-select [(ngModel)]="selectedEstado" [options]="estadoOptions" optionLabel="label"
+                        placeholder="Todos los estados" [showClear]="true" (onChange)="onEstadoChange()"
+                        [style]="{ width: '180px' }" />
                 </div>
 
                 <div class="flex items-end">
-                    <p-button 
-                        label="Limpiar Filtros" 
-                        icon="pi pi-filter-slash" 
-                        severity="secondary"
-                        [outlined]="true"
-                        (onClick)="clearFilters()" 
-                    />
+                    <p-button label="Limpiar Filtros" icon="pi pi-filter-slash" severity="secondary" [outlined]="true"
+                        (onClick)="clearFilters()" />
                 </div>
             </div>
         </ng-template>
 
         <ng-template #end>
-            <p-button 
-                label="Actualizar" 
-                icon="pi pi-refresh" 
-                severity="info"
-                (onClick)="loadVouchers()" 
-                [loading]="loading"
-            />
+            <p-button label="Actualizar" icon="pi pi-refresh" severity="info" (onClick)="loadVouchers()"
+                [loading]="loading" />
         </ng-template>
     </p-toolbar>
 
-    <p-table 
-        #dt 
-        [value]="filteredVouchers" 
-        [rows]="10" 
-        [paginator]="true"
-        [globalFilterFields]="['codigo', 'descripcion', 'estadoLabel']" 
-        [tableStyle]="{ 'min-width': '75rem' }"
-        [rowHover]="true" 
-        dataKey="id"
-        [loading]="loading"
-        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} vouchers"
-        [showCurrentPageReport]="true" 
-        [rowsPerPageOptions]="[10, 20, 30, 50]"
-    >
+    <p-table #dt [value]="filteredVouchers" [rows]="10" [paginator]="true"
+        [globalFilterFields]="['codigo', 'descripcion', 'estadoLabel']" [tableStyle]="{ 'min-width': '75rem' }"
+        [rowHover]="true" dataKey="id" [loading]="loading"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} vouchers" [showCurrentPageReport]="true"
+        [rowsPerPageOptions]="[10, 20, 30, 50]">
         <ng-template #caption>
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
@@ -139,10 +102,7 @@
                 </td>
                 <td style="min-width:16rem">{{ voucher.descripcion || '-' }}</td>
                 <td style="min-width:10rem">
-                    <p-tag 
-                        [value]="voucher.estadoLabel" 
-                        [severity]="getEstadoSeverity(voucher.estado)"
-                    />
+                    <p-tag [value]="voucher.estadoLabel" [severity]="getEstadoSeverity(voucher.estado)" />
                 </td>
                 <td style="min-width:12rem">{{ formatDate(voucher.fecha_creacion) }}</td>
                 <td style="min-width:12rem">{{ formatDate(voucher.fecha_uso) }}</td>

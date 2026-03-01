@@ -1,0 +1,88 @@
+/* ===== TABLE BADGES ===== */
+.ruta-tag {
+    display: inline-block;
+    background-color: #f1f5f9;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.orden-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #dbeafe, #eff6ff);
+    color: #2563eb;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* ===== DIALOG STYLING ===== */
+::ng-deep .p-dialog {
+    border-radius: 16px !important;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+
+    .p-dialog-header {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+        color: white !important;
+        padding: 1.25rem 1.5rem !important;
+        border-bottom: none !important;
+
+        h2 {
+            color: white !important;
+        }
+
+        .p-dialog-header-icon {
+            color: #ddd6fe !important;
+            border-radius: 50% !important;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.2) !important;
+                color: #f5f3ff !important;
+            }
+        }
+    }
+
+    .p-dialog-content {
+        padding: 1.75rem 1.5rem !important;
+        background: #ffffff !important;
+    }
+
+    .p-dialog-footer {
+        padding: 1rem 1.5rem !important;
+        background: #f8fafc !important;
+        border-top: 1px solid #e2e8f0 !important;
+    }
+}
+
+/* ===== TABLE OVERRIDES ===== */
+::ng-deep .p-datatable {
+    font-size: 0.9rem;
+
+    .p-datatable-thead > tr > th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .p-datatable-tbody > tr > td {
+        padding: 0.6rem 0.75rem;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .p-datatable-tbody > tr:hover {
+        background-color: #f8fafc !important;
+    }
+}

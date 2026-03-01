@@ -8,6 +8,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ToolbarModule } from 'primeng/toolbar';
 import { RippleModule } from 'primeng/ripple';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { Router } from '@angular/router';
 
 
@@ -23,7 +25,9 @@ import { Router } from '@angular/router';
     DialogModule,
     ToolbarModule,
     RippleModule,
-    MenuFormComponent
+    MenuFormComponent,
+    TagModule,
+    TooltipModule
   ]
 })
 export class MenuListComponent implements OnInit {

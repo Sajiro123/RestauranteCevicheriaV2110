@@ -1,159 +1,174 @@
-<div class="card" style="width: 110% !important;">
-    <p-toast />
+<p-toast />
+<p-confirmDialog [style]="{ width: '450px' }" />
 
-    <div class="flex items-center mb-4">
-        <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
-            class="mr-4" pTooltip="Volver a Configuración" />
-        <h2 class="text-2xl font-semibold text-surface-900 dark:text-surface-0 m-0">
-            Gestión de Productos
-        </h2>
+<div class="card" style="width: 340% !important;">
+    <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
+        class="mr-4" pTooltip="Volver a Configuración" />
+
+    <div class="flex justify-content-between align-items-center mb-4 mt-6">
+        <h2 class="text-900 font-bold text-2xl">Gestión de Productos</h2>
     </div>
 
-    <p-toolbar styleClass="mb-6">
+    <p-toolbar styleClass="mb-4">
         <ng-template #start>
-            <p-button label="Nuevo Producto" icon="pi pi-plus" severity="secondary" class="mr-2"
-                (onClick)="openNew()" />
+            <p-button label="Nuevo Producto" icon="pi pi-plus" severity="success" class="mr-2" (onClick)="openNew()" />
         </ng-template>
-
         <ng-template #end>
             <div class="flex items-center gap-2">
                 <p-select [(ngModel)]="selectedCategory" [options]="categorias" optionLabel="nombre"
                     placeholder="Filtrar por categoría" [showClear]="true" (onChange)="onCategoryChange()"
-                    (onClear)="clearCategoryFilter()" [style]="{ width: '200px' }" />
+                    (onClear)="clearCategoryFilter()" [style]="{ width: '220px' }" />
             </div>
         </ng-template>
     </p-toolbar>
 
-    <p-table #dt [value]="filteredProductos" [rows]="10" [paginator]="true"
-        [globalFilterFields]="['nombre', 'acronimo', 'categoria.nombre']" [tableStyle]="{ 'min-width': '75rem' }"
-        [(selection)]="selectedProductos" [rowHover]="true" dataKey="idproducto"
-        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} productos"
-        [showCurrentPageReport]="true" [rowsPerPageOptions]="[10, 20, 30]">
+    <!-- Productos Table Card -->
+    <div class="card">
+        <div class="overflow-auto">
+            <p-table #dt [value]="filteredProductos" [rows]="10" [paginator]="true"
+                [globalFilterFields]="['nombre', 'acronimo', 'categoria.nombre', 'numero_carta', 'preciounitario']"
+                [tableStyle]="{ 'min-width': '60rem' }" [(selection)]="selectedProductos" [rowHover]="true"
+                dataKey="idproducto" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} productos"
+                [showCurrentPageReport]="true" [rowsPerPageOptions]="[10, 20, 30]"
+                styleClass="p-datatable-striped p-datatable-sm">
 
-        <ng-template #caption>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <h5 class="m-0">Gestionar Productos</h5>
-                    <span class="text-muted-color" *ngIf="selectedCategory">
-                        (Filtrado por: {{ selectedCategory.nombre }})
-                    </span>
-                </div>
-                <p-iconfield>
-                    <p-inputicon styleClass="pi pi-search" />
-                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar..." />
-                </p-iconfield>
+                <ng-template #caption>
+                    <div class="flex items-center justify-end">
+                        <p-iconfield>
+                            <p-inputicon styleClass="pi pi-search" />
+                            <input pInputText type="text" (input)="onGlobalFilter(dt, $event)"
+                                placeholder="Buscar..." />
+                        </p-iconfield>
+                    </div>
+                </ng-template>
+
+                <ng-template #header>
+                    <tr>
+                        <th pSortableColumn="numero_carta" style="width: 80px">
+                            N°
+                            <p-sortIcon field="numero_carta" />
+                        </th>
+                        <th pSortableColumn="nombre">
+                            Nombre
+                            <p-sortIcon field="nombre" />
+                        </th>
+                        <th pSortableColumn="acronimo" style="width: 120px">
+                            Acrónimo
+                            <p-sortIcon field="acronimo" />
+                        </th>
+                        <th pSortableColumn="preciounitario" style="width: 120px">
+                            Precio
+                            <p-sortIcon field="preciounitario" />
+                        </th>
+                        <th pSortableColumn="categoria.nombre" style="width: 160px">
+                            Categoría
+                            <p-sortIcon field="categoria.nombre" />
+                        </th>
+                        <th style="width: 120px" class="text-center">Acciones</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template #body let-producto>
+                    <tr>
+                        <td>
+                            <span class="numero-badge">{{ producto.numero_carta }}</span>
+                        </td>
+                        <td>
+                            <span class="font-semibold">{{ producto.nombre }}</span>
+                        </td>
+                        <td>
+                            <span class="acronimo-tag">{{ producto.acronimo }}</span>
+                        </td>
+                        <td>
+                            <span class="precio-text">{{ producto.preciounitario | currency:'S/ ' }}</span>
+                        </td>
+                        <td>
+                            <span class="categoria-badge">{{ producto.categoria?.nombre || 'Sin categoría' }}</span>
+                        </td>
+                        <td class="text-center">
+                            <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" size="small"
+                                (click)="editProducto(producto)" pTooltip="Editar" />
+                            <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                                size="small" (click)="deleteProducto(producto)" pTooltip="Eliminar" />
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template #emptymessage>
+                    <tr>
+                        <td colspan="6" class="text-center py-8">
+                            <i class="pi pi-inbox text-600 text-4xl mb-3" style="display:block"></i>
+                            <span class="text-600 font-medium">No se encontraron productos</span>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar Producto -->
+<p-dialog [(visible)]="productoDialog" [style]="{ width: '550px' }"
+    [header]="isEditing ? 'Editar Producto' : 'Nuevo Producto'" [modal]="true" [draggable]="false"
+    [position]="'center'">
+
+    <ng-template #content>
+        <div class="dialog-form" [formGroup]="productoForm">
+            <div class="field-group">
+                <label for="nombre" class="field-label">Nombre del Plato *</label>
+                <input type="text" pInputText id="nombre" formControlName="nombre" placeholder="Ej: Ceviche Mixto"
+                    autofocus fluid [class.ng-invalid]="productoForm.get('nombre')?.invalid && submitted" />
+                <small class="text-red-500" *ngIf="submitted && productoForm.get('nombre')?.errors?.['required']">
+                    El nombre es requerido.
+                </small>
+                <small class="text-red-500" *ngIf="submitted && productoForm.get('nombre')?.errors?.['minlength']">
+                    Mínimo 2 caracteres.
+                </small>
             </div>
-        </ng-template>
 
-        <ng-template #header>
-            <tr>
-                <th pSortableColumn="nombre" style="min-width:16rem">
-                    Nombre
-                    <p-sortIcon field="nombre" />
-                </th>
-                <th pSortableColumn="acronimo" style="min-width:8rem">
-                    Acrónimo
-                    <p-sortIcon field="acronimo" />
-                </th>
-                <th pSortableColumn="preciounitario" style="min-width:10rem">
-                    Precio
-                    <p-sortIcon field="preciounitario" />
-                </th>
-                <th pSortableColumn="categoria.nombre" style="min-width:12rem">
-                    Categoría
-                    <p-sortIcon field="categoria.nombre" />
-                </th>
-                <th pSortableColumn="categoria.nombre" style="min-width:12rem">
-                    N°Carta
-                    <p-sortIcon field="categoria.nombre" />
-                </th>
-                <th style="min-width:12rem">Acciones</th>
-            </tr>
-        </ng-template>
+            <div class="field-group">
+                <label for="idcategoria" class="field-label">Categoría *</label>
+                <p-select formControlName="idcategoria" inputId="idcategoria" [options]="categorias"
+                    optionLabel="nombre" optionValue="idcategoria" placeholder="Seleccione categoría" fluid
+                    [class.ng-invalid]="productoForm.get('idcategoria')?.invalid && submitted" />
+                <small class="text-red-500" *ngIf="submitted && productoForm.get('idcategoria')?.errors?.['required']">
+                    La categoría es requerida.
+                </small>
+            </div>
 
-        <ng-template #body let-producto>
-            <tr>
-                <td style="min-width:16rem">{{ producto.nombre }}</td>
-                <td>{{ producto.acronimo }}</td>
-                <td>{{ producto.preciounitario | currency:'S/ ' }}</td>
-                <td>{{ producto.categoria?.nombre || 'Sin categoría' }}</td>
-                <td>{{ producto.numero_carta }}</td>
-
-                <td>
-                    <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
-                        (click)="editProducto(producto)" />
-                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
-                        (click)="deleteProducto(producto)" />
-                </td>
-            </tr>
-        </ng-template>
-    </p-table>
-
-    <p-dialog [(visible)]="productoDialog" [style]="{ width: '450px' }"
-        [header]="isEditing ? 'Editar Producto' : 'Nuevo Producto'" [modal]="true" [formGroup]="productoForm">
-
-        <ng-template #content>
-            <div class="flex flex-col gap-6">
-                <div>
-                    <label for="nombre" class="block font-bold mb-3">Nombre *</label>
-                    <input type="text" pInputText id="nombre" formControlName="nombre" required autofocus fluid
-                        [class.ng-invalid]="productoForm.get('nombre')?.invalid && submitted" />
-                    <small class="text-red-500" *ngIf="submitted && productoForm.get('nombre')?.errors?.['required']">
-                        El nombre es requerido.
-                    </small>
-                    <small class="text-red-500" *ngIf="submitted && productoForm.get('nombre')?.errors?.['minlength']">
-                        El nombre debe tener al menos 2 caracteres.
-                    </small>
-                </div>
-
-                <div>
-                    <label for="idcategoria" class="block font-bold mb-3">Categoría *</label>
-                    <p-select formControlName="idcategoria" inputId="idcategoria" [options]="categorias"
-                        optionLabel="nombre" optionValue="idcategoria" placeholder="Seleccione una categoría" fluid
-                        [class.ng-invalid]="productoForm.get('idcategoria')?.invalid && submitted" />
-                    <small class="text-red-500"
-                        *ngIf="submitted && productoForm.get('idcategoria')?.errors?.['required']">
-                        La categoría es requerida.
-                    </small>
-                </div>
-                <div>
-                    <label for="acronimo" class="block font-bold mb-3">Acrónimo *</label>
-                    <input type="text" pInputText id="acronimo" formControlName="acronimo" required fluid
+            <div class="field-row">
+                <div class="field-group">
+                    <label for="acronimo" class="field-label">Acrónimo *</label>
+                    <input type="text" pInputText id="acronimo" formControlName="acronimo" placeholder="Ej: CVM" fluid
                         [class.ng-invalid]="productoForm.get('acronimo')?.invalid && submitted" />
                     <small class="text-red-500" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['required']">
-                        El acrónimo es requerido.
+                        Requerido.
                     </small>
                 </div>
-
-                <div>
-                    <label for="preciounitario" class="block font-bold mb-3">Precio *</label>
+                <div class="field-group">
+                    <label for="preciounitario" class="field-label">Precio *</label>
                     <p-inputnumber id="preciounitario" formControlName="preciounitario" mode="currency" currency="PEN"
                         locale="es-PE" fluid
                         [class.ng-invalid]="productoForm.get('preciounitario')?.invalid && submitted" />
                     <small class="text-red-500"
                         *ngIf="submitted && productoForm.get('preciounitario')?.errors?.['required']">
-                        El precio es requerido.
-                    </small>
-                    <small class="text-red-500"
-                        *ngIf="submitted && productoForm.get('preciounitario')?.errors?.['min']">
-                        El precio debe ser mayor o igual a 0.
+                        Requerido.
                     </small>
                 </div>
+            </div>
 
-                <div>
-                    <label for="numero_carta" class="block font-bold mb-3">N° Carta *</label>
+            <div class="field-row">
+                <div class="field-group">
+                    <label for="numero_carta" class="field-label">N° Carta</label>
                     <p-inputnumber id="numero_carta" formControlName="numero_carta" fluid />
                 </div>
-
-
+                <div class="field-group"></div>
             </div>
-        </ng-template>
+        </div>
+    </ng-template>
 
-        <ng-template #footer>
-            <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" />
-            <p-button label="Guardar" icon="pi pi-check" (click)="saveProducto()" />
-        </ng-template>
-    </p-dialog>
-
-    <p-confirmdialog [style]="{ width: '450px' }" />
-</div>
+    <ng-template #footer>
+        <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" />
+        <p-button label="Guardar" icon="pi pi-check" (click)="saveProducto()" />
+    </ng-template>
+</p-dialog>

@@ -20,6 +20,7 @@ export class AperturaComponent {
     texto_estado_caja: any = '';
     estado_caja = 0;
     GastosForm: FormGroup;
+    EditGastoForm: FormGroup;
     CategoriaGastosList: { descripcion: string; idcategoriagastos: number }[] = [];
     GastosList: { monto: number; descripcion: string; fecha: Date; idcategoriagastos: number; notas: string }[] = [];
     fechaActual: string = new Date()
@@ -34,6 +35,8 @@ export class AperturaComponent {
     Resumenventahoy: any = [];
     isSubmitting = false;
     trabajadoresList: any[] = [];
+    editDialogVisible = false;
+    gastoEditando: any = null;
 
     constructor(private AperturaService_: AperturaService, private pedidoService_: PedidoService, private fb: FormBuilder, private messageService: MessageService, private confirmationService: ConfirmationService, private cd: ChangeDetectorRef) {
         this.cajaForm = this.fb.group({
@@ -53,6 +56,13 @@ export class AperturaComponent {
             descripcion: ['', Validators.required],
             monto: [0.0, Validators.required],
             // fecha: [hoy, Validators.required],
+            categoria: ['', Validators.required],
+            notas: ['']
+        });
+
+        this.EditGastoForm = this.fb.group({
+            descripcion: ['', Validators.required],
+            monto: [0.0, Validators.required],
             categoria: ['', Validators.required],
             notas: ['']
         });
@@ -134,6 +144,76 @@ export class AperturaComponent {
                 // this.ListAperturaNow();
             });
         }
+    }
+
+    abrirEditarGasto(gasto: any) {
+        this.gastoEditando = gasto;
+        this.EditGastoForm.patchValue({
+            descripcion: gasto.descripcion,
+            monto: gasto.monto,
+            categoria: gasto.idcategoriagastos,
+            notas: gasto.notas || ''
+        });
+        this.editDialogVisible = true;
+    }
+
+    guardarEdicion() {
+        if (this.EditGastoForm.valid && this.gastoEditando) {
+            const data = {
+                descripcion: this.EditGastoForm.value.descripcion,
+                monto: this.EditGastoForm.value.monto,
+                idcategoriagastos: this.EditGastoForm.value.categoria,
+                notas: this.EditGastoForm.value.notas
+            };
+            this.AperturaService_.editarGasto(this.gastoEditando.idgastos, data).subscribe((response) => {
+                if (response.success) {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Actualizado',
+                        detail: 'Gasto actualizado correctamente',
+                        life: 3000
+                    });
+                    this.editDialogVisible = false;
+                    this.gastoEditando = null;
+                    this.ListGastos();
+                } else {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'No se pudo actualizar el gasto',
+                        life: 3000
+                    });
+                }
+            });
+        }
+    }
+
+    eliminarGasto(gasto: any) {
+        this.confirmationService.confirm({
+            message: '¿Estás seguro de eliminar este gasto?',
+            header: 'Confirmar Eliminación',
+            icon: 'pi pi-exclamation-triangle',
+            accept: () => {
+                this.AperturaService_.eliminarGasto(gasto.idgastos).subscribe((response) => {
+                    if (response.success) {
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Eliminado',
+                            detail: 'Gasto eliminado correctamente',
+                            life: 3000
+                        });
+                        this.ListGastos();
+                    } else {
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'Error',
+                            detail: 'No se pudo eliminar el gasto',
+                            life: 3000
+                        });
+                    }
+                });
+            }
+        });
     }
 
     ListarReporteHoy() {
