@@ -1,0 +1,111 @@
+/* ===== PERFIL SELECTOR CARD ===== */
+.perfil-selector-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    max-width: 450px;
+}
+
+.perfil-selector-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.25rem;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+
+    i {
+        font-size: 1rem;
+    }
+}
+
+.perfil-selector-body {
+    padding: 1.25rem;
+}
+
+/* ===== MENU COUNT BADGE ===== */
+.menu-count-badge {
+    background-color: #dbeafe;
+    color: #2563eb;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+}
+
+/* ===== PERMISSION TABLE ===== */
+.permiso-col {
+    width: 15%;
+}
+
+.permiso-icon {
+    margin-right: 0.35rem;
+    font-size: 0.75rem;
+
+    &.ver {
+        color: #22c55e;
+    }
+    &.editar {
+        color: #3b82f6;
+    }
+    &.eliminar {
+        color: #ef4444;
+    }
+}
+
+::ng-deep .p-datatable {
+    font-size: 0.9rem;
+
+    .p-datatable-thead > tr > th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .p-datatable-tbody > tr > td {
+        padding: 0.65rem 0.75rem;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .p-datatable-tbody > tr:hover {
+        background-color: #f8fafc !important;
+    }
+}
+
+/* ===== EMPTY CARD ===== */
+.empty-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    padding: 3rem 2rem;
+
+    i {
+        font-size: 3rem;
+        color: #cbd5e1;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 0.5rem 0;
+    }
+
+    p {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin: 0;
+    }
+}

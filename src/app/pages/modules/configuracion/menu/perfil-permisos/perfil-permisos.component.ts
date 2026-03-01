@@ -10,26 +10,27 @@ import { TableModule } from 'primeng/table';
 import { CheckboxModule } from 'primeng/checkbox';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
+import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-perfil-permisos',
   templateUrl: './perfil-permisos.component.html',
+  styleUrl: './perfil-permisos.component.scss',
   standalone: true,
   imports: [
     ButtonModule,
     TableModule,
-    // ConfirmDialogModule,
-    // DialogModule,
-    // ToolbarModule,
-    // RippleModule,
-
     CommonModule,
     FormsModule,
     DropdownModule,
-    TableModule,
     CheckboxModule,
-    CardModule
-  ]
+    CardModule,
+    ToastModule,
+    TooltipModule
+  ],
+  providers: [MessageService]
 })
 export class PerfilPermisosComponent implements OnInit {
   perfiles: any[] = [];

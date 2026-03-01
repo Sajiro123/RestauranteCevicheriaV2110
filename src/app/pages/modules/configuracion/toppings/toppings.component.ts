@@ -1,10 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, ViewChild, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ImportsModule } from '../../../imports';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { SupabaseService } from '../../../../services/supabase.service';
-import { Table } from 'primeng/table';
 
 @Component({
     selector: 'app-toppings',
@@ -14,16 +13,16 @@ import { Table } from 'primeng/table';
     providers: [MessageService, ConfirmationService]
 })
 export class ToppingsComponent {
-    @ViewChild('dt') dt!: Table;
     @Output() backToMain = new EventEmitter<void>();
 
     toppings: any[] = [];
+    filteredToppings: any[] = [];
     toppingDialog: boolean = false;
     topping: any = {};
     submitted: boolean = false;
-    selectedToppings: any[] = [];
     toppingForm: FormGroup;
     isEditing: boolean = false;
+    searchTerm: string = '';
 
     constructor(private supabaseService: SupabaseService, private messageService: MessageService, private confirmationService: ConfirmationService, private fb: FormBuilder) {
         this.toppingForm = this.fb.group({
@@ -44,6 +43,7 @@ export class ToppingsComponent {
 
             if (error) throw error;
             this.toppings = data || [];
+            this.applyFilter();
         } catch (error) {
             console.error('Error loading toppings:', error);
             this.messageService.add({
@@ -162,7 +162,17 @@ export class ToppingsComponent {
         this.submitted = false;
     }
 
-    onGlobalFilter(table: Table, event: Event) {
-        table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
+    filterToppings(event: Event) {
+        this.searchTerm = (event.target as HTMLInputElement).value;
+        this.applyFilter();
+    }
+
+    applyFilter() {
+        if (!this.searchTerm) {
+            this.filteredToppings = [...this.toppings];
+        } else {
+            const term = this.searchTerm.toLowerCase();
+            this.filteredToppings = this.toppings.filter(t => t.nombre?.toLowerCase().includes(term));
+        }
     }
 }

@@ -1,37 +1,137 @@
-.card {
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    padding: 20px;
-}
-
-.p-datatable {
-    font-size: 14px;
-    border-radius: 10px;
+/* ===== DIALOG STYLING ===== */
+::ng-deep .p-dialog {
+    border-radius: 16px !important;
     overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+
+    .p-dialog-header {
+        background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+        color: white !important;
+        padding: 1.25rem 1.5rem !important;
+        border-bottom: none !important;
+
+        .p-dialog-title {
+            font-weight: 700 !important;
+            font-size: 1.1rem !important;
+            color: white !important;
+        }
+
+        .p-dialog-header-icon {
+            color: #fecaca !important;
+            border-radius: 50% !important;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.2) !important;
+                color: #fef2f2 !important;
+            }
+        }
+    }
+
+    .p-dialog-content {
+        padding: 1.75rem 1.5rem !important;
+        background: #ffffff !important;
+    }
+
+    .p-dialog-footer {
+        padding: 1rem 1.5rem !important;
+        background: #f8fafc !important;
+        border-top: 1px solid #e2e8f0 !important;
+    }
 }
 
-.p-datatable thead th {
-    background-color: #f4f6f9;
-    color: #2d3436;
-    font-weight: 600;
-    text-align: left;
+/* ===== DIALOG FORM SPACING ===== */
+.dialog-form {
+    padding: 0.5rem 0;
 }
 
-.p-datatable tbody td {
-    padding: 10px;
-    color: #333;
+.field-group {
+    margin-bottom: 1.25rem;
+    flex: 1;
 }
 
-.p-datatable tbody tr:hover {
-    background-color: #f0f8ff;
-    cursor: pointer;
+.field-label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #475569;
+    margin-bottom: 0.5rem;
 }
 
-.p-dialog .p-dialog-content {
-    padding: 1.5rem;
+.field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
 }
 
+/* ===== CUSTOM TABLE BADGES ===== */
+.numero-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #dbeafe, #eff6ff);
+    color: #2563eb;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.acronimo-tag {
+    display: inline-block;
+    background-color: #f1f5f9;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.precio-text {
+    font-weight: 700;
+    color: #16a34a;
+    font-size: 0.9rem;
+}
+
+.categoria-badge {
+    display: inline-block;
+    background-color: #fef3c7;
+    color: #92400e;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+/* ===== TABLE OVERRIDES ===== */
+::ng-deep .p-datatable {
+    font-size: 0.9rem;
+
+    .p-datatable-thead > tr > th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .p-datatable-tbody > tr > td {
+        padding: 0.6rem 0.75rem;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .p-datatable-tbody > tr:hover {
+        background-color: #f8fafc !important;
+    }
+}
+
+/* ===== VALIDATION ===== */
 .ng-invalid.ng-touched {
     border-color: #e74c3c;
 }

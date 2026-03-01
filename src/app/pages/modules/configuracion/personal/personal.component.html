@@ -1,31 +1,24 @@
-<div class="card">
+<div class="card" style="width: 340% !important;">
     <p-toast />
 
     <div class="flex items-center mb-4">
-        <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()" class="mr-4" pTooltip="Volver a Configuración" />
+        <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
+            class="mr-4" pTooltip="Volver a Configuración" />
         <h2 class="text-2xl font-semibold text-surface-900 dark:text-surface-0 m-0">Gestión de Personal</h2>
     </div>
 
     <p-toolbar styleClass="mb-6">
         <ng-template #start>
-            <p-button label="Nuevo Personal" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
+            <p-button label="Nuevo Personal" icon="pi pi-plus" severity="secondary" class="mr-2"
+                (onClick)="openNew()" />
         </ng-template>
     </p-toolbar>
 
-    <p-table
-        #dt
-        [value]="personal"
-        [rows]="10"
-        [paginator]="true"
+    <p-table #dt [value]="personal" [rows]="10" [paginator]="true"
         [globalFilterFields]="['nombres', 'apellidopat', 'apellidomat', 'direccion']"
-        [tableStyle]="{ 'min-width': '75rem' }"
-        [(selection)]="selectedPersonal"
-        [rowHover]="true"
-        dataKey="idpersona"
-        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} personal"
-        [showCurrentPageReport]="true"
-        [rowsPerPageOptions]="[10, 20, 30]"
-    >
+        [tableStyle]="{ 'min-width': '75rem' }" [(selection)]="selectedPersonal" [rowHover]="true" dataKey="idpersona"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} personal" [showCurrentPageReport]="true"
+        [rowsPerPageOptions]="[10, 20, 30]">
         <ng-template #caption>
             <div class="flex items-center justify-between">
                 <h5 class="m-0">Gestionar Personal</h5>
@@ -79,43 +72,57 @@
                 <td>{{ persona.cumpleanos ? (persona.cumpleanos | date : 'dd/MM/yyyy') : 'N/A' }}</td>
                 <td>{{ getPerfilName(persona.idperfil) }}</td>
                 <td>
-                    <p-tag [value]="getEstadoLabel(persona.idestado)" [severity]="getEstadoSeverity(persona.idestado)" />
+                    <p-tag [value]="getEstadoLabel(persona.idestado)"
+                        [severity]="getEstadoSeverity(persona.idestado)" />
                 </td>
                 <td>
-                    <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editPersona(persona)" />
-                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deletePersona(persona)" />
+                    <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
+                        (click)="editPersona(persona)" />
+                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                        (click)="deletePersona(persona)" />
                 </td>
             </tr>
         </ng-template>
     </p-table>
 
-    <p-dialog [(visible)]="personalDialog" [style]="{ width: '600px' }" [header]="isEditing ? 'Editar Personal' : 'Nuevo Personal'" [modal]="true" [formGroup]="personalForm">
+    <p-dialog [(visible)]="personalDialog" [style]="{ width: '600px' }"
+        [header]="isEditing ? 'Editar Personal' : 'Nuevo Personal'" [modal]="true" [formGroup]="personalForm">
         <ng-template #content>
             <div class="flex flex-col gap-6">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="nombres" class="block font-bold mb-3">Nombres *</label>
-                        <input type="text" pInputText id="nombres" formControlName="nombres" required autofocus fluid [class.ng-invalid]="personalForm.get('nombres')?.invalid && submitted" />
-                        <small class="text-red-500" *ngIf="submitted && personalForm.get('nombres')?.errors?.['required']"> Los nombres son requeridos. </small>
+                        <input type="text" pInputText id="nombres" formControlName="nombres" required autofocus fluid
+                            [class.ng-invalid]="personalForm.get('nombres')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && personalForm.get('nombres')?.errors?.['required']"> Los nombres son
+                            requeridos. </small>
                     </div>
 
                     <div>
                         <label for="apellidopat" class="block font-bold mb-3">Apellido Paterno *</label>
-                        <input type="text" pInputText id="apellidopat" formControlName="apellidopat" required fluid [class.ng-invalid]="personalForm.get('apellidopat')?.invalid && submitted" />
-                        <small class="text-red-500" *ngIf="submitted && personalForm.get('apellidopat')?.errors?.['required']"> El apellido paterno es requerido. </small>
+                        <input type="text" pInputText id="apellidopat" formControlName="apellidopat" required fluid
+                            [class.ng-invalid]="personalForm.get('apellidopat')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && personalForm.get('apellidopat')?.errors?.['required']"> El apellido
+                            paterno es requerido. </small>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="apellidomat" class="block font-bold mb-3">Apellido Materno *</label>
-                        <input type="text" pInputText id="apellidomat" formControlName="apellidomat" required fluid [class.ng-invalid]="personalForm.get('apellidomat')?.invalid && submitted" />
-                        <small class="text-red-500" *ngIf="submitted && personalForm.get('apellidomat')?.errors?.['required']"> El apellido materno es requerido. </small>
+                        <input type="text" pInputText id="apellidomat" formControlName="apellidomat" required fluid
+                            [class.ng-invalid]="personalForm.get('apellidomat')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && personalForm.get('apellidomat')?.errors?.['required']"> El apellido
+                            materno es requerido. </small>
                     </div>
 
                     <div>
                         <label for="cumpleanos" class="block font-bold mb-3">Cumpleaños</label>
-                        <p-datepicker formControlName="cumpleanos" inputId="cumpleanos" placeholder="Seleccionar fecha" fluid />
+                        <p-datepicker formControlName="cumpleanos" inputId="cumpleanos" placeholder="Seleccionar fecha"
+                            fluid />
                     </div>
                 </div>
 
@@ -127,22 +134,18 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="idperfil" class="block font-bold mb-3">Perfil *</label>
-                        <p-select
-                            formControlName="idperfil"
-                            inputId="idperfil"
-                            [options]="perfiles"
-                            optionLabel="nombre"
-                            optionValue="idperfil"
-                            placeholder="Seleccione un perfil"
-                            fluid
-                            [class.ng-invalid]="personalForm.get('idperfil')?.invalid && submitted"
-                        />
-                        <small class="text-red-500" *ngIf="submitted && personalForm.get('idperfil')?.errors?.['required']"> El perfil es requerido. </small>
+                        <p-select formControlName="idperfil" inputId="idperfil" [options]="perfiles"
+                            optionLabel="nombre" optionValue="idperfil" placeholder="Seleccione un perfil" fluid
+                            [class.ng-invalid]="personalForm.get('idperfil')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && personalForm.get('idperfil')?.errors?.['required']"> El perfil es
+                            requerido. </small>
                     </div>
 
                     <div>
                         <label for="idestado" class="block font-bold mb-3">Estado *</label>
-                        <p-select formControlName="idestado" inputId="idestado" [options]="estados" optionLabel="label" optionValue="value" placeholder="Seleccione un estado" fluid />
+                        <p-select formControlName="idestado" inputId="idestado" [options]="estados" optionLabel="label"
+                            optionValue="value" placeholder="Seleccione un estado" fluid />
                     </div>
                 </div>
 
