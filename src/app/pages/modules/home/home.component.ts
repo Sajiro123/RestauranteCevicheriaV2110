@@ -1159,7 +1159,7 @@ export class HomeComponent {
     // Helper method to get total amount for a mesa
     getTotalMesa(numeroMesa: string): string {
         // Find all pedidos for this mesa and sum their totals
-        const pedidos = this.Pedidos.filter(p => p.mesa === numeroMesa);
+        const pedidos = this.Pedidos.filter(p => p.mesa == numeroMesa);
         const total = pedidos.reduce((sum, pedido) => {
             return sum + (pedido.total || 0);
         }, 0);
