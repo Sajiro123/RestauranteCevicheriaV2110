@@ -33,8 +33,8 @@ export class ProductosComponent {
             nombre: ['', [Validators.required, Validators.minLength(2)]],
             preciounitario: [0, [Validators.required, Validators.min(0)]],
             idcategoria: ['', Validators.required],
-            acronimo: ['', [Validators.required, Validators.maxLength(10)]],
-            numero_carta: [0, [Validators.required, Validators.min(0)]]
+            acronimo: ['', [Validators.required, Validators.maxLength(20), Validators.pattern(/^[^0-9]*$/)]],
+            numero_carta: [null, [Validators.min(0)]]
         });
     }
 
@@ -215,6 +215,19 @@ export class ProductosComponent {
                     detail: 'Error al guardar producto'
                 });
             }
+        } else {
+            const invalidFields = [];
+            for (const name in this.productoForm.controls) {
+                if (this.productoForm.controls[name].invalid) {
+                    invalidFields.push(name);
+                    console.log(`Field ${name} is invalid:`, this.productoForm.controls[name].errors);
+                }
+            }
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Campos Inválidos',
+                detail: `Por favor revise los campos: ${invalidFields.join(', ')}`
+            });
         }
     }
 
