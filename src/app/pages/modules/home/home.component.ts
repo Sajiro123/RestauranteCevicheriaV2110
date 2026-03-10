@@ -354,7 +354,7 @@ export class HomeComponent {
         if (mesa.numero == '0') {
             var status_array = this.Pedidos.filter((p) => p.idpedido === NuevoPedido.idpedido);
         } else {
-            var status_array = this.Pedidos.filter((p) => p.mesa === mesa.numero);
+            var status_array = this.Pedidos.filter((p) => p.mesa == mesa.numero);
             this.mesaSeleccionada = mesa;
         }
         if (status_array.length > 0) {
@@ -609,7 +609,7 @@ export class HomeComponent {
                 this.isOrderViewActive = false;
                 if (this.mesaSeleccionada) {
                     const num = this.mesaSeleccionada.numero;
-                    const refreshed = this.mesas.find(m => m.numero === num) || this.mesaSeleccionada;
+                    const refreshed = this.mesas.find(m => m.numero == num) || this.mesaSeleccionada;
                     // For deliveries where numero == '0', we must assign the fresh idpedido
                     if (num === '0') {
                         // Deliveries logic to auto-select would happen here if we tracked idpedido differently,
@@ -794,7 +794,7 @@ export class HomeComponent {
                     this.isOrderViewActive = false;
                     if (this.mesaSeleccionada) {
                         const num = this.mesaSeleccionada.numero;
-                        const refreshed = this.mesas.find(m => m.numero === num) || this.mesaSeleccionada;
+                        const refreshed = this.mesas.find(m => m.numero == num) || this.mesaSeleccionada;
                         if (num === '0') {
                             if (data?.idpedido) {
                                 refreshed.idpedido = data.idpedido;
@@ -897,7 +897,7 @@ export class HomeComponent {
         if (mesa.numero == '0') {
             var status_array = this.Pedidos.filter((p) => p.idpedido === pedido.idpedido);
         } else {
-            var status_array = this.Pedidos.filter((p) => p.mesa === mesa.numero);
+            var status_array = this.Pedidos.filter((p) => p.mesa == mesa.numero);
         }
         this.NuevoPedido = this.getPedidoClick(status_array);
         this.BuscarPlatoSearchText('');
@@ -1062,7 +1062,7 @@ export class HomeComponent {
 
     getTiempoTranscurrido(numeroMesa: string): string {
         // Find the pedido for this mesa
-        const pedido = this.Pedidos.find(p => p.mesa === numeroMesa);
+        const pedido = this.Pedidos.find(p => p.mesa == numeroMesa);
         if (pedido && pedido['created_at']) {
             const createdTime = new Date(pedido['created_at']);
             const currentTime = new Date();
@@ -1075,7 +1075,7 @@ export class HomeComponent {
     // Helper method to get number of pedidos for a mesa
     getNumeroPedidos(numeroMesa: string): number {
         // Count pedidos for this mesa
-        const pedidos = this.Pedidos.filter(p => p.mesa === numeroMesa) as any;
+        const pedidos = this.Pedidos.filter(p => p.mesa == numeroMesa) as any;
         return pedidos[0].pedidodetalle.reduce((sum: number, element: any) => sum + element.cantidad, 0);
     }
 
@@ -1144,7 +1144,7 @@ export class HomeComponent {
     // Helper method to get mozo name for a mesa
     getNombreMozopedido(numeroMesa: string): string {
         // Find the pedido for this mesa
-        const pedido = this.Pedidos.find(p => p.mesa === numeroMesa);
+        const pedido = this.Pedidos.find(p => p.mesa == numeroMesa);
         if (pedido && pedido.persona && pedido.persona.nombres) {
             // Return first name and first letter of last name
             const nombres = pedido.persona.nombres.split(' ');
@@ -1793,7 +1793,7 @@ export class HomeComponent {
                     // Update the mesa states
                     // Set the current mesa to free (estado = '0')
                     if (this.mesaSeleccionada) {
-                        const currentMesa = this.mesas.find(m => m.numero === this.mesaSeleccionada!.numero);
+                        const currentMesa = this.mesas.find(m => m.numero == this.mesaSeleccionada!.numero);
                         if (currentMesa) {
                             currentMesa.estado = '0';
                             if (this.estadomesa[currentMesa.numero]) {
