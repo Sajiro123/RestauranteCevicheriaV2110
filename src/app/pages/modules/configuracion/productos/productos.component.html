@@ -87,9 +87,9 @@
                         </td>
                         <td class="text-center">
                             <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" size="small"
-                                (click)="editProducto(producto)" pTooltip="Editar" />
+                                (onClick)="editProducto(producto)" pTooltip="Editar" />
                             <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
-                                size="small" (click)="deleteProducto(producto)" pTooltip="Eliminar" />
+                                size="small" (onClick)="deleteProducto(producto)" pTooltip="Eliminar" />
                         </td>
                     </tr>
                 </ng-template>
@@ -144,6 +144,12 @@
                     <small class="text-red-500" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['required']">
                         Requerido.
                     </small>
+                    <small class="text-red-500" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['pattern']">
+                        No se permiten números.
+                    </small>
+                    <small class="text-red-500" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['maxlength']">
+                        Máximo 20 caracteres.
+                    </small>
                 </div>
                 <div class="field-group">
                     <label for="preciounitario" class="field-label">Precio *</label>
@@ -168,7 +174,7 @@
     </ng-template>
 
     <ng-template #footer>
-        <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" />
-        <p-button label="Guardar" icon="pi pi-check" (click)="saveProducto()" />
+        <p-button label="Cancelar" icon="pi pi-times" text (onClick)="hideDialog()" />
+        <p-button label="Guardar" icon="pi pi-check" (onClick)="saveProducto()" />
     </ng-template>
 </p-dialog>
