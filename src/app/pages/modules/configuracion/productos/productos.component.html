@@ -144,10 +144,8 @@
                     <small class="text-red-500" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['required']">
                         Requerido.
                     </small>
-                    <small class="text-red-500" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['pattern']">
-                        No se permiten números.
-                    </small>
-                    <small class="text-red-500" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['maxlength']">
+                    <small class="text-red-500"
+                        *ngIf="submitted && productoForm.get('acronimo')?.errors?.['maxlength']">
                         Máximo 20 caracteres.
                     </small>
                 </div>

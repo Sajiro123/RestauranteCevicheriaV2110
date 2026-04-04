@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ToppingsComponent } from './toppings/toppings.component';
 import { ProductosComponent } from './productos/productos.component';
 import { PersonalComponent } from './personal/personal.component';
+import { ClientesComponent } from './clientes/clientes.component';
 import { VouchersComponent } from './vouchers/vouchers.component';
 import { UsuarioComponent } from './administracion/usuario.component';
 import { CommonModule } from '@angular/common';
@@ -17,6 +18,7 @@ import MenuListComponent from "./menu/menu-list/menu-list.component";
         ToppingsComponent,
         ProductosComponent,
         PersonalComponent,
+        ClientesComponent,
         VouchersComponent,
         UsuarioComponent,
         MenuListComponent,

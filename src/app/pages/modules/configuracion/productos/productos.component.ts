@@ -33,7 +33,7 @@ export class ProductosComponent {
             nombre: ['', [Validators.required, Validators.minLength(2)]],
             preciounitario: [0, [Validators.required, Validators.min(0)]],
             idcategoria: ['', Validators.required],
-            acronimo: ['', [Validators.required, Validators.maxLength(20), Validators.pattern(/^[^0-9]*$/)]],
+            acronimo: ['', [Validators.required, Validators.maxLength(20)]],
             numero_carta: [null, [Validators.min(0)]]
         });
     }
