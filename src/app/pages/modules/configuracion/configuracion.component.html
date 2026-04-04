@@ -38,6 +38,17 @@
                     </div>
                 </li>
                 <li>
+                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'clientes';selector = true">
+                        <div class="icon green" aria-hidden="true">
+                            <i class="fa-solid fa-address-book"></i>
+                        </div>
+                        <div class="text-content">
+                            <p class="title">Clientes</p>
+                            <p class="subtitle">Gestión de clientes del restaurante.</p>
+                        </div>
+                    </div>
+                </li>
+                <li>
                     <div class="list-item" tabindex="0" (click)="seleccciontext = 'vouchers';selector = true">
                         <div class="icon green" aria-hidden="true">
                             <i class="fa-solid fa-ticket"></i>
@@ -97,6 +108,8 @@
     </app-productos>
     <app-personal *ngIf="seleccciontext == 'personal'" (backToMain)="selector = false; seleccciontext = ''">
     </app-personal>
+    <app-clientes *ngIf="seleccciontext == 'clientes'" (backToMain)="selector = false; seleccciontext = ''">
+    </app-clientes>
     <app-vouchers *ngIf="seleccciontext == 'vouchers'" (backToMain)="selector = false; seleccciontext = ''">
     </app-vouchers>
     <app-usuario *ngIf="seleccciontext == 'usuarios'" (backToMain)="selector = false; seleccciontext = ''">

@@ -1,0 +1,87 @@
+<div class="contenedor-facturacion p-4">
+
+    <div class="botones-tipo mb-4 flex gap-2">
+        <button (click)="seleccionarTipo('03')" [class.activo]="tipoComprobante === '03'"
+            class="btn btn-outline-primary">
+            Emitir Boleta
+        </button>
+        <button (click)="seleccionarTipo('01')" [class.activo]="tipoComprobante === '01'"
+            class="btn btn-outline-primary">
+            Emitir Factura
+        </button>
+    </div>
+
+    <div class="busqueda-cliente mb-4">
+        <label>Buscar Cliente ({{ tipoComprobante === '01' ? 'RUC' : 'DNI' }})</label>
+        <div class="flex gap-2">
+            <input type="text" [(ngModel)]="documentoBusqueda" placeholder="Ingrese número..." class="form-control">
+            <button (click)="buscarCliente()" class="btn btn-secondary">Buscar</button>
+        </div>
+    </div>
+
+    @if (clienteEncontrado) {
+    <div class="cliente-info bg-green-100 p-3 mb-4 rounded">
+        <h4>Datos del Cliente:</h4>
+        <p><strong>Documento:</strong> {{ clienteEncontrado.num_doc }}</p>
+        <p><strong>Nombre/Razón Social:</strong> {{ clienteEncontrado.razon_social }}</p>
+        <p><strong>Dirección:</strong> {{ clienteEncontrado.direccion || 'No registrada' }}</p>
+    </div>
+
+    <button (click)="emitirComprobante()" class="btn btn-success w-full">
+        ¡Generar {{ tipoComprobante === '01' ? 'Factura' : 'Boleta' }} a SUNAT!
+    </button>
+    }
+
+    @if (mostrarModalCliente) {
+    <div class="modal-overlay">
+        <div class="modal-content p-4 bg-white rounded shadow-lg">
+            <h3>Registrar Nuevo Cliente</h3>
+
+            <div class="mb-2">
+                <label>Número de {{ tipoComprobante === '01' ? 'RUC' : 'DNI' }}</label>
+                <input type="text" [(ngModel)]="nuevoCliente.num_doc" class="form-control" readonly>
+            </div>
+
+            <div class="mb-2">
+                <label>{{ tipoComprobante === '01' ? 'Razón Social' : 'Nombres Completos' }} *</label>
+                <input type="text" [(ngModel)]="nuevoCliente.razon_social" class="form-control">
+            </div>
+
+            @if (tipoComprobante === '01') {
+            <div class="mb-2">
+                <label>Dirección Fiscal * (Obligatorio para Factura)</label>
+                <input type="text" [(ngModel)]="nuevoCliente.direccion" class="form-control">
+            </div>
+            }
+
+            <div class="flex gap-2 mt-4 justify-end">
+                <button (click)="mostrarModalCliente = false" class="btn btn-danger">Cancelar</button>
+                <button (click)="guardarCliente()" class="btn btn-primary">Guardar y Seleccionar</button>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- PDF Modal -->
+    @if (pdfDialog) {
+    <div class="modal-overlay" style="z-index: 1100;">
+        <div class="modal-content p-0 bg-white rounded shadow-lg" style="width: 90%; max-width: 800px; height: 85vh; display: flex; flex-direction: column;">
+            <div class="flex items-center justify-between p-4" style="background: linear-gradient(135deg, #22c55e, #16a34a); border-radius: 8px 8px 0 0;">
+                <div>
+                    <h3 class="m-0" style="color: white; font-size: 1.2rem;">✅ {{ comprobanteMessage }}</h3>
+                    <span *ngIf="comprobanteTicket" style="color: rgba(255,255,255,0.85); font-size: 0.9rem;">Ticket: {{ comprobanteTicket }}</span>
+                </div>
+                <button (click)="cerrarPdfDialog()" 
+                    style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;"
+                    title="Cerrar">
+                    ✕
+                </button>
+            </div>
+            <div style="flex: 1; padding: 0;">
+                <iframe *ngIf="pdfUrl" [src]="pdfUrl" style="width: 100%; height: 100%; border: none; border-radius: 0 0 8px 8px;"></iframe>
+            </div>
+        </div>
+    </div>
+    }
+
+</div>

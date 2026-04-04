@@ -91,12 +91,18 @@
                     class="p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col gap-4 animate-fadein transition-all duration-700"
                     [ngClass]="highlightToolbar ? 'bg-yellow-50 ring-4 ring-yellow-200 scale-[1.02]' : 'bg-white'">
                     <div class="flex items-center justify-between w-full border-b border-gray-100 pb-3">
-                        <h2 class="text-2xl font-black text-gray-800 m-0">
-                            <i class="pi pi-shopping-bag text-blue-500 mr-2"></i>
-                            {{ mesaSeleccionada.numero == '0' ? 'Delivery ' + (mesaSeleccionada.idpedido ? '#' +
-                            mesaSeleccionada.idpedido : '') : 'Mesa ' + mesaSeleccionada.numero }}
-                            <p-button icon="pi pi-file-pdf" severity="danger" size="small" [text]="true"
-                                [rounded]="true" (onClick)="imprimirpedidodialog(Pedidos)" />
+                        <h2 class="text-2xl font-black text-gray-800 m-0 flex items-center flex-wrap gap-2">
+                            <span>
+                                <i class="pi pi-shopping-bag text-blue-500 mr-2"></i>
+                                {{ mesaSeleccionada.numero == '0' ? 'Delivery ' + (mesaSeleccionada.idpedido ? '#' +
+                                mesaSeleccionada.idpedido : '') : 'Mesa ' + mesaSeleccionada.numero }}
+                            </span>
+                            <button
+                                class="ml-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-2 text-sm font-bold transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md tracking-wide"
+                                (click)="imprimirpedidodialog(Pedidos)">
+                                <i class="pi pi-print"></i>
+                                <span>Seleccionar a Imprimir</span>
+                            </button>
                         </h2>
                         <div class="flex items-center gap-3 relative">
                             <span *ngIf="NuevoPedido.idmozo"
@@ -113,46 +119,94 @@
                         </div>
                     </div>
 
+                    <!-- Lista Resumen Rápido -->
+                    <div class="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-[220px] overflow-y-auto custom-scrollbar shadow-inner mb-4">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1 flex items-center gap-2">
+                            <i class="pi pi-list text-[11px]"></i> Detalle Rápido del Pedido
+                        </h4>
+                        <div class="space-y-1.5">
+                            <ng-container *ngFor="let pedido of getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada)">
+                                <ng-container *ngIf="pedido.pedidodetalle && pedido.pedidodetalle.length > 0">
+                                    <div *ngFor="let detalle of pedido.pedidodetalle" class="flex justify-between items-center py-1.5 px-3 bg-white rounded-lg border border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-blue-100 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <span class="font-black text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded-md text-xs border border-blue-100">{{ detalle.cantidad }}x</span>
+                                            <span class="font-bold text-slate-700 text-[13px] truncate" style="max-width: 200px;" [title]="detalle.producto?.nombre">{{ detalle.producto?.nombre ?? 'Producto sin nombre' }}</span>
+                                        </div>
+                                        <div class="flex flex-col items-end">
+                                            <span class="font-black text-slate-800 text-[13px]">{{ (detalle.cantidad * detalle.precioU) | currency : 'S/ ' }}</span>
+                                        </div>
+                                    </div>
+                                </ng-container>
+                            </ng-container>
+                            <div *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length === 0" class="text-center py-2 text-slate-400 text-xs font-medium">
+                                No se encontraron detalles
+                            </div>
+                            
+                            <!-- Total de la lista resumen -->
+                            <div class="mt-2 pt-2.5 border-t border-slate-200 flex justify-between items-center px-1" *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length > 0">
+                                <span class="font-bold text-slate-500 uppercase text-[11px] tracking-widest">Total del Pedido</span>
+                                <span class="font-black text-slate-800 text-[15px] bg-slate-200/50 px-2.5 py-1 rounded shadow-sm border border-slate-200/60 transition-colors">
+                                    {{ 'S/ ' + calculateTotalPedidos(mesaSeleccionada.numero, pedido_mesa_status, mesaSeleccionada) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Buttons Grid -->
-                    <div class="grid grid-cols-4 sm:grid-cols-7 gap-2 w-full text-center">
-                        <div class="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-2 cursor-pointer transition-colors flex flex-col items-center justify-center min-h-[75px] shadow-sm"
+                    <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2.5 w-full text-center mt-1">
+                        <!-- Editar -->
+                        <div class="group bg-gradient-to-br from-blue-50 to-blue-100/80 hover:from-blue-100 hover:to-blue-200 border border-blue-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="editar(mesaSeleccionada, NuevoPedido)">
-                            <i class="material-icons !p-0 !text-[24px] text-gray-600 mb-1">edit</i>
-                            <span class="text-[11px] sm:text-[13px] font-bold text-gray-700 uppercase">Editar</span>
+                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                                <i class="material-icons !p-0 !text-[20px] text-blue-600">edit</i>
+                            </div>
+                            <span class="text-[10px] sm:text-[12px] font-black text-blue-800 uppercase tracking-widest">Editar</span>
                         </div>
-                        <div class="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-2 cursor-pointer transition-colors flex flex-col items-center justify-center min-h-[75px] shadow-sm"
+                        
+                        <!-- Ticket -->
+                        <div class="group bg-gradient-to-br from-indigo-50 to-indigo-100/80 hover:from-indigo-100 hover:to-indigo-200 border border-indigo-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="generatePDF(NuevoPedido)">
-                            <i class="material-icons !p-0 !text-[24px] text-gray-600 mb-1">description</i>
-                            <span class="text-[11px] sm:text-[13px] font-bold text-gray-700 uppercase">Ticket</span>
+                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                                <i class="material-icons !p-0 !text-[20px] text-indigo-600">description</i>
+                            </div>
+                            <span class="text-[10px] sm:text-[12px] font-black text-indigo-800 uppercase tracking-widest">Ticket</span>
                         </div>
-                        <div class="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-2 cursor-pointer transition-colors flex flex-col items-center justify-center min-h-[75px] shadow-sm"
+                        
+                        <!-- Cocina -->
+                        <div class="group bg-gradient-to-br from-orange-50 to-orange-100/80 hover:from-orange-100 hover:to-orange-200 border border-orange-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="generateCocinaPDF(NuevoPedido)">
-                            <i class="material-icons !p-0 !text-[24px] text-gray-600 mb-1">restaurant</i>
-                            <span class="text-[11px] sm:text-[13px] font-bold text-gray-700 uppercase">Cocina</span>
+                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                                <i class="material-icons !p-0 !text-[20px] text-orange-600">restaurant</i>
+                            </div>
+                            <span class="text-[10px] sm:text-[12px] font-black text-orange-800 uppercase tracking-widest">Cocina</span>
                         </div>
-                        <div class="bg-green-500 hover:bg-green-600 text-white rounded-xl p-2 cursor-pointer transition-colors flex flex-col items-center justify-center min-h-[75px] shadow-md border border-green-600"
+                        
+                        <!-- Cobrar (Destacado) -->
+                        <div class="col-span-2 group bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 border border-green-600 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col sm:flex-row items-center justify-center gap-2 min-h-[75px] shadow-md hover:shadow-lg hover:shadow-green-500/30 transform hover:-translate-y-1 relative overflow-hidden"
                             (click)="CobrarDialog(mesaSeleccionada, NuevoPedido)">
-                            <i class="material-icons fa-solid fa-money-bill-wave !p-0 !text-[24px] mb-1 text-white"></i>
-                            <span class="text-[11px] sm:text-[13px] font-black tracking-wide uppercase">Cobrar</span>
+                            <div class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                            <div class="bg-white/20 backdrop-blur-sm p-1.5 rounded-lg shadow-inner z-10 group-hover:scale-110 transition-transform duration-300">
+                                <i class="material-icons fa-solid fa-money-bill-wave !p-0 !text-[20px] text-white"></i>
+                            </div>
+                            <span class="text-[12px] sm:text-[14px] font-black text-white uppercase tracking-widest z-10">Cobrar</span>
                         </div>
-                        <div class="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl p-2 cursor-pointer transition-colors flex flex-col items-center justify-center min-h-[75px] shadow-sm"
-                            (click)="openVoucherDialog()">
-                            <i class="material-icons !p-0 !text-[24px] text-blue-600 mb-1">qr_code_2</i>
-                            <span
-                                class="text-[11px] sm:text-[13px] font-bold text-blue-800 leading-tight uppercase">Vale
-                                QR</span>
-                        </div>
-                        <div class="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-2 cursor-pointer transition-colors flex flex-col items-center justify-center min-h-[75px] shadow-sm"
+                        
+                        <!-- Mover Mesa -->
+                        <div class="group bg-gradient-to-br from-cyan-50 to-cyan-100/80 hover:from-cyan-100 hover:to-cyan-200 border border-cyan-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="moveTableModal()">
-                            <i class="material-icons fa-solid fa-arrows-alt !p-0 !text-[20px] text-gray-600 mb-1"></i>
-                            <span
-                                class="text-[11px] sm:text-[13px] font-bold text-gray-700 leading-tight uppercase">Mover
-                                Mesa</span>
+                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                                <i class="material-icons fa-solid fa-arrows-alt !p-0 !text-[18px] text-cyan-600"></i>
+                            </div>
+                            <span class="text-[10px] sm:text-[12px] font-black text-cyan-800 leading-tight uppercase tracking-widest">Mover</span>
                         </div>
-                        <div class="bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl p-2 cursor-pointer transition-colors flex flex-col items-center justify-center min-h-[75px] shadow-sm"
+                        
+                        <!-- Cancelar -->
+                        <div class="group bg-gradient-to-br from-red-50 to-red-100/80 hover:from-red-100 hover:to-red-200 border border-red-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="deletepedidoModal()">
-                            <i class="material-icons fa-solid fa-trash !p-0 !text-[20px] text-red-500 mb-1"></i>
-                            <span class="text-[11px] sm:text-[13px] font-bold text-red-600 uppercase">Cancelar</span>
+                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                                <i class="material-icons fa-solid fa-trash !p-0 !text-[18px] text-red-600"></i>
+                            </div>
+                            <span class="text-[10px] sm:text-[12px] font-black text-red-800 uppercase tracking-widest">Cancelar</span>
                         </div>
                     </div>
                 </div>
@@ -817,43 +871,84 @@
     </ng-template>
 </p-dialog>
 <!-- Modal PDF ESCOGER PEDIDO-->
-<p-dialog header="PDF" [modal]="true" [(visible)]="imprimirPedidoDialog" [style]="{ width: '500px', height: '880px' }">
-    <div class="container">
-        <table class="table-auto w-full h-auto border-collapse border border-gray-400 text-center"
-            *ngIf="Pedidos?.length != 0">
-            <thead>
-                <tr>
-                    <th class="border border-gray-300">
-                        <input type="checkbox" class="w-6 h-6" (change)="toggleTodos($event)" />
-                    </th>
-                    <th class="border border-gray-300">Cantidad</th>
-                    <th class="border border-gray-300">Pedido</th>
-                    <th class="border border-gray-300">Precio U.</th>
-                </tr>
-            </thead>
+<p-dialog header="Seleccionar Productos para Imprimir" [modal]="true" [(visible)]="imprimirPedidoDialog"
+    [style]="{ width: '650px', 'max-height': '90vh' }" [draggable]="false" [resizable]="false" styleClass="p-fluid">
 
-            <tbody>
-                <ng-container
-                    *ngFor="let pedido of getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada)">
-                    <ng-container *ngIf="pedido.pedidodetalle && pedido.pedidodetalle.length > 0">
-                        <tr class="border border-gray-300" *ngFor="let detalle of pedido.pedidodetalle">
-                            <td class="">
-                                <input type="checkbox" class="w-6 h-6" name="chk_{{ detalle.producto?.idpedido }}"
-                                    [(ngModel)]="detalle.seleccionado" />
-                            </td>
-                            <td>{{ detalle.cantidad }}</td>
-                            <td>{{ detalle.producto?.nombre ?? 'Producto sin nombre' }}</td>
-                            <td>{{ detalle.precioU | currency : 'S/ ' }}</td>
-                        </tr>
-                    </ng-container>
+    <div class="flex flex-col h-full bg-slate-50 p-2 sm:p-3 rounded-lg">
+        <div class="flex items-center justify-between mb-3 bg-white p-3 rounded shadow-sm border border-slate-200">
+            <h3 class="text-slate-800 font-bold m-0 flex items-center gap-2 text-base">
+                <i class="pi pi-list text-blue-500"></i> Pedidos de la Mesa
+            </h3>
+            <div class="flex items-center gap-2 px-2 py-1 bg-slate-50 hover:bg-slate-100 rounded border border-slate-200 transition-colors cursor-pointer"
+                (click)="toggleTodos($event)">
+                <input type="checkbox" id="selectAllItemsBtn"
+                    class="w-4 h-4 rounded border-slate-400 text-blue-600 focus:ring-blue-500 cursor-pointer m-0 p-0"
+                    (change)="toggleTodos($event)" (click)="$event.stopPropagation()" />
+                <label for="selectAllItemsBtn"
+                    class="font-bold text-[14px] text-slate-700 cursor-pointer select-none m-0 pt-0.5">Marcar
+                    Todos</label>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-1.5" style="max-height: 55vh;">
+            <div *ngIf="Pedidos?.length == 0"
+                class="text-center py-6 bg-white rounded border border-dashed border-slate-300 text-slate-400 font-medium">
+                <p class="text-[14px] m-0">No hay productos registrados</p>
+            </div>
+
+            <ng-container
+                *ngFor="let pedido of getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada)">
+                <ng-container *ngIf="pedido.pedidodetalle && pedido.pedidodetalle.length > 0">
+                    <div *ngFor="let detalle of pedido.pedidodetalle"
+                        class="bg-white rounded shadow-sm border py-2 px-3 flex items-center gap-3 transition-all duration-200 hover:shadow-md cursor-pointer group"
+                        [ngClass]="detalle.seleccionado ? 'border-blue-400 bg-blue-50/50' : 'border-slate-200 hover:border-blue-200'"
+                        (click)="detalle.seleccionado = !detalle.seleccionado; $event.stopPropagation()">
+
+                        <div class="flex-shrink-0 flex items-center" (click)="$event.stopPropagation()">
+                            <input type="checkbox"
+                                class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer shadow-sm transition-all m-0 p-0"
+                                [(ngModel)]="detalle.seleccionado" />
+                        </div>
+
+                        <div class="flex-shrink-0 w-8 h-8 bg-slate-100 rounded flex items-center justify-center font-black text-slate-700 shadow-inner border border-slate-200 text-[14px]"
+                            [ngClass]="{'bg-blue-100 text-blue-700 border-blue-300': detalle.seleccionado}">
+                            {{ detalle.cantidad }}
+                        </div>
+
+                        <div class="flex-1 min-w-0 pr-2 pl-1">
+                            <h4
+                                class="font-bold text-slate-800 text-[14px] m-0 leading-tight truncate group-hover:text-blue-700 transition-colors">
+                                {{ detalle.producto?.nombre ?? 'Producto sin nombre' }}
+                            </h4>
+                        </div>
+
+                        <div class="flex-shrink-0 text-right flex flex-col justify-center gap-0.5">
+                            <span class="text-slate-500 text-[12px] font-bold leading-none">
+                                P.U. {{ detalle.precioU | currency : 'S/ ' }}
+                            </span>
+                            <span class="font-black text-slate-800 text-[15px] leading-none"
+                                [ngClass]="{'text-blue-700': detalle.seleccionado}">
+                                {{ (detalle.cantidad * detalle.precioU) | currency : 'S/ ' }}
+                            </span>
+                        </div>
+                    </div>
                 </ng-container>
-            </tbody>
-        </table>
+            </ng-container>
+        </div>
     </div>
-    <div class="flex justify-end mt-4">
-        <p-button class="text-white font-bold py-2 px-4" severity="danger" (click)="imprimirSeleccionados()"> 🖨️
-            Imprimir seleccionados </p-button>
-    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-3 px-2 pb-2 pt-4 border-t border-slate-100 mt-2">
+            <p-button styleClass="p-button-text p-button-secondary font-bold" label="Cancelar" icon="pi pi-times"
+                (onClick)="imprimirPedidoDialog = false"></p-button>
+            <button
+                class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-2 transform hover:scale-105"
+                (click)="imprimirSeleccionados()">
+                <i class="pi pi-print text-lg"></i>
+                <span class="text-base">Imprimir Seleccionados</span>
+            </button>
+        </div>
+    </ng-template>
 </p-dialog>
 
 <!-- Modal para generar Vale QR -->
@@ -985,5 +1080,115 @@
         <p-button label="Cancelar" icon="pi pi-times" (click)="moveTableDialog = false"
             class="p-button-text"></p-button>
         <p-button label="Mover Pedido" icon="pi pi-check" (click)="moveTable()" severity="primary"></p-button>
+    </ng-template>
+</p-dialog>
+
+<!-- Modal Emitir Comprobante (Boleta / Factura) -->
+<p-dialog [(visible)]="comprobanteDialog" [position]="'top'"
+    [header]="'Emitir ' + (tipoComprobante === '01' ? 'Factura' : 'Boleta')" [style]="{ width: '550px' }" [modal]="true"
+    [draggable]="false" [resizable]="false" styleClass="p-fluid">
+    <ng-template pTemplate="content">
+        <div class="px-6 py-4 space-y-5">
+
+            <!-- Tipo de comprobante toggle -->
+            <div class="flex gap-2">
+                <button (click)="seleccionarTipoComprobante('03')"
+                    class="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all border-2"
+                    [ngClass]="tipoComprobante === '03' ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-300'">
+                    📄 Boleta
+                </button>
+                <button (click)="seleccionarTipoComprobante('01')"
+                    class="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all border-2"
+                    [ngClass]="tipoComprobante === '01' ? 'bg-amber-600 text-white border-amber-600 shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:border-amber-300'">
+                    🧾 Factura
+                </button>
+            </div>
+
+            <!-- Búsqueda de cliente -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Buscar Cliente ({{ tipoComprobante === '01' ? 'RUC' : 'DNI' }})
+                </label>
+                <div class="flex gap-2">
+                    <input type="text" [(ngModel)]="documentoBusqueda"
+                        [placeholder]="tipoComprobante === '01' ? 'Ingrese RUC...' : 'Ingrese DNI...'"
+                        class="flex-1 rounded-lg border border-gray-300 px-3 py-2.5 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 font-medium" />
+                    <button (click)="buscarClienteComprobante()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                        <i class="pi pi-search text-sm"></i> Buscar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cliente encontrado -->
+            <div *ngIf="clienteEncontrado" class="bg-green-50 border border-green-200 rounded-xl p-4 space-y-1">
+                <h4 class="text-green-800 font-bold text-sm flex items-center gap-2 m-0 mb-2">
+                    <i class="pi pi-check-circle"></i> Datos del Cliente
+                </h4>
+                <p class="text-sm text-gray-700 m-0"><strong>Documento:</strong> {{ clienteEncontrado.num_doc }}</p>
+                <p class="text-sm text-gray-700 m-0"><strong>Nombre/Razón Social:</strong> {{
+                    clienteEncontrado.razon_social }}</p>
+                <p class="text-sm text-gray-700 m-0"><strong>Dirección:</strong> {{ clienteEncontrado.direccion || 'No
+                    registrada' }}</p>
+            </div>
+
+            <!-- Formulario nuevo cliente -->
+            <div *ngIf="mostrarFormNuevoCliente" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 space-y-3">
+                <h4 class="text-yellow-800 font-bold text-sm flex items-center gap-2 m-0">
+                    <i class="pi pi-user-plus"></i> Registrar Nuevo Cliente
+                </h4>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Nro. {{ tipoComprobante === '01' ? 'RUC'
+                        : 'DNI' }}</label>
+                    <input type="text" [(ngModel)]="nuevoCliente.num_doc"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm bg-gray-100"
+                        readonly />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ tipoComprobante === '01' ? 'Razón
+                        Social' : 'Nombres Completos' }} *</label>
+                    <input type="text" [(ngModel)]="nuevoCliente.razon_social"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" />
+                </div>
+                <div *ngIf="tipoComprobante === '01'">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Dirección Fiscal * (Obligatorio para
+                        Factura)</label>
+                    <input type="text" [(ngModel)]="nuevoCliente.direccion"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200" />
+                </div>
+                <div class="flex gap-2 justify-end pt-1">
+                    <button (click)="mostrarFormNuevoCliente = false"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs px-4 py-2 rounded-lg transition-colors">Cancelar</button>
+                    <button (click)="guardarNuevoCliente()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition-colors">Guardar
+                        y Seleccionar</button>
+                </div>
+            </div>
+
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-3 px-6 pb-4">
+            <p-button styleClass="p-button-raised p-button-secondary" icon="pi pi-times" label="Cancelar"
+                (onClick)="comprobanteDialog = false"></p-button>
+            <p-button styleClass="p-button-raised p-button-success" icon="pi pi-send"
+                [label]="'Emitir ' + (tipoComprobante === '01' ? 'Factura' : 'Boleta')" [loading]="emitiendo"
+                [disabled]="!clienteEncontrado || emitiendo" (onClick)="emitirComprobante()"></p-button>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<!-- Modal PDF Comprobante (Boleta/Factura) -->
+<p-dialog [(visible)]="Comprobante_PDF_Dialog" [position]="'center'" header="Comprobante Electrónico"
+    [style]="{ width: '850px', height: '90vh' }" [modal]="true" [draggable]="false" [resizable]="false"
+    styleClass="p-fluid" (onHide)="Comprobante_PDF_Dialog = false" [closeOnEscape]="true">
+    <div style="height: calc(90vh - 120px);">
+        <iframe *ngIf="pdfUrl" [src]="pdfUrl" width="100%" height="100%" frameborder="0"
+            style="border: none; border-radius: 8px;"></iframe>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button styleClass="p-button-raised p-button-danger" label="Cerrar" icon="pi pi-times"
+            (onClick)="Comprobante_PDF_Dialog = false"></p-button>
     </ng-template>
 </p-dialog>

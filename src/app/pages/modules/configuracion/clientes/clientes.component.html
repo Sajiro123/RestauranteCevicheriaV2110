@@ -1,0 +1,230 @@
+<div class="card" style="width: 340% !important;">
+    <p-toast />
+
+    <div class="flex items-center mb-4">
+        <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
+            class="mr-4" pTooltip="Volver a Configuración" />
+        <h2 class="text-2xl font-semibold text-surface-900 dark:text-surface-0 m-0">Gestión de Clientes</h2>
+    </div>
+
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <p-button label="Nuevo Cliente" icon="pi pi-plus" severity="secondary" class="mr-2"
+                (onClick)="openNew()" />
+        </ng-template>
+        <ng-template #end>
+            <div class="flex items-center gap-2">
+                <span class="p-input-icon-left">
+                    <i class="pi pi-search"></i>
+                    <input pInputText type="text" [(ngModel)]="searchDoc" placeholder="Buscar por Nro. Documento..."
+                        (keyup.enter)="searchByDoc()" style="width: 280px;" />
+                </span>
+                <p-button icon="pi pi-search" severity="info" pTooltip="Buscar" (onClick)="searchByDoc()" />
+                <p-button icon="pi pi-times" severity="secondary" [outlined]="true" pTooltip="Limpiar búsqueda"
+                    (onClick)="clearSearch()" />
+            </div>
+        </ng-template>
+    </p-toolbar>
+
+    <p-table #dt [value]="clientes" [rows]="10" [paginator]="true"
+        [globalFilterFields]="['numerodoc', 'nombres', 'apellidopat', 'apellidomat', 'correo', 'celular', 'direccion']"
+        [tableStyle]="{ 'min-width': '75rem' }" [(selection)]="selectedClientes" [rowHover]="true" dataKey="idpersona"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} clientes" [showCurrentPageReport]="true"
+        [rowsPerPageOptions]="[10, 20, 30]">
+        <ng-template #caption>
+            <div class="flex items-center justify-between">
+                <h5 class="m-0">Gestionar Clientes</h5>
+                <p-iconfield>
+                    <p-inputicon styleClass="pi pi-search" />
+                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Filtrar..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="tipodoc" style="min-width:8rem">
+                    Tipo Doc.
+                    <p-sortIcon field="tipodoc" />
+                </th>
+                <th pSortableColumn="numerodoc" style="min-width:10rem">
+                    Nro. Documento
+                    <p-sortIcon field="numerodoc" />
+                </th>
+                <th pSortableColumn="nombres" style="min-width:12rem">
+                    Nombres
+                    <p-sortIcon field="nombres" />
+                </th>
+                <th pSortableColumn="apellidopat" style="min-width:10rem">
+                    Apellido Paterno
+                    <p-sortIcon field="apellidopat" />
+                </th>
+                <th pSortableColumn="apellidomat" style="min-width:10rem">
+                    Apellido Materno
+                    <p-sortIcon field="apellidomat" />
+                </th>
+                <th pSortableColumn="direccion" style="min-width:12rem">
+                    Dirección
+                    <p-sortIcon field="direccion" />
+                </th>
+                <th pSortableColumn="correo" style="min-width:12rem">
+                    Correo
+                    <p-sortIcon field="correo" />
+                </th>
+                <th pSortableColumn="celular" style="min-width:10rem">
+                    Celular
+                    <p-sortIcon field="celular" />
+                </th>
+                <th pSortableColumn="cumpleanos" style="min-width:10rem">
+                    Cumpleaños
+                    <p-sortIcon field="cumpleanos" />
+                </th>
+                <th pSortableColumn="idestado" style="min-width:8rem">
+                    Estado
+                    <p-sortIcon field="idestado" />
+                </th>
+                <th style="min-width:12rem">Acciones</th>
+            </tr>
+        </ng-template>
+
+        <ng-template #body let-cliente>
+            <tr>
+                <td style="min-width:8rem">{{ getTipoDocLabel(cliente.tipodoc) || 'N/A' }}</td>
+                <td style="min-width:10rem; font-weight: 600;">{{ cliente.numerodoc || 'N/A' }}</td>
+                <td style="min-width:12rem">{{ cliente.nombres }}</td>
+                <td>{{ cliente.apellidopat }}</td>
+                <td>{{ cliente.apellidomat }}</td>
+                <td>{{ cliente.direccion || 'N/A' }}</td>
+                <td>{{ cliente.correo || 'N/A' }}</td>
+                <td>{{ cliente.celular || 'N/A' }}</td>
+                <td>{{ cliente.cumpleanos ? (cliente.cumpleanos | date : 'dd/MM/yyyy') : 'N/A' }}</td>
+                <td>
+                    <p-tag [value]="getEstadoLabel(cliente.idestado)"
+                        [severity]="getEstadoSeverity(cliente.idestado)" />
+                </td>
+                <td>
+                    <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
+                        (click)="editCliente(cliente)" />
+                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                        (click)="deleteCliente(cliente)" />
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+    <p-dialog [(visible)]="clienteDialog" [style]="{ width: '600px' }"
+        [header]="isEditing ? 'Editar Cliente' : 'Nuevo Cliente'" [modal]="true" [formGroup]="clienteForm">
+        <ng-template #content>
+            <div class="flex flex-col gap-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="tipodoc" class="block font-bold mb-3">Tipo Documento *</label>
+                        <p-select formControlName="tipodoc" inputId="tipodoc" [options]="tiposdoc"
+                            optionLabel="label" optionValue="value" placeholder="Seleccione tipo" fluid
+                            [class.ng-invalid]="clienteForm.get('tipodoc')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && clienteForm.get('tipodoc')?.errors?.['required']"> El tipo de documento
+                            es requerido. </small>
+                    </div>
+
+                    <div>
+                        <label for="numerodoc" class="block font-bold mb-3">Nro. Documento *</label>
+                        <input type="text" pInputText id="numerodoc" formControlName="numerodoc" required autofocus fluid
+                            placeholder="Ej: 12345678"
+                            [class.ng-invalid]="clienteForm.get('numerodoc')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && clienteForm.get('numerodoc')?.errors?.['required']"> El número de documento
+                            es requerido. </small>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="nombres" class="block font-bold mb-3">Nombres *</label>
+                        <input type="text" pInputText id="nombres" formControlName="nombres" required fluid
+                            [class.ng-invalid]="clienteForm.get('nombres')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && clienteForm.get('nombres')?.errors?.['required']"> Los nombres son
+                            requeridos. </small>
+                    </div>
+
+                    <div>
+                        <label for="apellidopat" class="block font-bold mb-3">Apellido Paterno *</label>
+                        <input type="text" pInputText id="apellidopat" formControlName="apellidopat" required fluid
+                            [class.ng-invalid]="clienteForm.get('apellidopat')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && clienteForm.get('apellidopat')?.errors?.['required']"> El apellido
+                            paterno es requerido. </small>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="apellidomat" class="block font-bold mb-3">Apellido Materno *</label>
+                        <input type="text" pInputText id="apellidomat" formControlName="apellidomat" required fluid
+                            [class.ng-invalid]="clienteForm.get('apellidomat')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && clienteForm.get('apellidomat')?.errors?.['required']"> El apellido
+                            materno es requerido. </small>
+                    </div>
+
+                    <div>
+                        <label for="cumpleanos" class="block font-bold mb-3">Cumpleaños</label>
+                        <p-datepicker formControlName="cumpleanos" inputId="cumpleanos" placeholder="Seleccionar fecha"
+                            fluid />
+                    </div>
+                </div>
+
+                <div>
+                    <label for="direccion" class="block font-bold mb-3">Dirección</label>
+                    <input type="text" pInputText id="direccion" formControlName="direccion" fluid />
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="correo" class="block font-bold mb-3">Correo Electrónico *</label>
+                        <input type="email" pInputText id="correo" formControlName="correo" required fluid
+                            placeholder="ejemplo@correo.com"
+                            [class.ng-invalid]="clienteForm.get('correo')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && clienteForm.get('correo')?.errors?.['required']"> El correo es
+                            requerido. </small>
+                        <small class="text-red-500"
+                            *ngIf="submitted && clienteForm.get('correo')?.errors?.['email']"> Ingrese un correo
+                            válido. </small>
+                    </div>
+
+                    <div>
+                        <label for="celular" class="block font-bold mb-3">Celular *</label>
+                        <input type="text" pInputText id="celular" formControlName="celular" required fluid
+                            placeholder="Ej: 987654321"
+                            [class.ng-invalid]="clienteForm.get('celular')?.invalid && submitted" />
+                        <small class="text-red-500"
+                            *ngIf="submitted && clienteForm.get('celular')?.errors?.['required']"> El celular es
+                            requerido. </small>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="idestado" class="block font-bold mb-3">Estado *</label>
+                        <p-select formControlName="idestado" inputId="idestado" [options]="estados" optionLabel="label"
+                            optionValue="value" placeholder="Seleccione un estado" fluid />
+                    </div>
+                </div>
+
+                <div>
+                    <label for="referencia" class="block font-bold mb-3">Referencia</label>
+                    <textarea id="referencia" pTextarea formControlName="referencia" rows="3" fluid> </textarea>
+                </div>
+            </div>
+        </ng-template>
+
+        <ng-template #footer>
+            <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" />
+            <p-button label="Guardar" icon="pi pi-check" (click)="saveCliente()" />
+        </ng-template>
+    </p-dialog>
+
+    <p-confirmdialog [style]="{ width: '450px' }" />
+</div>
