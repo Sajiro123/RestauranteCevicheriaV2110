@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MessageService } from 'primeng/api';
 import { CajaService } from '../../service/caja.service';
 import { PedidoService } from '../../service/pedido.service';
 import { AperturaService } from '../../service/apertura.service';
@@ -11,7 +12,8 @@ import autoTable from 'jspdf-autotable';
   selector: 'app-caja',
   templateUrl: './caja.component.html',
   styleUrls: ['./caja.component.scss'],
-  imports: [ImportsModule]
+  imports: [ImportsModule],
+  providers: [MessageService]
 })
 export class CajaComponent implements OnInit {
   cajas: Caja[] = [];
@@ -25,11 +27,13 @@ export class CajaComponent implements OnInit {
 
   // Store gastosApp values for each date
   gastosAppValues: { [fecha: string]: number } = {};
+  gastosAppDetalles: any[] = [];
 
   constructor(
     private cajaService: CajaService,
     private pedidoService: PedidoService,
-    private aperturaService: AperturaService
+    private aperturaService: AperturaService,
+    private messageService: MessageService
   ) { }
 
   ngOnInit(): void {
@@ -71,6 +75,7 @@ export class CajaComponent implements OnInit {
       efectivo: 0,
       tarjeta: 0,
       gastos: 0,
+      plin: 0,
       notas: ''
     };
   }
@@ -120,222 +125,179 @@ export class CajaComponent implements OnInit {
   // Generate weekly financial report in PDF format
   async generateWeeklyReportPDF() {
     this.isGeneratingPDF = true;
-
     try {
-      // Create new PDF document
       const doc = new jsPDF() as any;
+      const PW = doc.internal.pageSize.width;
+      const PH = doc.internal.pageSize.height;
+      const M = 14;
+      const CW = PW - M * 2;
 
-      // Set document properties
-      doc.setFontSize(18);
-      doc.text('REPORTE SEMANAL DE CAJA', 105, 20, { align: 'center' });
+      const sectionHeader = (title: string, y: number) => {
+        doc.setFillColor(30, 41, 59);
+        doc.rect(M, y, CW, 7, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text(title, M + 3, y + 5);
+        doc.setTextColor(0, 0, 0);
+        return y + 9;
+      };
 
-      // Add subtitle with date range
-      doc.setFontSize(12);
-      let subtitle = 'Turno: Mañana';
-      if (this.fechaInicio && this.fechaFin) {
-        subtitle += ` — Período: ${this.fechaInicio} a ${this.fechaFin}`;
-      }
-      doc.text(subtitle, 105, 30, { align: 'center' });
+      const checkPage = (y: number, needed = 50) => {
+        if (y + needed > PH - 15) { doc.addPage(); return 15; }
+        return y;
+      };
 
-      // Add week info
-      doc.setFontSize(10);
-      doc.text('Semana 48', 105, 37, { align: 'center' });
-
-      // Add margin
-      doc.setLineWidth(0.5);
-      doc.line(20, 45, 190, 45);
-
-      // INGRESOS TABLE
+      // HEADER
+      doc.setFillColor(30, 41, 59);
+      doc.rect(0, 0, PW, 36, 'F');
+      doc.setTextColor(245, 158, 11);
+      doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
-      doc.text('INGRESOS', 20, 55);
+      doc.text('REPORTE SEMANAL DE CAJA', PW / 2, 13, { align: 'center' });
+      doc.setTextColor(200, 210, 220);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      const periodo = this.fechaInicio && this.fechaFin
+        ? `Periodo: ${this.fechaInicio} al ${this.fechaFin}` : 'Sin filtro de fecha';
+      doc.text(`Restaurante Cevicheria  |  ${periodo}  |  ${new Date().toLocaleDateString('es-PE')}`, PW / 2, 22, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+      let y = 42;
 
-      doc.setFontSize(10);
-      const ingresosHeaders = ['Fecha', 'Día', 'Yape', 'Efectivo', 'Tarjeta', 'Total'];
-      const ingresosData = this.cajasFiltradas.map(caja => [
-        caja.fecha,
-        this.getDayName(caja.dia),
-        caja.yape.toFixed(2),
-        caja.efectivo.toFixed(2),
-        caja.tarjeta.toFixed(2),
-        (caja.yape + caja.efectivo + caja.tarjeta).toFixed(2)
+      // TABLA INGRESOS
+      y = sectionHeader('1.  DETALLE DE INGRESOS', y);
+      const ingresosData = this.cajasFiltradas.map(c => [
+        c.fecha, this.getDayName(c.dia),
+        `S/. ${(c.plin || 0).toFixed(2)}`,
+        `S/. ${(c.yape || 0).toFixed(2)}`,
+        `S/. ${(c.efectivo || 0).toFixed(2)}`,
+        `S/. ${(c.tarjeta || 0).toFixed(2)}`,
+        `S/. ${((c.plin||0)+(c.yape||0)+(c.efectivo||0)+(c.tarjeta||0)).toFixed(2)}`
       ]);
-
       autoTable(doc, {
-        head: [ingresosHeaders],
-        body: ingresosData,
-        startY: 60,
-        theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [22, 160, 133] },
-        margin: { left: 20, right: 20 }
+        head: [['Fecha','Dia','Plin','Yape','Efectivo','Tarjeta','Total']],
+        body: ingresosData, startY: y, theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 2 },
+        headStyles: { fillColor: [51,65,85], textColor: 255, fontSize: 7 },
+        columnStyles: { 6: { fontStyle: 'bold', textColor: [133,83,0] } },
+        alternateRowStyles: { fillColor: [248,250,251] },
+        margin: { left: M, right: M }
       });
+      y = doc.lastAutoTable.finalY + 6;
 
-      // Calculate total ingresos
-      const totalIngresos = this.getTotalGeneral();
-
-      // Add total ingresos
-      let finalY = 60 + (ingresosData.length + 1) * 10; // Approximate position after table
-
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Total Ingresos: S/. ${totalIngresos.toFixed(2)}`, 150, finalY);
-
-      // GASTOS TABLE
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(14);
-      doc.text('GASTOS', 20, finalY + 20);
-
-      // Fetch actual gastos data
+      // TABLA GASTOS
       const gastosData = await this.fetchAllGastosForPeriod();
-
-      doc.setFontSize(10);
-      const gastosHeaders = ['Fecha', 'Tipo', 'Motivo', 'Monto'];
-
+      y = checkPage(y, 50);
+      y = sectionHeader('2.  DETALLE DE GASTOS', y);
       autoTable(doc, {
-        head: [gastosHeaders],
-        body: gastosData,
-        startY: finalY + 25,
-        theme: 'grid',
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [22, 160, 133] },
-        margin: { left: 20, right: 20 }
+        head: [['Fecha','Categoria','Descripcion','Monto']],
+        body: gastosData.map((g: any[]) => [g[0],g[1],g[2],`S/. ${parseFloat(g[3]).toFixed(2)}`]),
+        startY: y, theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 2 },
+        headStyles: { fillColor: [51,65,85], textColor: 255, fontSize: 7 },
+        columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } },
+        alternateRowStyles: { fillColor: [248,250,251] },
+        margin: { left: M, right: M }
       });
+      y = doc.lastAutoTable.finalY + 8;
 
-      // Calculate total gastos
-      const totalGastos = gastosData.reduce((sum, item) => sum + parseFloat(item[3]), 0);
-
-      // Add total gastos
-      const gastosTableHeight = (gastosData.length + 1);
-      let finalYGastos = gastosTableHeight + 20;
-
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Total Gastos: S/. ${totalGastos.toFixed(2)}`, 150, finalYGastos);
-
-      // CALCULATIONS SECTION (Original)
-      const gananciaBruta = totalIngresos - totalGastos;
-      const gananciaNeta = gananciaBruta * 0.85; // Example calculation
-      const porcentajeGanancia = totalIngresos > 0 ? (gananciaBruta / totalIngresos) * 100 : 0;
+      // CALCULOS
+      const totalIngresos = this.getTotalPlin() + this.getTotalYape() + this.getTotalEfectivo() + this.getTotalTarjeta();
+      const totalGastos = gastosData.reduce((s: number, i: any[]) => s + parseFloat(i[3]), 0);
+      const gananciaNeta = totalIngresos - totalGastos;
+      const margen = totalIngresos > 0 ? (gananciaNeta / totalIngresos) * 100 : 0;
       const foodCost = totalIngresos > 0 ? (totalGastos / totalIngresos) * 100 : 0;
 
-      // Add calculations section
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text('RESUMEN FINANCIERO', 20, finalYGastos + 20);
+      // SECCION 3: RESUMEN FINANCIERO
+      y = checkPage(y, 70);
+      y = sectionHeader('3.  RESUMEN FINANCIERO GENERAL', y);
 
-      // Add a line under the header
-      doc.setDrawColor(200, 200, 200);
-      doc.line(20, finalYGastos + 22, 190, finalYGastos + 22);
+      const bw = (CW - 4) / 3; const bh = 18;
+      const kpis = [
+        { label:'VENTAS TOTALES', value:`S/. ${totalIngresos.toFixed(2)}`, bg:[209,250,229] as [number,number,number], fg:[6,95,70] as [number,number,number] },
+        { label:'GASTOS TOTALES', value:`S/. ${totalGastos.toFixed(2)}`, bg:[254,226,226] as [number,number,number], fg:[185,28,28] as [number,number,number] },
+        { label:'GANANCIA NETA',  value:`S/. ${gananciaNeta.toFixed(2)}`, bg:(gananciaNeta>=0?[219,234,254]:[254,226,226]) as [number,number,number], fg:(gananciaNeta>=0?[29,78,216]:[185,28,28]) as [number,number,number] },
+      ];
+      kpis.forEach((b, i) => {
+        const bx = M + i * (bw + 2);
+        doc.setFillColor(...b.bg); doc.roundedRect(bx, y, bw, bh, 2, 2, 'F');
+        doc.setTextColor(...b.fg); doc.setFont('helvetica','bold');
+        doc.setFontSize(6.5); doc.text(b.label, bx + 3, y + 5.5);
+        doc.setFontSize(10); doc.text(b.value, bx + 3, y + 14);
+      });
+      y += bh + 4;
 
-      doc.setFontSize(10);
-      doc.text(`Ganancia Bruta: S/. ${gananciaBruta.toFixed(2)}`, 20, finalYGastos + 35);
-      doc.text(`Ganancia Neta: S/. ${gananciaNeta.toFixed(2)}`, 20, finalYGastos + 42);
-      doc.text(`Porcentaje de Ganancia: ${porcentajeGanancia.toFixed(2)}%`, 20, finalYGastos + 49);
-      doc.text(`Food Cost: ${foodCost.toFixed(2)}%`, 20, finalYGastos + 56);
+      const hw = (CW - 4) / 2;
+      doc.setFillColor(219,234,254); doc.roundedRect(M, y, hw, 13, 2, 2, 'F');
+      doc.setTextColor(29,78,216); doc.setFontSize(6.5); doc.text('MARGEN DE GANANCIA', M+3, y+5);
+      doc.setFontSize(9); doc.text(`${margen.toFixed(1)}%`, M+3, y+11.5);
+      const fcOk = foodCost<=35;
+      doc.setFillColor(...(fcOk?[209,250,229]:[254,226,226]) as [number,number,number]);
+      doc.roundedRect(M+hw+4, y, hw, 13, 2, 2, 'F');
+      doc.setTextColor(...(fcOk?[6,95,70]:[185,28,28]) as [number,number,number]);
+      doc.setFontSize(6.5); doc.text(`FOOD COST (lim. recomendado 35%)`, M+hw+7, y+5);
+      doc.setFontSize(9); doc.text(`${foodCost.toFixed(1)}%  ${fcOk?'OK':'Critico: Supera el limite'}`, M+hw+7, y+11.5);
+      y += 19;
 
-      // Add expense types breakdown with improved design
-      const expenseDetailsStartY = finalYGastos + 70;
+      // SECCION 4: ANALISIS INGRESOS
+      y = checkPage(y, 50);
+      y = sectionHeader('4.  ANALISIS DE INGRESOS - Metodos de Pago', y);
+      const tPlin=this.getTotalPlin(), tYape=this.getTotalYape(), tEfec=this.getTotalEfectivo(), tTarj=this.getTotalTarjeta();
+      const pct = (v: number) => totalIngresos>0?`${((v/totalIngresos)*100).toFixed(1)}%`:'0%';
+      autoTable(doc, {
+        head: [['Metodo de Pago','Monto Estimado','% del Total']],
+        body: [
+          ['Plin',    `S/. ${tPlin.toFixed(2)}`, pct(tPlin)],
+          ['Yape',    `S/. ${tYape.toFixed(2)}`, pct(tYape)],
+          ['Efectivo',`S/. ${tEfec.toFixed(2)}`, pct(tEfec)],
+          ['Tarjeta', `S/. ${tTarj.toFixed(2)}`, pct(tTarj)],
+          ['TOTAL',   `S/. ${totalIngresos.toFixed(2)}`, '100%'],
+        ],
+        startY: y, theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2.5 },
+        headStyles: { fillColor: [51,65,85], textColor: 255, fontSize: 7.5 },
+        columnStyles: { 1:{halign:'right',fontStyle:'bold'}, 2:{halign:'center'} },
+        margin: { left: M, right: M }
+      });
+      y = doc.lastAutoTable.finalY + 8;
 
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('DETALLE DE GASTOS POR TIPO:', 20, expenseDetailsStartY);
-
-      // Add a line under the header
-      doc.setDrawColor(200, 200, 200);
-      doc.line(20, expenseDetailsStartY + 2, 190, expenseDetailsStartY + 2);
-
-      // Calculate totals by expense type
-      const gastosByType: { [key: string]: number } = {};
-      gastosData.forEach(item => {
-        const tipo = item[1]; // Tipo column
-        const monto = parseFloat(item[3]); // Monto column
-        gastosByType[tipo] = (gastosByType[tipo] || 0) + monto;
+      // SECCION 5: DESGLOSE GASTOS
+      y = checkPage(y, 60);
+      y = sectionHeader('5.  DESGLOSE DE GASTOS - Por Categoria', y);
+      const byType: {[k:string]:number} = {};
+      gastosData.forEach((g: any[]) => { const t=g[1]||'Otros'; byType[t]=(byType[t]||0)+parseFloat(g[3]); });
+      const gastosRows = Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([tipo,monto])=>{
+        const p = totalGastos>0?((monto/totalGastos)*100):0;
+        const est = tipo.toLowerCase().includes('pescado')||p>40 ? 'Requiere revision' : p>15 ? 'Vigilar' : 'Estable';
+        return [tipo, `S/. ${monto.toFixed(2)}`, `${p.toFixed(1)}%`, est];
+      });
+      gastosRows.push(['TOTAL GASTOS',`S/. ${totalGastos.toFixed(2)}`,'100%','']);
+      autoTable(doc, {
+        head: [['Categoria','Monto Invertido','% Gasto','Estado']],
+        body: gastosRows, startY: y, theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 2 },
+        headStyles: { fillColor: [51,65,85], textColor: 255, fontSize: 7 },
+        columnStyles: { 1:{halign:'right',fontStyle:'bold'}, 2:{halign:'center'} },
+        alternateRowStyles: { fillColor: [248,250,251] },
+        margin: { left: M, right: M }
       });
 
-      // Display expense types and their totals with improved formatting
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      let yPos = expenseDetailsStartY + 12;
-
-      // Draw table header for expense details
-      doc.setFillColor(245, 245, 245);
-      doc.rect(20, yPos, 170, 8, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.text('TIPO DE GASTO', 25, yPos + 6);
-      doc.text('TOTAL', 160, yPos + 6);
-
-      yPos += 10;
-
-      // Draw expense details
-      Object.keys(gastosByType).forEach(tipo => {
-        const total = gastosByType[tipo];
-
-        // Alternate row colors for better readability
-        if ((yPos / 10) % 2 === 0) {
-          doc.setFillColor(250, 250, 250);
-          doc.rect(20, yPos - 2, 170, 8, 'F');
-        }
-
-        doc.setFont('helvetica', 'normal');
-        doc.text(tipo, 25, yPos + 6);
-        doc.text(`S/. ${total.toFixed(2)}`, 160, yPos + 6);
-        yPos += 8;
-      });
-
-      // Add total expenses with emphasis
-      yPos += 5;
-      doc.setFont('helvetica', 'bold');
-      doc.setLineWidth(0.5);
-      doc.line(20, yPos, 190, yPos); // Top line
-      doc.line(20, yPos + 10, 190, yPos + 10); // Bottom line
-      doc.text(`TOTAL GASTOS: S/. ${totalGastos.toFixed(2)}`, 25, yPos + 7);
-
-      // NEW RESUMEN SEMANAL SECTION
-      const ventasTotales = totalIngresos;
-      const gastosTotales = totalGastos;
-      const gananciaNetaReal = gananciaBruta;
-
-      // Calculate new position after expense details
-      let resumenSemanalPosition = yPos + 25;
-
-      // Add RESUMEN SEMANAL section with better spacing and design
-      // Check if we have enough space on the current page, if not, add a new page
-      const pageHeight = doc.internal.pageSize.height;
-      const requiredSpace = 60; // Approximate space needed for this section
-
-      if (resumenSemanalPosition + requiredSpace > pageHeight - 20) {
-        doc.addPage();
-        resumenSemanalPosition = 20; // Reset position for new page
+      // FOOTER
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let p=1; p<=totalPages; p++) {
+        doc.setPage(p);
+        doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(150);
+        doc.text(`Pagina ${p} de ${totalPages}  |  Sistema de Caja - Restaurante Cevicheria`, PW/2, PH-8, {align:'center'});
       }
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(16);
-      doc.setTextColor(0, 0, 0);
-      doc.text('RESUMEN SEMANAL', 20, resumenSemanalPosition);
-
-      // Add a line under the header
-      doc.setDrawColor(0, 0, 0);
-      doc.setLineWidth(1);
-      doc.line(20, resumenSemanalPosition + 2, 190, resumenSemanalPosition + 2);
-
-      // Add summary items with proper spacing and formatting
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Ventas totales: S/. ${ventasTotales.toFixed(2)}`, 25, resumenSemanalPosition + 20);
-      doc.text(`Gastos totales: S/. ${gastosTotales.toFixed(2)}`, 25, resumenSemanalPosition + 32);
-      doc.text(`Ganancia neta: S/. ${gananciaNetaReal.toFixed(2)}`, 25, resumenSemanalPosition + 44);
-
-      // Save the PDF
-      doc.save('reporte_semanal_caja.pdf');
+      doc.save(`reporte_caja_${this.fechaInicio||'sin-fecha'}.pdf`);
     } catch (error) {
       console.error('Error generating PDF report:', error);
-      alert('Error al generar el reporte PDF. Por favor, inténtelo de nuevo.');
+      this.messageService.add({ severity:'error', summary:'Error PDF', detail:'No se pudo generar el reporte.' });
     } finally {
       this.isGeneratingPDF = false;
     }
   }
-
   // Fetch all gastos for the current period
   async fetchAllGastosForPeriod(): Promise<any[]> {
     const gastosData: any[] = [];
@@ -462,10 +424,12 @@ export class CajaComponent implements OnInit {
 
   // Fetch gastosApp data where app = '1' for the selected date
   async fetchGastosAppData(fecha: string) {
+    this.gastosAppDetalles = [];
     try {
       this.aperturaService.ListGastosApp(fecha).subscribe(
         (response: { success: boolean; data: any[] }) => {
           if (response.success && response.data) {
+            this.gastosAppDetalles = response.data.filter((gasto: any) => gasto.app === '1');
             // Calculate total gastosApp from all expenses on that date where app = '1'
             let totalGastosApp = 0;
             response.data.forEach((gasto: any) => {
@@ -488,24 +452,35 @@ export class CajaComponent implements OnInit {
   }
 
   save() {
+    // Calcular total antes de guardar
+    this.form.total = (this.form.plin || 0) + (this.form.yape || 0) + (this.form.efectivo || 0) + (this.form.tarjeta || 0);
+
     if (this.editingId) {
-      this.cajaService.update(this.editingId, this.form).then(() => {
-        // Reload data for current date range if set
+      this.cajaService.update(this.editingId, this.form).then(({ error }) => {
+        if (error) {
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el registro.' });
+          return;
+        }
         if (this.fechaInicio && this.fechaFin) {
           this.loadData(this.fechaInicio, this.fechaFin);
         }
         this.editingId = null;
         this.form = this.resetForm();
         this.displayDialog = false;
+        this.messageService.add({ severity: 'success', summary: 'Actualizado', detail: 'Registro actualizado correctamente.' });
       });
     } else {
-      this.cajaService.create(this.form).then(() => {
-        // Reload data for current date range if set
+      this.cajaService.create(this.form).then(({ error }) => {
+        if (error) {
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el registro.' });
+          return;
+        }
         if (this.fechaInicio && this.fechaFin) {
           this.loadData(this.fechaInicio, this.fechaFin);
         }
         this.form = this.resetForm();
         this.displayDialog = false;
+        this.messageService.add({ severity: 'success', summary: 'Registrado', detail: 'Registro guardado correctamente.' });
       });
     }
   }
@@ -514,6 +489,7 @@ export class CajaComponent implements OnInit {
     this.editingId = item.id!;
     this.form = { ...item };
     this.displayDialog = true;
+    this.fetchGastosAppData(item.fecha);
   }
 
   delete(id: number) {
@@ -531,6 +507,7 @@ export class CajaComponent implements OnInit {
     this.form = this.resetForm();
     this.editingId = null;
     this.displayDialog = true;
+    this.gastosAppDetalles = [];
     this.form.trabajo = "mañana";
     this.form.fecha = new Date().toISOString().slice(0, 10);
   }
@@ -570,6 +547,10 @@ export class CajaComponent implements OnInit {
   // Calculate total gastos from filtered data
   getTotalGastos(): number {
     return this.cajasFiltradas.reduce((sum, caja) => sum + (caja.gastos || 0), 0);
+  }
+
+  getTotalPlin(): number {
+    return this.cajasFiltradas.reduce((sum, caja) => sum + (caja.plin || 0), 0);
   }
 
   // Calculate total yape from filtered data

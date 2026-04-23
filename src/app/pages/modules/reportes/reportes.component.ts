@@ -345,17 +345,25 @@ export class ReportesComponent {
                         plin_total += parseInt(element.plin);
                         visa_total += parseInt(element.visa);
                         efectivo_total += parseInt(element.efectivo);
-                        var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-                        var numeroDia = new Date(element.fecha).getDay() + 1;
-                        var nombreDia = dias[numeroDia];
                         var total = parseInt(element.yape) + parseInt(element.visa) + parseInt(element.efectivo) + parseInt(element.plin);
                         TOTAL_TOTAL += total;
+
+                        let nombreDia = '';
                         if (element.fecha != undefined) {
-                            element.fecha = new Date(element.fecha).toISOString().split('T')[0]; // Formato YYYY-MM-DD
-                            // element.fecha = this.formatDateToMySQL(element.fecha);
+                            const d = new Date(element.fecha);
+                            if (!isNaN(d.getTime())) {
+                                const yyyy = d.getFullYear();
+                                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                const dd = String(d.getDate()).padStart(2, '0');
+                                element.fecha = `${yyyy}-${mm}-${dd}`;
+
+                                const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                                nombreDia = dias[d.getDay()];
+                            }
                         } else {
                             element.fecha = '';
                         }
+
                         this.array_data.push({
                             fecha: element.fecha,
                             dia: nombreDia,
@@ -394,11 +402,16 @@ export class ReportesComponent {
                     this.array_data = [] as any;
                     response.data.forEach((element: any) => {
                         if (element.fecha != undefined) {
-                            element.fecha = new Date(element.fecha).toISOString().split('T')[0]; // Formato YYYY-MM-DD
-                            var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-                            var numeroDia = Math.floor(new Date(element.fecha).getDay() + 1);
-                            var nombreDia = dias[numeroDia];
-                            element.dia = nombreDia;
+                            const d = new Date(element.fecha);
+                            if (!isNaN(d.getTime())) {
+                                const yyyy = d.getFullYear();
+                                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                const dd = String(d.getDate()).padStart(2, '0');
+                                element.fecha = `${yyyy}-${mm}-${dd}`;
+
+                                const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                                element.dia = dias[d.getDay()];
+                            }
                         }
                     });
                     this.PedidoReporte = response.data;
@@ -444,11 +457,17 @@ export class ReportesComponent {
                 if (response.success) {
                     response.data.forEach((element: any) => {
                         if (element.fecha != undefined) {
-                            element.fecha = new Date(element.fecha).toISOString().split('T')[0]; // Formato YYYY-MM-DD
-                            var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-                            var numeroDia = Math.floor(new Date(element.fecha).getDay() + 1);
-                            var nombreDia = dias[numeroDia];
-                            element.dia = nombreDia;
+                            const d = new Date(element.fecha);
+                            if (!isNaN(d.getTime())) {
+                                debugger
+                                const yyyy = d.getFullYear();
+                                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                const dd = String(d.getDate()).padStart(2, '0');
+                                element.fecha = `${yyyy}-${mm}-${dd}`;
+
+                                const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                                element.dia = dias[d.getDay()];
+                            }
                         }
                     });
                     this.PedidoReporteEliminados = response.data;
@@ -484,11 +503,16 @@ export class ReportesComponent {
                 if (response.success) {
                     response.data.forEach((element: any) => {
                         if (element.fecha != undefined) {
-                            element.fecha = new Date(element.fecha).toISOString().split('T')[0]; // Formato YYYY-MM-DD
-                            var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-                            var numeroDia = Math.floor(new Date(element.fecha).getDay() + 1);
-                            var nombreDia = dias[numeroDia];
-                            element.dia = nombreDia;
+                            const d = new Date(element.fecha);
+                            if (!isNaN(d.getTime())) {
+                                const yyyy = d.getFullYear();
+                                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                const dd = String(d.getDate()).padStart(2, '0');
+                                element.fecha = `${yyyy}-${mm}-${dd}`;
+
+                                const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                                element.dia = dias[d.getDay()];
+                            }
                         }
                     });
                     this.PedidoReporteSinCobrar = response.data;

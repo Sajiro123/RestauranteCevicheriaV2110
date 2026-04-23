@@ -25,80 +25,70 @@
                     columnResizeMode="expand" [value]="Clients" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
                     [tableStyle]="{ 'min-width': '5rem' }" [rowHover]="true" dataKey="idpedido"
                     [resizableColumns]="true"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                    currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
                     [showCurrentPageReport]="true">
+
                     <ng-template pTemplate="header">
                         <tr>
-                            <td style="width:5%" pSortableColumn="fecha" style="min-width:6rem">
-                                📅Fecha
-                                <p-sortIcon field="fecha" />
-                            </td>
-                            <th pSortableColumn="dia" style="min-width:15rem" style="min-width:3rem">
-                                📅Dia
-                                <p-sortIcon field="dia" />
+                            <th pSortableColumn="fecha" style="width:14%">
+                                📅 Fecha <p-sortIcon field="fecha" />
                             </th>
-                            <th style="width:5%" pSortableColumn="efectivo" style="min-width:3rem">
-                                💵Efectivo
-                                <p-sortIcon field="efectivo" />
+                            <th pSortableColumn="dia" style="width:12%">
+                                📅 Día <p-sortIcon field="dia" />
                             </th>
-                            <th pSortableColumn="yape" style="min-width:3rem">
-                                📱Yape
-                                <p-sortIcon field="yape" />
+                            <th pSortableColumn="efectivo" class="col-efectivo">
+                                💵 Efectivo <p-sortIcon field="efectivo" />
                             </th>
-                            <th pSortableColumn="plin" style="min-width:3rem">
-                                📱Plin
-                                <p-sortIcon field="plin" />
+                            <th pSortableColumn="yape" class="col-yape">
+                                📱 Yape <p-sortIcon field="yape" />
                             </th>
-                            <th pSortableColumn="visa" style="min-width:3rem">
-                                💳Visa
-                                <p-sortIcon field="visa" />
+                            <th pSortableColumn="plin" class="col-plin">
+                                📱 Plin <p-sortIcon field="plin" />
                             </th>
-                            <th pSortableColumn="total" style="min-width:2rem">
-                                Total
-                                <p-sortIcon field="total" />
+                            <th pSortableColumn="visa" class="col-tarjeta">
+                                💳 Visa <p-sortIcon field="visa" />
                             </th>
-                            <th style="min-width:3rem;width:3%"></th>
+                            <th pSortableColumn="total" class="col-total">
+                                Total <p-sortIcon field="total" />
+                            </th>
+                            <th style="width:3rem"></th>
                         </tr>
                     </ng-template>
-                    <ng-template pTemplate="body" let-product>
-                        <tr>
-                            <td>{{ product.fecha }}</td>
-                            <td>{{ product.dia }}</td>
-                            <td>{{ 'S/' + product.efectivo }}</td>
-                            <td>{{ 'S/' + product.yape }}</td>
-                            <td>{{ 'S/' + product.plin }}</td>
-                            <td>{{ 'S/' + product.visa }}</td>
-                            <td>{{ 'S/' + product.total }}</td>
+
+                    <ng-template pTemplate="body" let-product let-odd="odd">
+                        <tr [class.row-odd]="odd">
+                            <td class="td-fecha">{{ product.fecha }}</td>
+                            <td class="td-dia" style="text-transform: capitalize;">{{ product.dia }}</td>
+                            <td>S/ {{ product.efectivo | number:'1.2-2' }}</td>
+                            <td>S/ {{ product.yape | number:'1.2-2' }}</td>
+                            <td>S/ {{ product.plin | number:'1.2-2' }}</td>
+                            <td>S/ {{ product.visa | number:'1.2-2' }}</td>
+                            <td class="td-total">S/ {{ product.total | number:'1.2-2' }}</td>
                             <td>
-                                <p-button type="button" pRipple [icon]="'pi pi-eye'" [rounded]="true" [plain]="true"
-                                    (click)="PdfReporteDiario(product.fecha)" />
+                                <p-button type="button" pRipple icon="pi pi-file-pdf" [rounded]="true" severity="danger"
+                                    [text]="true" (click)="PdfReporteDiario(product.fecha)" pTooltip="Reporte PDF"
+                                    tooltipPosition="left" />
                             </td>
                         </tr>
                     </ng-template>
+
                     <ng-template pTemplate="footer">
-                        <tr *ngIf="Clients.length != 0" style="font-weight: bold;">
-                            <td colspan="2">
-                                <h4>Total General</h4>
+                        <tr *ngIf="Clients.length != 0" class="premium-tfoot">
+                            <td colspan="2" class="tfoot-label">
+                                TOTAL PERIODO
                             </td>
-                            <td>
-                                <h4>{{ 'S/' + (array_data_total.efectivo || 0) }}</h4>
-                            </td>
-                            <td>
-                                <h4>{{ 'S/' + (array_data_total.yape || 0) }}</h4>
-                            </td>
-                            <td>
-                                <h4>{{ 'S/' + (array_data_total.plin || 0) }}</h4>
-                            </td>
-                            <td>
-                                <h4>{{ 'S/' + (array_data_total.visa || 0) }}</h4>
-                            </td>
-                            <td>
-                                <h4>{{ 'S/' + (array_data_total.total || 0) }}</h4>
-                            </td>
+                            <td>S/ {{ array_data_total.efectivo | number:'1.2-2' }}</td>
+                            <td>S/ {{ array_data_total.yape | number:'1.2-2' }}</td>
+                            <td>S/ {{ array_data_total.plin | number:'1.2-2' }}</td>
+                            <td>S/ {{ array_data_total.visa | number:'1.2-2' }}</td>
+                            <td class="tfoot-total">S/ {{ array_data_total.total | number:'1.2-2' }}</td>
+                            <td></td>
                         </tr>
                         <tr *ngIf="Clients.length == 0">
-                            <td colspan="7" style="text-align: center;">No existe información o seleccione el rango con
-                                las fechas</td>
+                            <td colspan="8" class="empty-state">
+                                <i class="pi pi-calendar"></i>
+                                <span>No hay registros. Por favor, seleccione un rango de fechas válido.</span>
+                            </td>
                         </tr>
                     </ng-template>
                 </p-table>

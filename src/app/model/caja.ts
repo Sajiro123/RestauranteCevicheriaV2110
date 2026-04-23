@@ -10,4 +10,5 @@ export interface Caja {
   total?: number; // calculado en DB si usas columna generada
   gastos: number;
   notas?: string;
+  plin: number;
 }

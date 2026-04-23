@@ -81,3 +81,113 @@ h4 {
     font-weight: 600;
     color: rgb(200, 55, 55);
 }
+
+// ── Diseño Limpio (Mockup Style) para la Tabla de Reporte General ─────────────────
+
+::ng-deep .premium-table {
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    
+    .p-datatable-header {
+        background: transparent;
+        border: none;
+    }
+
+    .p-datatable-thead > tr > th {
+        background-color: #515c6e; /* Gris oscuro del mockup */
+        color: #ffffff;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        padding: 1.2rem;
+        border: none;
+        
+        .p-sortable-column-icon {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        &:hover {
+            background-color: #3f4857 !important;
+        }
+    }
+
+    .p-datatable-tbody > tr {
+        transition: background-color 0.2s;
+        border-bottom: 1px solid #f0f0f0;
+        
+        &.row-odd {
+            background-color: #fafafa;
+        }
+
+        &:hover {
+            background-color: #f8fafc !important;
+        }
+
+        > td {
+            padding: 1.2rem;
+            border: none;
+            vertical-align: middle;
+            color: #333333;
+            font-size: 0.9rem;
+            
+            &.td-fecha {
+                font-weight: 500;
+                color: #111827;
+            }
+            
+            &.td-dia {
+                color: #4b5563;
+            }
+            
+            &.td-total {
+                font-weight: 700;
+                color: #111827;
+                font-size: 0.95rem;
+            }
+        }
+    }
+
+    // Footer
+    .premium-tfoot > td {
+        background-color: #e5e7eb; /* Gris claro del mockup */
+        border: none;
+        padding: 1.5rem 1.2rem;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #111827;
+
+        &.tfoot-label {
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            color: #374151;
+        }
+        
+        &.tfoot-total {
+            color: #92400e; /* Tono marrón/dorado del total final */
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+    }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem !important;
+    background: #ffffff;
+    color: #94a3b8;
+
+    i {
+        font-size: 2.5rem;
+        display: block;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    span {
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+}
