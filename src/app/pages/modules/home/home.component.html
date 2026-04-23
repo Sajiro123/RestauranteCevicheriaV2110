@@ -120,33 +120,47 @@
                     </div>
 
                     <!-- Lista Resumen Rápido -->
-                    <div class="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-[220px] overflow-y-auto custom-scrollbar shadow-inner mb-4">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1 flex items-center gap-2">
+                    <div
+                        class="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-[220px] overflow-y-auto custom-scrollbar shadow-inner mb-4">
+                        <h4
+                            class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1 flex items-center gap-2">
                             <i class="pi pi-list text-[11px]"></i> Detalle Rápido del Pedido
                         </h4>
                         <div class="space-y-1.5">
-                            <ng-container *ngFor="let pedido of getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada)">
+                            <ng-container
+                                *ngFor="let pedido of getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada)">
                                 <ng-container *ngIf="pedido.pedidodetalle && pedido.pedidodetalle.length > 0">
-                                    <div *ngFor="let detalle of pedido.pedidodetalle" class="flex justify-between items-center py-1.5 px-3 bg-white rounded-lg border border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-blue-100 transition-colors">
+                                    <div *ngFor="let detalle of pedido.pedidodetalle"
+                                        class="flex justify-between items-center py-1.5 px-3 bg-white rounded-lg border border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-blue-100 transition-colors">
                                         <div class="flex items-center gap-3">
-                                            <span class="font-black text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded-md text-xs border border-blue-100">{{ detalle.cantidad }}x</span>
-                                            <span class="font-bold text-slate-700 text-[13px] truncate" style="max-width: 200px;" [title]="detalle.producto?.nombre">{{ detalle.producto?.nombre ?? 'Producto sin nombre' }}</span>
+                                            <span
+                                                class="font-black text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded-md text-xs border border-blue-100">{{
+                                                detalle.cantidad }}x</span>
+                                            <span class="font-bold text-slate-700 text-[13px] truncate"
+                                                style="max-width: 200px;" [title]="detalle.producto?.nombre">{{
+                                                detalle.producto?.nombre ?? 'Producto sin nombre' }}</span>
                                         </div>
                                         <div class="flex flex-col items-end">
-                                            <span class="font-black text-slate-800 text-[13px]">{{ (detalle.cantidad * detalle.precioU) | currency : 'S/ ' }}</span>
+                                            <span class="font-black text-slate-800 text-[13px]">{{ (detalle.cantidad *
+                                                detalle.precioU) | currency : 'S/ ' }}</span>
                                         </div>
                                     </div>
                                 </ng-container>
                             </ng-container>
-                            <div *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length === 0" class="text-center py-2 text-slate-400 text-xs font-medium">
+                            <div *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length === 0"
+                                class="text-center py-2 text-slate-400 text-xs font-medium">
                                 No se encontraron detalles
                             </div>
-                            
+
                             <!-- Total de la lista resumen -->
-                            <div class="mt-2 pt-2.5 border-t border-slate-200 flex justify-between items-center px-1" *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length > 0">
-                                <span class="font-bold text-slate-500 uppercase text-[11px] tracking-widest">Total del Pedido</span>
-                                <span class="font-black text-slate-800 text-[15px] bg-slate-200/50 px-2.5 py-1 rounded shadow-sm border border-slate-200/60 transition-colors">
-                                    {{ 'S/ ' + calculateTotalPedidos(mesaSeleccionada.numero, pedido_mesa_status, mesaSeleccionada) }}
+                            <div class="mt-2 pt-2.5 border-t border-slate-200 flex justify-between items-center px-1"
+                                *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length > 0">
+                                <span class="font-bold text-slate-500 uppercase text-[11px] tracking-widest">Total del
+                                    Pedido</span>
+                                <span
+                                    class="font-black text-slate-800 text-[15px] bg-slate-200/50 px-2.5 py-1 rounded shadow-sm border border-slate-200/60 transition-colors">
+                                    {{ 'S/ ' + calculateTotalPedidos(mesaSeleccionada.numero, pedido_mesa_status,
+                                    mesaSeleccionada) }}
                                 </span>
                             </div>
                         </div>
@@ -157,56 +171,81 @@
                         <!-- Editar -->
                         <div class="group bg-gradient-to-br from-blue-50 to-blue-100/80 hover:from-blue-100 hover:to-blue-200 border border-blue-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="editar(mesaSeleccionada, NuevoPedido)">
-                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                            <div
+                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
                                 <i class="material-icons !p-0 !text-[20px] text-blue-600">edit</i>
                             </div>
-                            <span class="text-[10px] sm:text-[12px] font-black text-blue-800 uppercase tracking-widest">Editar</span>
+                            <span
+                                class="text-[10px] sm:text-[12px] font-black text-blue-800 uppercase tracking-widest">Editar</span>
                         </div>
-                        
+
                         <!-- Ticket -->
                         <div class="group bg-gradient-to-br from-indigo-50 to-indigo-100/80 hover:from-indigo-100 hover:to-indigo-200 border border-indigo-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="generatePDF(NuevoPedido)">
-                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                            <div
+                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
                                 <i class="material-icons !p-0 !text-[20px] text-indigo-600">description</i>
                             </div>
-                            <span class="text-[10px] sm:text-[12px] font-black text-indigo-800 uppercase tracking-widest">Ticket</span>
+                            <span
+                                class="text-[10px] sm:text-[12px] font-black text-indigo-800 uppercase tracking-widest">Ticket</span>
                         </div>
-                        
+
                         <!-- Cocina -->
                         <div class="group bg-gradient-to-br from-orange-50 to-orange-100/80 hover:from-orange-100 hover:to-orange-200 border border-orange-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="generateCocinaPDF(NuevoPedido)">
-                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                            <div
+                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
                                 <i class="material-icons !p-0 !text-[20px] text-orange-600">restaurant</i>
                             </div>
-                            <span class="text-[10px] sm:text-[12px] font-black text-orange-800 uppercase tracking-widest">Cocina</span>
+                            <span
+                                class="text-[10px] sm:text-[12px] font-black text-orange-800 uppercase tracking-widest">Cocina</span>
                         </div>
-                        
+
                         <!-- Cobrar (Destacado) -->
                         <div class="col-span-2 group bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 border border-green-600 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col sm:flex-row items-center justify-center gap-2 min-h-[75px] shadow-md hover:shadow-lg hover:shadow-green-500/30 transform hover:-translate-y-1 relative overflow-hidden"
                             (click)="CobrarDialog(mesaSeleccionada, NuevoPedido)">
-                            <div class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                            <div class="bg-white/20 backdrop-blur-sm p-1.5 rounded-lg shadow-inner z-10 group-hover:scale-110 transition-transform duration-300">
+                            <div
+                                class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]">
+                            </div>
+                            <div
+                                class="bg-white/20 backdrop-blur-sm p-1.5 rounded-lg shadow-inner z-10 group-hover:scale-110 transition-transform duration-300">
                                 <i class="material-icons fa-solid fa-money-bill-wave !p-0 !text-[20px] text-white"></i>
                             </div>
-                            <span class="text-[12px] sm:text-[14px] font-black text-white uppercase tracking-widest z-10">Cobrar</span>
+                            <span
+                                class="text-[12px] sm:text-[14px] font-black text-white uppercase tracking-widest z-10">Cobrar</span>
                         </div>
-                        
+
                         <!-- Mover Mesa -->
                         <div class="group bg-gradient-to-br from-cyan-50 to-cyan-100/80 hover:from-cyan-100 hover:to-cyan-200 border border-cyan-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="moveTableModal()">
-                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                            <div
+                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
                                 <i class="material-icons fa-solid fa-arrows-alt !p-0 !text-[18px] text-cyan-600"></i>
                             </div>
-                            <span class="text-[10px] sm:text-[12px] font-black text-cyan-800 leading-tight uppercase tracking-widest">Mover</span>
+                            <span
+                                class="text-[10px] sm:text-[12px] font-black text-cyan-800 leading-tight uppercase tracking-widest">Mover</span>
                         </div>
-                        
+
+                        <!-- Generar Comprobante -->
+                        <!-- <div class="group bg-gradient-to-br from-violet-50 to-violet-100/80 hover:from-violet-100 hover:to-violet-200 border border-violet-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
+                            (click)="abrirComprobanteModal('03')">
+                            <div
+                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                                <i class="material-icons !p-0 !text-[18px] text-violet-600">receipt_long</i>
+                            </div>
+                            <span
+                                class="text-[10px] sm:text-[12px] font-black text-violet-800 leading-tight uppercase tracking-widest text-center">Comprobante</span>
+                        </div> -->
+
                         <!-- Cancelar -->
                         <div class="group bg-gradient-to-br from-red-50 to-red-100/80 hover:from-red-100 hover:to-red-200 border border-red-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
                             (click)="deletepedidoModal()">
-                            <div class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
+                            <div
+                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
                                 <i class="material-icons fa-solid fa-trash !p-0 !text-[18px] text-red-600"></i>
                             </div>
-                            <span class="text-[10px] sm:text-[12px] font-black text-red-800 uppercase tracking-widest">Cancelar</span>
+                            <span
+                                class="text-[10px] sm:text-[12px] font-black text-red-800 uppercase tracking-widest">Cancelar</span>
                         </div>
                     </div>
                 </div>

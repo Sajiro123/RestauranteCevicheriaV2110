@@ -63,12 +63,9 @@ export class CajaService {
   // 📌 INSERTAR
   // ============================
   async create(item: Caja) {
-    // Remove total field if present since it's a generated column
-    const { total, ...insertData } = item;
-
     const { data, error } = await this.supabase
       .from('caja_semanal')
-      .insert(insertData)
+      .insert(item)
       .select();
 
     return { data, error };
