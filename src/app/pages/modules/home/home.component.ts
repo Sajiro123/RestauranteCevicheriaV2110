@@ -2407,6 +2407,31 @@ export class HomeComponent {
         return true;
     }
 
+    onBuscarPlatoChange(value: string) {
+        if (value.length > 4) {
+            const table = document.getElementById('listarPlatos');
+            if (table) {
+                table.innerHTML = '';
+            }
+            this.BuscarPlatoSearchText(value);
+        } else if (value.length === 0) {
+            const table = document.getElementById('listarPlatos');
+            if (table) {
+                table.innerHTML = '';
+            }
+            this.BuscarPlatoSearchText('');
+        }
+    }
+
+    quickSearchPlato(term: string) {
+        this.buscarPlato = term;
+        const table = document.getElementById('listarPlatos');
+        if (table) {
+            table.innerHTML = '';
+        }
+        this.BuscarPlatoSearchText(term);
+    }
+
     AddKeyPressCalculator(e: Event | undefined, buscarPlato: string) {
         e = e || window.event;
         const keyboardEvent = e as KeyboardEvent;

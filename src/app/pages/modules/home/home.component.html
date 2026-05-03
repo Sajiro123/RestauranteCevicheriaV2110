@@ -495,64 +495,139 @@
                 <p-iconfield>
                     <p-inputicon styleClass="pi pi-search text-gray-400 font-bold" />
                     <input pInputText type="text" name="plato" id="idplatotext"
-                        (keypress)="AddKeyPress($event, buscarPlato)" placeholder="Buscar platos/productos..."
+                        (keypress)="AddKeyPress($event, buscarPlato)" (ngModelChange)="onBuscarPlatoChange($event)"
+                        placeholder="Buscar platos/productos..."
                         class="h-12 w-full pl-10 pr-4 py-2 border border-gray-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-medium"
                         [(ngModel)]="buscarPlato" />
                 </p-iconfield>
             </div>
+            <!-- Quick Search Chips (below search input) -->
+            <div class="mb-3">
+                <div class="flex items-center gap-2.5 overflow-x-auto pb-1.5 no-scrollbar">
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-blue-600 text-white text-base font-bold shadow-sm transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('')">
+                        Todos
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-red-600 text-white text-base font-bold shadow-sm transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('Taper')">
+                        Taper
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('arroz mariscos')">
+                        🦐 Arroz Mariscos
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('chicha morada')">
+                        🍇 Chicha Morada
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('arroz duo')">
+                        🍚 Arroz Duo
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('trio mixto')">
+                        🐟 Trio Mixto
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('gaseosa 1l')">
+                        🥤 Gaseosa 1L
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('ceviche')">
+                        🍋 Ceviche
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('chaufa trio')">
+                        🍳 Chaufa Trio
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('gaseosa')">
+                        🫙 Gaseosa
+                    </button>
+                    <button type="button"
+                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        (click)="quickSearchPlato('chilcano')">
+                        🍹 Chilcano
+                    </button>
+                </div>
+            </div>
 
-            <!-- Enhanced Calculator Embedded -->
-            <div class="mb-4 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                <div
-                    class="flex items-center justify-between mb-3 text-sm font-bold text-gray-600 uppercase tracking-wider">
-                    <span>Calculadora Rápida</span>
-                </div>
-                <!-- Number Input and Add button -->
-                <div class="flex gap-2 w-full mb-3">
-                    <input type="number" (keypress)="AddKeyPressCalculator($event, buscarPlato)" id="NumberLote"
-                        name="NumberLote" placeholder="Ingresa N° de Plato" [(ngModel)]="numeroPlato"
-                        class="flex-1 h-14 text-center text-2xl font-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <button
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold w-14 rounded-lg shadow-sm transition-colors flex items-center justify-center text-xl"
-                        (click)="ListarPedidoNumeroCalculadora()"><i class="pi pi-plus"></i></button>
-                </div>
-                <!-- Mini Keypad for touch devices and desktop -->
-                <div class="grid grid-cols-5 gap-2 w-full">
+            <!-- Calculator: Ingreso Rápido por Código -->
+            <div class="mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
+                    <span
+                        class="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <i class="pi pi-th-large text-slate-400 text-[10px]"></i> Ingreso Rápido por Código
+                    </span>
                     <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(1)">1</button>
-                    <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(2)">2</button>
-                    <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(3)">3</button>
-                    <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(4)">4</button>
-                    <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(5)">5</button>
-                    <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(6)">6</button>
-                    <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(7)">7</button>
-                    <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(8)">8</button>
-                    <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(9)">9</button>
-                    <button type="button"
-                        class="h-10 bg-gray-100 hover:bg-gray-200 rounded-md font-extrabold text-gray-800 text-lg"
-                        (click)="setNumbersSelectDashboard(0)">0</button>
-                    <!-- Clear -->
-                    <button type="button"
-                        class="h-10 bg-red-100 text-red-600 hover:bg-red-200 rounded-md font-bold col-span-5"
+                        class="text-[11px] font-black text-red-400 hover:text-red-600 uppercase tracking-wider transition-colors"
                         (click)="setNumbersSelectDashboard('clear')">
-                        <i class="fa-regular fa-trash-can mr-2"></i> Limpiar Numérico
+                        Limpiar
+                    </button>
+                </div>
+
+                <!-- Keypad + number display + add button -->
+                <div class="p-3 flex gap-2 items-stretch">
+                    <!-- Left: number display + grid -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <!-- Number display (hidden input shown as display) -->
+                        <input type="number" (keypress)="AddKeyPressCalculator($event, buscarPlato)" id="NumberLote"
+                            name="NumberLote" placeholder="—" [(ngModel)]="numeroPlato"
+                            class="w-full h-8 text-center text-xl font-black border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50 tracking-widest transition-all mb-0.5" />
+                        <!-- Row 1: 1–5 -->
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(1)">1</button>
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(2)">2</button>
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(3)">3</button>
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(4)">4</button>
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(5)">5</button>
+                        </div>
+                        <!-- Row 2: 6–0 -->
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(6)">6</button>
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(7)">7</button>
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(8)">8</button>
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(9)">9</button>
+                            <button type="button"
+                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                (click)="setNumbersSelectDashboard(0)">0</button>
+                        </div>
+                    </div>
+
+                    <!-- Right: big + button -->
+                    <button
+                        class="bg-[#3b82f6] hover:bg-blue-700 active:scale-95 text-white font-black w-16 rounded-2xl shadow-md transition-all flex items-center justify-center text-3xl self-stretch"
+                        (click)="ListarPedidoNumeroCalculadora()">
+                        <i class="pi pi-plus"></i>
                     </button>
                 </div>
             </div>

@@ -42,9 +42,9 @@ export class ReportesComponent {
     pdfUrl: SafeResourceUrl | null = null;
     fecha_actual: any;
 
-    // Date restrictions for calendar
-    minDate!: Date;
-    maxDate!: Date;
+    // Date restrictions for calendar (null = sin restricción)
+    minDate: Date | null = null;
+    maxDate: Date | null = null;
 
     // Add properties for the edit modal
     Cobrar_Dialog: boolean = false;
@@ -80,9 +80,9 @@ export class ReportesComponent {
             this.minDate = yesterday;
             this.maxDate = today;
         } else {
-            // For admin users, allow all dates by not setting restrictions
-            this.minDate = undefined as unknown as Date;
-            this.maxDate = undefined as unknown as Date;
+            // Admin: sin restricción de fechas
+            this.minDate = null;
+            this.maxDate = null;
         }
 
         // Set date restrictions: only today and yesterday allowed
@@ -331,7 +331,6 @@ export class ReportesComponent {
 
         this.PedidoService.showRerporte(parameters).subscribe(
             (response: { success: any; data: any[] }) => {
-                debugger;
                 if (response.success) {
                     var yape_total = 0;
                     var plin_total = 0;
@@ -374,8 +373,7 @@ export class ReportesComponent {
                             total: total
                         });
                     });
-                    debugger;
-                    this.Clients = this.array_data;
+                        this.Clients = this.array_data;
                     this.array_data_total = {
                         efectivo: this.totalEfectivo,
                         plin: this.totalPlin,
@@ -416,19 +414,15 @@ export class ReportesComponent {
                     });
                     this.PedidoReporte = response.data;
 
-                    debugger;
-                    await this.PedidoService.ReporteProductoDetalle(parameters).subscribe((response2: { success: any; data: any[] }) => {
-                        debugger;
-                        if (response2.success) {
+                        await this.PedidoService.ReporteProductoDetalle(parameters).subscribe((response2: { success: any; data: any[] }) => {
+                                if (response2.success) {
                             // this.PedidoDetalle =
-                            debugger;
-                            var pedidodetalle: any = {};
+                                        var pedidodetalle: any = {};
                             // response2.data.forEach((element: any) => {
                             //     pedidodetalle = { ...element.pedidodetalle };
                             // });
                             // this.PedidoDetalle = pedidodetalle;
-                            debugger;
-                            this.PedidoReporte = this.PedidoReporte.map((pedido: any) => {
+                                        this.PedidoReporte = this.PedidoReporte.map((pedido: any) => {
                                 const detalle = response2.data.filter((d: any) => d.idpedido === pedido.idpedido);
                                 return {
                                     ...pedido,
