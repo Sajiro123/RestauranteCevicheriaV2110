@@ -69,15 +69,21 @@ export class SupabaseService {
                 .gt('preciounitario', 0)
                 .order('nombre');
         } else if (type == 'nombre') {
-            query = await this.supabase
+            let baseQuery = this.supabase
                 .from('producto')
                 .select(
                     `
             *,
             categoria:idcategoria(nombre)
         `
-                )
-                .ilike(type, `%${searchTerm}%`)
+                );
+
+            const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0).slice(0, 4);
+            words.forEach(word => {
+                baseQuery = baseQuery.ilike(type, `%${word}%`);
+            });
+
+            query = await baseQuery
                 .is('deleted', null)
                 .gt('preciounitario', 0)
                 .order('nombre');

@@ -117,6 +117,20 @@ export class Login implements OnInit {
 
     async ngOnInit() {
         await this.loadEmpresaData();
+        this.checkSessionClosedMessage();
+    }
+
+    checkSessionClosedMessage() {
+        const reason = this.authService.sessionClosedReason;
+        if (reason) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Sesión cerrada',
+                detail: reason,
+                life: 8000
+            });
+            this.authService.sessionClosedReason = null;
+        }
     }
 
     async loadEmpresaData() {
@@ -149,7 +163,6 @@ export class Login implements OnInit {
             const { username, password } = this.loginForm.value;
 
             try {
-                debugger
                 const result = await this.authService.login(username, password);
 
                 if (result.success) {

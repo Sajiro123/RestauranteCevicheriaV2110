@@ -10,12 +10,12 @@
                 <div class="col-sm-12">
                     <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
                     <div class="col-sm-12">
-                        <p-calendar [(ngModel)]="selectedRange" [selectionMode]="'range'" [numberOfMonths]="2"
-                            class="date-range" [showButtonBar]="true" [showWeek]="false" [touchUI]="false"
+                        <p-datepicker [(ngModel)]="selectedRange" selectionMode="range" [numberOfMonths]="2"
+                            class="date-range" [showButtonBar]="true"
                             placeholder="Selecciona un rango" (onSelect)="handleCalendarBlur()"
                             [style]="{ width: '300px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
                             [minDate]="minDate" [maxDate]="maxDate">
-                        </p-calendar>
+                        </p-datepicker>
                     </div>
                 </div>
             </div>
@@ -103,9 +103,9 @@
                 <div class="col-sm-12">
                     <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
                     <div class="col-sm-12">
-                        <p-calendar [(ngModel)]="selectedRange2" placeholder="Selecciona una fecha"
+                        <p-datepicker [(ngModel)]="selectedRange2" placeholder="Selecciona una fecha"
                             (onSelect)="DayCalendarBlur()" [style]="{ width: '300px' }" [appendTo]="'body'"
-                            [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate"> </p-calendar>
+                            [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate"> </p-datepicker>
                     </div>
                 </div>
             </div>
@@ -235,10 +235,10 @@
         <div class="col-sm-12">
             <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
             <div class="col-sm-12">
-                <p-calendar [(ngModel)]="selectedRange3" [selectionMode]="'range'" [numberOfMonths]="2"
+                <p-datepicker [(ngModel)]="selectedRange3" selectionMode="range" [numberOfMonths]="2"
                     placeholder="Selecciona un rango" (onSelect)="DayCalendarBlurEliminados()"
                     [style]="{ width: '300px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
-                    [minDate]="minDate" [maxDate]="maxDate"> </p-calendar>
+                    [minDate]="minDate" [maxDate]="maxDate"> </p-datepicker>
             </div>
         </div>
     </div>
@@ -355,10 +355,10 @@
         <div class="col-sm-12">
             <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Rango de Fecha:</b></p>
             <div class="col-sm-12">
-                <p-calendar [(ngModel)]="selectedRange4" [selectionMode]="'range'" [numberOfMonths]="2"
+                <p-datepicker [(ngModel)]="selectedRange4" selectionMode="range" [numberOfMonths]="2"
                     placeholder="Selecciona un rango" (onSelect)="DayCalendarBlurSinCobrar()"
                     [style]="{ width: '300px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
-                    [minDate]="minDate" [maxDate]="maxDate"> </p-calendar>
+                    [minDate]="minDate" [maxDate]="maxDate"> </p-datepicker>
             </div>
         </div>
     </div>

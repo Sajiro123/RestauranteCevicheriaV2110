@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { SupabaseService } from './supabase.service';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { MenuService } from '../pages/service/menu.service';
 
 export interface User {
@@ -22,28 +22,119 @@ export class AuthService {
     private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
     public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
+    private readonly SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 horas
+
+    /** Razón del cierre de sesión forzado (para mostrar mensaje en login) */
+    public sessionClosedReason: string | null = null;
+
+    /** Canal Realtime activo */
+    private realtimeChannel: any = null;
+
     constructor(
         private supabaseService: SupabaseService,
         @Inject(MenuService) private menuService: MenuService,
         private router: Router
     ) {
-        // Verificar si hay una sesión guardada al inicializar
         this.checkStoredSession();
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────
+
+    /** Genera un UUID v4 simple */
+    private generateSessionToken(): string {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = (Math.random() * 16) | 0;
+            return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Sesión almacenada
+    // ─────────────────────────────────────────────────────────────
+
     private checkStoredSession() {
         const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-            try {
-                const user = JSON.parse(storedUser);
-                this.currentUserSubject.next(user);
-                this.isAuthenticatedSubject.next(true);
-            } catch (error) {
-                console.error('Error parsing stored user:', error);
-                localStorage.removeItem('currentUser');
+        if (!storedUser) return;
+
+        try {
+            const parsed = JSON.parse(storedUser);
+
+            // Verificar expiración (24 horas)
+            const elapsed = Date.now() - (parsed.loginAt ?? 0);
+            if (elapsed > this.SESSION_DURATION_MS) {
+                console.warn('Sesión expirada. Se requiere nuevo inicio de sesión.');
+                this.clearLocalSession();
+                return;
             }
+
+            const { loginAt: _, menuData: __, ...user } = parsed;
+            this.currentUserSubject.next(user);
+            this.isAuthenticatedSubject.next(true);
+
+            // Reanudar vigilancia Realtime
+            if (parsed.sessionToken && parsed.idusuario) {
+                this.watchSessionToken(parsed.idusuario, parsed.sessionToken);
+            }
+        } catch (err) {
+            console.error('Error parsing stored user:', err);
+            this.clearLocalSession();
         }
     }
+
+    private clearLocalSession() {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('userMenuData');
+        this.unsubscribeRealtime();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Realtime: vigilar session_token
+    // ─────────────────────────────────────────────────────────────
+
+    private watchSessionToken(idusuario: number, myToken: string) {
+        this.unsubscribeRealtime();
+
+        console.log(`[Auth] Iniciando vigilancia Realtime para usuario ${idusuario}. Mi token: ${myToken.substring(0, 8)}...`);
+
+        this.realtimeChannel = this.supabaseService.client
+            .channel(`session_watch_${idusuario}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'usuario',
+                    filter: `idusuario=eq.${idusuario}`
+                },
+                (payload: any) => {
+                    const newToken = payload.new?.session_token;
+                    console.log(`[Auth] Cambio detectado en usuario. Nuevo token: ${newToken?.substring(0, 8)}... | Mi token: ${myToken.substring(0, 8)}...`);
+                    if (newToken && newToken !== myToken) {
+                        console.warn('[Auth] ⚠️ Sesión desplazada. Cerrando esta sesión...');
+                        this.sessionClosedReason = 'Tu sesión fue cerrada porque iniciaste sesión desde otro dispositivo.';
+                        this.logout(true);
+                    } else if (newToken === myToken) {
+                        console.log('[Auth] Token coincide. Esta sesión sigue activa.');
+                    }
+                }
+            )
+            .subscribe((status: string) => {
+                console.log(`[Auth] Estado Realtime: ${status}`);
+            });
+    }
+
+    private unsubscribeRealtime() {
+        if (this.realtimeChannel) {
+            this.supabaseService.client.removeChannel(this.realtimeChannel);
+            this.realtimeChannel = null;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Login
+    // ─────────────────────────────────────────────────────────────
 
     async login(username: string, password: string): Promise<{ success: boolean; message?: string; user?: User }> {
         try {
@@ -57,10 +148,24 @@ export class AuthService {
                 .single();
 
             if (error || !data) {
-                return {
-                    success: false,
-                    message: 'Usuario o contraseña incorrectos'
-                };
+                return { success: false, message: 'Usuario o contraseña incorrectos' };
+            }
+
+            // Generar token único para esta sesión
+            const sessionToken = this.generateSessionToken();
+            console.log(`[Auth] Login: generando session_token para usuario ${data.idusuario}: ${sessionToken.substring(0, 8)}...`);
+
+            // Actualizar session_token en la BD → invalida otras sesiones activas
+            const { error: updateError } = await this.supabaseService.client
+                .from('usuario')
+                .update({ session_token: sessionToken })
+                .eq('idusuario', data.idusuario);
+
+            if (updateError) {
+                console.error('[Auth] ❌ Error actualizando session_token en BD:', updateError);
+                console.error('[Auth] Detalle:', JSON.stringify(updateError));
+            } else {
+                console.log('[Auth] ✅ session_token actualizado en BD correctamente.');
             }
 
             const user: User = {
@@ -72,13 +177,15 @@ export class AuthService {
                 idperfil: data.idperfil
             };
 
-            // Fetch menu data for this user profile
+            // Fetch menu data
             const menuData = await this.fetchAndStoreMenuData(data.idperfil);
 
-            // Guardar usuario en localStorage para persistencia
+            // Guardar sesión en localStorage con token y timestamp
             const userData = {
                 ...user,
-                menuData: menuData // Include menu data in user object
+                menuData,
+                loginAt: Date.now(),
+                sessionToken
             };
             localStorage.setItem('currentUser', JSON.stringify(userData));
 
@@ -86,32 +193,29 @@ export class AuthService {
             this.currentUserSubject.next(user);
             this.isAuthenticatedSubject.next(true);
 
-            return {
-                success: true,
-                user: user
-            };
+            // Iniciar vigilancia Realtime para detectar desplazamiento
+            this.watchSessionToken(data.idusuario, sessionToken);
+
+            return { success: true, user };
         } catch (error) {
             console.error('Error en login:', error);
-            return {
-                success: false,
-                message: 'Error de conexión. Intente nuevamente.'
-            };
+            return { success: false, message: 'Error de conexión. Intente nuevamente.' };
         }
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // Menu data
+    // ─────────────────────────────────────────────────────────────
 
     private async fetchAndStoreMenuData(idperfil: number) {
         try {
             const { data, error } = await this.menuService.getMenuByPerfil(idperfil);
-
             if (error) {
                 console.error('Error fetching menu data:', error);
                 return [];
             }
-
-            // Store menu data in localStorage
             const menuData = data || [];
             localStorage.setItem('userMenuData', JSON.stringify(menuData));
-
             return menuData;
         } catch (error) {
             console.error('Error fetching menu data:', error);
@@ -119,36 +223,50 @@ export class AuthService {
         }
     }
 
-    logout(redirectToLogin: boolean = true) {
-        // Limpiar localStorage
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('userMenuData');
+    // ─────────────────────────────────────────────────────────────
+    // Logout
+    // ─────────────────────────────────────────────────────────────
 
-        // Actualizar observables
+    logout(redirectToLogin: boolean = true) {
+        this.clearLocalSession();
         this.currentUserSubject.next(null);
         this.isAuthenticatedSubject.next(false);
 
-        // Redirigir al login solo si se especifica
         if (redirectToLogin) {
             this.router.navigate(['/auth/login']);
         }
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // Helpers públicos
+    // ─────────────────────────────────────────────────────────────
 
     getCurrentUser(): User | null {
         return this.currentUserSubject.value;
     }
 
     isAuthenticated(): boolean {
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            try {
+                const parsed = JSON.parse(storedUser);
+                const elapsed = Date.now() - (parsed.loginAt ?? 0);
+                if (elapsed > this.SESSION_DURATION_MS) {
+                    this.logout(false);
+                    return false;
+                }
+            } catch {
+                this.logout(false);
+                return false;
+            }
+        }
         return this.isAuthenticatedSubject.value;
     }
 
-    // Método para verificar roles específicos si es necesario
     hasRole(role: string): boolean {
-        const user = this.getCurrentUser();
-        return user?.rol === role;
+        return this.getCurrentUser()?.rol === role;
     }
 
-    // Método para redirigir después del login exitoso
     redirectAfterLogin(returnUrl?: string, idperfil?: number) {
         if (returnUrl && returnUrl !== '/auth/login') {
             if (idperfil == 3 || idperfil == 1) {
@@ -156,7 +274,6 @@ export class AuthService {
             } else {
                 this.router.navigate([returnUrl]);
             }
-
         } else {
             this.router.navigate(['/']);
         }
