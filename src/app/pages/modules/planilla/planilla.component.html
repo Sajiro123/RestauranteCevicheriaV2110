@@ -1,0 +1,257 @@
+<div class="planilla-page">
+    <div class="page-header">
+        <div class="page-title">
+            <div class="title-icon">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
+            <div>
+                <h1>Gestión de Planilla</h1>
+                <p class="page-subtitle">Revise, ajuste y apruebe la nómina del periodo actual.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="page-header" style="justify-content: flex-start;">
+
+        <div class="filter-group">
+            <span class="filter-label">Desde</span>
+            <input type="date" class="date-input" [(ngModel)]="fechaInicioFiltro">
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">Hasta</span>
+            <input type="date" class="date-input" [(ngModel)]="fechaFinFiltro">
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">Buscar Empleado</span>
+            <select class="date-input" [(ngModel)]="empleadoSeleccionado">
+                <option value="">Todos los empleados</option>
+                <option *ngFor="let emp of empleados" [value]="emp.idpersona || emp.id_persona">{{ emp.nombres }}
+                </option>
+            </select>
+        </div>
+        <button class="btn btn-ghost" style="margin-bottom: 2px; border: 1px solid #d1d5db;"
+            (click)="listarPlanillas()">
+            <i class="pi pi-search"></i> Buscar
+        </button>
+        <button class="btn btn-primary" style="margin-bottom: 2px;" (click)="abrirModalCalculo()">
+            <i class="pi pi-calculator"></i> Generar Cálculo
+        </button>
+    </div>
+    <div class="table-card">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Empleado</th>
+                        <th style="text-align: center;">Período Laborado</th>
+                        <th class="th-total" style="text-align: right;">Salario Base</th>
+                        <th style="text-align: center;">Días Contab.</th>
+                        <th style="text-align: center;">Tardanzas</th>
+                        <th style="text-align: right;">Descuentos</th>
+                        <th style="text-align: right;">Extras</th>
+                        <th class="th-total" style="text-align: right;">Monto Neto</th>
+                        <th style="width: 90px; text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngIf="planillas.length === 0">
+                        <td colspan="9" style="text-align: center; padding: 3rem 1rem; color: #64748b;">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                                <i class="pi pi-inbox" style="font-size: 2rem; color: #cbd5e1;"></i>
+                                <span style="font-size: 0.85rem;">No hay registros de planilla para mostrar.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr *ngFor="let p of planillas; let odd = odd" [class.row-odd]="odd">
+                        <td class="td-trabajo">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img alt="Avatar"
+                                    src="https://ui-avatars.com/api/?name={{p.nombre_persona}}&background=random"
+                                    style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                                <div>
+                                    <div style="font-weight: 700; color: #191c1e;">{{ p.nombre_persona }}</div>
+                                    <div style="font-size: 0.75rem; color: #534434; font-weight: 400;">{{
+                                        p.cargo_persona }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="td-center">
+                            <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">
+                                {{ p.laborinicio | date:'dd/MM/yyyy' }} - {{ p.laborfin | date:'dd/MM/yyyy' }}
+                            </span>
+                        </td>
+                        <td class="td-gastos" style="text-align: right; color: #534434;">S/ {{ p.salario |
+                            number:'1.2-2' }}</td>
+                        <td class="td-center">{{ p.dias_trabajados }}</td>
+                        <td class="td-center">
+                            <span *ngIf="p.tardanzas_cantidad_dias > 0"
+                                style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; font-size: 11px; font-weight: 700;">
+                                <i class="pi pi-exclamation-triangle" style="font-size: 10px;"></i> {{
+                                p.tardanzas_cantidad_dias }} Faltas/Tard.
+                            </span>
+                            <span *ngIf="p.tardanzas_cantidad_dias === 0"
+                                style="display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: #f2f4f6; color: #a1a1aa; align-items: center; justify-content: center;">-</span>
+                        </td>
+                        <td class="td-gastos" style="text-align: right;">S/ {{ p.descuento | number:'1.2-2' }}</td>
+                        <td class="td-gastos" style="text-align: right; color: #059669;">S/ {{ (p.extra || 0) |
+                            number:'1.2-2' }}</td>
+                        <td class="td-total" style="text-align: right;">S/ {{ p.monto_neto | number:'1.2-2' }}</td>
+                        <td class="td-actions" style="justify-content: center; gap: 4px;">
+                            <button class="btn-edit" title="Editar"
+                                style="background: #f59e0b; color: #fff; padding: 6px; border: none; border-radius: 4px; cursor: pointer;"
+                                (click)="editarPlanilla(p)">
+                                <i class="pi pi-pencil"></i>
+                            </button>
+                            <button class="btn-edit" title="Descargar PDF" (click)="descargarPDF(p)"
+                                style="background: #1d4ed8; color: #fff; padding: 6px; border: none; border-radius: 4px; cursor: pointer;">
+                                <i class="pi pi-file-pdf"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Generar Cálculo -->
+<p-dialog header="Generar Cálculo de Planilla" [(visible)]="displayCalculoModal" [modal]="true"
+    [style]="{width: '850px'}" [draggable]="false" [resizable]="false">
+    <div class="dialog-form" style="padding-top: 1rem;">
+
+        <div *ngIf="!calculoGenerado">
+            <p style="font-size: 0.85rem; color: #534434; margin-bottom: 1rem;">
+                Se calcularán los días trabajados en base a los registros de apertura de caja para el rango de fechas
+                seleccionado.
+            </p>
+
+            <div class="form-grid-2">
+                <div class="form-field">
+                    <label>Empleado a procesar</label>
+                    <input type="text" class="field-input readonly" disabled [value]="nombreEmpleadoModal()">
+                </div>
+                <div class="form-field">
+                    <label>Frecuencia de Pago</label>
+                    <select class="field-input" [(ngModel)]="frecuenciaPagoGlobal">
+                        <option value="Diario">Diario</option>
+                        <option value="Semanal">Semanal</option>
+                        <option value="Quincenal">Quincenal</option>
+                        <option value="Mensual">Mensual</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-field">
+                    <label>Fecha Inicio</label>
+                    <input type="date" class="field-input" [(ngModel)]="fechaInicioCalc">
+                </div>
+
+                <div class="form-field">
+                    <label>Fecha Fin</label>
+                    <input type="date" class="field-input" [(ngModel)]="fechaFinCalc">
+                </div>
+            </div>
+
+            <div class="dialog-actions" style="margin-top: 1.5rem;">
+                <button class="btn btn-ghost" (click)="displayCalculoModal = false">Cancelar</button>
+                <button class="btn btn-primary" (click)="calcularPlanilla()">
+                    <i class="pi pi-cog"></i> Generar
+                </button>
+            </div>
+        </div>
+
+        <div *ngIf="calculoGenerado">
+            <p *ngIf="!modoEdicion" style="font-size: 0.85rem; color: #10b981; font-weight: 600; margin-bottom: 1rem;">
+                <i class="pi pi-check-circle"></i> Cálculo generado exitosamente. Complete los descuentos u
+                observaciones antes de registrar.
+            </p>
+            <p *ngIf="modoEdicion" style="font-size: 0.85rem; color: #f59e0b; font-weight: 600; margin-bottom: 1rem;">
+                <i class="pi pi-pencil"></i> Modo Edición. Modifique los valores y guarde los cambios.
+            </p>
+
+            <div
+                style="max-height: 55vh; overflow-y: auto; padding-right: 0.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div *ngFor="let p of planillasGeneradas"
+                    style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img alt="Avatar"
+                                src="https://ui-avatars.com/api/?name={{p.nombre_persona}}&background=random"
+                                style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            <div>
+                                <span
+                                    style="font-weight: 700; font-size: 1.1rem; color: #1e293b; display: block;">{{p.nombre_persona}}</span>
+                                <span style="font-size: 0.75rem; color: #64748b;">{{p.cargo_persona}}</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span
+                                style="font-size: 0.75rem; color: #64748b; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Neto
+                                a Pagar</span>
+                            <span style="font-weight: 800; font-size: 1.4rem; color: #059669;">S/ {{p.monto_neto |
+                                number:'1.2-2'}}</span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-field">
+                            <label style="font-size: 0.75rem; font-weight: 600;">Salario Base</label>
+                            <input type="number" class="field-input" [(ngModel)]="p.salario"
+                                (ngModelChange)="recalcularNeto(p)">
+                        </div>
+                        <div class="form-field">
+                            <label style="font-size: 0.75rem; font-weight: 600;">Frecuencia Pago</label>
+                            <input type="text" class="field-input readonly" [(ngModel)]="p.frecuencia">
+                        </div>
+                        <div class="form-field">
+                            <label style="font-size: 0.75rem; font-weight: 600;">Días Trabajados</label>
+                            <input type="number" class="field-input readonly" disabled [(ngModel)]="p.dias_trabajados">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-field">
+                            <label style="font-size: 0.75rem; font-weight: 600; color: #b91c1c;">Faltas (Días)</label>
+                            <input type="number" class="field-input" [(ngModel)]="p.faltas"
+                                (ngModelChange)="recalcularNeto(p)">
+                        </div>
+                        <div class="form-field">
+                            <label style="font-size: 0.75rem; font-weight: 600; color: #b91c1c;">Tardanzas
+                                (Cant.)</label>
+                            <input type="number" class="field-input" [(ngModel)]="p.tardanzas_cantidad_dias"
+                                (ngModelChange)="recalcularNeto(p)">
+                        </div>
+                        <div class="form-field">
+                            <label style="font-size: 0.75rem; font-weight: 600; color: #b91c1c;">Descuento (S/)</label>
+                            <input type="number" class="field-input" [(ngModel)]="p.descuento"
+                                (ngModelChange)="recalcularNeto(p)">
+                        </div>
+                        <div class="form-field">
+                            <label style="font-size: 0.75rem; font-weight: 600; color: #059669;">Extra (S/)</label>
+                            <input type="number" class="field-input" [(ngModel)]="p.extra"
+                                (ngModelChange)="recalcularNeto(p)">
+                        </div>
+                    </div>
+
+                    <div class="form-field" style="margin-bottom: 0;">
+                        <label style="font-size: 0.75rem; font-weight: 12000;">Observaciones</label>
+                        <textarea class="field-input" style="min-height: 100px; resize: vertical;"
+                            [(ngModel)]="p.observacion"
+                            placeholder="Agregue notas o justificaciones (opcional)..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dialog-actions" style="margin-top: 1.5rem;">
+                <button class="btn btn-ghost"
+                    (click)="calculoGenerado = false; modoEdicion = false; displayCalculoModal = false">Volver</button>
+                <button class="btn btn-primary" (click)="registrarPlanilla()" style="background: #10b981;">
+                    <i class="pi pi-save"></i> {{ modoEdicion ? 'Actualizar' : 'Registrar' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</p-dialog>

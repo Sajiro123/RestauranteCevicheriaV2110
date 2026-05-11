@@ -30,6 +30,8 @@ export const appRoutes: Routes = [
             { path: 'menuperfil', loadChildren: () => import('./pages/modules/configuracion/menu/perfil-permisos/perfil-permisos.component').then(m => m.PerfilPermisosComponent), canActivate: [PermisoGuard], data: { menuRuta: 'menuperfil' } },
             { path: 'caja', loadChildren: () => import('./pages/modules/cierre_dia/caja.routes'), canActivate: [AuthGuard] },
             { path: 'empresa', loadChildren: () => import('./pages/modules/empresa/empresa.routes'), canActivate: [AuthGuard] },
+            { path: 'asistencia', loadChildren: () => import('./pages/modules/asistencia/asistencia.routes'), canActivate: [AuthGuard] },
+            { path: 'planilla', loadComponent: () => import('./pages/modules/planilla/planilla.component').then(m => m.PlanillaComponent), canActivate: [AuthGuard] },
 
         ]
     },
