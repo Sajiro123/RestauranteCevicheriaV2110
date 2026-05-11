@@ -292,7 +292,7 @@ export class PlanillaComponent implements OnInit {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
     doc.setTextColor(...colors.primaryContainer);
-    const nombreEmp = this.empresaInfo?.nombre_empresa || 'EL PUERTO CEVICHERO DE WILLY';
+    const nombreEmp = this.empresaInfo?.nombre_empresa || 'Falta ingresar el nombre de la empresa';
     doc.text(nombreEmp, textX, currentY);
 
     doc.setFont('helvetica', 'normal');
