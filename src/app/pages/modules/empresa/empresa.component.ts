@@ -117,6 +117,13 @@ export class EmpresaComponent implements OnInit {
                 await this.empresaService.create(this.form);
             }
 
+            if (this.form.nombre_empresa) {
+                localStorage.setItem('nombre_empresa', this.form.nombre_empresa);
+            }
+            localStorage.setItem('empresa_ruc', this.form.ruc || '');
+            localStorage.setItem('empresa_direccion', this.form.direccion || '');
+            localStorage.setItem('empresa_celular', this.form.celular || '');
+
             // Reload to get the updated ID if it was newly created
             this.loadData();
             alert('Datos guardados correctamente');

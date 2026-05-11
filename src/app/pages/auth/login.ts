@@ -139,6 +139,10 @@ export class Login implements OnInit {
             if (response.data && response.data.length > 0) {
                 const empresa = response.data[0];
                 this.empresaNombre = empresa.nombre_empresa || 'Sistema';
+                localStorage.setItem('nombre_empresa', this.empresaNombre);
+                localStorage.setItem('empresa_ruc', empresa.ruc || '');
+                localStorage.setItem('empresa_direccion', empresa.direccion || '');
+                localStorage.setItem('empresa_celular', empresa.celular || '');
 
                 // Check for custom logo in localStorage
                 const savedLogo = localStorage.getItem('logo');

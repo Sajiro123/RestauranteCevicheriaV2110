@@ -1348,19 +1348,31 @@ export class HomeComponent {
 
                 // Encabezado
                 doc.setFontSize(12);
-                doc.text('EL PUERTO CEVICHERO', centerX, y, { align: 'center' });
-                y += 3.5;
+                const nombreEmpresa = localStorage.getItem('nombre_empresa') || 'LA EMPRESA';
+                const nombreLines = doc.splitTextToSize(nombreEmpresa, 74);
+                nombreLines.forEach((line: any) => {
+                    doc.text(line, centerX, y, { align: 'center' });
+                    y += 4.5;
+                });
+                y -= 1; // Ajuste de espacio
                 doc.setFontSize(8);
 
                 doc.text('Nota de Venta: 000-95', centerX, y, { align: 'center' });
                 y += 3.5;
-                doc.text('RUC.: 20614776928', centerX, y, { align: 'center' });
+                const rucEmpresa = localStorage.getItem('empresa_ruc') || '';
+                doc.text('RUC.: ' + rucEmpresa, centerX, y, { align: 'center' });
                 y += 3.5;
-                doc.text('Av.Victor Malazques Mr Lt10 Pachamac-Manchay', centerX, y, { align: 'center' });
+                const direccionEmpresa = localStorage.getItem('empresa_direccion') || '';
+                const direccionLines = doc.splitTextToSize(direccionEmpresa, 74);
+                direccionLines.forEach((line: any) => {
+                    doc.text(line, centerX, y, { align: 'center' });
+                    y += 3.5;
+                });
+                const celularEmpresa = localStorage.getItem('empresa_celular') || '';
+                doc.text('TEL: ' + celularEmpresa, centerX, y, { align: 'center' });
                 y += 3.5;
-                doc.text('TEL: 991 687 503', centerX, y, { align: 'center' });
                 doc.addImage(base64Logo, 'PNG', 27, 25, 29, 28);
-                y += 33;
+                y += 28;
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
                 var date = new Date(response.data.created_at);
