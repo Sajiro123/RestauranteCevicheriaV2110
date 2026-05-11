@@ -1,0 +1,160 @@
+<p-toast></p-toast>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PANTALLA DE CARGA INICIAL
+═══════════════════════════════════════════════════════════ -->
+<div *ngIf="checkingState" class="asistencia-loading">
+    <p-progressSpinner strokeWidth="4" styleClass="spinner-xl"></p-progressSpinner>
+    <p>Verificando estado de asistencia...</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     CONTENIDO PRINCIPAL
+═══════════════════════════════════════════════════════════ -->
+<div *ngIf="!checkingState" class="asistencia-wrapper">
+
+    <!-- HERO CARD -->
+    <div class="hero-card" [class.marcado]="yaMarco">
+        <!-- Fondo animado con ondas -->
+        <div class="hero-bg">
+            <div class="wave wave-1"></div>
+            <div class="wave wave-2"></div>
+            <div class="wave wave-3"></div>
+        </div>
+
+        <div class="hero-content">
+            <!-- Ícono de estado -->
+            <div class="status-icon" [class.success]="yaMarco" [class.pending]="!yaMarco">
+                <i class="pi" [ngClass]="yaMarco ? 'pi-check-circle' : 'pi-clock'"></i>
+            </div>
+
+            <!-- Saludo y fecha -->
+            <div class="hero-text">
+                <h1 class="greeting">Hola, {{ nombreUsuario }}</h1>
+                <p class="date-label">{{ fechaHoy }}</p>
+            </div>
+
+            <!-- Badge de estado -->
+            <div class="status-badge" [class.badge-success]="yaMarco" [class.badge-warning]="!yaMarco">
+                <i class="pi" [ngClass]="yaMarco ? 'pi-check' : 'pi-exclamation-triangle'"></i>
+                {{ yaMarco ? 'Asistencia registrada' : 'Pendiente de marcar' }}
+            </div>
+
+            <!-- Info del último registro -->
+            <div *ngIf="yaMarco && ultimoRegistro" class="registro-info">
+                <div class="info-chip">
+                    <i class="pi pi-clock"></i>
+                    <span>{{ ultimoRegistro.hora_registro }}</span>
+                </div>
+                <div class="info-chip">
+                    <i class="pi pi-wifi"></i>
+                    <span>{{ ultimoRegistro.ip_cliente }}</span>
+                </div>
+            </div>
+
+            <!-- IP actual detectada -->
+            <div class="ip-detector" *ngIf="!yaMarco">
+                <span class="ip-label">Tu IP actual:</span>
+                <span class="ip-value" *ngIf="!checkingIp">{{ ipActual }}</span>
+                <p-progressSpinner *ngIf="checkingIp" strokeWidth="4" [style]="{'width':'18px','height':'18px'}"></p-progressSpinner>
+            </div>
+
+            <!-- BOTÓN PRINCIPAL -->
+            <button
+                id="btn-marcar-asistencia"
+                class="btn-marcar"
+                [class.btn-marcado]="yaMarco"
+                [disabled]="loading || yaMarco"
+                (click)="marcarAsistencia()"
+                pRipple>
+
+                <span *ngIf="!loading && !yaMarco" class="btn-inner">
+                    <i class="pi pi-fingerprint"></i>
+                    Marcar Asistencia
+                </span>
+                <span *ngIf="loading" class="btn-inner">
+                    <p-progressSpinner strokeWidth="5" [style]="{'width':'22px','height':'22px','margin-right':'8px'}"></p-progressSpinner>
+                    Registrando...
+                </span>
+                <span *ngIf="!loading && yaMarco" class="btn-inner">
+                    <i class="pi pi-check-circle"></i>
+                    Ya marcaste hoy
+                </span>
+            </button>
+
+            <!-- Nota de requisito de red -->
+            <p class="network-note">
+                <i class="pi pi-shield"></i>
+                Solo disponible desde la red Wi-Fi autorizada
+            </p>
+        </div>
+    </div>
+
+    <!-- ═══ HISTORIAL ═══════════════════════════════════════════ -->
+    <div class="historial-section">
+        <div class="historial-header">
+            <h2><i class="pi pi-history"></i> Historial de Asistencias</h2>
+            <p-tag
+                [value]="historial.length + ' registros'"
+                severity="info"
+                [rounded]="true">
+            </p-tag>
+        </div>
+
+        <!-- Tabla de historial -->
+        <div class="historial-table-wrapper">
+            <p-progressBar *ngIf="loadingHistorial" mode="indeterminate" [style]="{'height':'3px'}"></p-progressBar>
+
+            <p-table
+                [value]="historial"
+                [rows]="10"
+                [paginator]="historial.length > 10"
+                styleClass="p-datatable-sm historial-table"
+                [rowHover]="true"
+                *ngIf="!loadingHistorial">
+
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th><i class="pi pi-calendar"></i> Fecha</th>
+                        <th><i class="pi pi-clock"></i> Hora</th>
+                        <th><i class="pi pi-wifi"></i> IP Registrada</th>
+                        <th><i class="pi pi-check-circle"></i> Estado</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-asistencia>
+                    <tr class="historial-row">
+                        <td>
+                            <span class="fecha-cell">{{ formatFecha(asistencia.fecha) }}</span>
+                        </td>
+                        <td>
+                            <span class="hora-cell">{{ asistencia.hora_registro }}</span>
+                        </td>
+                        <td>
+                            <code class="ip-cell">{{ asistencia.ip_cliente }}</code>
+                        </td>
+                        <td>
+                            <p-tag
+                                value="Registrado"
+                                severity="success"
+                                icon="pi pi-check"
+                                [rounded]="true">
+                            </p-tag>
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="4" class="empty-message">
+                            <div class="empty-state">
+                                <i class="pi pi-inbox"></i>
+                                <p>No hay registros de asistencia aún.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+    </div>
+</div>

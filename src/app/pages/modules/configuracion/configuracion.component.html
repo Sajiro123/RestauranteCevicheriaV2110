@@ -1,5 +1,5 @@
 <div class="container">
-    <div *ngIf="!selector">
+    <div *ngIf="!selector" class="cards-grid">
         <!-- Restaurante Card -->
         <section class="card" aria-label="Restaurante">
             <h2>Restaurante</h2>
@@ -96,6 +96,24 @@
                         <div class="text-content">
                             <p class="title">Menú Perfil</p>
                             <p class="subtitle">Gestión de permisos por perfil.</p>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Contabilidad Card -->
+        <section class="card" aria-label="Contabilidad">
+            <h2>Contabilidad</h2>
+            <ul class="card-list">
+                <li>
+                    <div class="list-item" tabindex="0" routerLink="/planilla">
+                        <div class="icon green" aria-hidden="true">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="text-content">
+                            <p class="title">Gestión de Planilla</p>
+                            <p class="subtitle">Revise, ajuste y apruebe la nómina.</p>
                         </div>
                     </div>
                 </li>

@@ -10,12 +10,15 @@
    GRID CONTAINER
    ============================================ */
 .container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 1.5rem;
     max-width: 1200px;
     margin: 0 auto;
     animation: fadeInUp 0.5s ease;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
 }
 
 @keyframes fadeInUp {
@@ -212,7 +215,7 @@
         padding: 1rem;
     }
 
-    .container {
+    .cards-grid {
         grid-template-columns: 1fr;
     }
 

@@ -11,6 +11,7 @@ import { ImportsModule } from '../../imports';
 import { MenuFormComponent } from './menu/menu-form/menu-form/menu-form.component';
 import { PerfilPermisosComponent } from './menu/perfil-permisos/perfil-permisos.component';
 import MenuListComponent from "./menu/menu-list/menu-list.component";
+import { RouterModule } from '@angular/router';
 
 @Component({
     selector: 'app-configuracion',
@@ -26,7 +27,8 @@ import MenuListComponent from "./menu/menu-list/menu-list.component";
         CommonModule,
         FormsModule,
         ImportsModule,
-        MenuListComponent
+        MenuListComponent,
+        RouterModule
     ],
     templateUrl: './configuracion.component.html',
     styleUrl: './configuracion.component.scss'
