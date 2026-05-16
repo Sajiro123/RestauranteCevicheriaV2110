@@ -171,22 +171,25 @@ export class PlanillaComponent implements OnInit {
     this.calculoGenerado = true;
   }
 
-  recalcularNeto(p: RegistroPlanilla) {
-    const diasAsistidos = p.dias_trabajados || 0;
-    const faltas = p.faltas || 0;
-    const totalDiasReferencia = diasAsistidos;
-
-    let valorDia = 0;
-    if (totalDiasReferencia > 0) {
-      valorDia = p.salario / totalDiasReferencia;
-    }
-    debugger;
-    const descuentoFaltas = faltas * valorDia;
-    const descuentoTardanzas = (p.tardanzas_cantidad_dias || 0) * 5;
+  recalcularNeto(p: RegistroPlanilla, diasLaborablesMes: number = 24) {
+    const diasTrabajados = p.dias_trabajados || 0;
+    const tardanzasDias = p.tardanzas_cantidad_dias || 0;
     const descuentoAdicional = p.descuento || 0;
     const extraAdicional = p.extra || 0;
 
-    let neto = p.salario - descuentoFaltas - descuentoTardanzas - descuentoAdicional + extraAdicional;
+    // Valor día según los días laborables reales del mes (no 30)
+    const valorDia = p.salario / diasLaborablesMes;
+
+    // Sueldo proporcional a los días efectivamente trabajados
+    const sueldoGanado = valorDia * diasTrabajados;
+
+    // Descuentos
+    const descuentoTardanzas = tardanzasDias * 5;
+    const totalDescuentos = descuentoTardanzas + descuentoAdicional;
+
+    let neto = sueldoGanado - totalDescuentos + extraAdicional;
+    neto = Math.max(0, neto);
+
     p.monto_neto = Math.round(neto * 100) / 100;
   }
 
@@ -253,7 +256,31 @@ export class PlanillaComponent implements OnInit {
     this.calculoGenerado = true;
   }
 
-  descargarPDF(p: RegistroPlanilla) {
+  async eliminarPlanilla(p: RegistroPlanilla) {
+    if (!p.id_planilla) return;
+    if (!confirm(`¿Eliminar la planilla de ${p.nombre_persona}?`)) return;
+
+    const { error } = await this.supabaseService.client
+      .from('registro_planilla')
+      .update({ deleted: 1 })
+      .eq('id_planilla', p.id_planilla);
+
+    if (error) {
+      console.error('Error al eliminar:', error);
+      alert('Error al eliminar. Verifique consola.');
+      return;
+    }
+
+    this.listarPlanillas();
+  }
+
+  getNombreDia(fecha: string): string {
+    const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const fechaObj = new Date(fecha + 'T00:00:00');
+    return diasSemana[fechaObj.getDay()];
+  }
+
+  async descargarPDF(p: RegistroPlanilla) {
     const doc = new jsPDF('p', 'mm', 'a4');
 
     // Paleta de colores del diseño de Tailwind
@@ -375,12 +402,11 @@ export class PlanillaComponent implements OnInit {
 
     currentY += 15;
 
-    // --- TABLA DE DETALLES ---
     let valorDia = 0;
     if (p.dias_trabajados && p.dias_trabajados > 0) {
       valorDia = p.salario / p.dias_trabajados;
     }
-    const dctoFaltas = (p.faltas || 0) * valorDia;
+    const dctoFaltas = 0;
     const dctoTardanzas = (p.tardanzas_cantidad_dias || 0) * 5;
     const dctoExtra = p.descuento || 0;
     const totalDescuentos = dctoFaltas + dctoTardanzas + dctoExtra;
@@ -527,6 +553,108 @@ export class PlanillaComponent implements OnInit {
     doc.line(marginX, currentY, 190, currentY);
 
     currentY += 20;
+    doc.addPage();
+
+    const { data: diasData, error: errorDias } = await this.supabaseService.client
+      .rpc('get_dias_trabajados', {
+        fecha_inicio: p.laborinicio,
+        fecha_fin: p.laborfin,
+        id_persona: p.idpersona
+      });
+
+    const diasTrabajados = diasData && diasData.length > 0 ? diasData[0] : null;
+
+    // --- CABECERA PÁGINA 2 ---
+    doc.setFillColor(...colors.primary);
+    doc.rect(0, 0, 210, 22, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    doc.text('REGISTRO DE ASISTENCIA', marginX, 14);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(180, 195, 215);
+    doc.text(`Empleado: ${p.nombre_persona || ''}  |  Período: ${inicioStr} al ${finStr}`, 190, 14, { align: 'right' });
+
+    let pageY = 30;
+
+    // --- RESUMEN DE DÍAS ---
+    const fechasStr = diasTrabajados?.fechas_asistidas || '';
+    const diasList = fechasStr
+      ? fechasStr.split(',').map((f: string) => f.trim()).filter((f: string) => f)
+      : [];
+
+    const totalDias = diasList.length;
+
+    // Tarjetas de resumen
+    const cardW = 50;
+    const cardGap = 10;
+    const cardStartX = marginX;
+
+    const resumenItems = [
+      { label: 'Días Asistidos', value: `${totalDias}`, color: colors.primaryContainer as [number, number, number] },
+      { label: 'Faltas', value: `${p.faltas || 0}`, color: colors.error as [number, number, number] },
+      { label: 'Tardanzas', value: `${p.tardanzas_cantidad_dias || 0}`, color: colors.tertiaryContainer as [number, number, number] },
+    ];
+
+    resumenItems.forEach((item, idx) => {
+      const cx = cardStartX + idx * (cardW + cardGap);
+      doc.setDrawColor(...colors.outlineVariant);
+      doc.setFillColor(...colors.surfaceContainerLow);
+      doc.roundedRect(cx, pageY, cardW, 18, 1.5, 1.5, 'FD');
+
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...colors.onSurfaceVariant);
+      doc.text(item.label, cx + cardW / 2, pageY + 6, { align: 'center' });
+
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...item.color);
+      doc.text(item.value, cx + cardW / 2, pageY + 14, { align: 'center' });
+    });
+
+    pageY += 26;
+
+    // --- TABLA DE ASISTENCIA ---
+    const tableBody = diasList.map((fecha: string, idx: number) => {
+      const diaSemana = this.getNombreDia(fecha);
+      return [`${idx + 1}`, fecha, diaSemana, '✓'];
+    });
+
+    autoTable(doc, {
+      startY: pageY,
+      margin: { left: marginX, right: 20 },
+      head: [['N°', 'Fecha', 'Día', 'Estado']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: {
+        fillColor: colors.primaryContainer,
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 9,
+        halign: 'center',
+        cellPadding: { top: 4, bottom: 4, left: 4, right: 4 }
+      },
+      styles: {
+        fontSize: 9,
+        textColor: colors.onSurface,
+        lineColor: colors.outlineVariant,
+        lineWidth: 0.1,
+        cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }
+      },
+      alternateRowStyles: {
+        fillColor: [242, 245, 250]
+      },
+      columnStyles: {
+        0: { halign: 'center', fontStyle: 'bold', cellWidth: 15 },
+        1: { halign: 'center', cellWidth: 45 },
+        2: { halign: 'left' },
+        3: { halign: 'center', cellWidth: 20, textColor: [34, 139, 34], fontStyle: 'bold' }
+      }
+    });
 
     const fileName = `Nota_Pago_${p.nombre_persona?.replace(/\s+/g, '_')}_${fechaEmision}.pdf`;
     doc.save(fileName);

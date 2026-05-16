@@ -479,11 +479,11 @@
 <!-- FULL SCREEN ORDER VIEW -->
 <!-- ========================================== -->
 <div *ngIf="cajaAbierta && isOrderViewActive"
-    class="w-full h-[calc(100vh-80px)] lg:h-[calc(100vh-60px)] flex flex-col lg:flex-row overflow-hidden font-sans bg-[#f8fafc] fixed inset-0 z-50 animate-fadein lg:top-[60px] top-[80px]">
+    class="w-full h-[calc(100vh-80px)] lg:h-[calc(100vh-60px)] flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden font-sans bg-[#f8fafc] fixed inset-0 z-50 animate-fadein lg:top-[60px] top-[80px]">
 
     <!-- LEFT: Products & Calculator -->
-    <div class="w-full lg:w-1/2 xl:w-7/12 flex flex-col bg-[#f4f6f8] border-r border-gray-200 overflow-hidden relative">
-        <div class="p-4 bg-[#f4f6f8] flex flex-col h-full overflow-hidden">
+    <div class="w-full lg:w-1/2 xl:w-7/12 flex flex-col bg-[#f4f6f8] border-r border-gray-200">
+        <div class="p-4 bg-[#f4f6f8] flex flex-col h-full">
             <div class="flex items-center gap-3 mb-4">
                 <p-button icon="pi pi-arrow-left" [rounded]="true" [text]="true" severity="secondary"
                     (click)="returntoMesas()"></p-button>
@@ -634,7 +634,7 @@
 
             <!-- Search Results / Categories List -->
             <div
-                class="flex-1 overflow-y-auto w-full custom-scrollbar bg-white rounded-xl shadow-sm border border-gray-200">
+                class="max-h-[200px] lg:max-h-none lg:flex-1 overflow-y-auto w-full custom-scrollbar bg-white rounded-xl shadow-sm border border-gray-200">
                 <table class="w-full text-left" id="listarPlatos">
                     <tbody class="divide-y divide-gray-100">
                         <!-- content populated dynamically by js based on buscarPlato -->
