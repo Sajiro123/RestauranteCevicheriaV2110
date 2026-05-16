@@ -74,9 +74,6 @@ export class PedidoService {
             plin: productos.plin,
             updated_at: fechaHoraPeru
         };
-        alert(productos.idpedido);
-        // throwError;
-
         return from(this.supabaseService.updatePedido(productos.idpedido, updateData));
     }
 
