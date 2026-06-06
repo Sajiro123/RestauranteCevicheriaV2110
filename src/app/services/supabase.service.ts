@@ -204,6 +204,16 @@ export class SupabaseService {
         return { success: !error, data, error };
     }
 
+    async insertTopping(nombre: string) {
+        const { data, error } = await this.supabase
+            .from('toppings')
+            .insert({ nombre })
+            .select()
+            .single();
+
+        return { success: !error, data, error };
+    }
+
     async loadMozos() {
         const { data, error } = await this.supabase
             .from('persona')
@@ -243,6 +253,17 @@ export class SupabaseService {
 
         return { success: !error, data, error };
     }
+
+    async updateAperturaCaja(fecha: string, updateData: any) {
+        const { data, error } = await this.supabase
+            .from('apertura_caja')
+            .update(updateData)
+            .eq('fecha', fecha)
+            .is('deleted', null);
+
+        return { success: !error, data, error };
+    }
+
 
     // Gastos operations
     async getGastos(fecha: string) {

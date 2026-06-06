@@ -23,4 +23,5 @@ export interface NuevoPedido {
     idmozo?: number | null;
     fecha?: string;
     mesa?: string;
+    idtoppings?: number | null;
 }

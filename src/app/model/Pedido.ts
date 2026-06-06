@@ -23,4 +23,5 @@ export interface Pedido {
     seleccionado?: boolean;
     pedidodetalle?: any;
     persona?: any;
+    created_at?: any;
 }

@@ -151,16 +151,274 @@
 }
 
 .workers-display {
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 0.85rem;
 
-    label {
-        display: block;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #64748b;
-        margin-bottom: 0.5rem;
+    .workers-display-header {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 0.75rem;
+
+        i {
+            color: #ea580c;
+            font-size: 0.95rem;
+        }
+
+        label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin: 0;
+            flex: 1;
+        }
+
+        .workers-count-badge {
+            background-color: #ea580c;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.15rem 0.55rem;
+            border-radius: 99px;
+            min-width: 22px;
+            text-align: center;
+        }
     }
 }
+
+/* Alertas de estado de caja */
+.caja-abierta-alert,
+.caja-cerrada-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    border-radius: 8px;
+    padding: 0.65rem 0.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.78rem;
+    line-height: 1.4;
+
+    i {
+        font-size: 1rem;
+        margin-top: 1px;
+        flex-shrink: 0;
+    }
+
+    div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    strong {
+        font-weight: 700;
+        display: block;
+    }
+
+    span {
+        opacity: 0.85;
+    }
+}
+
+.caja-abierta-alert {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+}
+
+.caja-cerrada-alert {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+}
+
+/* Lista de trabajadores */
+.workers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+$avatar-colors: #ea580c, #2563eb, #7c3aed, #0891b2, #059669, #d97706;
+
+.worker-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.55rem 0.75rem;
+    transition: background 0.15s, border-color 0.15s;
+
+    &:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    .worker-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ea580c, #f97316);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        letter-spacing: 0.5px;
+    }
+
+    .worker-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.05rem;
+
+        .worker-name {
+            font-size: 0.83rem;
+            font-weight: 700;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .worker-role {
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+    }
+
+    .worker-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #22c55e;
+        flex-shrink: 0;
+        box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+    }
+}
+
+/* Estado vacío */
+.workers-empty {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    padding: 0.65rem 0.5rem;
+
+    i {
+        font-size: 1rem;
+    }
+}
+
+
+
+/* Botón para activar edición */
+.btn-edit-caja {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-top: 0.9rem;
+    padding: 0.6rem 1rem;
+    border: 1.5px dashed #ea580c;
+    border-radius: 9px;
+    background: transparent;
+    color: #ea580c;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s;
+
+    &:hover {
+        background-color: #fff7ed;
+    }
+
+    i { font-size: 0.9rem; }
+}
+
+/* Header del modo edición */
+.edit-mode-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    margin-bottom: 0.9rem;
+    color: #c2410c;
+    font-size: 0.82rem;
+    font-weight: 700;
+
+    i { font-size: 1rem; }
+}
+
+/* Acciones del modo edición */
+.edit-mode-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+}
+
+.btn-cancel-edit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+
+    &:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    i { font-size: 0.85rem; }
+}
+
+.btn-save-edit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.7rem;
+    border: none;
+    border-radius: 9px;
+    background: #ea580c;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s;
+
+    &:hover { background: #c2410c; }
+    &:disabled {
+        background: #fdba74;
+        cursor: not-allowed;
+    }
+
+    i { font-size: 0.85rem; }
+}
+
+
 
 .btn-action {
     width: 100%;
@@ -191,6 +449,8 @@
         font-size: 1rem;
     }
 }
+
+
 
 /* ===== CENTER COLUMN ===== */
 .col-center {

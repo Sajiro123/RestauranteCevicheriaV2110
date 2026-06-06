@@ -37,6 +37,7 @@ export class AperturaComponent {
     trabajadoresList: any[] = [];
     editDialogVisible = false;
     gastoEditando: any = null;
+    modoEdicion = false;
 
     constructor(private AperturaService_: AperturaService, private pedidoService_: PedidoService, private fb: FormBuilder, private messageService: MessageService, private confirmationService: ConfirmationService, private cd: ChangeDetectorRef) {
         this.cajaForm = this.fb.group({
@@ -89,39 +90,90 @@ export class AperturaComponent {
 
     GuardarCaja(data: any) {
         if (data == 0) {
-            if (this.cajaForm.invalid) {
-                this.cajaForm.markAllAsTouched(); // 👈 fuerza mostrar todos los errores
+            // Guard: no duplicar apertura si ya existe una hoy
+            if (this.data_apertura.length > 0) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Caja ya registrada',
+                    detail: 'Ya existe una apertura de caja para el día de hoy.',
+                    life: 4000
+                });
                 return;
             }
-            if (this.cajaForm.valid) {
-                this.AperturaService_.registrarCaja(this.cajaForm.value).subscribe((response) => {
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Successful',
-                        detail: 'Apertura registrada para el dia de hoy',
-                        life: 3000
-                    });
-                    this.ListAperturaNow();
-                });
+            if (this.cajaForm.invalid) {
+                this.cajaForm.markAllAsTouched();
+                return;
             }
+            this.AperturaService_.registrarCaja(this.cajaForm.value).subscribe((response) => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Apertura registrada',
+                    detail: 'Apertura registrada para el día de hoy',
+                    life: 3000
+                });
+                this.ListAperturaNow();
+            });
         } else {
             this.confirmationService.confirm({
-                message: 'Estas seguro de cerrar la caja ?',
-                header: 'Confirm',
+                message: '¿Estás seguro de cerrar la caja?',
+                header: 'Cerrar Caja',
                 icon: 'pi pi-exclamation-triangle',
                 accept: () => {
                     this.AperturaService_.cerrarCaja(this.cajaForm.value).subscribe((response) => {
                         this.messageService.add({
                             severity: 'success',
-                            summary: 'Successful',
-                            detail: 'Cerrar Caja para el dia de hoy',
+                            summary: 'Caja cerrada',
+                            detail: 'La caja fue cerrada correctamente',
                             life: 3000
                         });
+                        this.modoEdicion = false;
                         this.ListAperturaNow();
                     });
                 }
             });
         }
+    }
+
+    activarEdicion() {
+        this.modoEdicion = true;
+        this.cajaForm.enable();
+        // Mantener estado bloqueado (no editable)
+        this.cajaForm.get('estado')?.disable();
+        this.cajaForm.get('caja')?.disable();
+    }
+
+    cancelarEdicion() {
+        this.modoEdicion = false;
+        this.cajaForm.disable();
+        // Recargar datos originales
+        this.ListAperturaNow();
+    }
+
+    ActualizarCaja() {
+        if (this.cajaForm.invalid) {
+            this.cajaForm.markAllAsTouched();
+            return;
+        }
+        this.AperturaService_.actualizarCaja(this.cajaForm.getRawValue()).subscribe((response) => {
+            if (response.success) {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Datos actualizados',
+                    detail: 'Los datos de la caja fueron actualizados correctamente',
+                    life: 3000
+                });
+                this.modoEdicion = false;
+                this.cajaForm.disable();
+                this.ListAperturaNow();
+            } else {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'No se pudo actualizar la caja',
+                    life: 3000
+                });
+            }
+        });
     }
 
     GuardarGastos() {
@@ -346,6 +398,21 @@ export class AperturaComponent {
                 alert('Hubo un problema al conectar con el servidor');
             }
         });
+    }
+
+    getWorkerName(idpersona: number): string {
+        const worker = this.trabajadoresList.find((t: any) => t.idpersona === idpersona);
+        return worker ? worker.nombres : `Trabajador #${idpersona}`;
+    }
+
+    getWorkerInitials(idpersona: number): string {
+        const name = this.getWorkerName(idpersona);
+        return name
+            .split(' ')
+            .slice(0, 2)
+            .map((w: string) => w[0])
+            .join('')
+            .toUpperCase();
     }
 
     ListarTrabajadores() {

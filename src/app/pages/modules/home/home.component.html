@@ -167,86 +167,52 @@
                     </div>
 
                     <!-- Buttons Grid -->
-                    <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2.5 w-full text-center mt-1">
+                    <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 w-full mt-3">
+
                         <!-- Editar -->
-                        <div class="group bg-gradient-to-br from-blue-50 to-blue-100/80 hover:from-blue-100 hover:to-blue-200 border border-blue-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
+                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-blue-50 border border-blue-200 hover:bg-blue-600 hover:border-blue-600 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
                             (click)="editar(mesaSeleccionada, NuevoPedido)">
-                            <div
-                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
-                                <i class="material-icons !p-0 !text-[20px] text-blue-600">edit</i>
-                            </div>
-                            <span
-                                class="text-[10px] sm:text-[12px] font-black text-blue-800 uppercase tracking-widest">Editar</span>
+                            <i class="material-icons text-[19px] text-blue-600 group-hover:text-white transition-colors duration-300">edit</i>
+                            <span class="text-[9px] sm:text-[10px] font-bold text-blue-700 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Editar</span>
                         </div>
 
                         <!-- Ticket -->
-                        <div class="group bg-gradient-to-br from-indigo-50 to-indigo-100/80 hover:from-indigo-100 hover:to-indigo-200 border border-indigo-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
+                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-violet-50 border border-violet-200 hover:bg-violet-600 hover:border-violet-600 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
                             (click)="generatePDF(NuevoPedido)">
-                            <div
-                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
-                                <i class="material-icons !p-0 !text-[20px] text-indigo-600">description</i>
-                            </div>
-                            <span
-                                class="text-[10px] sm:text-[12px] font-black text-indigo-800 uppercase tracking-widest">Ticket</span>
+                            <i class="material-icons text-[19px] text-violet-600 group-hover:text-white transition-colors duration-300">description</i>
+                            <span class="text-[9px] sm:text-[10px] font-bold text-violet-700 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Ticket</span>
                         </div>
 
                         <!-- Cocina -->
-                        <div class="group bg-gradient-to-br from-orange-50 to-orange-100/80 hover:from-orange-100 hover:to-orange-200 border border-orange-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
+                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-orange-50 border border-orange-200 hover:bg-orange-500 hover:border-orange-500 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
                             (click)="generateCocinaPDF(NuevoPedido)">
-                            <div
-                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
-                                <i class="material-icons !p-0 !text-[20px] text-orange-600">restaurant</i>
-                            </div>
-                            <span
-                                class="text-[10px] sm:text-[12px] font-black text-orange-800 uppercase tracking-widest">Cocina</span>
+                            <i class="material-icons text-[19px] text-orange-500 group-hover:text-white transition-colors duration-300">restaurant</i>
+                            <span class="text-[9px] sm:text-[10px] font-bold text-orange-600 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Cocina</span>
                         </div>
 
-                        <!-- Cobrar (Destacado) -->
-                        <div class="col-span-2 group bg-gradient-to-br from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 border border-green-600 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col sm:flex-row items-center justify-center gap-2 min-h-[75px] shadow-md hover:shadow-lg hover:shadow-green-500/30 transform hover:-translate-y-1 relative overflow-hidden"
+                        <!-- Cobrar (Principal) -->
+                        <div class="col-span-2 group flex flex-row items-center justify-center gap-2.5 min-h-[68px] rounded-xl bg-emerald-500 border border-emerald-600 hover:bg-emerald-600 hover:border-emerald-700 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] px-3 shadow-sm shadow-emerald-200"
                             (click)="CobrarDialog(mesaSeleccionada, NuevoPedido)">
-                            <div
-                                class="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]">
+                            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
+                                <i class="fa-solid fa-money-bill-wave text-[13px] text-white"></i>
                             </div>
-                            <div
-                                class="bg-white/20 backdrop-blur-sm p-1.5 rounded-lg shadow-inner z-10 group-hover:scale-110 transition-transform duration-300">
-                                <i class="material-icons fa-solid fa-money-bill-wave !p-0 !text-[20px] text-white"></i>
-                            </div>
-                            <span
-                                class="text-[12px] sm:text-[14px] font-black text-white uppercase tracking-widest z-10">Cobrar</span>
+                            <span class="text-[13px] font-bold text-white uppercase tracking-wider">Cobrar</span>
                         </div>
 
                         <!-- Mover Mesa -->
-                        <div class="group bg-gradient-to-br from-cyan-50 to-cyan-100/80 hover:from-cyan-100 hover:to-cyan-200 border border-cyan-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
+                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-cyan-50 border border-cyan-200 hover:bg-cyan-600 hover:border-cyan-600 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
                             (click)="moveTableModal()">
-                            <div
-                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
-                                <i class="material-icons fa-solid fa-arrows-alt !p-0 !text-[18px] text-cyan-600"></i>
-                            </div>
-                            <span
-                                class="text-[10px] sm:text-[12px] font-black text-cyan-800 leading-tight uppercase tracking-widest">Mover</span>
+                            <i class="fa-solid fa-up-down-left-right text-[16px] text-cyan-600 group-hover:text-white transition-colors duration-300"></i>
+                            <span class="text-[9px] sm:text-[10px] font-bold text-cyan-700 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Mover</span>
                         </div>
-
-                        <!-- Generar Comprobante -->
-                        <!-- <div class="group bg-gradient-to-br from-violet-50 to-violet-100/80 hover:from-violet-100 hover:to-violet-200 border border-violet-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
-                            (click)="abrirComprobanteModal('03')">
-                            <div
-                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
-                                <i class="material-icons !p-0 !text-[18px] text-violet-600">receipt_long</i>
-                            </div>
-                            <span
-                                class="text-[10px] sm:text-[12px] font-black text-violet-800 leading-tight uppercase tracking-widest text-center">Comprobante</span>
-                        </div> -->
 
                         <!-- Cancelar -->
-                        <div class="group bg-gradient-to-br from-red-50 to-red-100/80 hover:from-red-100 hover:to-red-200 border border-red-200/60 rounded-xl p-2 cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[75px] shadow-sm hover:shadow-md transform hover:-translate-y-1"
+                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-red-50 border border-red-200 hover:bg-red-500 hover:border-red-500 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
                             (click)="deletepedidoModal()">
-                            <div
-                                class="bg-white p-1.5 rounded-lg shadow-sm mb-1.5 group-hover:scale-110 transition-transform duration-300">
-                                <i class="material-icons fa-solid fa-trash !p-0 !text-[18px] text-red-600"></i>
-                            </div>
-                            <span
-                                class="text-[10px] sm:text-[12px] font-black text-red-800 uppercase tracking-widest">Cancelar</span>
+                            <i class="fa-solid fa-trash text-[15px] text-red-500 group-hover:text-white transition-colors duration-300"></i>
+                            <span class="text-[9px] sm:text-[10px] font-bold text-red-600 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Cancelar</span>
                         </div>
+
                     </div>
                 </div>
 
@@ -713,15 +679,29 @@
                         class="flex w-full items-center py-1.5 px-3 rounded border border-slate-100 bg-white hover:border-blue-200 hover:shadow-sm transition-all group"
                         [hidden]="pedidosnew.total == 0">
 
+                        <!-- TRASH & SETTINGS -->
+                        <div class="w-[8%] flex flex-col items-center justify-center gap-0.5 pr-2">
+                            <button
+                                class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded hover:bg-slate-100"
+                                (click)="abrirToppingPanel(pedidosnew, $event)">
+                                <i class="pi pi-cog text-[11px]"></i>
+                            </button>
+                            <button
+                                class="text-slate-400 hover:text-red-400 transition-colors p-1 rounded hover:bg-slate-100"
+                                (click)="remove(pedidosnew); trashPedido(pedidosnew)">
+                                <i class="fa-regular fa-trash-can text-[11px]"></i>
+                            </button>
+                        </div>
+
                         <!-- ITEM INFO -->
                         <div class="w-[34%] pr-2 flex flex-col justify-center overflow-hidden">
                             <h4 class="font-extrabold text-slate-800 m-0 text-[11px] xl:text-[13px] leading-tight truncate"
                                 [title]="pedidosnew.nombre">{{
                                 pedidosnew.nombre }}</h4>
                             <div class="flex flex-wrap gap-0.5 mt-0.5"
-                                *ngIf="pedidosnew.idtopings && pedidosnew.idtopings.length > 0">
-                                @for (topping of pedidosnew.idtopings; track topping.idtopings) {
-                                <span *ngIf="topping.idtopings != 0"
+                                *ngIf="pedidosnew.idtoppings && pedidosnew.idtoppings.length > 0">
+                                @for (topping of pedidosnew.idtoppings; track topping.idtoppings) {
+                                <span *ngIf="topping.idtoppings != 0"
                                     class="text-[8px] xl:text-[9px] text-blue-700 bg-blue-50 px-1.5 py-[1px] rounded font-bold border border-blue-100">{{
                                     topping.nombre }}</span>
                                 }
@@ -761,41 +741,105 @@
                             class="w-[15%] text-right text-blue-600 font-black text-sm xl:text-[15px] flex-shrink-0 tracking-tight">
                             {{ pedidosnew.total }}
                         </div>
-
-                        <!-- TRASH & SETTINGS -->
-                        <div class="w-[8%] flex flex-col items-end justify-center gap-0.5 pl-2">
-                            <button
-                                class="text-slate-300 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-blue-50"
-                                (click)="toggleDataTable(op2, $event, pedidosnew)">
-                                <i class="pi pi-cog text-[10px]"></i>
-                            </button>
-                            <button
-                                class="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50"
-                                (click)="remove(pedidosnew); trashPedido(pedidosnew)">
-                                <i class="fa-regular fa-trash-can text-[11px]"></i>
-                            </button>
-
-                            <p-popover #op2 [style]="{ width: '90vw', maxWidth: '400px', padding: '15px' }">
-                                <div class="flex flex-col gap-4 p-2">
-                                    <div class="font-bold text-lg text-gray-800 border-b pb-2">Opciones de Plato</div>
-                                    <p-multiselect [options]="multiselectToppings" [(ngModel)]="selectedToppings"
-                                        class="w-full" placeholder="Seleccionar adicionales" optionLabel="nombre"
-                                        display="chip" [filter]="true" [dataKey]="'idtopings'">
-                                    </p-multiselect>
-                                    <div class="flex justify-end gap-2 mt-4">
-                                        <p-button label="Cerrar" [outlined]="true" severity="secondary" size="small"
-                                            (onClick)="op2.hide()"></p-button>
-                                        <p-button label="Guardar" severity="success" size="small"
-                                            (onClick)="agregarToppingsPedido(pedidosnew, op2, i)"></p-button>
-                                    </div>
-                                </div>
-                            </p-popover>
-                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- ===== DIALOG GLOBAL DE TOPPINGS (único, fuera del ngFor) ===== -->
+            <p-dialog [(visible)]="toppingDialogVisible" [modal]="true" [closable]="true"
+                [style]="{ width: '92vw', maxWidth: '420px' }" [contentStyle]="{ padding: '0' }" [showHeader]="false">
+
+                <div style="border-radius: 16px; overflow: hidden; font-family: 'Inter', sans-serif;">
+
+                    <!-- Header del dialog -->
+                    <div
+                        style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1.1rem 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div
+                                style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 0.2rem;">
+                                Personalizando plato</div>
+                            <div style="font-size: 1rem; font-weight: 800; color: #ffffff;">{{ itemActivoTopping?.nombre
+                                }}</div>
+                        </div>
+                        <button (click)="toppingDialogVisible = false"
+                            style="background: rgba(255,255,255,0.1); border: none; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff;">
+                            <i class="pi pi-times" style="font-size: 0.85rem;"></i>
+                        </button>
+                    </div>
+
+                    <!-- Body: lista de toppings como chips toggleables -->
+                    <div style="padding: 1.1rem 1.25rem; background: #f8fafc; max-height: 55vh; overflow-y: auto;">
+                        <div
+                            style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">
+                            Selecciona las opciones
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            <button *ngFor="let t of multiselectToppings" type="button" (click)="toggleTopping(t)"
+                                [style.background]="isToppingSelected(t) ? '#1e293b' : '#ffffff'"
+                                [style.color]="isToppingSelected(t) ? '#ffffff' : '#475569'"
+                                [style.border]="isToppingSelected(t) ? '1.5px solid #1e293b' : '1.5px solid #e2e8f0'"
+                                style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.85rem; border-radius: 99px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                <i class="pi" [class.pi-check-circle]="isToppingSelected(t)"
+                                    [class.pi-circle]="!isToppingSelected(t)" style="font-size: 0.75rem;"></i>
+                                {{ t.nombre }}
+                            </button>
+                        </div>
+
+                        <!-- Agregar nuevo topping -->
+                        <div
+                            style="margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 0.55rem 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <i class="pi pi-plus-circle" style="color: #64748b; font-size: 0.85rem; flex-shrink: 0;"></i>
+                            <input
+                                type="text"
+                                [(ngModel)]="nuevoToppingNombre"
+                                placeholder="Nombre del nuevo topping..."
+                                (keydown.enter)="agregarNuevoTopping()"
+                                [disabled]="guardandoTopping"
+                                style="flex: 1; border: none; outline: none; font-size: 0.82rem; font-weight: 600; color: #334155; background: transparent; min-width: 0;" />
+                            <button
+                                type="button"
+                                (click)="agregarNuevoTopping()"
+                                [disabled]="!nuevoToppingNombre.trim() || guardandoTopping"
+                                style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.38rem 0.85rem; border-radius: 8px; border: none; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.15s;"
+                                [style.background]="!nuevoToppingNombre.trim() || guardandoTopping ? '#f1f5f9' : '#0f172a'"
+                                [style.color]="!nuevoToppingNombre.trim() || guardandoTopping ? '#94a3b8' : '#ffffff'">
+                                <i [class]="guardandoTopping ? 'pi pi-spin pi-spinner' : 'pi pi-check'" style="font-size: 0.72rem;"></i>
+                                {{ guardandoTopping ? 'Guardando...' : 'Agregar' }}
+                            </button>
+                        </div>
+
+                        <!-- Resumen seleccionados -->
+                        <div *ngIf="selectedToppings.length > 0"
+                            style="margin-top: 1rem; padding: 0.65rem 0.85rem; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px;">
+                            <div
+                                style="font-size: 0.7rem; font-weight: 700; color: #0369a1; margin-bottom: 0.35rem; text-transform: uppercase;">
+                                Seleccionados</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
+                                <span *ngFor="let sel of selectedToppings"
+                                    style="background: #0284c7; color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.65rem; border-radius: 99px;">
+                                    {{ sel.nombre }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div
+                        style="padding: 0.9rem 1.25rem; background: #ffffff; border-top: 1px solid #f1f5f9; display: flex; gap: 0.65rem; justify-content: flex-end;">
+                        <button type="button" (click)="selectedToppings = []"
+                            style="padding: 0.6rem 1.1rem; border: 1.5px solid #e2e8f0; border-radius: 9px; background: #fff; color: #64748b; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                            <i class="pi pi-eraser" style="margin-right: 0.3rem;"></i> Limpiar
+                        </button>
+                        <button type="button" (click)="guardarToppingDesdeDialog()"
+                            style="padding: 0.6rem 1.25rem; border: none; border-radius: 9px; background: #1e293b; color: #ffffff; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
+                            <i class="pi pi-check" style="margin-right: 0.3rem;"></i> Guardar
+                        </button>
+                    </div>
+                </div>
+            </p-dialog>
+
             <!-- Notes -->
+
             <div class="w-full mt-6">
                 <textarea [(ngModel)]="comentarios"
                     class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium text-gray-800 resize-none min-h-[80px]"

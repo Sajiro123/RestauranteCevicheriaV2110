@@ -77,7 +77,7 @@ export class PedidoService {
         return from(this.supabaseService.updatePedido(productos.idpedido, updateData));
     }
 
-    ShowProductosPdf(idpedido: any): Observable<any> {
+    ShowProductosPdf(idpedido: any, funcion: string): Observable<any> {
         return from(
             this.supabaseService.client
                 .from('pedido')
@@ -102,6 +102,7 @@ export class PedidoService {
                     producto:idproducto(
                         nombre,
                         acronimo,
+                        idcategoria,
                         categoria:idcategoria(nombre)
                     )
                 )
@@ -112,7 +113,19 @@ export class PedidoService {
                 .is('deleted', null)
                 .is('pedidodetalle.deleted', null)
                 .order('mesa')
-                .then(({ data, error }: { data: any; error: any }) => ({ success: !error, data: data && data.length > 0 ? data[0] : null, error }))
+                .then(({ data, error }: { data: any; error: any }) => {
+                    if (data && data.length > 0 && funcion == 'cocina') {
+                        const pedido = data[0];
+                        if (pedido.pedidodetalle) {
+                            // Excluir los productos que son de la categoría 5 (Toppings)
+                            // para que no salgan listados como platos principales
+                            pedido.pedidodetalle = pedido.pedidodetalle.filter((d: any) => d.producto?.idcategoria !== 5);
+                        }
+                        return { success: !error, data: pedido, error };
+                    } else {
+                        return { success: !error, data: data[0], error };
+                    }
+                })
         );
     }
 
@@ -183,7 +196,6 @@ export class PedidoService {
                 })
         );
     }
-
 
     ReporteProductoDetalleEliminados(parameters: any): Observable<any> {
         return from(
@@ -361,7 +373,10 @@ export class PedidoService {
         }
     }
 
-    constructor(private supabaseService: SupabaseService, private router: Router) { }
+    constructor(
+        private supabaseService: SupabaseService,
+        private router: Router
+    ) {}
 
     ListarPedidosMesa(): Observable<any> {
         return from(this.supabaseService.getPedidosHoy());
@@ -383,6 +398,10 @@ export class PedidoService {
 
     ListarToppings(): Observable<any> {
         return from(this.supabaseService.getToppings());
+    }
+
+    InsertarTopping(nombre: string): Observable<any> {
+        return from(this.supabaseService.insertTopping(nombre));
     }
 
     loadMozos(): Observable<any> {
@@ -415,9 +434,9 @@ export class PedidoService {
 
     insertPedidoDetalle(arraypedido: NuevoPedidodetalle): Observable<any> {
         let toppings = '';
-        if (arraypedido.idtopings.length > 0) {
-            arraypedido.idtopings.forEach((element: any, index: number) => {
-                toppings += `${element.idtopings},`;
+        if (arraypedido.idtoppings.length > 0) {
+            arraypedido.idtoppings.forEach((element: any, index: number) => {
+                toppings += `${element.idtoppings},`;
             });
         }
         toppings = toppings.slice(0, -1); // Eliminar la última coma

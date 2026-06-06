@@ -1,0 +1,877 @@
+{
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\ui-ux-pro-max\\scripts\\core.py": {
+    "mtime": 1780458165.7196927,
+    "ast_hash": "3df4734a785963a8242a56c1b926adfd",
+    "semantic_hash": "3df4734a785963a8242a56c1b926adfd"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\ui-ux-pro-max\\scripts\\design_system.py": {
+    "mtime": 1780458165.7206972,
+    "ast_hash": "08f84d04608a19049c90fc2b1ef314f9",
+    "semantic_hash": "08f84d04608a19049c90fc2b1ef314f9"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\ui-ux-pro-max\\scripts\\search.py": {
+    "mtime": 1780458165.7216933,
+    "ast_hash": "8c7e35426fe8f6f3ed91e9dce0ed7af1",
+    "semantic_hash": "8c7e35426fe8f6f3ed91e9dce0ed7af1"
+  },
+  "C:\\laragon\\www\\sistema1910\\.prettierrc.json": {
+    "mtime": 1760909560.0,
+    "ast_hash": "f167903e25b98dcccce3cd04e2a6db01",
+    "semantic_hash": "f167903e25b98dcccce3cd04e2a6db01"
+  },
+  "C:\\laragon\\www\\sistema1910\\angular.json": {
+    "mtime": 1772137559.280608,
+    "ast_hash": "04638afbbe7e85e89e2fcaa7e5e97354",
+    "semantic_hash": "04638afbbe7e85e89e2fcaa7e5e97354"
+  },
+  "C:\\laragon\\www\\sistema1910\\backend\\package.json": {
+    "mtime": 1760909560.0,
+    "ast_hash": "3df865ef3fee0f66d0bb241ee3f4febf",
+    "semantic_hash": "3df865ef3fee0f66d0bb241ee3f4febf"
+  },
+  "C:\\laragon\\www\\sistema1910\\eslint.config.js": {
+    "mtime": 1760909560.0,
+    "ast_hash": "4d135cfcf0aa3557ceaa0180a90fc6b2",
+    "semantic_hash": "4d135cfcf0aa3557ceaa0180a90fc6b2"
+  },
+  "C:\\laragon\\www\\sistema1910\\package.json": {
+    "mtime": 1769637098.2070315,
+    "ast_hash": "5a70bb7f6351d0b862f4ae81c61bb455",
+    "semantic_hash": "5a70bb7f6351d0b862f4ae81c61bb455"
+  },
+  "C:\\laragon\\www\\sistema1910\\scripts\\deploy-logo.js": {
+    "mtime": 1769637075.5268223,
+    "ast_hash": "86bdd1394bce2c38c399fcd02ff8ffc1",
+    "semantic_hash": "86bdd1394bce2c38c399fcd02ff8ffc1"
+  },
+  "C:\\laragon\\www\\sistema1910\\scripts\\save-logo.js": {
+    "mtime": 1769637094.256112,
+    "ast_hash": "840fbe4e820e7aa2d32600eff7664757",
+    "semantic_hash": "840fbe4e820e7aa2d32600eff7664757"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app.component.ts": {
+    "mtime": 1760909563.0,
+    "ast_hash": "c089fec9872aef2994a47528cba8e1f6",
+    "semantic_hash": "c089fec9872aef2994a47528cba8e1f6"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app.config.ts": {
+    "mtime": 1763424192.0855775,
+    "ast_hash": "a770c666822b96cc1f718d09f20d5dcc",
+    "semantic_hash": "a770c666822b96cc1f718d09f20d5dcc"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\app.routes.ts": {
+    "mtime": 1778365535.8178499,
+    "ast_hash": "028b3ea6b24f4af4c5cad98cc70a1437",
+    "semantic_hash": "028b3ea6b24f4af4c5cad98cc70a1437"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\guards\\auth.guard.ts": {
+    "mtime": 1763424458.407576,
+    "ast_hash": "80765587b9078bb6127e02bedb6eed6c",
+    "semantic_hash": "80765587b9078bb6127e02bedb6eed6c"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\guards\\permiso.guard.ts": {
+    "mtime": 1763439402.4671776,
+    "ast_hash": "4d956cf4cbfb1692357ca8bdeb376ab9",
+    "semantic_hash": "4d956cf4cbfb1692357ca8bdeb376ab9"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\layout\\component\\app.configurator.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "ade5076e3c7c1cfe66cd9e5f42d98a86",
+    "semantic_hash": "ade5076e3c7c1cfe66cd9e5f42d98a86"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\layout\\component\\app.floatingconfigurator.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "8cdd9328bc8df8ac919b4e44d6191299",
+    "semantic_hash": "8cdd9328bc8df8ac919b4e44d6191299"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\layout\\component\\app.footer.ts": {
+    "mtime": 1761284010.040701,
+    "ast_hash": "7ef0f684b66babdd27dd18a4e32e14d3",
+    "semantic_hash": "7ef0f684b66babdd27dd18a4e32e14d3"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\layout\\component\\app.layout.ts": {
+    "mtime": 1765426415.0668201,
+    "ast_hash": "6d631a335f89adc92765abe2e8cb556e",
+    "semantic_hash": "6d631a335f89adc92765abe2e8cb556e"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\layout\\component\\app.menu.ts": {
+    "mtime": 1772125971.3825185,
+    "ast_hash": "c14ba08abc117ebb2f57fc5325e44623",
+    "semantic_hash": "c14ba08abc117ebb2f57fc5325e44623"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\layout\\component\\app.menuitem.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "23ad21c8f93ce56b6ae8ad6c01be7c72",
+    "semantic_hash": "23ad21c8f93ce56b6ae8ad6c01be7c72"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\layout\\component\\app.sidebar.ts": {
+    "mtime": 1772125947.0289128,
+    "ast_hash": "726f5e258465ef46c74ed3f2237241ce",
+    "semantic_hash": "726f5e258465ef46c74ed3f2237241ce"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\layout\\component\\app.topbar.ts": {
+    "mtime": 1769638394.951949,
+    "ast_hash": "5306d450cb327487db37c85d77c2e305",
+    "semantic_hash": "5306d450cb327487db37c85d77c2e305"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\layout\\service\\layout.service.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "32a8d91bf36cb3d18fd8f0bd486f23cb",
+    "semantic_hash": "32a8d91bf36cb3d18fd8f0bd486f23cb"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\Menu.ts": {
+    "mtime": 1763250021.5204127,
+    "ast_hash": "0f83fa4af03e5948fc4b66e9219dcd75",
+    "semantic_hash": "0f83fa4af03e5948fc4b66e9219dcd75"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\Mesa.ts": {
+    "mtime": 1764788148.744639,
+    "ast_hash": "100ebc3c77bddbdfe599ee2f6da3a691",
+    "semantic_hash": "100ebc3c77bddbdfe599ee2f6da3a691"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\NuevoPedido.ts": {
+    "mtime": 1762058127.1469493,
+    "ast_hash": "d494cc161ee09685e4325836eba2b8ee",
+    "semantic_hash": "d494cc161ee09685e4325836eba2b8ee"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\NuevoPedidodetalle.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "d1cb1245478ce023e6b5e3d5685c0e61",
+    "semantic_hash": "d1cb1245478ce023e6b5e3d5685c0e61"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\Pedido.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "018f2e7cead6c5bc88bed576737e02a7",
+    "semantic_hash": "018f2e7cead6c5bc88bed576737e02a7"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\Perfil.ts": {
+    "mtime": 1763250032.8252351,
+    "ast_hash": "46f300f474723c03955a437b651e13cb",
+    "semantic_hash": "46f300f474723c03955a437b651e13cb"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\PerfilMenu.ts": {
+    "mtime": 1763250047.5461733,
+    "ast_hash": "ab3bc38c7d733f21a7d0ddb8877a242f",
+    "semantic_hash": "ab3bc38c7d733f21a7d0ddb8877a242f"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\Products.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "7aa418ba67ba0be52cd9b10b061125be",
+    "semantic_hash": "7aa418ba67ba0be52cd9b10b061125be"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\caja.ts": {
+    "mtime": 1776885924.5480175,
+    "ast_hash": "1d98df8ba108d2813b7b04b210b0b170",
+    "semantic_hash": "1d98df8ba108d2813b7b04b210b0b170"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\util\\calendar.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "440c77c56aeadd64fd37650446fc4673",
+    "semantic_hash": "440c77c56aeadd64fd37650446fc4673"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\util\\functionscompartidas.ts": {
+    "mtime": 1769622653.981128,
+    "ast_hash": "a292cf8de1c95ef5114afbd6e7799ab1",
+    "semantic_hash": "a292cf8de1c95ef5114afbd6e7799ab1"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\util\\order-by.pipe.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "e8bbbce16062fc36a5bb63cc11150a03",
+    "semantic_hash": "e8bbbce16062fc36a5bb63cc11150a03"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\model\\util\\unique.pipe.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "3eb6de6e5fa4c6b6d3f7efd1f3b64945",
+    "semantic_hash": "3eb6de6e5fa4c6b6d3f7efd1f3b64945"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\auth\\access.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "e4e8c0d7dc84f09db8e15a3d5587c54d",
+    "semantic_hash": "e4e8c0d7dc84f09db8e15a3d5587c54d"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\auth\\auth.routes.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "b909eaa1d75a287abd5accf4b4c41a31",
+    "semantic_hash": "b909eaa1d75a287abd5accf4b4c41a31"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\auth\\error.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "0deef3d27bc712f4d53d888a8cdbc76e",
+    "semantic_hash": "0deef3d27bc712f4d53d888a8cdbc76e"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\auth\\login.ts": {
+    "mtime": 1778532280.2229211,
+    "ast_hash": "e87e09520b1af5f29d0e5f68accba75e",
+    "semantic_hash": "e87e09520b1af5f29d0e5f68accba75e"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\crud\\crud.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "be3379d7b9ce7e00bbf55829382b69f6",
+    "semantic_hash": "be3379d7b9ce7e00bbf55829382b69f6"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\dashboard\\components\\bestsellingwidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "b6874990919086dc6b7b611d830e1877",
+    "semantic_hash": "b6874990919086dc6b7b611d830e1877"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\dashboard\\components\\notificationswidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "e5a55aa025c7ae2ca99b88259181672b",
+    "semantic_hash": "e5a55aa025c7ae2ca99b88259181672b"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\dashboard\\components\\recentsaleswidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "3346c10c0010ed690dc6c1cf4a8fdf30",
+    "semantic_hash": "3346c10c0010ed690dc6c1cf4a8fdf30"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\dashboard\\components\\revenuestreamwidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "d21f6ea0df02f3a6736b279f4727028a",
+    "semantic_hash": "d21f6ea0df02f3a6736b279f4727028a"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\dashboard\\components\\statswidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "713f664848ffeccc5e60959c82910a65",
+    "semantic_hash": "713f664848ffeccc5e60959c82910a65"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\dashboard\\dashboard.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "e6e92535f7b356fbc31c609eeed94d7e",
+    "semantic_hash": "e6e92535f7b356fbc31c609eeed94d7e"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\documentation\\documentation.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "a2d9e8f3d15309d0742e2ae1f31861b6",
+    "semantic_hash": "a2d9e8f3d15309d0742e2ae1f31861b6"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\empty\\empty.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "b87fdfedf99212219391a57e8adba407",
+    "semantic_hash": "b87fdfedf99212219391a57e8adba407"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\imports.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "a2bc2d0da2004b0fb3ac06cebdae98f0",
+    "semantic_hash": "a2bc2d0da2004b0fb3ac06cebdae98f0"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\landing\\components\\featureswidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "a46b60b6ea8bd2fb820384c94b020894",
+    "semantic_hash": "a46b60b6ea8bd2fb820384c94b020894"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\landing\\components\\footerwidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "d229126a415ed572d72a68b456c42e10",
+    "semantic_hash": "d229126a415ed572d72a68b456c42e10"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\landing\\components\\herowidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "d67e7b62baae450e011c97f8cf882828",
+    "semantic_hash": "d67e7b62baae450e011c97f8cf882828"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\landing\\components\\highlightswidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "f9c6b5632d869468b336638952f368b1",
+    "semantic_hash": "f9c6b5632d869468b336638952f368b1"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\landing\\components\\pricingwidget.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "f59875cb91cf516e5a1790039bebd661",
+    "semantic_hash": "f59875cb91cf516e5a1790039bebd661"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\landing\\components\\topbarwidget.component.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "29402d052220a450093cf1c24b0babfe",
+    "semantic_hash": "29402d052220a450093cf1c24b0babfe"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\landing\\landing.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "5d8decf3b5cb21024eb3e97cb9bdb9a0",
+    "semantic_hash": "5d8decf3b5cb21024eb3e97cb9bdb9a0"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\apertura\\apertura.component.spec.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "523b292ea8ca48399b77433f5557de36",
+    "semantic_hash": "523b292ea8ca48399b77433f5557de36"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\apertura\\apertura.component.ts": {
+    "mtime": 1772248384.3107612,
+    "ast_hash": "918b4226883e85ef9d93e4dd67675276",
+    "semantic_hash": "918b4226883e85ef9d93e4dd67675276"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\apertura\\apertura.routes.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "ef92ce4dd2ca02cb38d6526d305fc2cc",
+    "semantic_hash": "ef92ce4dd2ca02cb38d6526d305fc2cc"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\asistencia\\asistencia.component.ts": {
+    "mtime": 1777871356.954583,
+    "ast_hash": "ea01a8cf76afc17e251e24878c3d6eaf",
+    "semantic_hash": "ea01a8cf76afc17e251e24878c3d6eaf"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\asistencia\\asistencia.routes.ts": {
+    "mtime": 1777871358.9693546,
+    "ast_hash": "83d83137e88dde23a6af3a7f2545c52e",
+    "semantic_hash": "83d83137e88dde23a6af3a7f2545c52e"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\cierre_dia\\caja.component.ts": {
+    "mtime": 1776891912.6078792,
+    "ast_hash": "46e6ff63a8cb3d9f5e6cfd8146fee1ee",
+    "semantic_hash": "46e6ff63a8cb3d9f5e6cfd8146fee1ee"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\cierre_dia\\caja.routes.ts": {
+    "mtime": 1764302852.542053,
+    "ast_hash": "6c6aad75ffdf9e6688e2351d176a6145",
+    "semantic_hash": "6c6aad75ffdf9e6688e2351d176a6145"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\comprobante\\emitir-comprobante.component.ts": {
+    "mtime": 1773894106.1376224,
+    "ast_hash": "5c2bd94d172a516c46ad1e084a5b4ff9",
+    "semantic_hash": "5c2bd94d172a516c46ad1e084a5b4ff9"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\administracion\\administracion.component.ts": {
+    "mtime": 1763439620.9755905,
+    "ast_hash": "bf83881b0548969da88aef46c61b8110",
+    "semantic_hash": "bf83881b0548969da88aef46c61b8110"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\administracion\\administracion.routes.ts": {
+    "mtime": 1763485371.7291727,
+    "ast_hash": "5b78b7ecf9e730ae2454f551086063e0",
+    "semantic_hash": "5b78b7ecf9e730ae2454f551086063e0"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\administracion\\usuario.component.ts": {
+    "mtime": 1763917417.5336554,
+    "ast_hash": "115da5e11960adc9664be937359f067a",
+    "semantic_hash": "115da5e11960adc9664be937359f067a"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\clientes\\clientes.component.ts": {
+    "mtime": 1773881090.3705819,
+    "ast_hash": "7e73285ef520ea92bb47594ac71f84bf",
+    "semantic_hash": "7e73285ef520ea92bb47594ac71f84bf"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\configuracion.component.ts": {
+    "mtime": 1778365853.5224934,
+    "ast_hash": "0a50acb3508003bea66e4d3381d29900",
+    "semantic_hash": "0a50acb3508003bea66e4d3381d29900"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\configuracion.routes.ts": {
+    "mtime": 1763485549.9335792,
+    "ast_hash": "2077dd62167ad2ab8a5fc52b540ad8cc",
+    "semantic_hash": "2077dd62167ad2ab8a5fc52b540ad8cc"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\menu\\menu-form\\menu-form\\menu-form.component.ts": {
+    "mtime": 1763254938.4152935,
+    "ast_hash": "6d53c79b570eda53f4c533e09609edd7",
+    "semantic_hash": "6d53c79b570eda53f4c533e09609edd7"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\menu\\menu-list\\menu-list.component.ts": {
+    "mtime": 1772250927.897683,
+    "ast_hash": "e9d9823775ed15773001e8b1bf95b1f3",
+    "semantic_hash": "e9d9823775ed15773001e8b1bf95b1f3"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\menu\\menu.routes.ts": {
+    "mtime": 1763253623.2518654,
+    "ast_hash": "03afb9fb5b6cafba1240023c228abca3",
+    "semantic_hash": "03afb9fb5b6cafba1240023c228abca3"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\menu\\perfil-permisos\\perfil-permisos.component.ts": {
+    "mtime": 1772250774.8555791,
+    "ast_hash": "ff695d0f8179020076ec26d13b6c3ade",
+    "semantic_hash": "ff695d0f8179020076ec26d13b6c3ade"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\personal\\personal.component.spec.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "326f2a018f2cbaea44414992a0a6634e",
+    "semantic_hash": "326f2a018f2cbaea44414992a0a6634e"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\personal\\personal.component.ts": {
+    "mtime": 1773878765.5540009,
+    "ast_hash": "ed55ea466f181b7c82ca02ca582d7e4a",
+    "semantic_hash": "ed55ea466f181b7c82ca02ca582d7e4a"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\productos\\productos.component.ts": {
+    "mtime": 1773808997.1940312,
+    "ast_hash": "bfe27ba354259cc1e8cdb51d96752141",
+    "semantic_hash": "bfe27ba354259cc1e8cdb51d96752141"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\toppings\\toppings.component.spec.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "a850a2a4d6537a9b6be484fbd93c02ca",
+    "semantic_hash": "a850a2a4d6537a9b6be484fbd93c02ca"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\toppings\\toppings.component.ts": {
+    "mtime": 1772249037.0138714,
+    "ast_hash": "46eabb25b26c646c48471a92137e89b1",
+    "semantic_hash": "46eabb25b26c646c48471a92137e89b1"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\vouchers\\vouchers.component.ts": {
+    "mtime": 1761283922.1693056,
+    "ast_hash": "80dc048d6b86d390d8aa959d8e612d5d",
+    "semantic_hash": "80dc048d6b86d390d8aa959d8e612d5d"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\empresa\\empresa.component.ts": {
+    "mtime": 1778532282.23409,
+    "ast_hash": "2f1429696e853017216bece85a16e815",
+    "semantic_hash": "2f1429696e853017216bece85a16e815"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\empresa\\empresa.routes.ts": {
+    "mtime": 1769630842.911088,
+    "ast_hash": "05bdc674f58eb52c4690a9f859312813",
+    "semantic_hash": "05bdc674f58eb52c4690a9f859312813"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\home\\home.component.ts": {
+    "mtime": 1778532698.2924318,
+    "ast_hash": "2721527e7883d82b7a46c808266053fa",
+    "semantic_hash": "2721527e7883d82b7a46c808266053fa"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\home\\home.routes.ts": {
+    "mtime": 1763915338.3968573,
+    "ast_hash": "b9ac20dbeeb0d2c448c2bdf94461ac6d",
+    "semantic_hash": "b9ac20dbeeb0d2c448c2bdf94461ac6d"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\planilla\\planilla.component.ts": {
+    "mtime": 1778961888.7691157,
+    "ast_hash": "757b2b6df0ce690b075ddb1862d2bd91",
+    "semantic_hash": "757b2b6df0ce690b075ddb1862d2bd91"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\reportes\\reportes.component.ts": {
+    "mtime": 1777816602.7766187,
+    "ast_hash": "ff654b04a361d65e53ceeea4ebbabe11",
+    "semantic_hash": "ff654b04a361d65e53ceeea4ebbabe11"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\reportes\\reportes.routes.ts": {
+    "mtime": 1763915406.7142797,
+    "ast_hash": "2c36eb74d9e4bb695613cc3807ace5b4",
+    "semantic_hash": "2c36eb74d9e4bb695613cc3807ace5b4"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\notfound\\notfound.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "d944cdd8f7d04cb9833205b42a7a1f87",
+    "semantic_hash": "d944cdd8f7d04cb9833205b42a7a1f87"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\pages.routes.ts": {
+    "mtime": 1763424354.8574705,
+    "ast_hash": "ffb2d64c50a502b0cc2da3be975bec21",
+    "semantic_hash": "ffb2d64c50a502b0cc2da3be975bec21"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\apertura.service.ts": {
+    "mtime": 1772248345.9986,
+    "ast_hash": "b24b7b260316605b7a21e2dc4c19c2f6",
+    "semantic_hash": "b24b7b260316605b7a21e2dc4c19c2f6"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\caja.service.ts": {
+    "mtime": 1776884823.9122603,
+    "ast_hash": "2818e3ad7bcd8b056d8f2fb9342dfc53",
+    "semantic_hash": "2818e3ad7bcd8b056d8f2fb9342dfc53"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\configuracion.service.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "19f96ebb4bd1898e02637fb6fbb58d2a",
+    "semantic_hash": "19f96ebb4bd1898e02637fb6fbb58d2a"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\country.service.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "dfdf3554608ef0f1142ceee38c7553bf",
+    "semantic_hash": "dfdf3554608ef0f1142ceee38c7553bf"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\customer.service.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "60d5d44553733a79d5f737e621a8d8bc",
+    "semantic_hash": "60d5d44553733a79d5f737e621a8d8bc"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\empresa.service.ts": {
+    "mtime": 1769633184.7766752,
+    "ast_hash": "f35ea3c95275d2a37369e01c39b3f349",
+    "semantic_hash": "f35ea3c95275d2a37369e01c39b3f349"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\home.service.ts": {
+    "mtime": 1760909562.0,
+    "ast_hash": "a891cd72af94fa5aa4706117ace9a4a8",
+    "semantic_hash": "a891cd72af94fa5aa4706117ace9a4a8"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\menu.service.ts": {
+    "mtime": 1763492934.556496,
+    "ast_hash": "7b82ec7402da7096d28857a85b4d3c13",
+    "semantic_hash": "7b82ec7402da7096d28857a85b4d3c13"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\node.service.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "f0ea7c56326ec9bf4582cf40f4d51c2f",
+    "semantic_hash": "f0ea7c56326ec9bf4582cf40f4d51c2f"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\pedido.service.ts": {
+    "mtime": 1778948382.7738044,
+    "ast_hash": "0ee3cab986804423ee91f9dc0a459524",
+    "semantic_hash": "0ee3cab986804423ee91f9dc0a459524"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\photo.service.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "cbb145791383b8debb4a0e91c8dfbee8",
+    "semantic_hash": "cbb145791383b8debb4a0e91c8dfbee8"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\service\\product.service.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "a5d11441336219995e1f1c297f650bcf",
+    "semantic_hash": "a5d11441336219995e1f1c297f650bcf"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\buttondemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "9daf4a87cf9a7f5093b0cae899fa0eec",
+    "semantic_hash": "9daf4a87cf9a7f5093b0cae899fa0eec"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\chartdemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "ca39ae91909e1ba814a5a5b5e6861ba2",
+    "semantic_hash": "ca39ae91909e1ba814a5a5b5e6861ba2"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\filedemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "73899e36c3b78f05d6bd74d37f78b5dc",
+    "semantic_hash": "73899e36c3b78f05d6bd74d37f78b5dc"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\formlayoutdemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "89c12af73863b5dfa50b8c0c04c707d8",
+    "semantic_hash": "89c12af73863b5dfa50b8c0c04c707d8"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\inputdemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "74b2a9ccc5c11e0eca0d11a3e3953190",
+    "semantic_hash": "74b2a9ccc5c11e0eca0d11a3e3953190"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\listdemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "787baa2be38d53d2a0fdefcc2d5ff97b",
+    "semantic_hash": "787baa2be38d53d2a0fdefcc2d5ff97b"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\mediademo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "4758577f408fc07f997b0af578d1aa22",
+    "semantic_hash": "4758577f408fc07f997b0af578d1aa22"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\menudemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "b3b62865ccbc4e16e430e8493dddbec1",
+    "semantic_hash": "b3b62865ccbc4e16e430e8493dddbec1"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\messagesdemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "784b843b14cfdb5f8822e7b87c560de5",
+    "semantic_hash": "784b843b14cfdb5f8822e7b87c560de5"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\miscdemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "d9337b45dd713633e744e173ac850a5e",
+    "semantic_hash": "d9337b45dd713633e744e173ac850a5e"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\overlaydemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "c19214365e45db2ccd06c767b53f72eb",
+    "semantic_hash": "c19214365e45db2ccd06c767b53f72eb"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\panelsdemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "91e3f933b74155c0bd4bae0f8fd09157",
+    "semantic_hash": "91e3f933b74155c0bd4bae0f8fd09157"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\tabledemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "79f56b32de5d25d9fbe9d0f393115d11",
+    "semantic_hash": "79f56b32de5d25d9fbe9d0f393115d11"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\timelinedemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "89fa4b6f806de2f71e95d4a5c91863e2",
+    "semantic_hash": "89fa4b6f806de2f71e95d4a5c91863e2"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\treedemo.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "5d1f4e1d0902efe052a060b8e58e96fe",
+    "semantic_hash": "5d1f4e1d0902efe052a060b8e58e96fe"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\uikit\\uikit.routes.ts": {
+    "mtime": 1769630715.318894,
+    "ast_hash": "fa5e7b45c24c1e1059c9a6c38081b24a",
+    "semantic_hash": "fa5e7b45c24c1e1059c9a6c38081b24a"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\services\\asistencia.service.ts": {
+    "mtime": 1777872834.143731,
+    "ast_hash": "fb793876440142ccee0b4dc457d02620",
+    "semantic_hash": "fb793876440142ccee0b4dc457d02620"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\services\\auth.service.ts": {
+    "mtime": 1777816405.346092,
+    "ast_hash": "2a3e339e53aaec6f5a0e07237986c463",
+    "semantic_hash": "2a3e339e53aaec6f5a0e07237986c463"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\services\\supabase.service.ts": {
+    "mtime": 1777778867.2139056,
+    "ast_hash": "8db3596053987a8798c354b3e3e5bc01",
+    "semantic_hash": "8db3596053987a8798c354b3e3e5bc01"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\services\\voucher.service.ts": {
+    "mtime": 1761283711.360077,
+    "ast_hash": "f3400b3fdd3f28986fdce56de53f6bb5",
+    "semantic_hash": "f3400b3fdd3f28986fdce56de53f6bb5"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\environments\\environment.prod.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "2aa89b6cb59d6d97216639e746ec43d3",
+    "semantic_hash": "2aa89b6cb59d6d97216639e746ec43d3"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\environments\\environment.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "10b3b9f4b43dcaf7da2b3604d230fd59",
+    "semantic_hash": "10b3b9f4b43dcaf7da2b3604d230fd59"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\main.ts": {
+    "mtime": 1760909563.0,
+    "ast_hash": "8e088b94591c5b24d4dd4aaba296042d",
+    "semantic_hash": "8e088b94591c5b24d4dd4aaba296042d"
+  },
+  "C:\\laragon\\www\\sistema1910\\supabase\\functions\\execute-sql\\index.ts": {
+    "mtime": 1760909560.0,
+    "ast_hash": "ad66742abb068212303fc8e7713e591c",
+    "semantic_hash": "ad66742abb068212303fc8e7713e591c"
+  },
+  "C:\\laragon\\www\\sistema1910\\supabase\\migrations\\20250905050557_soft_unit.sql": {
+    "mtime": 1760909560.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "C:\\laragon\\www\\sistema1910\\supabase\\migrations\\20250905050913_wild_sunset.sql": {
+    "mtime": 1760909560.0,
+    "ast_hash": "5e7ccc760f6cbd7958f64e46a0fcbe8c",
+    "semantic_hash": "5e7ccc760f6cbd7958f64e46a0fcbe8c"
+  },
+  "C:\\laragon\\www\\sistema1910\\supabase\\migrations\\20250908185132_red_manor.sql": {
+    "mtime": 1760909560.0,
+    "ast_hash": "00624d7fcb54ae7b6d5334aff2162588",
+    "semantic_hash": "00624d7fcb54ae7b6d5334aff2162588"
+  },
+  "C:\\laragon\\www\\sistema1910\\supabase\\migrations\\20250916061437_lucky_shadow.sql": {
+    "mtime": 1760909560.0,
+    "ast_hash": "bb394b4e5b908563a5ede3b6026c7f5d",
+    "semantic_hash": "bb394b4e5b908563a5ede3b6026c7f5d"
+  },
+  "C:\\laragon\\www\\sistema1910\\supabase\\migrations\\20250920013033_teal_union.sql": {
+    "mtime": 1760909560.0,
+    "ast_hash": "f1295fe469176444bd50fe2dbf411538",
+    "semantic_hash": "f1295fe469176444bd50fe2dbf411538"
+  },
+  "C:\\laragon\\www\\sistema1910\\supabase\\migrations\\20250921170002_small_dew.sql": {
+    "mtime": 1760909560.0,
+    "ast_hash": "65dad909d5f2a80073ebc07e8c4df776",
+    "semantic_hash": "65dad909d5f2a80073ebc07e8c4df776"
+  },
+  "C:\\laragon\\www\\sistema1910\\supabase\\migrations\\20250925000000_add_perfil_menu_constraint.sql": {
+    "mtime": 1763490561.4906633,
+    "ast_hash": "fb0987b45c5624bc575f223528f1943a",
+    "semantic_hash": "fb0987b45c5624bc575f223528f1943a"
+  },
+  "C:\\laragon\\www\\sistema1910\\tailwind.config.js": {
+    "mtime": 1760909560.0,
+    "ast_hash": "ae970170b90da712d142b93922b7120e",
+    "semantic_hash": "ae970170b90da712d142b93922b7120e"
+  },
+  "C:\\laragon\\www\\sistema1910\\tsconfig.app.json": {
+    "mtime": 1760909560.0,
+    "ast_hash": "bea9844d4b4c1dacb38d60b08edc3f2d",
+    "semantic_hash": "bea9844d4b4c1dacb38d60b08edc3f2d"
+  },
+  "C:\\laragon\\www\\sistema1910\\tsconfig.json": {
+    "mtime": 1760909560.0,
+    "ast_hash": "c15a687e19310d32f42f731b550518db",
+    "semantic_hash": "c15a687e19310d32f42f731b550518db"
+  },
+  "C:\\laragon\\www\\sistema1910\\tsconfig.spec.json": {
+    "mtime": 1760909560.0,
+    "ast_hash": "8a6e5d8a88283f3263b37c3b4fce4db6",
+    "semantic_hash": "8a6e5d8a88283f3263b37c3b4fce4db6"
+  },
+  "C:\\laragon\\www\\sistema1910\\vercel.json": {
+    "mtime": 1760909560.0,
+    "ast_hash": "941c81b6fadfbc70a867012e9ce65bd5",
+    "semantic_hash": "941c81b6fadfbc70a867012e9ce65bd5"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\brandkit\\SKILL.md": {
+    "mtime": 1780458880.8198297,
+    "ast_hash": "7491f8fb77b0ebf517b758d096ac4ab4",
+    "semantic_hash": "7491f8fb77b0ebf517b758d096ac4ab4"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\design-taste-frontend-v1\\SKILL.md": {
+    "mtime": 1780458880.8273444,
+    "ast_hash": "e109588218fb2a3411cb5110f93bb634",
+    "semantic_hash": "e109588218fb2a3411cb5110f93bb634"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\design-taste-frontend\\SKILL.md": {
+    "mtime": 1780458880.8283448,
+    "ast_hash": "648c8bf98f84fbe7f14bf2da035c57fe",
+    "semantic_hash": "648c8bf98f84fbe7f14bf2da035c57fe"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\high-end-visual-design\\SKILL.md": {
+    "mtime": 1780458880.825345,
+    "ast_hash": "64f7c1069a5a3d18797950d8fac7b63a",
+    "semantic_hash": "64f7c1069a5a3d18797950d8fac7b63a"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\imagegen-frontend-mobile\\SKILL.md": {
+    "mtime": 1780458880.8218298,
+    "ast_hash": "6253c18387ca5d561a945ffe14e70d54",
+    "semantic_hash": "6253c18387ca5d561a945ffe14e70d54"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\imagegen-frontend-web\\SKILL.md": {
+    "mtime": 1780458880.8228297,
+    "ast_hash": "728f55ab7e44330e78aac4ca8331d83a",
+    "semantic_hash": "728f55ab7e44330e78aac4ca8331d83a"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\minimalist-ui\\SKILL.md": {
+    "mtime": 1780458880.8228297,
+    "ast_hash": "32f8681f79a681d00a4b72ddce4415b1",
+    "semantic_hash": "32f8681f79a681d00a4b72ddce4415b1"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\redesign-existing-projects\\SKILL.md": {
+    "mtime": 1780458880.825345,
+    "ast_hash": "c8d729e3e807df37dcd5e6262c9b8843",
+    "semantic_hash": "c8d729e3e807df37dcd5e6262c9b8843"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\stitch-design-taste\\DESIGN.md": {
+    "mtime": 1780458880.8263445,
+    "ast_hash": "7f8c91aeecc8983b687965c2fc23438c",
+    "semantic_hash": "7f8c91aeecc8983b687965c2fc23438c"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\stitch-design-taste\\SKILL.md": {
+    "mtime": 1780458880.8263445,
+    "ast_hash": "782a1107366a3490dc52ab8b032f05ef",
+    "semantic_hash": "782a1107366a3490dc52ab8b032f05ef"
+  },
+  "C:\\laragon\\www\\sistema1910\\.agent\\skills\\ui-ux-pro-max\\SKILL.md": {
+    "mtime": 1780458166.0391774,
+    "ast_hash": "b33a6a2bede0b68b6919ec33248476f8",
+    "semantic_hash": "b33a6a2bede0b68b6919ec33248476f8"
+  },
+  "C:\\laragon\\www\\sistema1910\\LICENSE.md": {
+    "mtime": 1760909560.0,
+    "ast_hash": "9bf69fed5b8514c7e393a699c18000af",
+    "semantic_hash": "9bf69fed5b8514c7e393a699c18000af"
+  },
+  "C:\\laragon\\www\\sistema1910\\LOGO_MANAGEMENT.md": {
+    "mtime": 1769638421.5963385,
+    "ast_hash": "2efee27640620dede061c2776fa1e070",
+    "semantic_hash": "2efee27640620dede061c2776fa1e070"
+  },
+  "C:\\laragon\\www\\sistema1910\\README.md": {
+    "mtime": 1760909560.0,
+    "ast_hash": "e39b9aabf232d2d3e28968ad79672a9e",
+    "semantic_hash": "e39b9aabf232d2d3e28968ad79672a9e"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\apertura\\apertura.component.html": {
+    "mtime": 1772248408.9608395,
+    "ast_hash": "536a7e377045489198e5bc162cbc1554",
+    "semantic_hash": "536a7e377045489198e5bc162cbc1554"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\asistencia\\asistencia.component.html": {
+    "mtime": 1777871387.8647244,
+    "ast_hash": "059f8a727725d84a94cdb2000129ccc9",
+    "semantic_hash": "059f8a727725d84a94cdb2000129ccc9"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\cierre_dia\\caja.component.html": {
+    "mtime": 1778526615.1779852,
+    "ast_hash": "5503528a63ee3e98ba6bf3baad7aeded",
+    "semantic_hash": "5503528a63ee3e98ba6bf3baad7aeded"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\comprobante\\emitir-comprobante.component.html": {
+    "mtime": 1773894108.1601906,
+    "ast_hash": "bad328fe06dd5521c8a350b382751016",
+    "semantic_hash": "bad328fe06dd5521c8a350b382751016"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\administracion\\usuario.component.html": {
+    "mtime": 1772250633.169568,
+    "ast_hash": "b92ec9bde80f376069cf9c908880dbdb",
+    "semantic_hash": "b92ec9bde80f376069cf9c908880dbdb"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\clientes\\clientes.component.html": {
+    "mtime": 1773880511.6982887,
+    "ast_hash": "77c7617dfdb35a097e8888b4bf3e3626",
+    "semantic_hash": "77c7617dfdb35a097e8888b4bf3e3626"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\configuracion.component.html": {
+    "mtime": 1778366079.3099246,
+    "ast_hash": "55e0a4725677e6c18beec75197955f28",
+    "semantic_hash": "55e0a4725677e6c18beec75197955f28"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\menu\\menu-form\\menu-form\\menu-form.component.html": {
+    "mtime": 1763255752.9151025,
+    "ast_hash": "3026e4699708e16a957f7643ebb511b5",
+    "semantic_hash": "3026e4699708e16a957f7643ebb511b5"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\menu\\menu-list\\menu-list.component.html": {
+    "mtime": 1772250893.5655193,
+    "ast_hash": "53d0a14708987d7696088f66f8289404",
+    "semantic_hash": "53d0a14708987d7696088f66f8289404"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\menu\\perfil-permisos\\perfil-permisos.component.html": {
+    "mtime": 1772250711.8203187,
+    "ast_hash": "405e85c5723e757921c1b3877f45e426",
+    "semantic_hash": "405e85c5723e757921c1b3877f45e426"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\personal\\personal.component.html": {
+    "mtime": 1772249554.9714842,
+    "ast_hash": "8af62c0d7777f8e34d2ecaff2a7fb4e1",
+    "semantic_hash": "8af62c0d7777f8e34d2ecaff2a7fb4e1"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\productos\\productos.component.html": {
+    "mtime": 1773808965.778136,
+    "ast_hash": "79fe42ffcf4041687c892a1d82a4b3fb",
+    "semantic_hash": "79fe42ffcf4041687c892a1d82a4b3fb"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\toppings\\toppings.component.html": {
+    "mtime": 1772249354.0925345,
+    "ast_hash": "a96f67c9c7615fe48fd0b8dafe56dd0d",
+    "semantic_hash": "a96f67c9c7615fe48fd0b8dafe56dd0d"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\configuracion\\vouchers\\vouchers.component.html": {
+    "mtime": 1772249557.0835466,
+    "ast_hash": "8a7fe8c859eac5aafee94421f232c250",
+    "semantic_hash": "8a7fe8c859eac5aafee94421f232c250"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\empresa\\empresa.component.html": {
+    "mtime": 1769641678.7081184,
+    "ast_hash": "e908279c5b886c3417cded32f32eba6b",
+    "semantic_hash": "e908279c5b886c3417cded32f32eba6b"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\home\\home.component.html": {
+    "mtime": 1778960665.6488154,
+    "ast_hash": "2bb55251cbb43991440747b2ecf49290",
+    "semantic_hash": "2bb55251cbb43991440747b2ecf49290"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\planilla\\planilla.component.html": {
+    "mtime": 1778961621.2251942,
+    "ast_hash": "4e8814a974b740072d377bbc992d7bda",
+    "semantic_hash": "4e8814a974b740072d377bbc992d7bda"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\app\\pages\\modules\\reportes\\reportes.component.html": {
+    "mtime": 1777816764.9936721,
+    "ast_hash": "9a8d69601482721cdcf9e6f61eccb45c",
+    "semantic_hash": "9a8d69601482721cdcf9e6f61eccb45c"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\index.html": {
+    "mtime": 1772136870.9433537,
+    "ast_hash": "703ec2a6dafb816e3bb50ee4789cf3fb",
+    "semantic_hash": "703ec2a6dafb816e3bb50ee4789cf3fb"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\assets\\demo\\flags\\flags_responsive.png": {
+    "mtime": 1760909560.0,
+    "ast_hash": "73e6b012bf1e5ab3ba41033aa8f977de",
+    "semantic_hash": "73e6b012bf1e5ab3ba41033aa8f977de"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\assets\\img\\images.jpeg": {
+    "mtime": 1760909560.0,
+    "ast_hash": "66e7e795007a90521d8c19577bf13e1d",
+    "semantic_hash": "66e7e795007a90521d8c19577bf13e1d"
+  },
+  "C:\\laragon\\www\\sistema1910\\src\\assets\\img\\logo.png": {
+    "mtime": 1760909560.0,
+    "ast_hash": "883059bbd951e92505e1fd5ba051d578",
+    "semantic_hash": "883059bbd951e92505e1fd5ba051d578"
+  }
+}
