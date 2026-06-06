@@ -1,4 +1,4 @@
-<div class="card" style="width: 340% !important;">
+<div class="card">
     <p-toast />
 
     <div class="flex items-center mb-4">
@@ -9,8 +9,7 @@
 
     <p-toolbar styleClass="mb-6">
         <ng-template #start>
-            <p-button label="Nuevo Cliente" icon="pi pi-plus" severity="secondary" class="mr-2"
-                (onClick)="openNew()" />
+            <p-button label="Nuevo Cliente" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
         </ng-template>
         <ng-template #end>
             <div class="flex items-center gap-2">
@@ -119,8 +118,8 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="tipodoc" class="block font-bold mb-3">Tipo Documento *</label>
-                        <p-select formControlName="tipodoc" inputId="tipodoc" [options]="tiposdoc"
-                            optionLabel="label" optionValue="value" placeholder="Seleccione tipo" fluid
+                        <p-select formControlName="tipodoc" inputId="tipodoc" [options]="tiposdoc" optionLabel="label"
+                            optionValue="value" placeholder="Seleccione tipo" fluid
                             [class.ng-invalid]="clienteForm.get('tipodoc')?.invalid && submitted" />
                         <small class="text-red-500"
                             *ngIf="submitted && clienteForm.get('tipodoc')?.errors?.['required']"> El tipo de documento
@@ -129,11 +128,12 @@
 
                     <div>
                         <label for="numerodoc" class="block font-bold mb-3">Nro. Documento *</label>
-                        <input type="text" pInputText id="numerodoc" formControlName="numerodoc" required autofocus fluid
-                            placeholder="Ej: 12345678"
+                        <input type="text" pInputText id="numerodoc" formControlName="numerodoc" required autofocus
+                            fluid placeholder="Ej: 12345678"
                             [class.ng-invalid]="clienteForm.get('numerodoc')?.invalid && submitted" />
                         <small class="text-red-500"
-                            *ngIf="submitted && clienteForm.get('numerodoc')?.errors?.['required']"> El número de documento
+                            *ngIf="submitted && clienteForm.get('numerodoc')?.errors?.['required']"> El número de
+                            documento
                             es requerido. </small>
                     </div>
                 </div>
@@ -189,8 +189,8 @@
                         <small class="text-red-500"
                             *ngIf="submitted && clienteForm.get('correo')?.errors?.['required']"> El correo es
                             requerido. </small>
-                        <small class="text-red-500"
-                            *ngIf="submitted && clienteForm.get('correo')?.errors?.['email']"> Ingrese un correo
+                        <small class="text-red-500" *ngIf="submitted && clienteForm.get('correo')?.errors?.['email']">
+                            Ingrese un correo
                             válido. </small>
                     </div>
 
