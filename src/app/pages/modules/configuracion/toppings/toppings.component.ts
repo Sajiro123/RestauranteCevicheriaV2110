@@ -24,7 +24,12 @@ export class ToppingsComponent {
     isEditing: boolean = false;
     searchTerm: string = '';
 
-    constructor(private supabaseService: SupabaseService, private messageService: MessageService, private confirmationService: ConfirmationService, private fb: FormBuilder) {
+    constructor(
+        private supabaseService: SupabaseService,
+        private messageService: MessageService,
+        private confirmationService: ConfirmationService,
+        private fb: FormBuilder
+    ) {
         this.toppingForm = this.fb.group({
             nombre: ['', [Validators.required, Validators.minLength(2)]]
         });
@@ -83,7 +88,7 @@ export class ToppingsComponent {
             icon: 'pi pi-exclamation-triangle',
             accept: async () => {
                 try {
-                    const { error } = await this.supabaseService.client.from('toppings').update({ deleted: fechaPeru }).eq('idtopings', topping.idtopings);
+                    const { error } = await this.supabaseService.client.from('toppings').update({ deleted: fechaPeru }).eq('idtoppings', topping.idtoppings);
 
                     if (error) throw error;
 
@@ -119,7 +124,7 @@ export class ToppingsComponent {
                         .update({
                             nombre: formData.nombre
                         })
-                        .eq('idtopings', this.topping.idtopings);
+                        .eq('idtoppings', this.topping.idtoppings);
 
                     if (error) throw error;
 
@@ -172,7 +177,7 @@ export class ToppingsComponent {
             this.filteredToppings = [...this.toppings];
         } else {
             const term = this.searchTerm.toLowerCase();
-            this.filteredToppings = this.toppings.filter(t => t.nombre?.toLowerCase().includes(term));
+            this.filteredToppings = this.toppings.filter((t) => t.nombre?.toLowerCase().includes(term));
         }
     }
 }

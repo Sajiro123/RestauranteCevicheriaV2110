@@ -41,14 +41,20 @@ export class HomeComponent {
     @Input() isLoading: boolean = false; // Para activar/desactivar el loader
     pedido_seleccionado: any;
     AperturaHoy: any;
-    selectedToppings: { idtopings: number; nombre: string }[] = []; // O puedes inicializar con algunos seleccionados
+    selectedToppings: { idtoppings: number; nombre: string }[] = [];
     isDropdownOpen = false;
+    toppingDialogVisible = false;
+    itemActivoTopping: any = null;
+    itemActivoToppingIndex = -1;
+
     selectedMozo: any = null;
     private authSubscription: Subscription | undefined;
     private timeUpdateSubscription: Subscription | undefined;
 
     @ViewChild('responsableTextarea') responsableTextarea!: ElementRef;
     multiselectToppings: any[] = [];
+    nuevoToppingNombre: string = '';
+    guardandoTopping: boolean = false;
     discount: number = 0;
     switchValue: boolean = false;
     pedidosSeleccionados: any[] = [];
@@ -105,7 +111,7 @@ export class HomeComponent {
                 total: 0,
                 pedido_estado: undefined,
                 lugarpedido: '0',
-                idtopings: [],
+                idtoppings: [],
                 id_created_at: undefined,
                 idpedidodetalle: 0
             }
@@ -170,7 +176,6 @@ export class HomeComponent {
     async verificarCajaAbierta(): Promise<void> {
         return new Promise((resolve) => {
             this.aperturaService.ListarAperturaHoy().subscribe((response) => {
-
                 if (response.success && response.data && response.data.length > 0) {
                     this.AperturaHoy = response.data;
                     // Check if caja is open (estado === 1 or estado === 2)
@@ -179,7 +184,6 @@ export class HomeComponent {
                 } else {
                     this.cajaAbierta = false;
                     this.verificandoCaja = false;
-
                 }
                 resolve();
             });
@@ -219,18 +223,15 @@ export class HomeComponent {
         this.checkAuthentication();
 
         // Subscribe to authentication state changes
-        this.authSubscription = this.authService.isAuthenticated$.subscribe(
-            (authenticated: boolean) => {
-                if (!authenticated) {
-                    this.router.navigate(['/auth/login']);
-                }
+        this.authSubscription = this.authService.isAuthenticated$.subscribe((authenticated: boolean) => {
+            if (!authenticated) {
+                this.router.navigate(['/auth/login']);
             }
-        );
+        });
         // perdiendo una rama por yordy
         this.loadMozos().then(() => {
             setTimeout(() => {
                 if (this.authService.isAuthenticated()) {
-
                     this.verificarCajaAbierta().then(() => {
                         if (this.cajaAbierta) {
                             this.cargarMesas();
@@ -245,10 +246,8 @@ export class HomeComponent {
                         }
                     });
                 }
-
             }, 1000);
             // Only proceed with initialization if user is authenticated
-
         });
 
         // Setup timer to actively update elapsed times
@@ -416,7 +415,7 @@ export class HomeComponent {
                         response.data[0].cantidad = 1; // Inicializar cantidad en 1
                         response.data[0].total = response.data[0].preciounitario; // Inicializar cantidad en 1
                         response.data[0].lugarpedido = '0'; // Inicializar cantidad en 1
-                        response.data[0].idtopings = [{ idtopings: 0, nombre: '' }]; // Inicializar toppings
+                        response.data[0].idtoppings = [{ idtoppings: 0, nombre: '' }]; // Inicializar toppings
                         this.NuevoPedido.pedidodetalle.push(response.data[0]);
                     } else {
                         this.messageService.add({ severity: 'warn', summary: 'Error', detail: 'No contiene informaciòn la consulta BuscarPlatoSearch' });
@@ -434,9 +433,9 @@ export class HomeComponent {
     cargarToppingsSeleccionados(pedidosdetalle: NuevoPedidodetalle) {
         const detalle = this.NuevoPedido.pedidodetalle.find((d) => d.idpedidodetalle === pedidosdetalle.idpedidodetalle);
 
-        if (detalle && Array.isArray(detalle.idtopings)) {
-            var toppings = (detalle.idtopings as { idtopings: number; nombre: string }[]).map((topping) => ({
-                idtopings: topping.idtopings,
+        if (detalle && Array.isArray(detalle.idtoppings)) {
+            var toppings = (detalle.idtoppings as { idtoppings: number; nombre: string }[]).map((topping) => ({
+                idtoppings: topping.idtoppings,
                 nombre: topping.nombre
             }));
             this.selectedToppings = [...toppings];
@@ -444,7 +443,93 @@ export class HomeComponent {
             this.selectedToppings = [];
         }
     }
+
+    /** Abre el dialog global de toppings para el item específico */
+    abrirToppingPanel(pedidosdetalle: NuevoPedidodetalle, event: Event) {
+        event.stopPropagation();
+        this.itemActivoTopping = pedidosdetalle;
+
+        // Siempre usar referencia de objeto para encontrar el índice exacto
+        this.itemActivoToppingIndex = this.NuevoPedido.pedidodetalle.findIndex((d) => d === pedidosdetalle);
+
+        // Leer toppings directamente del objeto pasado (evita bug con find por idpedidodetalle=0)
+        if (pedidosdetalle.idtoppings && Array.isArray(pedidosdetalle.idtoppings)) {
+            this.selectedToppings = (pedidosdetalle.idtoppings as { idtoppings: number; nombre: string }[]).filter((t) => t && t.idtoppings && t.idtoppings > 0).map((t) => ({ idtoppings: t.idtoppings, nombre: t.nombre }));
+        } else {
+            this.selectedToppings = [];
+        }
+
+        this.toppingDialogVisible = true;
+    }
+
+    /** Toggle individual de un topping en el panel */
+    toggleTopping(topping: { idtoppings: number; nombre: string }) {
+        debugger;
+        // Guard: ignorar toppings sin id válido
+        if (!topping || !topping.idtoppings || topping.idtoppings <= 0) return;
+
+        const existe = this.selectedToppings.some((t) => t.idtoppings === topping.idtoppings);
+        if (existe) {
+            this.selectedToppings = this.selectedToppings.filter((t) => t.idtoppings !== topping.idtoppings);
+        } else {
+            this.selectedToppings = [...this.selectedToppings, { idtoppings: topping.idtoppings, nombre: topping.nombre }];
+        }
+    }
+
+    /** Verifica si un topping está seleccionado — con guard para idtoppings inválido */
+    isToppingSelected(topping: { idtoppings: number; nombre: string }): boolean {
+        if (!topping || !topping.idtoppings || topping.idtoppings <= 0) return false;
+        return this.selectedToppings.some((t) => t.idtoppings === topping.idtoppings);
+    }
+
+    /** Guarda los toppings del item activo y cierra el dialog */
+    guardarToppingDesdeDialog() {
+        const idx = this.itemActivoToppingIndex;
+        if (idx >= 0 && idx < this.NuevoPedido.pedidodetalle.length) {
+            this.NuevoPedido.pedidodetalle[idx].idtoppings = [...this.selectedToppings];
+        }
+        this.toppingDialogVisible = false;
+        this.itemActivoTopping = null;
+        this.itemActivoToppingIndex = -1;
+        this.selectedToppings = [];
+    }
+
+    /** Crea un nuevo topping en la BD, lo agrega a la lista y lo selecciona */
+    agregarNuevoTopping() {
+        const nombre = this.nuevoToppingNombre.trim();
+        if (!nombre) return;
+
+        // Evitar duplicados
+        const existe = this.multiselectToppings.some((t: any) => t.nombre.toLowerCase() === nombre.toLowerCase());
+        if (existe) {
+            this.messageService.add({ severity: 'warn', summary: 'Duplicado', detail: 'Ese topping ya existe en la lista.', life: 2500 });
+            return;
+        }
+
+        this.guardandoTopping = true;
+        this.PedidoService.InsertarTopping(nombre).subscribe({
+            next: (response) => {
+                this.guardandoTopping = false;
+                if (response.success && response.data) {
+                    this.multiselectToppings = [...this.multiselectToppings, response.data]
+                        .sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
+                    // Auto-seleccionar el nuevo topping
+                    this.selectedToppings = [...this.selectedToppings, { idtoppings: response.data.idtoppings, nombre: response.data.nombre }];
+                    this.nuevoToppingNombre = '';
+                    this.messageService.add({ severity: 'success', summary: 'Topping agregado', detail: '"' + nombre + '" fue creado y seleccionado.', life: 2500 });
+                } else {
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo agregar el topping.', life: 3000 });
+                }
+            },
+            error: () => {
+                this.guardandoTopping = false;
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al conectar con la base de datos.', life: 3000 });
+            }
+        });
+    }
+
     agregarToppingsPedido(pedidosdetalle: NuevoPedidodetalle, op: Popover, index: number) {
+        debugger;
         if (pedidosdetalle.idpedidodetalle != 0) {
             var detalleIndex = this.NuevoPedido.pedidodetalle.findIndex((d) => d.idpedidodetalle === pedidosdetalle.idpedidodetalle);
         } else {
@@ -463,7 +548,7 @@ export class HomeComponent {
                     total: pedidosdetalle.total,
                     pedido_estado: pedidosdetalle.pedido_estado,
                     lugarpedido: pedidosdetalle.lugarpedido,
-                    idtopings: [{ idtopings: 0, nombre: '' }],
+                    idtoppings: [{ idtoppings: 0, nombre: '' }],
                     id_created_at: pedidosdetalle.id_created_at,
                     idpedidodetalle: 0
                 };
@@ -471,19 +556,19 @@ export class HomeComponent {
                 detalleIndex = this.NuevoPedido.pedidodetalle.length - 1;
             }
 
-            // Asegurar que idtopings existe y es array
-            if (!this.NuevoPedido.pedidodetalle[detalleIndex].idtopings) {
-                this.NuevoPedido.pedidodetalle[detalleIndex].idtopings = [];
+            // Asegurar que idtoppings existe y es array
+            if (!this.NuevoPedido.pedidodetalle[detalleIndex].idtoppings) {
+                this.NuevoPedido.pedidodetalle[detalleIndex].idtoppings = [];
             }
 
             // Asignar los toppings (reemplazar existentes)
-            this.NuevoPedido.pedidodetalle[detalleIndex].idtopings = [...this.selectedToppings];
+            this.NuevoPedido.pedidodetalle[detalleIndex].idtoppings = [...this.selectedToppings];
 
             this.selectedToppings = [];
             this.isDropdownOpen = false;
         } else {
             if (typeof detalleIndex === 'number' && detalleIndex >= 0) {
-                this.NuevoPedido.pedidodetalle[detalleIndex].idtopings = [];
+                this.NuevoPedido.pedidodetalle[detalleIndex].idtoppings = [];
             }
         }
         op.hide();
@@ -554,7 +639,7 @@ export class HomeComponent {
             pedido_estado: undefined,
             lugarpedido: '0',
             idpedido: 0,
-            idtopings: [{ idtopings: 0, nombre: '' }],
+            idtoppings: [{ idtoppings: 0, nombre: '' }],
             id_created_at: undefined,
             idpedidodetalle: 0
         });
@@ -611,7 +696,7 @@ export class HomeComponent {
 
             // Reset estado_cocina to 0
             this.PedidoService.updateEstadoCocina(pedido.idpedido, 0).subscribe({
-                next: () => { },
+                next: () => {},
                 error: (err) => console.error('Error resetting estado_cocina:', err)
             });
 
@@ -623,7 +708,7 @@ export class HomeComponent {
                 this.isOrderViewActive = false;
                 if (this.mesaSeleccionada) {
                     const num = this.mesaSeleccionada.numero;
-                    const refreshed = this.mesas.find(m => m.numero == num) || this.mesaSeleccionada;
+                    const refreshed = this.mesas.find((m) => m.numero == num) || this.mesaSeleccionada;
                     // For deliveries where numero == '0', we must assign the fresh idpedido
                     if (num === '0') {
                         // Deliveries logic to auto-select would happen here if we tracked idpedido differently,
@@ -808,7 +893,7 @@ export class HomeComponent {
                     this.isOrderViewActive = false;
                     if (this.mesaSeleccionada) {
                         const num = this.mesaSeleccionada.numero;
-                        const refreshed = this.mesas.find(m => m.numero == num) || this.mesaSeleccionada;
+                        const refreshed = this.mesas.find((m) => m.numero == num) || this.mesaSeleccionada;
                         if (num === '0') {
                             if (data?.idpedido) {
                                 refreshed.idpedido = data.idpedido;
@@ -830,7 +915,6 @@ export class HomeComponent {
                 setTimeout(() => {
                     this.generateCocinaPDF(data);
                 }, 1000);
-
             } catch (error) {
                 console.error('Error en el proceso completo:', error);
 
@@ -917,7 +1001,7 @@ export class HomeComponent {
         this.BuscarPlatoSearchText('');
     }
     getPedidoClick(status_array: any): NuevoPedido {
-        var idtopingsArray: { idtopings: number; nombre: string }[] = [];
+        var idtoppingsArray: { idtoppings: number; nombre: string }[] = [];
 
         if (status_array.length > 0) {
             this.selectedMozo = status_array[0]?.persona;
@@ -956,7 +1040,7 @@ export class HomeComponent {
                     estado: pedido.estado || false,
                     lugarpedido: pedido.lugarpedido || '',
                     comentario: pedido.comentario || '',
-                    idtopings: idtopingsArray || [],
+                    idtoppings: idtoppingsArray || [],
                     id_created_at: undefined,
                     pedido_estado: undefined
                 })
@@ -966,14 +1050,14 @@ export class HomeComponent {
                 var toppings = element.toppings;
                 if (toppings) {
                     var topings_ = toppings.split(',');
-                    idtopingsArray = [];
+                    idtoppingsArray = [];
                     topings_.forEach((elementopping: any) => {
-                        const topping = this.multiselectToppings.find((t: any) => t.idtopings == elementopping);
-                        if (topping) idtopingsArray.push({ idtopings: topping.idtopings, nombre: topping.nombre });
+                        const topping = this.multiselectToppings.find((t: any) => t.idtoppings == elementopping);
+                        if (topping) idtoppingsArray.push({ idtoppings: topping.idtoppings, nombre: topping.nombre });
                         const lastDetalle = this.NuevoPedido.pedidodetalle.find((detalle) => detalle.idpedidodetalle == element.idpedidodetalle);
                         // Asegurarse de que lastDetalle no sea undefined
                         if (lastDetalle) {
-                            lastDetalle.idtopings = [...idtopingsArray];
+                            lastDetalle.idtoppings = [...idtoppingsArray];
                         }
                     });
                 }
@@ -1076,7 +1160,7 @@ export class HomeComponent {
 
     getTiempoTranscurrido(numeroMesa: string): string {
         // Find the pedido for this mesa
-        const pedido = this.Pedidos.find(p => p.mesa == numeroMesa);
+        const pedido = this.Pedidos.find((p) => p.mesa == numeroMesa);
         if (pedido && pedido['created_at']) {
             const createdTime = new Date(pedido['created_at']);
             const currentTime = new Date();
@@ -1089,7 +1173,7 @@ export class HomeComponent {
     // Helper method to get number of pedidos for a mesa
     getNumeroPedidos(numeroMesa: string): number {
         // Count pedidos for this mesa
-        const pedidos = this.Pedidos.filter(p => p.mesa == numeroMesa) as any;
+        const pedidos = this.Pedidos.filter((p) => p.mesa == numeroMesa) as any;
         return pedidos[0].pedidodetalle.reduce((sum: number, element: any) => sum + element.cantidad, 0);
     }
 
@@ -1144,7 +1228,6 @@ export class HomeComponent {
     }
 
     pagarTodo(metodo: 'efectivo' | 'visa' | 'yape' | 'plin') {
-
         // Reiniciar todos
         this.Pedido_cobrar.efectivo = 0;
         this.Pedido_cobrar.visa = 0;
@@ -1158,7 +1241,7 @@ export class HomeComponent {
     // Helper method to get mozo name for a mesa
     getNombreMozopedido(numeroMesa: string): string {
         // Find the pedido for this mesa
-        const pedido = this.Pedidos.find(p => p.mesa == numeroMesa);
+        const pedido = this.Pedidos.find((p) => p.mesa == numeroMesa);
         if (pedido && pedido.persona && pedido.persona.nombres) {
             // Return first name and first letter of last name
             const nombres = pedido.persona.nombres.split(' ');
@@ -1173,7 +1256,7 @@ export class HomeComponent {
     // Helper method to get total amount for a mesa
     getTotalMesa(numeroMesa: string): string {
         // Find all pedidos for this mesa and sum their totals
-        const pedidos = this.Pedidos.filter(p => p.mesa == numeroMesa);
+        const pedidos = this.Pedidos.filter((p) => p.mesa == numeroMesa);
         const total = pedidos.reduce((sum, pedido) => {
             return sum + (pedido.total || 0);
         }, 0);
@@ -1307,7 +1390,7 @@ export class HomeComponent {
     generatePDF(pedido: NuevoPedido) {
         this.isLoading = true;
         this.loadImageBase64('assets/img/logo.png').then((base64Logo) => {
-            this.PedidoService.ShowProductosPdf(pedido.idpedido).subscribe((response) => {
+            this.PedidoService.ShowProductosPdf(pedido.idpedido, 'ticket').subscribe((response) => {
                 var inicial = 125;
                 var items = response.data?.pedidodetalle?.length || 0;
 
@@ -1766,9 +1849,7 @@ export class HomeComponent {
 
     moveTableModal() {
         // Load available mesas that are not the current one and are free (estado = 0 in estadomesa)
-        this.availableMesas = this.mesas.filter(mesa =>
-            mesa.numero !== this.mesaSeleccionada?.numero && this.estadomesa[mesa.numero]?.value === 0
-        );
+        this.availableMesas = this.mesas.filter((mesa) => mesa.numero !== this.mesaSeleccionada?.numero && this.estadomesa[mesa.numero]?.value === 0);
 
         // If there are no available mesas, show a message
         if (this.availableMesas.length === 0) {
@@ -1797,10 +1878,7 @@ export class HomeComponent {
         }
 
         // Check if the target mesa is already occupied
-        const targetMesaOccupied = this.Pedidos.some(pedido =>
-            pedido.mesa === this.targetMesa!.numero &&
-            pedido.idpedido !== this.NuevoPedido.idpedido
-        );
+        const targetMesaOccupied = this.Pedidos.some((pedido) => pedido.mesa === this.targetMesa!.numero && pedido.idpedido !== this.NuevoPedido.idpedido);
 
         if (targetMesaOccupied) {
             this.messageService.add({
@@ -1819,7 +1897,7 @@ export class HomeComponent {
                     // Update the mesa states
                     // Set the current mesa to free (estado = '0')
                     if (this.mesaSeleccionada) {
-                        const currentMesa = this.mesas.find(m => m.numero == this.mesaSeleccionada!.numero);
+                        const currentMesa = this.mesas.find((m) => m.numero == this.mesaSeleccionada!.numero);
                         if (currentMesa) {
                             currentMesa.estado = '0';
                             if (this.estadomesa[currentMesa.numero]) {
@@ -1835,7 +1913,7 @@ export class HomeComponent {
                     }
 
                     // Update the pedido's mesa number
-                    const pedido = this.Pedidos.find(p => p.idpedido === this.NuevoPedido.idpedido);
+                    const pedido = this.Pedidos.find((p) => p.idpedido === this.NuevoPedido.idpedido);
                     if (pedido) {
                         pedido.mesa = this.targetMesa!.numero;
                     }
@@ -1879,7 +1957,7 @@ export class HomeComponent {
     generateCocinaPDF(pedido: any) {
         this.isLoading = true; // Activar el loader
 
-        this.PedidoService.ShowProductosPdf(pedido.idpedido).subscribe((response) => {
+        this.PedidoService.ShowProductosPdf(pedido.idpedido, 'cocina').subscribe((response) => {
             this.estadopedido = 0;
             var inicial = 100;
             var items = response.data?.pedidodetalle?.length || 0;
@@ -1914,13 +1992,14 @@ export class HomeComponent {
                 var toppings = element.toppings;
                 if (toppings && toppings != 0) {
                     var topings_ = toppings.split(',');
-                    var texto_topping = '';
                     topings_.forEach((elementopping: any) => {
-                        const topping = this.multiselectToppings.find((t: any) => t.idtopings == elementopping);
-                        if (topping) texto_topping += topping.nombre + ', ';
+                        const topping = this.multiselectToppings.find((t: any) => t.idtoppings == elementopping);
+                        if (topping) {
+                            inicial += 3.5; // Sumar 3.5mm por CADA topping que se imprime en nueva línea
+                        }
                     });
-                    inicial += 4;
                 }
+                inicial += 4; // Sumar 4mm por la línea separadora que va debajo de cada plato
             });
 
             const doc = new jsPDF({
@@ -1985,6 +2064,32 @@ export class HomeComponent {
                 doc.text(element[1], col2X, y);
                 doc.text('S/' + element[2].toString(), col3X, y);
                 y += 4.5;
+
+                // Toppings del plato (debajo del producto)
+                const detalle = response.data.pedidodetalle.find((p: any) => p.producto.nombre === element[1] && (p.lugarpedido == null || p.lugarpedido == '0'));
+                if (detalle && detalle.toppings && detalle.toppings != 0) {
+                    const toppingIds = detalle.toppings.split(',');
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    toppingIds.forEach((tid: any) => {
+                        const topping = this.multiselectToppings.find((t: any) => t.idtoppings == tid);
+                        if (topping) {
+                            const esSin = topping.nombre.toUpperCase().startsWith('SIN');
+                            const prefijo = esSin ? '  >> - ' : '  >> + ';
+                            doc.text(prefijo + topping.nombre, col2X, y);
+                            y += 3.5;
+                        }
+                    });
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(12);
+                }
+
+                // Línea separadora entre platos
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.text('-----------------------------------------------------------------------', centerX, y, { align: 'center' });
+                doc.setFontSize(12);
+                y += 4;
             });
 
             doc.setFont('helvetica', 'bold');
@@ -2006,6 +2111,31 @@ export class HomeComponent {
                         doc.text(element.cantidad.toString(), col1X, y);
                         doc.text(element.producto.nombre, col2X, y);
                         doc.text('S/' + element.precioU.toString(), col3X, y);
+                        y += 4;
+
+                        // Toppings debajo del plato (para llevar)
+                        if (element.toppings && element.toppings != 0) {
+                            const toppingIds = element.toppings.split(',');
+                            doc.setFont('helvetica', 'bold');
+                            doc.setFontSize(8);
+                            toppingIds.forEach((tid: any) => {
+                                const topping = this.multiselectToppings.find((t: any) => t.idtoppings == tid);
+                                if (topping) {
+                                    const esSin = topping.nombre.toUpperCase().startsWith('SIN');
+                                    const prefijo = esSin ? '  >> - ' : '  >> + ';
+                                    doc.text(prefijo + topping.nombre, col2X, y);
+                                    y += 3.5;
+                                }
+                            });
+                            doc.setFont('helvetica', 'normal');
+                            doc.setFontSize(12);
+                        }
+
+                        // Línea separadora entre platos
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(8);
+                        doc.text('-----------------------------------------------------------------------', centerX, y, { align: 'center' });
+                        doc.setFontSize(12);
                         y += 4;
                     }
                 });
@@ -2033,33 +2163,7 @@ export class HomeComponent {
                 currentY += 4; // Espacio entre líneas (ajusta según necesidad)
             });
             y += 5;
-            doc.setFontSize(8);
-            response.data.pedidodetalle.forEach((element: any) => {
-                var toppings = element.toppings;
-
-                if (toppings && toppings != 0) {
-                    var topings_ = toppings.split(',');
-                    var texto_topping = '';
-                    topings_.forEach((elementopping: any) => {
-                        const topping = this.multiselectToppings.find((t: any) => t.idtopings == elementopping);
-                        if (topping) texto_topping += topping.nombre + ', ';
-
-                        // idtopings: topping.idtopings, nombre: topping.nombre  ;
-                        // const lastDetalle = this.NuevoPedido.pedidodetalle.find((detalle) => detalle.idproducto == element.idproducto);
-                        // // Asegurarse de que lastDetalle no sea undefined
-                        // if (lastDetalle) {
-                        //     lastDetalle.idtopings = [...idtopingsArray];
-                        // }
-                    });
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(element.producto.nombre, centerX, y, { align: 'center' });
-
-                    const fontSize = doc.getFontSize(); // Obtiene el tamaño de fuente actual
-                    y += fontSize * 0.4; // Ajuste fino (0.2 es un factor para reducir espacio)
-                    doc.text(texto_topping, centerX, y, { align: 'center' });
-                    y += 6;
-                }
-            });
+            // (Toppings renderizados ahora debajo de cada plato, se elimina el bloque anterior)
 
             // Cuando la imagen se cargue, agregarla al PDF
             const pdfBlob = doc.output('blob');
@@ -2098,7 +2202,7 @@ export class HomeComponent {
             });
         }
 
-        var idtopingsArray: { idtopings: number; nombre: string }[] = [];
+        var idtoppingsArray: { idtoppings: number; nombre: string }[] = [];
         if (status_array.length != 0) {
             this.NuevoPedido = {
                 idpedido: status_array[0]?.idpedido || 0,
@@ -2132,7 +2236,7 @@ export class HomeComponent {
                 estado: pedido.estado || false,
                 lugarpedido: pedido.lugarpedido || '',
                 comentario: pedido.comentario || '',
-                idtopings: idtopingsArray || [],
+                idtoppings: idtoppingsArray || [],
                 id_created_at: undefined,
                 idpedidodetalle: 0,
                 pedido_estado: undefined
@@ -2142,13 +2246,13 @@ export class HomeComponent {
                 var toppings = element.toppings;
                 if (toppings) {
                     var topings_ = toppings.split(',');
-                    idtopingsArray = [];
+                    idtoppingsArray = [];
                     topings_.forEach((elementopping: any) => {
-                        const topping = this.multiselectToppings.find((t: any) => t.idtopings == elementopping);
-                        if (topping) idtopingsArray.push({ idtopings: topping.idtopings, nombre: topping.nombre });
+                        const topping = this.multiselectToppings.find((t: any) => t.idtoppings == elementopping);
+                        if (topping) idtoppingsArray.push({ idtoppings: topping.idtoppings, nombre: topping.nombre });
                         const lastDetalle = this.NuevoPedido.pedidodetalle.find((detalle) => detalle.idproducto == element.idproducto);
                         if (lastDetalle) {
-                            lastDetalle.idtopings = [...idtopingsArray];
+                            lastDetalle.idtoppings = [...idtoppingsArray];
                         }
                     });
                 }
@@ -2240,10 +2344,46 @@ export class HomeComponent {
     }
 
     imprimirSeleccionados() {
-        this.pedidosSeleccionados = this.Pedidos[0].pedidodetalle.filter((p: { seleccionado: any }) => p.seleccionado);
+        const pedidos = this.getPedidosDeMesa(this.mesaSeleccionada?.numero, this.pedido_mesa_status, this.mesaSeleccionada);
+        this.pedidosSeleccionados = [];
+
+        pedidos.forEach((pedido) => {
+            if (pedido.pedidodetalle) {
+                const seleccionados = pedido.pedidodetalle.filter((p: any) => p.seleccionado);
+                seleccionados.forEach((sel: any) => {
+                    this.pedidosSeleccionados.push({
+                        ...sel,
+                        created_at: pedido.created_at,
+                        mesa: pedido.mesa,
+                        comentario: pedido.comentario
+                    });
+                });
+            }
+        });
+
+        if (this.pedidosSeleccionados.length === 0) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Atención',
+                detail: 'Debe seleccionar al menos un producto para imprimir.',
+                life: 3000
+            });
+            return;
+        }
+
         this.estadopedido = 0;
         var inicial = 100;
         var items = this.pedidosSeleccionados.length;
+
+        // Calcular altura adicional por toppings
+        let toppingCount = 0;
+        this.pedidosSeleccionados.forEach((element: any) => {
+            if (element.toppings && element.toppings != '0') {
+                const ids = element.toppings.split(',').filter((id: any) => id.trim() !== '');
+                toppingCount += ids.length;
+            }
+        });
+        inicial += toppingCount * 3.5;
 
         const increments = [
             { threshold: 4, value: 3 },
@@ -2283,7 +2423,6 @@ export class HomeComponent {
 
         // Encabezado
         y += 5;
-
         doc.setFontSize(14);
         var date = new Date(this.pedidosSeleccionados[0].created_at);
         var datePart = date.toLocaleDateString('en-US');
@@ -2292,7 +2431,7 @@ export class HomeComponent {
         doc.text('Fecha: ' + datePart + ' ' + timePart, 42, y, { align: 'center' });
         y += 5;
 
-        doc.text('Mesa:' + this.Pedidos[0].mesa, 42, y, { align: 'center' });
+        doc.text('Mesa:' + this.pedidosSeleccionados[0].mesa, 42, y, { align: 'center' });
         y += 7;
 
         doc.setFont('helvetica', 'normal');
@@ -2316,14 +2455,33 @@ export class HomeComponent {
             doc.setFont('helvetica', 'normal');
         }
         data.forEach((element: any) => {
-            const col1X = 5; // Posición X para la cantidad
-            const col2X = 9; // Posición X para el nombre del producto
-            const col3X = 69; // Posición X para el precio (ajusta según necesites)
+            const col1X = 5;
+            const col2X = 9;
+            const col3X = 69;
 
             doc.text(element[0].toString(), col1X, y);
             doc.text(element[1], col2X, y);
             doc.text('S/' + element[2].toString(), col3X, y);
             y += 4.5;
+
+            // Toppings del plato (debajo del producto)
+            const detalle = this.pedidosSeleccionados.find((p: any) => p.producto.nombre === element[1] && (p.lugarpedido == null || p.lugarpedido == '0'));
+            if (detalle && detalle.toppings && detalle.toppings != 0) {
+                const toppingIds = detalle.toppings.split(',');
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                toppingIds.forEach((tid: any) => {
+                    const topping = this.multiselectToppings.find((t: any) => t.idtoppings == tid);
+                    if (topping) {
+                        const esSin = topping.nombre.toUpperCase().startsWith('SIN');
+                        const prefijo = esSin ? '  >> - ' : '  >> + ';
+                        doc.text(prefijo + topping.nombre, col2X, y);
+                        y += 3.5;
+                    }
+                });
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(12);
+            }
         });
 
         doc.setFont('helvetica', 'bold');
@@ -2339,13 +2497,31 @@ export class HomeComponent {
             y += 5;
             this.pedidosSeleccionados.forEach((element: any) => {
                 if (element.lugarpedido == '1') {
-                    const col1X = 5; // Posición X para la cantidad
-                    const col2X = 9; // Posición X para el nombre del producto
-                    const col3X = 69; // Posición X para el precio (ajusta según necesites)
+                    const col1X = 5;
+                    const col2X = 9;
+                    const col3X = 69;
                     doc.text(element.cantidad.toString(), col1X, y);
                     doc.text(element.producto.nombre, col2X, y);
                     doc.text('S/' + element.precioU.toString(), col3X, y);
                     y += 4;
+
+                    // Toppings debajo del plato (para llevar)
+                    if (element.toppings && element.toppings != 0) {
+                        const toppingIds = element.toppings.split(',');
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(8);
+                        toppingIds.forEach((tid: any) => {
+                            const topping = this.multiselectToppings.find((t: any) => t.idtoppings == tid);
+                            if (topping) {
+                                const esSin = topping.nombre.toUpperCase().startsWith('SIN');
+                                const prefijo = esSin ? '  >> - ' : '  >> + ';
+                                doc.text(prefijo + topping.nombre, col2X, y);
+                                y += 3.5;
+                            }
+                        });
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(12);
+                    }
                 }
             });
         }
@@ -2359,48 +2535,20 @@ export class HomeComponent {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
 
-        const maxWidth = 73; // Ancho máximo en unidades del PDF (ajústalo según tu diseño)
-        const comentario = this.pedidosSeleccionados[0].comentario || ''; // Texto del comentario (o string vacío si es null/undefined)
+        const maxWidth = 73;
+        const comentario = this.pedidosSeleccionados[0].comentario || '';
         const lines = doc.splitTextToSize(comentario, maxWidth);
-        // Posición inicial (x, y)
         let x = 5;
-        let currentY = y; // 'y' es la posición vertical inicial que ya tienes definida
+        let currentY = y;
 
-        // Imprimir cada línea
         lines.forEach((line: string | string[]) => {
             doc.text(line, x, currentY);
-            currentY += 4; // Espacio entre líneas (ajusta según necesidad)
+            currentY += 4;
         });
         y += 5;
-        doc.setFontSize(8);
-        this.pedidosSeleccionados.forEach((element: any) => {
-            var toppings = element.toppings;
-
-            if (toppings && toppings != 0) {
-                var topings_ = toppings.split(',');
-                var texto_topping = '';
-                topings_.forEach((elementopping: any) => {
-                    const topping = this.multiselectToppings.find((t: any) => t.idtopings == elementopping);
-                    if (topping) texto_topping += topping.nombre + ', ';
-
-                    // idtopings: topping.idtopings, nombre: topping.nombre  ;
-                    // const lastDetalle = this.NuevoPedido.pedidodetalle.find((detalle) => detalle.idproducto == element.idproducto);
-                    // // Asegurarse de que lastDetalle no sea undefined
-                    // if (lastDetalle) {
-                    //     lastDetalle.idtopings = [...idtopingsArray];
-                    // }
-                });
-                doc.setFont('helvetica', 'bold');
-                doc.text(element.producto.nombre, centerX, y, { align: 'center' });
-
-                const fontSize = doc.getFontSize(); // Obtiene el tamaño de fuente actual
-                y += fontSize * 0.4; // Ajuste fino (0.2 es un factor para reducir espacio)
-                doc.text(texto_topping, centerX, y, { align: 'center' });
-                y += 6;
-            }
-        });
 
         // Cuando la imagen se cargue, agregarla al PDF
+
         const pdfBlob = doc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
         this.PDFdescargar(pdfUrl);
@@ -2453,18 +2601,29 @@ export class HomeComponent {
         return true;
     }
     toggleTodos(event: any) {
-        const checked = event.target.checked;
-        this.Pedidos.forEach((p) => {
+        let checked = false;
+        if (event && event.target && event.target.type === 'checkbox') {
+            checked = event.target.checked;
+        } else {
+            const checkbox = document.getElementById('selectAllItemsBtn') as HTMLInputElement;
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                checked = checkbox.checked;
+            }
+        }
+
+        const pedidos = this.getPedidosDeMesa(this.mesaSeleccionada?.numero, this.pedido_mesa_status, this.mesaSeleccionada);
+        pedidos.forEach((p) => {
             p.seleccionado = checked;
             if (p.pedidodetalle) {
-                p.pedidodetalle.forEach((detalle: any) => detalle.seleccionado = checked);
+                p.pedidodetalle.forEach((detalle: any) => (detalle.seleccionado = checked));
             }
         });
     }
     toggleDataTable(op: Popover, event: any, pedidosdetalle: NuevoPedidodetalle) {
         console.log('toggleDataTable', this.NuevoPedido.pedidodetalle);
         const index = this.NuevoPedido.pedidodetalle.findIndex((detalle) => detalle.idpedido === pedidosdetalle.idpedido);
-        // this.NuevoPedido.pedidodetalle[index].idtopings = [{ idtopings: 0, nombre: '' }]; // Inicializar con un objeto por defecto
+        // this.NuevoPedido.pedidodetalle[index].idtoppings = [{ idtoppings: 0, nombre: '' }]; // Inicializar con un objeto por defecto
 
         // Fix for potential infinite loop - was: this.isDropdownOpen = this.isDropdownOpen;
         this.isDropdownOpen = !this.isDropdownOpen;
@@ -2505,13 +2664,7 @@ export class HomeComponent {
 
         try {
             // Buscar en Supabase: persona con tipo=2 y deleted IS NULL
-            const { data, error } = await this.supabaseService.client
-                .from('persona')
-                .select('*')
-                .is('deleted', null)
-                .eq('tipo', 2)
-                .eq('numerodoc', this.documentoBusqueda.trim())
-                .maybeSingle();
+            const { data, error } = await this.supabaseService.client.from('persona').select('*').is('deleted', null).eq('tipo', 2).eq('numerodoc', this.documentoBusqueda.trim()).maybeSingle();
 
             if (error) throw error;
 
@@ -2521,7 +2674,7 @@ export class HomeComponent {
                     num_doc: data.numerodoc,
                     razon_social: `${data.nombres} ${data.apellidopat} ${data.apellidomat || ''}`.trim(),
                     direccion: data.direccion || '',
-                    tipo_doc: data.tipodoc ? String(data.tipodoc) : (this.tipoComprobante === '01' ? '6' : '1'),
+                    tipo_doc: data.tipodoc ? String(data.tipodoc) : this.tipoComprobante === '01' ? '6' : '1',
                     idpersona: data.idpersona
                 };
                 this.mostrarFormNuevoCliente = false;

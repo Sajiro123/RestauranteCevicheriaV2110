@@ -40,6 +40,7 @@ export class AperturaService {
             estado: 1,
             responsable: value.responsable,
             trabajadores: trabajadores,
+            turno: value.turno,
             id_created_at: 1
         };
 
@@ -71,6 +72,27 @@ export class AperturaService {
         });
         return from(this.supabaseService.cerrarCaja(fechaPeru));
     }
+
+    actualizarCaja(value: any): Observable<any> {
+        const now = new Date();
+        const fechaPeru = now.toLocaleDateString('en-CA', {
+            timeZone: 'America/Lima'
+        });
+        let trabajadores = '';
+        value.trabajadores.forEach((element: any) => {
+            trabajadores += element + ',';
+        });
+        trabajadores = trabajadores.replace(/,\s*$/, '');
+
+        const updateData = {
+            total: value.monto,
+            responsable: value.responsable,
+            trabajadores: trabajadores,
+            turno: value.turno
+        };
+        return from(this.supabaseService.updateAperturaCaja(fechaPeru, updateData));
+    }
+
 
     eliminarGasto(idgastos: number): Observable<any> {
         return from(this.supabaseService.softDeleteGasto(idgastos));

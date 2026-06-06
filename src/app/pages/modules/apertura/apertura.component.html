@@ -81,10 +81,8 @@
                     <div class="form-group">
                         <label>Responsable</label>
                         <select formControlName="responsable">
-                            <option value="">Seleccionar</option>
-                            <option value="Sully">Sully</option>
-                            <option value="Yordy">Yordy</option>
-                            <option value="Alex">Alex</option>
+                            <option value="">Seleccionar responsable...</option>
+                            <option *ngFor="let t of trabajadoresList" [value]="t.nombres">{{ t.nombres }}</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -105,19 +103,133 @@
                     </div>
                 </div>
 
-                <!-- Workers display when caja IS open -->
+                <!-- Workers display / Edit mode when caja IS open -->
                 <div class="workers-display" *ngIf="data_apertura.length > 0">
-                    <label>Personal en Campo</label>
-                    <p-multiSelect formControlName="trabajadores" [options]="trabajadoresList" optionLabel="nombres"
-                        optionValue="idpersona" placeholder="—" [showToggleAll]="true" [filter]="true"
-                        filterPlaceholder="Buscar..." display="chip" id="trabajadores-display"
-                        [style]="{ width: '100%' }" [maxSelectedLabels]="trabajadoresList.length"
-                        selectedItemsLabel="{0} trabajadores seleccionados">
-                    </p-multiSelect>
+
+                    <!-- MODO LECTURA -->
+                    <ng-container *ngIf="!modoEdicion">
+                        <div class="workers-display-header">
+                            <i class="pi pi-users"></i>
+                            <label>Personal en Campo</label>
+                            <span class="workers-count-badge">{{ cajaForm.get('trabajadores')?.value?.length || 0 }}</span>
+                        </div>
+
+                        <!-- Alerta: caja ya abierta (solo lectura) -->
+                        <div class="caja-abierta-alert" *ngIf="cajaForm.get('estado')?.value == 1">
+                            <i class="pi pi-lock-open"></i>
+                            <div>
+                                <strong>Caja abierta</strong>
+                                <span>Puedes editar los datos antes de cerrar la caja.</span>
+                            </div>
+                        </div>
+
+                        <!-- Alerta: caja cerrada hoy (solo lectura, sin edición) -->
+                        <div class="caja-cerrada-alert" *ngIf="cajaForm.get('estado')?.value == 2">
+                            <i class="pi pi-ban"></i>
+                            <div>
+                                <strong>Caja cerrada</strong>
+                                <span>La caja de hoy ya fue cerrada. No se permiten modificaciones.</span>
+                            </div>
+                        </div>
+
+                        <!-- Lista de trabajadores como avatares -->
+                        <div class="workers-list" *ngIf="cajaForm.get('trabajadores')?.value?.length > 0">
+                            <div class="worker-item"
+                                *ngFor="let idp of cajaForm.get('trabajadores')?.value; let i = index">
+                                <div class="worker-avatar">
+                                    {{ getWorkerInitials(idp) }}
+                                </div>
+                                <div class="worker-info">
+                                    <span class="worker-name">{{ getWorkerName(idp) }}</span>
+                                    <span class="worker-role">Personal de campo</span>
+                                </div>
+                                <span class="worker-status-dot"></span>
+                            </div>
+                        </div>
+
+                        <div class="workers-empty" *ngIf="!cajaForm.get('trabajadores')?.value?.length">
+                            <i class="pi pi-user-minus"></i>
+                            <span>Sin personal asignado</span>
+                        </div>
+
+                        <!-- Botón editar (solo cuando estado=1, caja abierta) -->
+                        <button class="btn-edit-caja" type="button"
+                            *ngIf="cajaForm.get('estado')?.value == 1"
+                            (click)="activarEdicion()">
+                            <i class="pi pi-pencil"></i> Editar Datos de Caja
+                        </button>
+                    </ng-container>
+
+                    <!-- MODO EDICIÓN -->
+                    <ng-container *ngIf="modoEdicion">
+                        <div class="edit-mode-header">
+                            <i class="pi pi-file-edit"></i>
+                            <span>Editando datos de caja</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Seleccionar Turno</label>
+                            <div class="turnos-grid">
+                                <button type="button" class="turno-btn"
+                                    [class.active]="cajaForm.get('turno')?.value === 'Mañana'"
+                                    (click)="cajaForm.get('turno')?.setValue('Mañana')">
+                                    <i class="pi pi-sun"></i><span>Mañana</span>
+                                </button>
+                                <button type="button" class="turno-btn"
+                                    [class.active]="cajaForm.get('turno')?.value === 'Tarde'"
+                                    (click)="cajaForm.get('turno')?.setValue('Tarde')">
+                                    <i class="pi pi-cloud"></i><span>Tarde</span>
+                                </button>
+                                <button type="button" class="turno-btn"
+                                    [class.active]="cajaForm.get('turno')?.value === 'Noche'"
+                                    (click)="cajaForm.get('turno')?.setValue('Noche')">
+                                    <i class="pi pi-moon"></i><span>Noche</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Responsable</label>
+                            <select formControlName="responsable">
+                                <option value="">Seleccionar responsable...</option>
+                                <option *ngFor="let t of trabajadoresList" [value]="t.nombres">{{ t.nombres }}</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Personal en Campo</label>
+                            <p-multiSelect formControlName="trabajadores" [options]="trabajadoresList"
+                                optionLabel="nombres" optionValue="idpersona"
+                                placeholder="Seleccione trabajadores" [showToggleAll]="true"
+                                [filter]="true" filterPlaceholder="Buscar..." display="chip"
+                                id="trabajadores-edit" [style]="{ width: '100%' }"
+                                [maxSelectedLabels]="trabajadoresList.length"
+                                selectedItemsLabel="{0} trabajadores seleccionados">
+                            </p-multiSelect>
+                        </div>
+                        <div class="form-group">
+                            <label>Monto de Apertura</label>
+                            <div class="monto-wrapper">
+                                <div class="currency">S/</div>
+                                <input formControlName="monto" type="number" placeholder="0.00" />
+                            </div>
+                        </div>
+
+                        <div class="edit-mode-actions">
+                            <button class="btn-cancel-edit" type="button" (click)="cancelarEdicion()">
+                                <i class="pi pi-times"></i> Cancelar
+                            </button>
+                            <button class="btn-save-edit" type="button" [disabled]="cajaForm.invalid"
+                                (click)="ActualizarCaja()">
+                                <i class="pi pi-check"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </ng-container>
                 </div>
 
-                <button class="btn-action" type="button" [disabled]="cajaForm.invalid"
-                    *ngIf="texto_estado_caja != 'Caja ya se Cerro (Hoy)'" (click)="GuardarCaja(data_apertura.length)">
+                <!-- Botón principal: Abrir / Cerrar caja -->
+                <button class="btn-action" type="button"
+                    [disabled]="cajaForm.invalid || modoEdicion"
+                    *ngIf="texto_estado_caja != 'Caja ya se Cerro (Hoy)' && !modoEdicion"
+                    (click)="GuardarCaja(data_apertura.length)">
                     <i class="pi" [ngClass]="{
                         'pi-lock-open': data_apertura.length == 0,
                         'pi-lock': data_apertura.length > 0

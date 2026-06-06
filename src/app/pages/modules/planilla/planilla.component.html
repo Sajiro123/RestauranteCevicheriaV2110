@@ -37,6 +37,10 @@
         <button class="btn btn-primary" style="margin-bottom: 2px;" (click)="abrirModalCalculo()">
             <i class="pi pi-calculator"></i> Generar Cálculo
         </button>
+        <button class="btn btn-adelanto" style="margin-bottom: 2px;" (click)="abrirModalAdelantos()">
+            <i class="pi pi-wallet"></i> Adelantos
+            <span *ngIf="adelantos.length > 0" class="adelanto-badge">{{ adelantos.length }}</span>
+        </button>
     </div>
     <div class="table-card">
         <div class="table-responsive">
@@ -257,5 +261,127 @@
                 </button>
             </div>
         </div>
+    </div>
+</p-dialog>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║              MODAL — ADELANTOS DE SUELDO                   ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<p-dialog header="Adelantos de Sueldo" [(visible)]="displayAdelantosModal" [modal]="true"
+    [style]="{width: '860px', maxWidth: '98vw'}" [draggable]="false" [resizable]="false">
+
+    <div class="adelantos-layout">
+
+        <!-- ── COLUMNA IZQUIERDA: Formulario de registro ── -->
+        <div class="adelantos-form-col">
+            <div class="adelantos-section-title">
+                <i class="pi pi-plus-circle"></i> Registrar Adelanto
+            </div>
+
+            <form [formGroup]="adelantoForm" (ngSubmit)="guardarAdelanto()" class="adelanto-form">
+
+                <div class="form-field">
+                    <label>Trabajador <span class="req">*</span></label>
+                    <select class="field-input" formControlName="idpersona"
+                        [class.input-error]="adelantoForm.get('idpersona')?.invalid && adelantoForm.get('idpersona')?.touched">
+                        <option [ngValue]="null" disabled>Seleccionar trabajador...</option>
+                        <option *ngFor="let emp of empleados" [value]="emp.idpersona || emp.id_persona">
+                            {{ emp.nombres }}
+                        </option>
+                    </select>
+                    <span class="error-hint"
+                        *ngIf="adelantoForm.get('idpersona')?.invalid && adelantoForm.get('idpersona')?.touched">
+                        Seleccione un trabajador.
+                    </span>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-field">
+                        <label>Monto (S/) <span class="req">*</span></label>
+                        <input type="number" class="field-input" formControlName="monto" min="1" step="0.50"
+                            placeholder="0.00"
+                            [class.input-error]="adelantoForm.get('monto')?.invalid && adelantoForm.get('monto')?.touched">
+                        <span class="error-hint"
+                            *ngIf="adelantoForm.get('monto')?.invalid && adelantoForm.get('monto')?.touched">
+                            Ingrese un monto mayor a 0.
+                        </span>
+                    </div>
+                    <div class="form-field">
+                        <label>Fecha <span class="req">*</span></label>
+                        <input type="date" class="field-input" formControlName="fecha_adelanto"
+                            [class.input-error]="adelantoForm.get('fecha_adelanto')?.invalid && adelantoForm.get('fecha_adelanto')?.touched">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label>Notas / Motivo</label>
+                    <textarea class="field-input" formControlName="notas" rows="3"
+                        placeholder="Ej: Adelanto por emergencia familiar..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;" [disabled]="guardandoAdelanto">
+                    <i class="pi" [class.pi-save]="!guardandoAdelanto" [class.pi-spin]="guardandoAdelanto"
+                        [class.pi-spinner]="guardandoAdelanto"></i>
+                    {{ guardandoAdelanto ? 'Guardando...' : 'Registrar Adelanto' }}
+                </button>
+
+            </form>
+        </div>
+
+        <!-- ── COLUMNA DERECHA: Tabla de pendientes ── -->
+        <div class="adelantos-list-col">
+            <div class="adelantos-section-title">
+                <i class="pi pi-list"></i> Pendientes de Descuento
+            </div>
+
+            <!-- Banner total pendiente -->
+            <div class="adelanto-total-banner" *ngIf="adelantos.length > 0">
+                <div class="adelanto-total-label">
+                    <i class="pi pi-exclamation-triangle"></i>
+                    Total a descontar en próxima planilla
+                </div>
+                <div class="adelanto-total-value">S/ {{ totalPendiente | number:'1.2-2' }}</div>
+            </div>
+
+            <!-- Loading -->
+            <div class="adelanto-loading" *ngIf="cargandoAdelantos">
+                <i class="pi pi-spin pi-spinner"></i> Cargando...
+            </div>
+
+            <!-- Vacío -->
+            <div class="adelanto-empty" *ngIf="!cargandoAdelantos && adelantos.length === 0">
+                <i class="pi pi-check-circle"></i>
+                <span>Sin adelantos pendientes. ¡Todo al día!</span>
+            </div>
+
+            <!-- Lista -->
+            <div class="adelanto-items" *ngIf="!cargandoAdelantos && adelantos.length > 0">
+                <div class="adelanto-item" *ngFor="let a of adelantos">
+                    <div class="adelanto-item-avatar">
+                        <img [src]="'https://ui-avatars.com/api/?name=' + a.nombre_persona + '&background=random'"
+                            alt="Avatar">
+                    </div>
+                    <div class="adelanto-item-info">
+                        <div class="adelanto-item-name">{{ a.nombre_persona }}</div>
+                        <div class="adelanto-item-meta">
+                            <span><i class="pi pi-calendar"></i> {{ a.fecha_adelanto | date:'dd/MM/yyyy' }}</span>
+                            <span *ngIf="a.notas" class="adelanto-item-nota">{{ a.notas }}</span>
+                        </div>
+                    </div>
+                    <div class="adelanto-item-monto">S/ {{ a.monto | number:'1.2-2' }}</div>
+                    <div class="adelanto-item-actions">
+                        <button class="btn-adelanto-action btn-deduct" title="Marcar como descontado"
+                            (click)="marcarDescontado(a)">
+                            <i class="pi pi-check"></i>
+                        </button>
+                        <button class="btn-adelanto-action btn-del" title="Eliminar"
+                            (click)="eliminarAdelanto(a)">
+                            <i class="pi pi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </p-dialog>

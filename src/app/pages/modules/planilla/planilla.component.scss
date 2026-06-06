@@ -678,3 +678,264 @@ tfoot td {
         grid-template-columns: 1fr;
     }
 }
+
+// ── ADELANTOS: Botón toolbar ──────────────────────────────────────
+.btn-adelanto {
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+    position: relative;
+
+    &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.5);
+    }
+}
+
+.adelanto-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    border: 2px solid #fff;
+    line-height: 1;
+}
+
+// ── ADELANTOS: Layout del modal (2 columnas) ──────────────────────
+.adelantos-layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.5rem;
+    min-height: 380px;
+
+    @media (max-width: 700px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.adelantos-form-col {
+    border-right: 1px solid $surface-low;
+    padding-right: 1.5rem;
+
+    @media (max-width: 700px) {
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 1px solid $surface-low;
+        padding-bottom: 1.25rem;
+    }
+}
+
+.adelantos-list-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.adelantos-section-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: $navy;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid $surface-low;
+
+    i { color: #7c3aed; }
+}
+
+// ── ADELANTOS: Formulario ─────────────────────────────────────────
+.adelanto-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.req {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+.input-error {
+    border-color: #ef4444 !important;
+    background: #fef2f2 !important;
+}
+
+.error-hint {
+    font-size: 0.72rem;
+    color: #ef4444;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+// ── ADELANTOS: Banner de total ────────────────────────────────────
+.adelanto-total-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, #fef3c7, #fef9c3);
+    border: 1.5px solid #f59e0b;
+    border-radius: 10px;
+    padding: 0.75rem 1.1rem;
+
+    .adelanto-total-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #92400e;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        i { color: #f59e0b; }
+    }
+
+    .adelanto-total-value {
+        font-size: 1.3rem;
+        font-weight: 900;
+        color: #92400e;
+    }
+}
+
+// ── ADELANTOS: Loading / Empty ────────────────────────────────────
+.adelanto-loading,
+.adelanto-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 2.5rem 1rem;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    text-align: center;
+
+    i { font-size: 2rem; }
+}
+
+.adelanto-empty i { color: #10b981; }
+
+// ── ADELANTOS: Lista de items ─────────────────────────────────────
+.adelanto-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-height: 360px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.adelanto-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: $surface-low;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+    transition: box-shadow 0.2s, border-color 0.2s;
+
+    &:hover {
+        border-color: #c4b5fd;
+        box-shadow: 0 2px 8px rgba(124, 58, 237, 0.08);
+    }
+}
+
+.adelanto-item-avatar img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid #e9d5ff;
+}
+
+.adelanto-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.adelanto-item-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: $text-main;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.adelanto-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    color: #64748b;
+    margin-top: 2px;
+    flex-wrap: wrap;
+
+    i { font-size: 0.65rem; }
+}
+
+.adelanto-item-nota {
+    background: #f3e8ff;
+    color: #7c3aed;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-style: italic;
+    font-weight: 500;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.adelanto-item-monto {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #b91c1c;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.adelanto-item-actions {
+    display: flex;
+    gap: 0.3rem;
+    flex-shrink: 0;
+}
+
+.btn-adelanto-action {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    transition: all 0.2s;
+
+    &.btn-deduct {
+        background: #d1fae5;
+        color: #065f46;
+        &:hover { background: #a7f3d0; transform: scale(1.1); }
+    }
+
+    &.btn-del {
+        background: #fee2e2;
+        color: #dc2626;
+        &:hover { background: #fecaca; transform: scale(1.1); }
+    }
+}
