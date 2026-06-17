@@ -24,7 +24,7 @@ export interface RegistroPlanilla {
     frecuencia?: string;
     faltas?: number;
     extra?: number;
-    // IDs de adelantos pendientes que se aplicarán al guardar
+    // IDs de adelantos pendientes que  se aplicarán al guardar
     _adelantosIds?: number[];
 }
 
@@ -35,6 +35,7 @@ export interface AdelantoSalario {
     monto: number;
     fecha_adelanto: string;
     estado: 'PENDING' | 'DEDUCTED';
+    tipo?: number; // 1 = Descuento, 2 = Adelanto
     notas?: string;
     id_planilla?: number;
     created_at?: string;
@@ -84,6 +85,7 @@ export class PlanillaComponent implements OnInit {
             idpersona: [null, Validators.required],
             monto: [null, [Validators.required, Validators.min(1)]],
             fecha_adelanto: [new Date().toISOString().split('T')[0], Validators.required],
+            tipo: [1, Validators.required],
             notas: ['']
         });
     }
@@ -103,6 +105,7 @@ export class PlanillaComponent implements OnInit {
             idpersona: null,
             monto: null,
             fecha_adelanto: new Date().toISOString().split('T')[0],
+            tipo: 1,
             notas: ''
         });
         this.listarAdelantos();
@@ -131,6 +134,7 @@ export class PlanillaComponent implements OnInit {
             monto: d.monto,
             fecha_adelanto: d.fecha_adelanto,
             estado: d.estado,
+            tipo: d.tipo ?? 1,
             notas: d.notas,
             created_at: d.created_at
         }));
@@ -152,6 +156,7 @@ export class PlanillaComponent implements OnInit {
             monto: val.monto,
             fecha_adelanto: val.fecha_adelanto,
             estado: 'PENDING',
+            tipo: val.tipo ?? 1,
             notas: val.notas || null
         });
 
@@ -166,6 +171,7 @@ export class PlanillaComponent implements OnInit {
             idpersona: null,
             monto: null,
             fecha_adelanto: new Date().toISOString().split('T')[0],
+            tipo: 1,
             notas: ''
         });
         this.listarAdelantos();
@@ -567,15 +573,14 @@ export class PlanillaComponent implements OnInit {
 
         currentY += 15;
 
-        let valorDia = 0;
-        if (p.dias_trabajados && p.dias_trabajados > 0) {
-            valorDia = p.salario / p.dias_trabajados;
-        }
+        const diasLaborablesMes = 24;
+        const sueldoGanado = (p.salario / diasLaborablesMes) * (p.dias_trabajados || 0);
         const dctoFaltas = 0;
         const dctoTardanzas = (p.tardanzas_cantidad_dias || 0) * 5;
         const dctoExtra = p.descuento || 0;
         const totalDescuentos = dctoFaltas + dctoTardanzas + dctoExtra;
         const totalIngresosBrutos = Number(p.salario) + Number(p.extra || 0);
+        const totalSinDescuento = sueldoGanado + Number(p.extra || 0);
 
         const bodyData = [
             ['Salario Base', `Mes asignado`, `S/ ${Number(p.salario).toFixed(2)}`],
@@ -588,9 +593,7 @@ export class PlanillaComponent implements OnInit {
         if (p.tardanzas_cantidad_dias && p.tardanzas_cantidad_dias > 0) {
             bodyData.push(['Tardanzas', `${p.tardanzas_cantidad_dias} hrs/faltas`, `- S/ ${dctoTardanzas.toFixed(2)}`]);
         }
-        if (p.descuento && p.descuento > 0) {
-            bodyData.push(['Descuentos Adicionales', 'Retenciones/Otros', `- S/ ${Number(dctoExtra).toFixed(2)}`]);
-        }
+
         if (p.extra && p.extra > 0) {
             bodyData.push(['Bonificaciones Extras', 'Movilidad/Alimentación/Otros', `+ S/ ${Number(p.extra).toFixed(2)}`]);
         }
@@ -624,11 +627,15 @@ export class PlanillaComponent implements OnInit {
                 2: { halign: 'right', fontStyle: 'bold' }
             },
             didParseCell: function (data) {
-                // Colorear descuentos de rojo y bonificaciones de azul
+                // Colorear descuentos de rojo/naranja y bonificaciones de azul
                 if (data.section === 'body') {
                     const concepto = (data.row.raw as any)[0];
                     if (concepto === 'Descuentos Adicionales' || concepto === 'Inasistencias' || concepto === 'Tardanzas') {
                         data.cell.styles.textColor = colors.error;
+                    }
+                    if (concepto === 'Adelanto de Sueldo') {
+                        // Naranja para diferenciar adelantos de descuentos normales
+                        data.cell.styles.textColor = [180, 83, 9]; // #b45309
                     }
                     if (concepto === 'Bonificaciones Extras') {
                         data.cell.styles.textColor = colors.tertiaryContainer;
@@ -646,7 +653,7 @@ export class PlanillaComponent implements OnInit {
 
         doc.setDrawColor(...colors.outlineVariant);
         doc.setFillColor(...colors.surfaceContainerLowest);
-        doc.roundedRect(summaryX, currentY, summaryWidth, 38, 1, 1, 'FD');
+        doc.roundedRect(summaryX, currentY, summaryWidth, 47, 1, 1, 'FD');
 
         // Cabecera Resumen
         doc.setFillColor(...colors.surfaceContainer);
@@ -667,6 +674,14 @@ export class PlanillaComponent implements OnInit {
         doc.text(`S/ ${totalIngresosBrutos.toFixed(2)}`, summaryX + summaryWidth - 4, currentY, { align: 'right' });
 
         currentY += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...colors.tertiaryContainer);
+        doc.text('Total Sin Descuento', summaryX + 4, currentY);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`S/ ${totalSinDescuento.toFixed(2)}`, summaryX + summaryWidth - 4, currentY, { align: 'right' });
+
+        currentY += 6;
+        doc.setFont('helvetica', 'normal');
         doc.setTextColor(...colors.error);
         doc.text('Total Descuentos', summaryX + 4, currentY);
         doc.text(`- S/ ${totalDescuentos.toFixed(2)}`, summaryX + summaryWidth - 4, currentY, { align: 'right' });

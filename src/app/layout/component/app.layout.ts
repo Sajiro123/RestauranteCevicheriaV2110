@@ -71,6 +71,28 @@ export class AppLayout {
             setTimeout(() => {
                 this.router.navigate(['/auth/login']);
             }, 0);
+        } else {
+            // Si está autenticado y la ruta está limpia (raíz), verificar redirección a mesas
+            if (this.router.url === '/' || this.router.url === '') {
+                this.redirectRootRoute();
+            }
+        }
+    }
+
+    private redirectRootRoute() {
+        try {
+            const storedMenuData = localStorage.getItem('userMenuData');
+            if (storedMenuData) {
+                const menuData = JSON.parse(storedMenuData);
+                const hasMesas = menuData.some((m: any) => m.menu && (m.menu.ruta === '/mesas' || m.menu.ruta === 'mesas' || (m.menu.nombre && m.menu.nombre.toLowerCase().includes('mesa'))));
+                if (hasMesas) {
+                    setTimeout(() => {
+                        this.router.navigate(['/mesas']);
+                    }, 0);
+                }
+            }
+        } catch (e) {
+            console.error('Error al redirigir ruta raíz:', e);
         }
     }
 

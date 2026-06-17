@@ -63,7 +63,7 @@
         </section>
 
         <!-- Administración Card -->
-        <section class="card" aria-label="Administración">
+        <section class="card" aria-label="Administración" *ngIf="idperfil === 1">
             <h2>Administración</h2>
             <ul class="card-list">
                 <li>
@@ -99,11 +99,22 @@
                         </div>
                     </div>
                 </li>
+                <li>
+                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'aperturas';selector = true">
+                        <div class="icon orange" aria-hidden="true">
+                            <i class="fa-solid fa-cash-register"></i>
+                        </div>
+                        <div class="text-content">
+                            <p class="title">Aperturas de Caja</p>
+                            <p class="subtitle">Historial de aperturas, personal y estado de caja.</p>
+                        </div>
+                    </div>
+                </li>
             </ul>
         </section>
 
         <!-- Contabilidad Card -->
-        <section class="card" aria-label="Contabilidad">
+        <section class="card" aria-label="Contabilidad" *ngIf="idperfil === 1">
             <h2>Contabilidad</h2>
             <ul class="card-list">
                 <li>
@@ -120,20 +131,13 @@
             </ul>
         </section>
     </div>
-    <app-toppings *ngIf="seleccciontext == 'toppings'" (backToMain)="selector = false; seleccciontext = ''">
-    </app-toppings>
-    <app-productos *ngIf="seleccciontext == 'productos'" (backToMain)="selector = false; seleccciontext = ''">
-    </app-productos>
-    <app-personal *ngIf="seleccciontext == 'personal'" (backToMain)="selector = false; seleccciontext = ''">
-    </app-personal>
-    <app-clientes *ngIf="seleccciontext == 'clientes'" (backToMain)="selector = false; seleccciontext = ''">
-    </app-clientes>
-    <app-vouchers *ngIf="seleccciontext == 'vouchers'" (backToMain)="selector = false; seleccciontext = ''">
-    </app-vouchers>
-    <app-usuario *ngIf="seleccciontext == 'usuarios'" (backToMain)="selector = false; seleccciontext = ''">
-    </app-usuario>
-    <app-menu-list *ngIf="seleccciontext == 'menulista'" (backToMain)="selector = false; seleccciontext = ''">
-    </app-menu-list>
-    <app-perfil-permisos *ngIf="seleccciontext == 'menuperfil'" (backToMain)="selector = false; seleccciontext = ''">
-    </app-perfil-permisos>
+    <app-toppings *ngIf="seleccciontext == 'toppings'" (backToMain)="selector = false; seleccciontext = ''"></app-toppings>
+    <app-productos *ngIf="seleccciontext == 'productos'" (backToMain)="selector = false; seleccciontext = ''"></app-productos>
+    <app-personal *ngIf="seleccciontext == 'personal'" (backToMain)="selector = false; seleccciontext = ''"></app-personal>
+    <app-clientes *ngIf="seleccciontext == 'clientes'" (backToMain)="selector = false; seleccciontext = ''"></app-clientes>
+    <app-vouchers *ngIf="seleccciontext == 'vouchers'" (backToMain)="selector = false; seleccciontext = ''"></app-vouchers>
+    <app-usuario *ngIf="seleccciontext == 'usuarios'" (backToMain)="selector = false; seleccciontext = ''"></app-usuario>
+    <app-menu-list *ngIf="seleccciontext == 'menulista'" (backToMain)="selector = false; seleccciontext = ''"></app-menu-list>
+    <app-perfil-permisos *ngIf="seleccciontext == 'menuperfil'" (backToMain)="selector = false; seleccciontext = ''"></app-perfil-permisos>
+    <app-aperturas *ngIf="seleccciontext == 'aperturas'" (backToMain)="selector = false; seleccciontext = ''"></app-aperturas>
 </div>

@@ -1,4 +1,4 @@
-<style>
+﻿<style>
     /* Small utility tweaks to preserve some original class names and give better admin UX */
 </style>
 <p-toast styleClass="text-2xl" />
@@ -15,7 +15,7 @@
         class="text-center p-12 bg-white rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 hover:shadow-3xl">
         <div class="mb-8">
             <i class="pi pi-exclamation-triangle text-8xl text-red-500 mb-6 animate-pulse"></i>
-            <h1 class="text-5xl font-bold text-gray-800 mb-4">¡Falta abrir caja!</h1>
+            <h1 class="text-5xl font-bold text-gray-800 mb-4">Â¡Falta abrir caja!</h1>
             <p class="text-2xl text-gray-600 mb-8 leading-relaxed">Para poder tomar pedidos es necesario abrir la caja
                 del día.</p>
         </div>
@@ -33,7 +33,7 @@
 <!-- Main responsive layout -->
 <!-- Main responsive layout -->
 <div *ngIf="cajaAbierta && !isOrderViewActive"
-    class="bg-[#f8fafc] w-full h-[calc(100vh-80px)] lg:h-[calc(100vh-60px)] flex flex-col lg:flex-row overflow-hidden font-sans">
+    class="bg-[#e8dece] w-full h-[calc(100vh-80px)] lg:h-[calc(100vh-60px)] flex flex-col lg:flex-row overflow-hidden font-sans">
 
     <!-- LEFT: Delivery Sidebar -->
     <aside
@@ -83,253 +83,323 @@
     <!-- CENTER/RIGHT: Main Content Area -->
     <div class="order-1 lg:order-2 flex-1 flex h-full overflow-hidden relative">
 
-        <main class="flex-1 h-full overflow-y-auto px-4 lg:px-6 pt-2 pb-6 bg-[#f8fafc] custom-scrollbar">
+        <main class="flex-1 h-full overflow-y-auto px-4 lg:px-6 pt-2 pb-6 bg-[#e8dece] custom-scrollbar">
             <div class="w-full">
 
-                <!-- TOOLBAR ACTION BUTTONS: Shown only when a table with an active order is selected -->
-                <div *ngIf="mesaSeleccionada && pedido_mesa_status" id="action-buttons-toolbar"
-                    class="p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col gap-4 animate-fadein transition-all duration-700"
-                    [ngClass]="highlightToolbar ? 'bg-yellow-50 ring-4 ring-yellow-200 scale-[1.02]' : 'bg-white'">
-                    <div class="flex items-center justify-between w-full border-b border-gray-100 pb-3">
-                        <h2 class="text-2xl font-black text-gray-800 m-0 flex items-center flex-wrap gap-2">
-                            <span>
-                                <i class="pi pi-shopping-bag text-blue-500 mr-2"></i>
-                                {{ mesaSeleccionada.numero == '0' ? 'Delivery ' + (mesaSeleccionada.idpedido ? '#' +
-                                mesaSeleccionada.idpedido : '') : 'Mesa ' + mesaSeleccionada.numero }}
-                            </span>
-                            <button
-                                class="ml-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-2 text-sm font-bold transition-all duration-200 transform hover:scale-[1.02] hover:shadow-md tracking-wide"
-                                (click)="imprimirpedidodialog(Pedidos)">
-                                <i class="pi pi-print"></i>
-                                <span>Seleccionar a Imprimir</span>
-                            </button>
-                        </h2>
-                        <div class="flex items-center gap-3 relative">
-                            <span *ngIf="NuevoPedido.idmozo"
-                                class="text-sm xl:text-base font-bold bg-blue-50 text-blue-700 py-2 px-4 rounded-full border border-blue-100 hidden sm:block">
-                                Mozo: {{ getNombreMozo(NuevoPedido.idmozo) }}
-                            </span>
-                            <span
-                                class="text-lg font-black text-red-600 bg-red-50/50 px-3 py-1 rounded-lg border border-red-100">
-                                Total {{ 'S/ ' + calculateTotalPedidos(mesaSeleccionada.numero, pedido_mesa_status,
-                                mesaSeleccionada) }}
-                            </span>
-                            <p-button icon="pi pi-times" [rounded]="true" [text]="true" severity="secondary"
-                                (click)="returntoMesas()"></p-button>
-                        </div>
-                    </div>
 
-                    <!-- Lista Resumen Rápido -->
-                    <div
-                        class="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-[220px] overflow-y-auto custom-scrollbar shadow-inner mb-4">
-                        <h4
-                            class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-1 flex items-center gap-2">
-                            <i class="pi pi-list text-[11px]"></i> Detalle Rápido del Pedido
-                        </h4>
-                        <div class="space-y-1.5">
-                            <ng-container
-                                *ngFor="let pedido of getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada)">
-                                <ng-container *ngIf="pedido.pedidodetalle && pedido.pedidodetalle.length > 0">
-                                    <div *ngFor="let detalle of pedido.pedidodetalle"
-                                        class="flex justify-between items-center py-1.5 px-3 bg-white rounded-lg border border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-blue-100 transition-colors">
-                                        <div class="flex items-center gap-3">
-                                            <span
-                                                class="font-black text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded-md text-xs border border-blue-100">{{
-                                                detalle.cantidad }}x</span>
-                                            <span class="font-bold text-slate-700 text-[13px] truncate"
-                                                style="max-width: 200px;" [title]="detalle.producto?.nombre">{{
-                                                detalle.producto?.nombre ?? 'Producto sin nombre' }}</span>
-                                        </div>
-                                        <div class="flex flex-col items-end">
-                                            <span class="font-black text-slate-800 text-[13px]">{{ (detalle.cantidad *
-                                                detalle.precioU) | currency : 'S/ ' }}</span>
-                                        </div>
-                                    </div>
-                                </ng-container>
-                            </ng-container>
-                            <div *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length === 0"
-                                class="text-center py-2 text-slate-400 text-xs font-medium">
-                                No se encontraron detalles
+                <div class="mesa-page-layout"
+                    [class.mesa-page-layout--selected]="mesaSeleccionada && pedido_mesa_status">
+
+
+                    <aside class="mesa-actions-sidebar mr-5" *ngIf="mesaSeleccionada && pedido_mesa_status"
+                        id="action-buttons-toolbar"
+                        [class.mesa-actions-sidebar--visible]="mesaSeleccionada && pedido_mesa_status">
+
+                        <!-- Cabecera de la mesa seleccionada -->
+                        <div class="sidebar-mesa-header">
+                            <div class="sidebar-mesa-badge"
+                                [class.sidebar-mesa-badge--ocupada]="estadomesa[mesaSeleccionada.numero]?.value === 1"
+                                [class.sidebar-mesa-badge--libre]="estadomesa[mesaSeleccionada.numero]?.value === 0">
+                                <i class="pi pi-th-large"></i>
                             </div>
+                            <div class="sidebar-mesa-info">
+                                <span class="sidebar-mesa-piso">
+                                    {{ mesaSeleccionada.numero == '0' ? 'Delivery' : 'Primer Piso' }}
+                                </span>
+                                <strong class="sidebar-mesa-num">
+                                    {{ mesaSeleccionada.numero == '0' ? 'Delivery' : 'Mesa ' + mesaSeleccionada.numero
+                                    }}
+                                </strong>
+                                <span class="sidebar-mesa-status"
+                                    [class.sidebar-mesa-status--ocupada]="estadomesa[mesaSeleccionada.numero]?.value === 1">
+                                    {{ estadomesa[mesaSeleccionada.numero]?.value === 1 ? 'Ocupada' : 'Libre' }}
+                                </span>
+                            </div>
+                            <button class="sidebar-close-btn" (click)="returntoMesas()" title="Cerrar panel">
+                                <i class="pi pi-times"></i>
+                            </button>
+                        </div>
 
-                            <!-- Total de la lista resumen -->
-                            <div class="mt-2 pt-2.5 border-t border-slate-200 flex justify-between items-center px-1"
-                                *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length > 0">
-                                <span class="font-bold text-slate-500 uppercase text-[11px] tracking-widest">Total del
-                                    Pedido</span>
-                                <span
-                                    class="font-black text-slate-800 text-[15px] bg-slate-200/50 px-2.5 py-1 rounded shadow-sm border border-slate-200/60 transition-colors">
-                                    {{ 'S/ ' + calculateTotalPedidos(mesaSeleccionada.numero, pedido_mesa_status,
-                                    mesaSeleccionada) }}
+                        <!-- Stats: tiempo + total -->
+                        <div class="sidebar-stats" *ngIf="estadomesa[mesaSeleccionada.numero]?.value === 1">
+                            <div class="sidebar-stat">
+                                <i class="pi pi-clock"></i>
+                                <span>{{ getTiempoTranscurrido(mesaSeleccionada.numero) }}</span>
+                            </div>
+                            <div class="sidebar-stat sidebar-stat--total">
+                                <span class="sidebar-stat__label">Total</span>
+                                <span class="sidebar-stat__value">
+                                    S/ {{ getTotalMesa(mesaSeleccionada.numero) }}
                                 </span>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Buttons Grid -->
-                    <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 w-full mt-3">
+                        <!-- Divisor -->
+                        <div class="sidebar-divider"></div>
 
-                        <!-- Editar -->
-                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-blue-50 border border-blue-200 hover:bg-blue-600 hover:border-blue-600 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
-                            (click)="editar(mesaSeleccionada, NuevoPedido)">
-                            <i class="material-icons text-[19px] text-blue-600 group-hover:text-white transition-colors duration-300">edit</i>
-                            <span class="text-[9px] sm:text-[10px] font-bold text-blue-700 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Editar</span>
-                        </div>
+                        <!-- Botones verticales -->
+                        <div class="sidebar-btns">
 
-                        <!-- Ticket -->
-                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-violet-50 border border-violet-200 hover:bg-violet-600 hover:border-violet-600 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
-                            (click)="generatePDF(NuevoPedido)">
-                            <i class="material-icons text-[19px] text-violet-600 group-hover:text-white transition-colors duration-300">description</i>
-                            <span class="text-[9px] sm:text-[10px] font-bold text-violet-700 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Ticket</span>
-                        </div>
+                            <!-- Editar -->
+                            <button class="sbar-btn sbar-btn--blue" (click)="editar(mesaSeleccionada, NuevoPedido)">
+                                <span class="sbar-btn__icon"><i class="material-icons">edit</i></span>
+                                <span class="sbar-btn__label">Editar pedido</span>
+                            </button>
 
-                        <!-- Cocina -->
-                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-orange-50 border border-orange-200 hover:bg-orange-500 hover:border-orange-500 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
-                            (click)="generateCocinaPDF(NuevoPedido)">
-                            <i class="material-icons text-[19px] text-orange-500 group-hover:text-white transition-colors duration-300">restaurant</i>
-                            <span class="text-[9px] sm:text-[10px] font-bold text-orange-600 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Cocina</span>
-                        </div>
+                            <!-- Ticket -->
+                            <button class="sbar-btn sbar-btn--violet" (click)="generatePDF(NuevoPedido)">
+                                <span class="sbar-btn__icon"><i class="material-icons">description</i></span>
+                                <span class="sbar-btn__label">Ticket</span>
+                            </button>
 
-                        <!-- Cobrar (Principal) -->
-                        <div class="col-span-2 group flex flex-row items-center justify-center gap-2.5 min-h-[68px] rounded-xl bg-emerald-500 border border-emerald-600 hover:bg-emerald-600 hover:border-emerald-700 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] px-3 shadow-sm shadow-emerald-200"
-                            (click)="CobrarDialog(mesaSeleccionada, NuevoPedido)">
-                            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
-                                <i class="fa-solid fa-money-bill-wave text-[13px] text-white"></i>
+                            <!-- Cocina -->
+                            <button class="sbar-btn sbar-btn--orange" (click)="generateCocinaPDF(NuevoPedido)">
+                                <span class="sbar-btn__icon"><i class="material-icons">restaurant</i></span>
+                                <span class="sbar-btn__label">Cocina</span>
+                            </button>
+
+                            <!-- Imprimir -->
+                            <button class="sbar-btn sbar-btn--gray" (click)="imprimirpedidodialog(Pedidos)">
+                                <span class="sbar-btn__icon"><i class="pi pi-print"></i></span>
+                                <span class="sbar-btn__label">Imprimir</span>
+                            </button>
+
+                            <!-- Mover -->
+                            <button class="sbar-btn sbar-btn--cyan" (click)="moveTableModal()">
+                                <span class="sbar-btn__icon"><i class="fa-solid fa-up-down-left-right"></i></span>
+                                <span class="sbar-btn__label">Mover mesa</span>
+                            </button>
+
+                            <!-- Divisor -->
+                            <div class="sidebar-divider"></div>
+
+                            <!-- Cobrar â€” primario -->
+                            <button class="sbar-btn sbar-btn--cobrar"
+                                (click)="CobrarDialog(mesaSeleccionada, NuevoPedido)">
+                                <span class="sbar-btn__icon">
+                                    <i class="fa-solid fa-money-bill-wave"></i>
+                                </span>
+                                <span class="sbar-btn__label">Cobrar</span>
+                            </button>
+
+                            <!-- Comprobante â€” con dropdown -->
+                            <div class="sbar-dropdown-wrap">
+                                <button class="sbar-btn sbar-btn--comprobante"
+                                    (click)="showComprobanteMenu = !showComprobanteMenu">
+                                    <span class="sbar-btn__icon">
+                                        <i class="fa-solid fa-file-invoice"></i>
+                                    </span>
+                                    <span class="sbar-btn__label">Comprobante</span>
+                                    <i class="fa-solid fa-chevron-right sbar-btn__arrow"
+                                        [class.sbar-btn__arrow--open]="showComprobanteMenu"></i>
+                                </button>
+                                <!-- Dropdown (sale a la derecha) -->
+                                <div *ngIf="showComprobanteMenu" class="sbar-comp-dropdown">
+                                    <div class="sbar-comp-item sbar-comp-item--factura"
+                                        (click)="abrirComprobanteModal('01'); showComprobanteMenu = false">
+                                        <span class="sbar-comp-icon">
+                                            <i class="fa-solid fa-file-invoice"></i>
+                                        </span>
+                                        <div class="sbar-comp-text">
+                                            <strong>Factura</strong>
+                                            <small>Con RUC empresa</small>
+                                        </div>
+                                    </div>
+                                    <div class="sbar-comp-item sbar-comp-item--boleta"
+                                        (click)="abrirComprobanteModal('03'); showComprobanteMenu = false">
+                                        <span class="sbar-comp-icon">
+                                            <i class="fa-solid fa-receipt"></i>
+                                        </span>
+                                        <div class="sbar-comp-text">
+                                            <strong>Boleta</strong>
+                                            <small>Para persona natural</small>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <span class="text-[13px] font-bold text-white uppercase tracking-wider">Cobrar</span>
-                        </div>
 
-                        <!-- Mover Mesa -->
-                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-cyan-50 border border-cyan-200 hover:bg-cyan-600 hover:border-cyan-600 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
-                            (click)="moveTableModal()">
-                            <i class="fa-solid fa-up-down-left-right text-[16px] text-cyan-600 group-hover:text-white transition-colors duration-300"></i>
-                            <span class="text-[9px] sm:text-[10px] font-bold text-cyan-700 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Mover</span>
-                        </div>
+                            <!-- Divisor -->
+                            <div class="sidebar-divider"></div>
 
-                        <!-- Cancelar -->
-                        <div class="group flex flex-col items-center justify-center gap-1.5 min-h-[68px] rounded-xl bg-red-50 border border-red-200 hover:bg-red-500 hover:border-red-500 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] px-1"
-                            (click)="deletepedidoModal()">
-                            <i class="fa-solid fa-trash text-[15px] text-red-500 group-hover:text-white transition-colors duration-300"></i>
-                            <span class="text-[9px] sm:text-[10px] font-bold text-red-600 group-hover:text-white uppercase tracking-wide transition-colors duration-300">Cancelar</span>
-                        </div>
+                            <!-- Cancelar -->
+                            <button class="sbar-btn sbar-btn--red" (click)="deletepedidoModal()">
+                                <span class="sbar-btn__icon"><i class="fa-solid fa-trash"></i></span>
+                                <span class="sbar-btn__label">Cancelar pedido</span>
+                            </button>
 
+                        </div>
+                    </aside>
+
+                    <!-- â”€â”€ COLUMNA CENTRAL: Plano de mesas (SIEMPRE visible) â”€â”€ -->
+                    <div class="mesa-floor-col">
+                        <p-tabView styleClass="custom-tabview" [(activeIndex)]="activeTabIndex">
+
+                            <!-- PRIMER PISO -->
+                            <p-tabPanel header="Primer Piso">
+                                <div class="mesa-holo-grid">
+
+                                    <!-- BAR decorativo -->
+                                    <div class="mesa-bar-card" style="grid-column: 3; grid-row: 2;">
+                                        <div class="mesa-bar-surface">
+                                            <div class="mesa__titulo">BAR</div>
+                                        </div>
+                                    </div>
+
+                                    <ng-container *ngFor="let mesa of mesas">
+                                        <div class="mesa-card-holo" (click)="seleccionarMesa(mesa)"
+                                            *ngIf="mesa.numero != '0' && mesa.piso == '1' && mozosSeleccionadosApertura.length > 0"
+                                            [style.grid-column]="getMesaGridCol(mesa.numero, '1')"
+                                            [style.grid-row]="getMesaGridRow(mesa.numero, '1')">
+
+                                            <div class="mesa" [class.mesa--libre]="estadomesa[mesa.numero]?.value === 0"
+                                                [class.mesa--ocupada]="estadomesa[mesa.numero]?.value === 1"
+                                                [class.mesa--seleccionada]="mesaSeleccionada?.numero == mesa.numero">
+                                                <div class="mesa__brillo"></div>
+                                                <div class="mesa__titulo">MESA {{ mesa.numero }}</div>
+                                                <div class="mesa__estado">
+                                                    <span class="mesa__punto"></span>
+                                                    <span class="mesa__texto">
+                                                        {{ estadomesa[mesa.numero]?.value === 1 ? 'Ocupada' : 'Libre' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Tiempo + total DENTRO de la mesa (solo ocupada) -->
+                                                <div class="mesa-info-bar" *ngIf="estadomesa[mesa.numero]?.value === 1">
+                                                    <span class="mesa-info-time">
+                                                        <i class="pi pi-clock"></i>
+                                                        <span>{{ getTiempoTranscurrido(mesa.numero) }}</span>
+                                                    </span>
+                                                    <span class="mesa-info-total">
+                                                        S/ {{ getTotalMesa(mesa.numero) }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ng-container>
+                                </div>
+                            </p-tabPanel>
+
+                            <!-- SEGUNDO PISO -->
+                            <p-tabPanel header="Segundo Piso">
+                                <div class="mesa-holo-grid mesa-holo-grid--piso2">
+                                    <ng-container *ngFor="let mesa of mesas">
+                                        <div class="mesa-card-holo" (click)="seleccionarMesa(mesa)"
+                                            *ngIf="mesa.numero != '0' && mesa.piso == '2'"
+                                            [style.grid-column]="getMesaGridCol(mesa.numero, '2')"
+                                            [style.grid-row]="getMesaGridRow(mesa.numero, '2')">
+
+                                            <div class="mesa" [class.mesa--libre]="estadomesa[mesa.numero]?.value === 0"
+                                                [class.mesa--ocupada]="estadomesa[mesa.numero]?.value === 1"
+                                                [class.mesa--seleccionada]="mesaSeleccionada?.numero == mesa.numero">
+                                                <div class="mesa__brillo"></div>
+                                                <div class="mesa__titulo">MESA {{ mesa.numero }}</div>
+                                                <div class="mesa__estado">
+                                                    <span class="mesa__punto"></span>
+                                                    <span class="mesa__texto">
+                                                        {{ estadomesa[mesa.numero]?.value === 1 ? 'Ocupada' : 'Libre' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Tiempo + total DENTRO de la mesa (solo ocupada) -->
+                                                <div class="mesa-info-bar" *ngIf="estadomesa[mesa.numero]?.value === 1">
+                                                    <span class="mesa-info-time">
+                                                        <i class="pi pi-clock"></i>
+                                                        <span>{{ getTiempoTranscurrido(mesa.numero) }}</span>
+                                                    </span>
+                                                    <span class="mesa-info-total">
+                                                        S/ {{ getTotalMesa(mesa.numero) }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ng-container>
+                                </div>
+                            </p-tabPanel>
+                        </p-tabView>
                     </div>
+
+                    <!-- â”€â”€ COLUMNA DERECHA: Panel de información de la mesa â”€â”€ -->
+                    <div class="mesa-info-col" *ngIf="mesaSeleccionada && pedido_mesa_status">
+
+                        <div class="panel-mesa ml-4" [class.panel-mesa--highlight]="highlightToolbar">
+
+                            <!-- Cabecera del panel info -->
+                            <div class="panel-mesa__header">
+                                <div class="panel-mesa__header-left">
+                                    <div class="panel-mesa__badge">
+                                        <i class="pi pi-th-large"></i>
+                                    </div>
+                                    <div class="panel-mesa__title-group">
+                                        <span class="panel-mesa__label">Cuenta</span>
+                                        <h2 class="panel-mesa__title">
+                                            {{ mesaSeleccionada.numero == '0'
+                                            ? 'Delivery'
+                                            : 'Mesa ' + mesaSeleccionada.numero }}
+                                        </h2>
+                                    </div>
+                                </div>
+                                <div class="panel-mesa__header-right">
+                                    <span *ngIf="NuevoPedido.idmozo" class="panel-mesa__mozo-tag">
+                                        <i class="pi pi-user"></i>
+                                        {{ getNombreMozo(NuevoPedido.idmozo) }}
+                                    </span>
+                                    <div class="panel-mesa__total-badge">
+                                        <span class="panel-mesa__total-label">TOTAL</span>
+                                        <span class="panel-mesa__total-amount">
+                                            S/ {{ calculateTotalPedidos(mesaSeleccionada.numero, pedido_mesa_status,
+                                            mesaSeleccionada) }}
+                                        </span>
+                                    </div>
+                                    <button class="panel-mesa__close-btn" (click)="returntoMesas()">
+                                        <i class="pi pi-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Lista de ítems -->
+                            <div class="panel-mesa__cuenta">
+                                <div class="panel-mesa__cuenta-header">
+                                    <i class="pi pi-receipt"></i>
+                                    <span>Cuenta de Mesa</span>
+                                </div>
+
+                                <div class="panel-mesa__items">
+                                    <ng-container
+                                        *ngFor="let pedido of getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada)">
+                                        <ng-container *ngIf="pedido.pedidodetalle && pedido.pedidodetalle.length > 0">
+                                            <div *ngFor="let detalle of pedido.pedidodetalle" class="panel-mesa__item">
+                                                <span class="panel-mesa__item-qty">{{ detalle.cantidad }}</span>
+                                                <span class="panel-mesa__item-name">
+                                                    {{ detalle.producto?.nombre ?? 'Producto sin nombre' }}
+                                                </span>
+                                                <span class="panel-mesa__item-price">
+                                                    {{ (detalle.cantidad * detalle.precioU) | currency : 'S/ ' }}
+                                                </span>
+                                            </div>
+                                        </ng-container>
+                                    </ng-container>
+
+                                    <div *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length === 0"
+                                        class="panel-mesa__empty">
+                                        <i class="pi pi-receipt"></i>
+                                        <span>Aún no hay pedidos</span>
+                                    </div>
+                                </div>
+
+                                <div class="panel-mesa__cuenta-footer"
+                                    *ngIf="getPedidosDeMesa(mesaSeleccionada?.numero, pedido_mesa_status, mesaSeleccionada).length > 0">
+                                    <span class="panel-mesa__cuenta-footer-label">Total a Pagar</span>
+                                    <span class="panel-mesa__cuenta-footer-total">
+                                        S/ {{ calculateTotalPedidos(mesaSeleccionada.numero, pedido_mesa_status,
+                                        mesaSeleccionada) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
                 </div>
-
-
-
-                <p-tabView styleClass="custom-tabview" [(activeIndex)]="activeTabIndex">
-                    <!-- PRIMER PISO -->
-                    <p-tabPanel header="Primer Piso">
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 lg:gap-4 mt-4">
-                            <ng-container *ngFor="let mesa of mesas">
-                                <div class="relative bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border overflow-hidden cursor-pointer flex flex-col group"
-                                    (click)="seleccionarMesa(mesa)"
-                                    *ngIf="mesa.numero != '0' && mesa.piso == '1' && mozosSeleccionadosApertura.length > 0"
-                                    [ngClass]="{
-                                         'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/50 shadow-md': mesaSeleccionada?.numero == mesa.numero,
-                                         'border-gray-200 hover:border-blue-300': mesaSeleccionada?.numero != mesa.numero
-                                     }">
-
-                                    <div class="absolute top-3 right-3 z-10">
-                                        <span
-                                            class="px-3 py-1.5 rounded-md text-sm sm:text-base font-black shadow-sm inline-block tracking-wide"
-                                            [ngClass]="{
-                                                  'bg-red-600 !text-white': estadomesa[mesa.numero]?.value === 1,
-                                                  'bg-emerald-600 text-white': estadomesa[mesa.numero]?.value === 0
-                                              }">
-                                            {{ estadomesa[mesa.numero]?.value === 1 ? 'Ocupada' : 'Libre' }}
-                                        </span>
-                                    </div>
-
-                                    <div class="flex-1 flex flex-col items-center justify-center p-4 mt-6">
-                                        <div class="w-16 h-16 lg:w-20 lg:h-20 mb-3 rounded-full flex items-center justify-center transition-transform group-hover:scale-105"
-                                            [ngClass]="{'bg-red-50 text-red-500 border border-red-100': estadomesa[mesa.numero]?.value === 1, 'bg-emerald-50 text-emerald-500 border border-emerald-100': estadomesa[mesa.numero]?.value === 0}">
-                                            <i class="pi pi-th-large text-2xl lg:text-3xl"></i>
-                                        </div>
-                                        <h3 class="text-lg lg:text-xl font-black text-center m-0 tracking-tight"
-                                            [ngClass]="{'text-red-700': estadomesa[mesa.numero]?.value === 1, 'text-emerald-800': estadomesa[mesa.numero]?.value === 0}">
-                                            Mesa {{ mesa.numero }}
-                                        </h3>
-                                    </div>
-
-                                    <div class="bg-gray-50 border-t border-gray-100 p-2 lg:p-3 flex justify-between items-center mt-auto h-[48px] lg:h-[56px]"
-                                        *ngIf="estadomesa[mesa.numero]?.value === 1">
-                                        <div class="flex flex-col text-left">
-                                            <div
-                                                class="flex items-center gap-1.5 text-sm lg:text-base font-bold text-gray-700 leading-none">
-                                                <i class="pi pi-clock"></i>
-                                                {{ getTiempoTranscurrido(mesa.numero) }}
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="text-sm lg:text-base font-black text-gray-900 bg-white border border-gray-200 px-3 py-1.5 rounded-md shadow-sm">
-                                            S/ {{ getTotalMesa(mesa.numero) }}
-                                        </div>
-                                    </div>
-                                    <div class="bg-gray-50 border-t border-gray-100 p-2 lg:p-3 flex justify-center items-center mt-auto h-[48px] lg:h-[56px]"
-                                        *ngIf="estadomesa[mesa.numero]?.value === 0">
-                                    </div>
-                                </div>
-                            </ng-container>
-                        </div>
-                    </p-tabPanel>
-
-                    <!-- SEGUNDO PISO -->
-                    <p-tabPanel header="Segundo Piso">
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 lg:gap-4 mt-4">
-                            <ng-container *ngFor="let mesa of mesas">
-                                <div class="relative bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border overflow-hidden cursor-pointer flex flex-col group"
-                                    (click)="seleccionarMesa(mesa)" *ngIf="mesa.numero != '0' && mesa.piso == '2'"
-                                    [ngClass]="{
-                                         'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/50 shadow-md': mesaSeleccionada?.numero == mesa.numero,
-                                         'border-gray-200 hover:border-blue-300': mesaSeleccionada?.numero != mesa.numero
-                                     }">
-
-                                    <div class="absolute top-3 right-3 z-10">
-                                        <span
-                                            class="px-3 py-1.5 rounded-md text-sm sm:text-base font-black shadow-sm inline-block tracking-wide"
-                                            [ngClass]="{
-                                                  'bg-red-600 !text-white': estadomesa[mesa.numero]?.value === 1,
-                                                  'bg-emerald-600 text-white': estadomesa[mesa.numero]?.value === 0
-                                              }">
-                                            {{ estadomesa[mesa.numero]?.value === 1 ? 'Ocupada' : 'Libre' }}
-                                        </span>
-                                    </div>
-
-                                    <div class="flex-1 flex flex-col items-center justify-center p-4 mt-6">
-                                        <div class="w-16 h-16 lg:w-20 lg:h-20 mb-3 rounded-full flex items-center justify-center transition-transform group-hover:scale-105"
-                                            [ngClass]="{'bg-red-50 text-red-500 border border-red-100': estadomesa[mesa.numero]?.value === 1, 'bg-emerald-50 text-emerald-600 border border-emerald-200': estadomesa[mesa.numero]?.value === 0}">
-                                            <i class="pi pi-th-large text-2xl lg:text-3xl"></i>
-                                        </div>
-                                        <h3 class="text-lg lg:text-xl font-black text-center m-0 tracking-tight"
-                                            [ngClass]="{'text-red-700': estadomesa[mesa.numero]?.value === 1, 'text-emerald-800': estadomesa[mesa.numero]?.value === 0}">
-                                            Mesa {{ mesa.numero }}
-                                        </h3>
-                                    </div>
-
-                                    <div class="bg-gray-50 border-t border-gray-100 p-2 lg:p-3 flex justify-between items-center mt-auto h-[48px] lg:h-[56px]"
-                                        *ngIf="estadomesa[mesa.numero]?.value === 1">
-                                        <div class="flex flex-col text-left">
-                                            <div
-                                                class="flex items-center gap-1.5 text-sm lg:text-base font-bold text-gray-700 leading-none">
-                                                <i class="pi pi-clock"></i>
-                                                {{ getTiempoTranscurrido(mesa.numero) }}
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="text-sm lg:text-base font-black text-gray-900 bg-white border border-gray-200 px-3 py-1.5 rounded-md shadow-sm">
-                                            S/ {{ getTotalMesa(mesa.numero) }}
-                                        </div>
-                                    </div>
-                                    <div class="bg-gray-50 border-t border-gray-100 p-2 lg:p-3 flex justify-center items-center mt-auto h-[48px] lg:h-[56px]"
-                                        *ngIf="estadomesa[mesa.numero]?.value === 0">
-                                    </div>
-                                </div>
-                            </ng-container>
-                        </div>
-                    </p-tabPanel>
-                </p-tabView>
 
                 <!-- ========================================== -->
                 <!-- ACTIVE ORDERS (PEDIDOS ACTIVOS) SECTION    -->
@@ -355,7 +425,6 @@
                         <div
                             class="min-w-[320px] max-w-[380px] bg-white rounded-2xl shadow-sm border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all flex flex-col flex-shrink-0">
 
-                            <!-- Header -->
                             <div class="p-4 border-b border-blue-900 flex justify-between items-start rounded-t-2xl"
                                 style="background-color: rgb(9 27 67);">
                                 <div class="flex items-center gap-3">
@@ -392,7 +461,6 @@
                                 </div>
                             </div>
 
-                            <!-- Body (Details) -->
                             <div class="p-4 flex-1 overflow-y-auto max-h-[160px] custom-scrollbar bg-white">
                                 <ul class="m-0 p-0 list-none space-y-2">
                                     <li *ngFor="let detalle of pedido.pedidodetalle"
@@ -414,7 +482,6 @@
                                 </ul>
                             </div>
 
-                            <!-- Footer -->
                             <div
                                 class="p-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl flex justify-between items-center mt-auto">
                                 <div class="flex flex-col">
@@ -483,58 +550,57 @@
                     <button type="button"
                         class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
                         (click)="quickSearchPlato('arroz mariscos')">
-                        🦐 Arroz Mariscos
+                        Arroz Mariscos
                     </button>
                     <button type="button"
                         class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
                         (click)="quickSearchPlato('chicha morada')">
-                        🍇 Chicha Morada
+                        Chicha Morada
                     </button>
                     <button type="button"
                         class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
                         (click)="quickSearchPlato('arroz duo')">
-                        🍚 Arroz Duo
+                        Arroz Duo
                     </button>
                     <button type="button"
                         class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
                         (click)="quickSearchPlato('trio mixto')">
-                        🐟 Trio Mixto
+                        Trio Mixto
                     </button>
                     <button type="button"
                         class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
                         (click)="quickSearchPlato('gaseosa 1l')">
-                        🥤 Gaseosa 1L
+                        Gaseosa 1L
                     </button>
                     <button type="button"
                         class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
                         (click)="quickSearchPlato('ceviche')">
-                        🍋 Ceviche
+                        Ceviche
                     </button>
                     <button type="button"
                         class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
                         (click)="quickSearchPlato('chaufa trio')">
-                        🍳 Chaufa Trio
+                        Chaufa Trio
                     </button>
                     <button type="button"
                         class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
                         (click)="quickSearchPlato('gaseosa')">
-                        🫙 Gaseosa
+                        Gaseosa
                     </button>
                     <button type="button"
                         class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
                         (click)="quickSearchPlato('chilcano')">
-                        🍹 Chilcano
+                        Chilcano
                     </button>
                 </div>
             </div>
 
-            <!-- Calculator: Ingreso Rápido por Código -->
             <div class="mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <!-- Header -->
                 <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
                     <span
                         class="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                        <i class="pi pi-th-large text-slate-400 text-[10px]"></i> Ingreso Rápido por Código
+                        <i class="pi pi-th-large text-slate-400 text-[10px]"></i> Ingreso por Codigo
                     </span>
                     <button type="button"
                         class="text-[11px] font-black text-red-400 hover:text-red-600 uppercase tracking-wider transition-colors"
@@ -549,9 +615,9 @@
                     <div class="flex-1 flex flex-col gap-1.5">
                         <!-- Number display (hidden input shown as display) -->
                         <input type="number" (keypress)="AddKeyPressCalculator($event, buscarPlato)" id="NumberLote"
-                            name="NumberLote" placeholder="—" [(ngModel)]="numeroPlato"
+                            name="NumberLote" placeholder="Ingresa Codigo" [(ngModel)]="numeroPlato"
                             class="w-full h-8 text-center text-xl font-black border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50 tracking-widest transition-all mb-0.5" />
-                        <!-- Row 1: 1–5 -->
+                        <!-- Row 1: 1â€“5 -->
                         <div class="grid grid-cols-5 gap-1.5">
                             <button type="button"
                                 class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
@@ -569,7 +635,7 @@
                                 class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
                                 (click)="setNumbersSelectDashboard(5)">5</button>
                         </div>
-                        <!-- Row 2: 6–0 -->
+                        <!-- Row 2: 6â€“0 -->
                         <div class="grid grid-cols-5 gap-1.5">
                             <button type="button"
                                 class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
@@ -788,22 +854,19 @@
                         <!-- Agregar nuevo topping -->
                         <div
                             style="margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 0.55rem 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                            <i class="pi pi-plus-circle" style="color: #64748b; font-size: 0.85rem; flex-shrink: 0;"></i>
-                            <input
-                                type="text"
-                                [(ngModel)]="nuevoToppingNombre"
-                                placeholder="Nombre del nuevo topping..."
-                                (keydown.enter)="agregarNuevoTopping()"
+                            <i class="pi pi-plus-circle"
+                                style="color: #64748b; font-size: 0.85rem; flex-shrink: 0;"></i>
+                            <input type="text" [(ngModel)]="nuevoToppingNombre"
+                                placeholder="Nombre del nuevo topping..." (keydown.enter)="agregarNuevoTopping()"
                                 [disabled]="guardandoTopping"
                                 style="flex: 1; border: none; outline: none; font-size: 0.82rem; font-weight: 600; color: #334155; background: transparent; min-width: 0;" />
-                            <button
-                                type="button"
-                                (click)="agregarNuevoTopping()"
+                            <button type="button" (click)="agregarNuevoTopping()"
                                 [disabled]="!nuevoToppingNombre.trim() || guardandoTopping"
                                 style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.38rem 0.85rem; border-radius: 8px; border: none; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.15s;"
                                 [style.background]="!nuevoToppingNombre.trim() || guardandoTopping ? '#f1f5f9' : '#0f172a'"
                                 [style.color]="!nuevoToppingNombre.trim() || guardandoTopping ? '#94a3b8' : '#ffffff'">
-                                <i [class]="guardandoTopping ? 'pi pi-spin pi-spinner' : 'pi pi-check'" style="font-size: 0.72rem;"></i>
+                                <i [class]="guardandoTopping ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
+                                    style="font-size: 0.72rem;"></i>
                                 {{ guardandoTopping ? 'Guardando...' : 'Agregar' }}
                             </button>
                         </div>
@@ -888,22 +951,22 @@
         <div class="px-6 py-2 space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                    <label for="efectivo" class="block text-sm font-medium text-gray-700">💵Efectivo</label>
+                    <label for="efectivo" class="block text-sm font-medium text-gray-700">ðŸ’µEfectivo</label>
                     <input id="efectivo" type="number" [(ngModel)]="Pedido_cobrar.efectivo"
                         class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
                 </div>
                 <div>
-                    <label for="visa" class="block text-sm font-medium text-gray-700">💳Visa</label>
+                    <label for="visa" class="block text-sm font-medium text-gray-700">ðŸ’³Visa</label>
                     <input id="visa" type="number" [(ngModel)]="Pedido_cobrar.visa"
                         class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
                 </div>
                 <div>
-                    <label for="yape" class="block text-sm font-medium text-gray-700">📱Yape</label>
+                    <label for="yape" class="block text-sm font-medium text-gray-700">ðŸ“±Yape</label>
                     <input id="yape" type="number" [(ngModel)]="Pedido_cobrar.yape"
                         class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
                 </div>
                 <div>
-                    <label for="plin" class="block text-sm font-medium text-gray-700">📱Plin</label>
+                    <label for="plin" class="block text-sm font-medium text-gray-700">ðŸ“±Plin</label>
                     <input id="plin" type="number" [(ngModel)]="Pedido_cobrar.plin"
                         class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
                 </div>
@@ -918,22 +981,22 @@
 
                     <button class="bg-green-600 text-black py-2 rounded-md shadow hover:bg-green-700"
                         (click)="pagarTodo('efectivo')">
-                        💵 Todo en Efectivo
+                        ðŸ’µ Todo en Efectivo
                     </button>
 
                     <button class="bg-blue-600 text-black py-2 rounded-md shadow hover:bg-blue-700"
                         (click)="pagarTodo('visa')">
-                        💳 Todo con Visa
+                        ðŸ’³ Todo con Visa
                     </button>
 
                     <button class="bg-purple-600 text-black py-2 rounded-md shadow hover:bg-purple-700"
                         (click)="pagarTodo('yape')">
-                        📱 Todo con Yape
+                        ðŸ“± Todo con Yape
                     </button>
 
                     <button class="bg-indigo-600 text-black py-2 rounded-md shadow hover:bg-indigo-700"
                         (click)="pagarTodo('plin')">
-                        📱 Todo con Plin
+                        ðŸ“± Todo con Plin
                     </button>
 
                 </div>
@@ -976,7 +1039,7 @@
 <p-dialog [position]="'top'" [(visible)]="CocinaPdf_Dialog" [style]="{ width: '500px', height: '880px' }"
     header="Imprimir Cocina" [modal]="true" [draggable]="false" [resizable]="false" styleClass="p-fluid">
     <div class="pdf-container">
-        <!-- <iframe [src]="pdfUrl" [ngModel]="" width="100%" height="500px"></iframe>ç -->
+        <!-- <iframe [src]="pdfUrl" [ngModel]="" width="100%" height="500px"></iframe>Á§ -->
     </div>
     <ng-template pTemplate="footer">
         <p-button styleClass="p-button-raised p-button-danger" label="Cerrar" icon="pi pi-times"
@@ -1253,12 +1316,12 @@
                 <button (click)="seleccionarTipoComprobante('03')"
                     class="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all border-2"
                     [ngClass]="tipoComprobante === '03' ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-300'">
-                    📄 Boleta
+                    ðŸ“„ Boleta
                 </button>
                 <button (click)="seleccionarTipoComprobante('01')"
                     class="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all border-2"
                     [ngClass]="tipoComprobante === '01' ? 'bg-amber-600 text-white border-amber-600 shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:border-amber-300'">
-                    🧾 Factura
+                    ðŸ§¾ Factura
                 </button>
             </div>
 
