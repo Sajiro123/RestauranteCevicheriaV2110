@@ -92,6 +92,7 @@ export class PedidoService {
                 mesa,
                 total,
                 pedidodetalle:pedidodetalle(
+                    idpedidodetalle,
                     deleted,
                     toppings,
                     lugarpedido,
@@ -102,6 +103,7 @@ export class PedidoService {
                     producto:idproducto(
                         nombre,
                         acronimo,
+                        numero_carta,
                         idcategoria,
                         categoria:idcategoria(nombre)
                     )
@@ -118,8 +120,9 @@ export class PedidoService {
                         const pedido = data[0];
                         if (pedido.pedidodetalle) {
                             // Excluir los productos que son de la categoría 5 (Toppings)
-                            // para que no salgan listados como platos principales
-                            pedido.pedidodetalle = pedido.pedidodetalle.filter((d: any) => d.producto?.idcategoria !== 5);
+                            // y excluir los taper (numero_carta == 0) para que no salgan en cocina
+                            pedido.pedidodetalle = pedido.pedidodetalle.filter((d: any) => d.idproducto != 85 && d.producto?.idcategoria !== 5);
+                            // MODIFICAR
                         }
                         return { success: !error, data: pedido, error };
                     } else {

@@ -135,6 +135,7 @@ export class HomeComponent {
     comentarios: string = '';
     tipomodal: any = 'Registrar';
     Cobrar_Dialog: boolean = false;
+    showComprobanteMenu: boolean = false;
     PDF_Dialog: boolean = false;
     pdfUrl: SafeResourceUrl | null = null;
     CocinaPdf_Dialog: boolean = false;
@@ -511,8 +512,7 @@ export class HomeComponent {
             next: (response) => {
                 this.guardandoTopping = false;
                 if (response.success && response.data) {
-                    this.multiselectToppings = [...this.multiselectToppings, response.data]
-                        .sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
+                    this.multiselectToppings = [...this.multiselectToppings, response.data].sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
                     // Auto-seleccionar el nuevo topping
                     this.selectedToppings = [...this.selectedToppings, { idtoppings: response.data.idtoppings, nombre: response.data.nombre }];
                     this.nuevoToppingNombre = '';
@@ -1957,7 +1957,7 @@ export class HomeComponent {
     generateCocinaPDF(pedido: any) {
         this.isLoading = true; // Activar el loader
 
-        this.PedidoService.ShowProductosPdf(pedido.idpedido, 'cocina').subscribe((response) => {
+        this.PedidoService.ShowProductosPdf(pedido.idpedido, 'cocina').subscribe((response: any) => {
             this.estadopedido = 0;
             var inicial = 100;
             var items = response.data?.pedidodetalle?.length || 0;
@@ -2039,7 +2039,7 @@ export class HomeComponent {
                 if (element.lugarpedido == '1') {
                     this.estadopedido = 1; // Para llevar
                 }
-                if (element.lugarpedido == null || element.lugarpedido == '0') data.push([element.cantidad, element.producto.nombre, element.precioU * element.cantidad]);
+                if (element.lugarpedido == null || element.lugarpedido == '0') data.push([element.cantidad, element.producto.nombre, element.precioU * element.cantidad, element.idpedidodetalle]);
             });
             if (data.length > 0) {
                 doc.setFont('helvetica', 'bold');
@@ -2065,8 +2065,9 @@ export class HomeComponent {
                 doc.text('S/' + element[2].toString(), col3X, y);
                 y += 4.5;
 
+                debugger;
                 // Toppings del plato (debajo del producto)
-                const detalle = response.data.pedidodetalle.find((p: any) => p.producto.nombre === element[1] && (p.lugarpedido == null || p.lugarpedido == '0'));
+                const detalle = response.data.pedidodetalle.find((p: any) => p.idpedidodetalle === element[3] && p.producto.nombre === element[1] && (p.lugarpedido == null || p.lugarpedido == '0'));
                 if (detalle && detalle.toppings && detalle.toppings != 0) {
                     const toppingIds = detalle.toppings.split(',');
                     doc.setFont('helvetica', 'bold');
@@ -2443,7 +2444,7 @@ export class HomeComponent {
             if (element.lugarpedido == '1') {
                 this.estadopedido = 1; // Para llevar
             }
-            if (element.lugarpedido == null || element.lugarpedido == '0') data.push([element.cantidad, element.producto.nombre, element.precioU * element.cantidad]);
+            if (element.lugarpedido == null || element.lugarpedido == '0') data.push([element.cantidad, element.producto.nombre, element.precioU * element.cantidad, element.idpedidodetalle]);
         });
         if (data.length > 0) {
             doc.setFont('helvetica', 'bold');
@@ -2465,7 +2466,7 @@ export class HomeComponent {
             y += 4.5;
 
             // Toppings del plato (debajo del producto)
-            const detalle = this.pedidosSeleccionados.find((p: any) => p.producto.nombre === element[1] && (p.lugarpedido == null || p.lugarpedido == '0'));
+            const detalle = this.pedidosSeleccionados.find((p: any) => p.idpedidodetalle === element[3] && p.producto.nombre === element[1] && (p.lugarpedido == null || p.lugarpedido == '0'));
             if (detalle && detalle.toppings && detalle.toppings != 0) {
                 const toppingIds = detalle.toppings.split(',');
                 doc.setFont('helvetica', 'normal');
@@ -2800,5 +2801,53 @@ export class HomeComponent {
                 });
             }
         });
+    }
+
+    // ─── Floor Plan Grid Position Maps ────────────────────────────────────────
+    // Piso 1 layout (5 cols × 3 rows):
+    //  Col:   1       2       3(BAR)  4       5
+    //  Row1: Mesa3  Mesa4   [empty] Mesa9   Mesa10
+    //  Row2: Mesa2  Mesa5    BAR    Mesa8   Mesa11
+    //  Row3: Mesa1  Mesa6   [empty] Mesa7   Mesa12
+
+    private readonly FLOOR1_COL: Record<number, number> = {
+        1:1, 2:1, 3:1,
+        4:2, 5:2, 6:2,
+        7:4, 8:4, 9:4,
+        10:5, 11:5, 12:5
+    };
+    private readonly FLOOR1_ROW: Record<number, number> = {
+        3:1, 4:1, 9:1, 10:1,
+        2:2, 5:2, 8:2, 11:2,
+        1:3, 6:3, 7:3, 12:3
+    };
+
+    // Piso 2 layout (4 cols × 3 rows):
+    //  Col:   1       2       3       4
+    //  Row1: Mesa13  Mesa16  Mesa19  Mesa22
+    //  Row2: Mesa14  Mesa17  Mesa20  Mesa23
+    //  Row3: Mesa15  Mesa18  Mesa21  Mesa24
+    private readonly FLOOR2_COL: Record<number, number> = {
+        13:1, 14:1, 15:1,
+        16:2, 17:2, 18:2,
+        19:3, 20:3, 21:3,
+        22:4, 23:4, 24:4
+    };
+    private readonly FLOOR2_ROW: Record<number, number> = {
+        13:1, 16:1, 19:1, 22:1,
+        14:2, 17:2, 20:2, 23:2,
+        15:3, 18:3, 21:3, 24:3
+    };
+
+    getMesaGridCol(numero: string, piso: string): string {
+        const n = parseInt(numero, 10);
+        const map = piso === '2' ? this.FLOOR2_COL : this.FLOOR1_COL;
+        return (map[n] ?? 'auto').toString();
+    }
+
+    getMesaGridRow(numero: string, piso: string): string {
+        const n = parseInt(numero, 10);
+        const map = piso === '2' ? this.FLOOR2_ROW : this.FLOOR1_ROW;
+        return (map[n] ?? 'auto').toString();
     }
 }

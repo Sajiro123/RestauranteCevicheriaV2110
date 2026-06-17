@@ -44,7 +44,7 @@ export class AuthService {
 
     /** Genera un UUID v4 simple */
     private generateSessionToken(): string {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
             const r = (Math.random() * 16) | 0;
             return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
         });
@@ -138,14 +138,7 @@ export class AuthService {
 
     async login(username: string, password: string): Promise<{ success: boolean; message?: string; user?: User }> {
         try {
-            const { data, error } = await this.supabaseService.client
-                .from('usuario')
-                .select('*')
-                .eq('username', username)
-                .eq('password', password)
-                .is('deleted', null)
-                .eq('estado', 1)
-                .single();
+            const { data, error } = await this.supabaseService.client.from('usuario').select('*').eq('username', username).eq('password', password).is('deleted', null).eq('estado', 1).single();
 
             if (error || !data) {
                 return { success: false, message: 'Usuario o contraseña incorrectos' };
@@ -156,10 +149,7 @@ export class AuthService {
             console.log(`[Auth] Login: generando session_token para usuario ${data.idusuario}: ${sessionToken.substring(0, 8)}...`);
 
             // Actualizar session_token en la BD → invalida otras sesiones activas
-            const { error: updateError } = await this.supabaseService.client
-                .from('usuario')
-                .update({ session_token: sessionToken })
-                .eq('idusuario', data.idusuario);
+            const { error: updateError } = await this.supabaseService.client.from('usuario').update({ session_token: sessionToken }).eq('idusuario', data.idusuario);
 
             if (updateError) {
                 console.error('[Auth] ❌ Error actualizando session_token en BD:', updateError);
@@ -268,12 +258,21 @@ export class AuthService {
     }
 
     redirectAfterLogin(returnUrl?: string, idperfil?: number) {
-        if (returnUrl && returnUrl !== '/auth/login') {
-            if (idperfil == 3 || idperfil == 1) {
-                this.router.navigate(['/mesas']);
-            } else {
-                this.router.navigate([returnUrl]);
+        let hasMesas = false;
+        try {
+            const storedMenuData = localStorage.getItem('userMenuData');
+            if (storedMenuData) {
+                const menuData = JSON.parse(storedMenuData);
+                hasMesas = menuData.some((m: any) => m.menu && (m.menu.ruta === '/mesas' || m.menu.ruta === 'mesas' || (m.menu.nombre && m.menu.nombre.toLowerCase().includes('mesa'))));
             }
+        } catch (e) {
+            console.error('Error al verificar menu de mesas:', e);
+        }
+
+        if (hasMesas) {
+            this.router.navigate(['/mesas']);
+        } else if (returnUrl && returnUrl !== '/auth/login') {
+            this.router.navigate([returnUrl]);
         } else {
             this.router.navigate(['/']);
         }

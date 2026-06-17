@@ -4,13 +4,16 @@
         width: 6px;
         height: 6px;
     }
+
     &::-webkit-scrollbar-track {
         background: transparent;
     }
+
     &::-webkit-scrollbar-thumb {
         background-color: rgba(156, 163, 175, 0.5);
         border-radius: 10px;
     }
+
     &::-webkit-scrollbar-thumb:hover {
         background-color: rgba(107, 114, 128, 0.8);
     }
@@ -133,8 +136,13 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* --- QR Dialog Styles --- */
@@ -174,52 +182,417 @@
 }
 
 /* --- PrimeNG Overrides --- */
-:host ::ng-deep {
-    /* Explicitly force white text on p-tab selectors because PrimeNG 18 uses .p-tab with var(--p-tabs-tab-color) */
-    .p-tab, .p-tablist-tab-link {
-        color: #ffffff !important;
-        --p-tabs-tab-color: #ffffff !important;
+
+/* ===================================================
+   MESA GRID - WARM WOOD RESTAURANT STYLE (BEM)
+   =================================================== */
+
+// --- VARIABLES ---
+$color-madera-clara: #c98c5a;
+$color-madera-oscura: #8c5226;
+$color-turquesa: #20b2aa;
+$color-rojo: #e63946;
+$sombra-flotante: 0 12px 24px rgba(0, 0, 0, 0.15);
+$sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
+
+// --- Container (Mayólica tile pattern) ---
+:root {
+    --mesa-card-radius: 22px;
+    --mesa-grid-gap-row: 1.2rem;
+    --mesa-grid-gap-col: 1.2rem;
+    --mesa-tile-size: 80px; // Tamaño de cada loseta/mayólica
+    --mesa-card-max: 137px; // Tamaño fijo de las mesas
+    --mesa-card-size: 137px;
+}
+
+.mesa-holo-grid {
+    position: relative;
+    border-radius: 0 0 1rem 1rem;
+    padding: 2rem 1.5rem 2.5rem;
+    min-height: 520px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(3, auto);
+    gap: 1.5rem 1.2rem;
+    justify-items: center;
+    align-items: center;
+    overflow: visible;
+
+    // ============================================================
+    // FONDO MAYOLICA — losetas de cerámica con cuadros visibles
+    // Valores hardcodeados en px para máxima compatibilidad
+    // ============================================================
+    background-color: #ede8dc;
+    background-image:
+        repeating-linear-gradient(0deg,
+            transparent,
+            transparent 89px,
+            rgba(180, 148, 108, 0.55) 89px,
+            rgba(180, 148, 108, 0.55) 90px),
+        repeating-linear-gradient(90deg,
+            transparent,
+            transparent 89px,
+            rgba(180, 148, 108, 0.55) 89px,
+            rgba(180, 148, 108, 0.55) 90px);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        box-shadow: inset 0 0 50px rgba(100, 65, 20, 0.08);
+        pointer-events: none;
+        z-index: 0;
     }
 
-    /* Override specifically for active state */
-    .p-tab-active, [data-p-active="true"],
-    .p-tab-active .p-tab-link, [data-p-active="true"] .p-tab-link,
-    .p-tab-active .p-tab, [data-p-active="true"] .p-tab,
+    >* {
+        position: relative;
+        z-index: 1;
+    }
+}
+
+.mesa-holo-grid--piso2 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+// Hidden — kept for DOM compatibility
+.holo-scanlines {
+    display: none;
+}
+
+.holo-grid-bg {
+    display: none;
+}
+
+// --- BAR static card ---
+.mesa-bar-card {
+    width: 117px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 1;
+    // Igual tamaño que las demás tarjetas
+    width: clamp(160px, 75%, var(--mesa-card-max));
+}
+
+.mesa-bar-surface {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--mesa-card-radius); // Cuadrado con esquinas redondeadas
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background:
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 2px, transparent 2px, transparent 6px),
+        linear-gradient(135deg, darken($color-madera-oscura, 10%), darken($color-madera-oscura, 25%));
+    box-shadow: $sombra-flotante, inset 0 2px 4px rgba(255, 255, 255, 0.2);
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 40%;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), transparent);
+        border-radius: var(--mesa-card-radius) var(--mesa-card-radius) 0 0;
+        pointer-events: none;
+    }
+
+    .mesa__titulo {
+        color: rgba(255, 240, 200, 0.95);
+        font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        z-index: 1;
+    }
+}
+
+// --- Card wrapper (positioned in the grid) ---
+.mesa-card-holo {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1;
+    // Tamaño fijo de 137px como quiere el usuario
+    width: 137px;
+}
+
+// --- ESTILOS DEL COMPONENTE (.mesa BEM) ---
+.mesa {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1; // cuadrada para que 50% border-radius = círculo
+    height: auto;
+    border-radius: var(--mesa-card-radius); // 50% → mesa redonda
+
+    // Simulación de textura de madera con gradientes superpuestos
+    background:
+        repeating-linear-gradient(45deg,
+            rgba(255, 255, 255, 0.03) 0px,
+            rgba(255, 255, 255, 0.03) 2px,
+            transparent 2px,
+            transparent 6px),
+        linear-gradient(135deg, $color-madera-clara, $color-madera-oscura);
+
+    // Efecto Antigravedad (Levitación inicial)
+    box-shadow: $sombra-flotante, inset 0 2px 4px rgba(255, 255, 255, 0.3);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    cursor: pointer;
+    overflow: hidden;
+
+    // Transición suave
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        box-shadow 0.3s ease;
+
+    &:hover {
+        transform: translateY(-6px) scale(1.03);
+        box-shadow: $sombra-hover, inset 0 2px 4px rgba(255, 255, 255, 0.4);
+    }
+
+    // Reflejo de cristal — adaptado a esquinas redondeadas cuadradas
+    &__brillo {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 40%;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.22), transparent);
+        border-radius: var(--mesa-card-radius) var(--mesa-card-radius) 0 0;
+        pointer-events: none;
+    }
+
+    &__titulo {
+        color: #ffffff;
+        font-size: clamp(0.65rem, 1.8vw, 1rem);
+        font-weight: 800;
+        letter-spacing: 1px;
+        margin: 0 0 8px 0;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        z-index: 1;
+    }
+
+    &__estado {
+        background: rgba(255, 255, 255, 0.92);
+        padding: 3px 9px;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        z-index: 1;
+    }
+
+    &__punto {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    &__texto {
+        font-size: clamp(0.5rem, 1.3vw, 0.75rem);
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    // --- MODIFICADORES DE ESTADO ---
+
+    &--libre {
+        .mesa__punto {
+            background-color: $color-turquesa;
+            box-shadow: 0 0 8px rgba($color-turquesa, 0.6);
+        }
+
+        .mesa__texto {
+            color: darken($color-turquesa, 15%);
+        }
+    }
+
+    &--ocupada {
+        .mesa__punto {
+            background-color: $color-rojo;
+            box-shadow: 0 0 8px rgba($color-rojo, 0.6);
+            animation: pulso-rojo 1.5s infinite;
+        }
+
+        .mesa__texto {
+            color: darken($color-rojo, 10%);
+        }
+    }
+
+    &--seleccionada {
+        outline: 3px solid #3b82f6;
+        outline-offset: 4px;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4), $sombra-hover;
+    }
+}
+
+// --- Legacy class compat (hide unused elements) ---
+.mesa-glow-ring {
+    display: none;
+}
+
+.mesa-icon-wrap {
+    display: none;
+}
+
+.mesa-float-shadow {
+    display: none;
+}
+
+.orbit-ring {
+    display: none;
+}
+
+.orbit-label {
+    display: none;
+}
+
+// --- Info bar (tiempo + total) DENTRO de la mesa — estilo sutil ---
+.mesa-info-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 10px;
+    // Overlay semitransparente suave — no tapa la textura de madera
+    background: rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    // El border-radius inferior coincide con la mesa
+    border-radius: 0 0 var(--mesa-card-radius) var(--mesa-card-radius);
+    z-index: 2;
+    gap: 4px;
+    min-width: 0;
+}
+
+.mesa-info-time {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: clamp(0.55rem, 1.1vw, 0.65rem);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.72);
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+
+    i {
+        font-size: 0.58rem;
+        color: rgba(255, 255, 255, 0.5);
+        flex-shrink: 0;
+    }
+
+    span {
+        color: rgba(255, 255, 255, 0.85);
+    }
+}
+
+.mesa-info-total {
+    font-size: clamp(0.58rem, 1.2vw, 0.68rem);
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+}
+
+/* ===================================================
+   KEYFRAMES
+   =================================================== */
+
+// Animación de latido para el punto rojo cuando está ocupada
+@keyframes pulso-rojo {
+    0% {
+        box-shadow: 0 0 0 0 rgba($color-rojo, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba($color-rojo, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba($color-rojo, 0);
+    }
+}
+
+// --- PrimeNG Tab Overrides ---
+:host ::ng-deep {
+
+    /* Tab text colors — warm natural tones */
+    .p-tab,
+    .p-tablist-tab-link {
+        color: #5c3d1e !important;
+        --p-tabs-tab-color: #5c3d1e !important;
+    }
+
+    /* Active tab */
+    .p-tab-active,
+    [data-p-active="true"],
+    .p-tab-active .p-tab-link,
+    [data-p-active="true"] .p-tab-link,
+    .p-tab-active .p-tab,
+    [data-p-active="true"] .p-tab,
     [data-p-active="true"] .p-tablist-tab-link {
-        color: #22c55e !important;
-        --p-tabs-tab-color: #22c55e !important;
-        --p-tabs-tab-active-color: #22c55e !important;
+        color: #5c7a2a !important;
+        --p-tabs-tab-color: #5c7a2a !important;
+        --p-tabs-tab-active-color: #5c7a2a !important;
     }
 
     .p-tabview .p-tabview-nav,
     .p-tablist-tab-list {
-        background: rgb(9 27 67) !important;
-        border-bottom: 1px solid #1e3a8a !important; /* border-blue-900 */
-        border-radius: 1rem 1rem 0 0 !important; /* rounded-t-2xl */
+        background: #f5ede0 !important;
+        border-bottom: 2px solid #d4a878 !important;
+        border-radius: 1rem 1rem 0 0 !important;
         padding: 0 1rem !important;
         margin: 0 !important;
-        
-        li, .p-tabview-nav-content, p-tabpanel, p-tab, p-tablist, .p-tab {
-            .p-tabview-nav-link, .p-tablist-tab-link, a.p-tabview-nav-link, .p-tab, .p-tab-link {
+
+        li,
+        .p-tabview-nav-content,
+        p-tabpanel,
+        p-tab,
+        p-tablist,
+        .p-tab {
+
+            .p-tabview-nav-link,
+            .p-tablist-tab-link,
+            a.p-tabview-nav-link,
+            .p-tab,
+            .p-tab-link {
                 background: transparent !important;
                 border: none !important;
                 border-bottom: 3px solid transparent !important;
-                color: #ffffff !important; /* text white */
+                color: #7c5220 !important;
                 font-weight: 700 !important;
-                font-size: 1.1rem !important;
-                padding: 1.25rem 1.5rem !important;
-                margin-bottom: -1px !important;
+                font-size: 1rem !important;
+                padding: 1rem 1.5rem !important;
+                margin-bottom: -2px !important;
                 transition: all 0.2s !important;
 
                 &:not(.p-disabled):focus {
                     box-shadow: none !important;
                 }
             }
-            
+
             &:not(.p-highlight):not([data-p-active="true"]):not(.p-disabled):hover .p-tabview-nav-link,
             &:not(.p-highlight):not([data-p-active="true"]):not(.p-disabled):hover .p-tablist-tab-link {
-                color: #ffffff !important;
-                background: rgba(255, 255, 255, 0.1) !important;
+                color: #5c3d1e !important;
+                background: rgba(180, 110, 50, 0.08) !important;
                 border-color: transparent !important;
             }
 
@@ -227,26 +600,1417 @@
             &[data-p-active="true"] .p-tabview-nav-link,
             &[data-p-active="true"] .p-tablist-tab-link,
             &.p-tablist-tab-active .p-tabview-nav-link {
-                color: #22c55e !important; /* Green color for selected tab */
-                border-color: #22c55e !important; /* Green underline for selected tab */
+                color: #4a7c20 !important;
+                border-color: #4a7c20 !important;
                 background: transparent !important;
-                --p-tabs-tab-color: #22c55e !important; /* Force injected var to green */
-                --p-tabs-tab-active-color: #22c55e !important;
+                --p-tabs-tab-color: #4a7c20 !important;
+                --p-tabs-tab-active-color: #4a7c20 !important;
             }
-            
+
             &[data-p-active="true"] .p-tab,
             &.p-tab-active .p-tab,
             &.p-highlight .p-tab {
-                color: #22c55e !important;
-                --p-tabs-tab-color: #22c55e !important;
+                color: #4a7c20 !important;
+                --p-tabs-tab-color: #4a7c20 !important;
             }
         }
     }
-    
+
     .p-tabview .p-tabview-panels,
-    .p-tabpanels {
+    .p-tabpanels,
+    .p-tabpanel,
+    .p-tabview-panel {
         background: transparent !important;
         padding: 0 !important;
         border: 0 !important;
+    }
+}
+
+/* ===================================================
+   PANEL MESA — Selección activa de mesa (BEM)
+   =================================================== */
+
+// Keyframe: borde pulsante cuando highlightToolbar = true
+@keyframes panel-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba($color-madera-clara, 0.5), 0 8px 32px rgba(0, 0, 0, 0.08);
+    }
+
+    50% {
+        box-shadow: 0 0 0 6px rgba($color-madera-clara, 0), 0 12px 40px rgba(0, 0, 0, 0.12);
+    }
+}
+
+@keyframes panel-slidein {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Panel principal
+.panel-mesa {
+    background: #fff;
+    border: 1.5px solid rgba(201, 140, 90, 0.18);
+    border-radius: 1.25rem;
+    overflow: visible;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0;
+    transition: box-shadow 0.4s ease, border-color 0.4s ease;
+    animation: panel-slidein 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+    // Focus — cuando highlightToolbar activo
+    &--highlight {
+        border-color: $color-madera-clara;
+        animation: panel-pulse 1.4s ease-in-out 3;
+    }
+
+    // ── Cabecera ────────────────────────────────────────────
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem 0.85rem;
+        border-bottom: 1.5px solid rgba(201, 140, 90, 0.12);
+        background: linear-gradient(135deg, #fdf6ee 0%, #fff 60%);
+        border-radius: 1.25rem 1.25rem 0 0;
+        flex-wrap: wrap;
+    }
+
+    &__header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    &__header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+
+    // Círculo-insignia con ícono de mesa
+    &__badge {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, $color-madera-clara, $color-madera-oscura);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba($color-madera-oscura, 0.25);
+
+        i {
+            color: #fff;
+            font-size: 1.1rem;
+        }
+    }
+
+    &__title-group {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+    }
+
+    &__label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: $color-madera-clara;
+    }
+
+    &__title {
+        font-size: 1.35rem;
+        font-weight: 900;
+        color: #1c1917;
+        margin: 0;
+        letter-spacing: -0.02em;
+    }
+
+    // Botón imprimir (discret pill en cabecera)
+    &__print-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        border: 1.5px solid rgba(220, 38, 38, 0.25);
+        background: rgba(254, 242, 242, 0.8);
+        color: #dc2626;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s, transform 0.15s;
+
+        &:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+            color: #fff;
+            transform: scale(1.04);
+        }
+
+        &:active {
+            transform: scale(0.97);
+        }
+    }
+
+    // Chip del mozo
+    &__mozo-tag {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.8rem;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        color: #1d4ed8;
+        font-size: 0.75rem;
+        font-weight: 700;
+
+        i {
+            font-size: 0.65rem;
+        }
+    }
+
+    // Total pill en cabecera
+    &__total-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        padding: 0.3rem 0.9rem;
+        background: linear-gradient(135deg, #1e293b, #334155);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(30, 41, 59, 0.25);
+    }
+
+    &__total-label {
+        font-size: 0.55rem;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    &__total-amount {
+        font-size: 1.05rem;
+        font-weight: 900;
+        color: #fff;
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+    }
+
+    // Botón cerrar (X)
+    &__close-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1.5px solid #e5e7eb;
+        background: #f9fafb;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s, transform 0.15s;
+        font-size: 0.85rem;
+
+        &:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #dc2626;
+            transform: rotate(90deg);
+        }
+    }
+
+    // ── Cuenta de mesa ──────────────────────────────────────
+    &__cuenta {
+        padding: 0 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    &__cuenta-header {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: #9ca3af;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px dashed #e5e7eb;
+        margin-bottom: 0.25rem;
+
+        i {
+            font-size: 0.65rem;
+        }
+    }
+
+    &__items {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.55rem 0.5rem;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.15s;
+        border-radius: 8px;
+        margin: 0 -0.5rem;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &:hover {
+            background: #fafaf9;
+        }
+    }
+
+    &__item-qty {
+        width: 24px;
+        height: 24px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+        font-size: 0.8rem;
+        font-weight: 900;
+        font-family: 'Courier New', monospace;
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    &__item-name {
+        flex: 1;
+        font-size: 0.83rem;
+        font-weight: 600;
+        color: #374151;
+        line-height: 1.3;
+    }
+
+    &__item-price {
+        font-size: 0.83rem;
+        font-weight: 800;
+        color: #111827;
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+    }
+
+    // Estado vacío
+    &__empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 1.8rem 0;
+        color: #d1d5db;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+
+        i {
+            font-size: 1.8rem;
+        }
+    }
+
+    // Pie con total
+    &__cuenta-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        padding: 0.8rem 0 0.2rem;
+        margin-top: 0.4rem;
+        border-top: 2px solid #111827;
+    }
+
+    &__cuenta-footer-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+    }
+
+    &__cuenta-footer-total {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: #111827;
+        letter-spacing: -0.03em;
+        line-height: 1;
+    }
+
+    // ── Botonera ────────────────────────────────────────────
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        padding: 0.85rem 1.25rem 1.1rem;
+        border-top: 1.5px solid rgba(201, 140, 90, 0.1);
+        background: linear-gradient(to bottom, #fdf6ee, #fff9f3);
+        border-radius: 0 0 1.25rem 1.25rem;
+        align-items: stretch;
+    }
+}
+
+/* ===================================================
+   ACTION BUTTONS — .acc-btn (BEM)
+   =================================================== */
+
+// Base
+.acc-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    min-height: 68px;
+    min-width: 64px;
+    padding: 0.5rem 0.6rem;
+    border-radius: 14px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition:
+        background 0.22s ease,
+        border-color 0.22s ease,
+        transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.22s ease;
+
+    &:hover {
+        transform: translateY(-3px) scale(1.03);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    &__icon {
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+
+    // Círculo blanco translúcido para cobrar/comprobante
+    &__icon--circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        font-size: 0.85rem;
+    }
+
+    &__label {
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        line-height: 1;
+    }
+
+    &__label--lg {
+        font-size: 0.78rem;
+        letter-spacing: 0.1em;
+    }
+
+    &__chevron {
+        font-size: 0.6rem;
+        opacity: 0.8;
+        transition: transform 0.2s;
+
+        &--down {
+            transform: rotate(180deg);
+        }
+    }
+
+    // — Color variants —
+    &--blue {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+
+        &:hover {
+            background: #2563eb;
+            border-color: #1d4ed8;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+        }
+    }
+
+    &--violet {
+        background: #f5f3ff;
+        border-color: #ddd6fe;
+        color: #7c3aed;
+
+        &:hover {
+            background: #7c3aed;
+            border-color: #6d28d9;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+        }
+    }
+
+    &--orange {
+        background: #fff7ed;
+        border-color: #fed7aa;
+        color: #ea580c;
+
+        &:hover {
+            background: #ea580c;
+            border-color: #c2410c;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(234, 88, 12, 0.3);
+        }
+    }
+
+    &--cyan {
+        background: #ecfeff;
+        border-color: #a5f3fc;
+        color: #0891b2;
+
+        &:hover {
+            background: #0891b2;
+            border-color: #0e7490;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(8, 145, 178, 0.3);
+        }
+    }
+
+    // Cobrar — destacado verde, modo fila con iconos grandes
+    &--cobrar {
+        flex-direction: row;
+        gap: 0.55rem;
+        min-width: 120px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-color: #047857;
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(5, 150, 105, 0.3);
+        flex: 1 1 auto;
+        max-width: 180px;
+
+        &:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            box-shadow: 0 10px 24px rgba(5, 150, 105, 0.4);
+            transform: translateY(-4px) scale(1.03);
+        }
+    }
+
+    // Comprobante — destacado azul oscuro, modo fila
+    &--comprobante {
+        flex-direction: row;
+        gap: 0.55rem;
+        min-width: 130px;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        border-color: #1e40af;
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(29, 78, 216, 0.25);
+        flex: 1 1 auto;
+        max-width: 200px;
+        width: 100%;
+
+        &:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            box-shadow: 0 10px 24px rgba(29, 78, 216, 0.35);
+            transform: translateY(-4px) scale(1.03);
+        }
+    }
+
+    &--red {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #dc2626;
+
+        &:hover {
+            background: #ef4444;
+            border-color: #dc2626;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3);
+        }
+    }
+}
+
+// Wrapper relativo para dropdown de comprobante
+.acc-btn-wrap {
+    position: relative;
+}
+
+/* ===================================================
+   COMPROBANTE DROPDOWN
+   =================================================== */
+.comp-dropdown {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    min-width: 200px;
+    width: max-content;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    z-index: 100;
+    animation: panel-slidein 0.2s ease both;
+
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: background 0.15s;
+        border-bottom: 1px solid #f3f4f6;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &--factura:hover {
+            background: #eff6ff;
+        }
+
+        &--boleta:hover {
+            background: #f0fdf4;
+        }
+    }
+
+    &__icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.8rem;
+
+        .comp-dropdown__item--factura & {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .comp-dropdown__item--boleta & {
+            background: #d1fae5;
+            color: #059669;
+        }
+    }
+
+    &__text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+
+        strong {
+            font-size: 0.78rem;
+            font-weight: 900;
+            color: #111827;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        small {
+            font-size: 0.66rem;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+    }
+}
+
+/* ===================================================
+   LAYOUT SPLIT: Mesa seleccionada (detalle)
+   =================================================== */
+
+@keyframes detalle-slidein {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+// Contenedor externo del layout split
+.mesa-detalle-layout {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    animation: detalle-slidein 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    min-height: 500px;
+
+    // Flash cuando highlightToolbar
+    &--highlight {
+        .mesa-detalle-left .mesa--detalle {
+            outline: 3px solid $color-madera-clara;
+            outline-offset: 6px;
+            animation: panel-pulse 1.4s ease-in-out 3;
+        }
+    }
+}
+
+// ── Columna izquierda: tarjeta + botones ────────────────
+.mesa-detalle-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    flex-shrink: 0;
+    // Ocupa un ancho fijo en pantallas grandes
+    width: 240px;
+}
+
+// Wrapper de la tarjeta grande de mesa
+.mesa-detalle-card-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+// Mesa en modo detalle — más grande que la del plano
+.mesa--detalle {
+    width: 210px !important;
+    height: 210px !important;
+    border-radius: 36px !important;
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.18),
+        inset 0 3px 6px rgba(255, 255, 255, 0.35) !important;
+    cursor: default !important;
+
+    &:hover {
+        transform: none !important;
+    }
+
+    .mesa__titulo {
+        font-size: 1.5rem !important;
+        margin-bottom: 14px !important;
+    }
+}
+
+// Stats (tiempo + total) incrustados en la tarjeta grande
+.mesa-detalle-card__stats {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    z-index: 1;
+}
+
+.mesa-detalle-card__time {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(0, 0, 0, 0.18);
+    padding: 3px 10px;
+    border-radius: 20px;
+
+    i {
+        font-size: 0.65rem;
+    }
+}
+
+.mesa-detalle-card__total {
+    font-size: 1rem;
+    font-weight: 900;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 3px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+}
+
+// Grilla de botones debajo de la mesa
+.mesa-detalle-btns {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+
+    // Cobrar y Comprobante abarcan el ancho completo
+    .acc-btn--cobrar,
+    .acc-btn-wrap {
+        grid-column: span 2;
+        max-width: 100%;
+    }
+
+    .acc-btn-wrap {
+        .acc-btn--comprobante {
+            width: 100%;
+        }
+    }
+}
+
+// ── Columna derecha: panel de cuenta ────────────────────
+.mesa-detalle-right {
+    flex: 1;
+    min-width: 0;
+
+    .panel-mesa {
+        // El panel ocupa todo el alto disponible
+        height: 100%;
+
+        // Items con scroll si hay muchos
+        .panel-mesa__items {
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 4px;
+
+            &::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: rgba(160, 130, 90, 0.25);
+                border-radius: 4px;
+            }
+        }
+    }
+}
+
+// ── Responsive: en móvil pasa a columna vertical ────────
+@media (max-width: 640px) {
+    .mesa-detalle-layout {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .mesa-detalle-left {
+        width: 100%;
+    }
+
+    .mesa--detalle {
+        width: 180px !important;
+        height: 180px !important;
+    }
+
+    .mesa-detalle-btns {
+        grid-template-columns: repeat(4, 1fr);
+
+        .acc-btn--cobrar,
+        .acc-btn-wrap {
+            grid-column: span 2;
+        }
+    }
+}
+
+/* ===================================================
+   NUEVO LAYOUT 3 COLUMNAS: mesa-page-layout
+   [Sidebar botones] | [Plano mayólica] | [Panel info]
+   =================================================== */
+
+@keyframes sidebar-slidein {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes infocol-slidein {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+// Contenedor principal — siempre un flex row
+.mesa-page-layout {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    min-height: 0;
+    // Cuando hay mesa seleccionada los sidebars aparecen
+}
+
+// ── Columna CENTRAL: plano de mesas ────────────────────
+.mesa-floor-col {
+    flex: 1;
+    min-width: 0;
+    // El tabView ya tiene su propio overflow-x en mesa-holo-grid
+}
+
+// ── Columna IZQUIERDA: sidebar de botones ──────────────
+.mesa-actions-sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1.5px solid rgba(201, 140, 90, 0.14);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    animation: sidebar-slidein 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+    overflow: visible;
+    position: relative;
+    z-index: 10;
+}
+
+// Header: insignia + nombre + close
+.sidebar-mesa-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 0.8rem 0.65rem;
+    border-bottom: 1.5px solid rgba(201, 140, 90, 0.12);
+    background: linear-gradient(135deg, #fdf6ee, #fff);
+}
+
+.sidebar-mesa-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    color: #fff;
+    transition: background 0.3s;
+
+    &--ocupada {
+        background: linear-gradient(135deg, $color-rojo, darken($color-rojo, 10%));
+        box-shadow: 0 4px 12px rgba($color-rojo, 0.3);
+    }
+
+    &--libre {
+        background: linear-gradient(135deg, $color-turquesa, darken($color-turquesa, 10%));
+        box-shadow: 0 4px 12px rgba($color-turquesa, 0.3);
+    }
+}
+
+.sidebar-mesa-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar-mesa-piso {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: $color-madera-clara;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.sidebar-mesa-num {
+    font-size: 0.9rem;
+    font-weight: 900;
+    color: #1c1917;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-mesa-status {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: $color-turquesa;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+
+    &--ocupada {
+        color: $color-rojo;
+    }
+}
+
+.sidebar-close-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid #e5e7eb;
+    background: #f9fafb;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+
+    &:hover {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #dc2626;
+        transform: rotate(90deg);
+    }
+}
+
+// Stats: tiempo + total
+.sidebar-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.5rem 0.8rem;
+    background: #f9fafb;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sidebar-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6b7280;
+
+    i {
+        font-size: 0.65rem;
+        color: #9ca3af;
+    }
+
+    &--total {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-top: 0.2rem;
+        padding-top: 0.25rem;
+        border-top: 1px dashed #e5e7eb;
+    }
+}
+
+.sidebar-stat__label {
+    font-size: 0.6rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+
+.sidebar-stat__value {
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #111827;
+    letter-spacing: -0.02em;
+}
+
+// Divisor
+.sidebar-divider {
+    height: 1px;
+    background: rgba(201, 140, 90, 0.10);
+    margin: 0.3rem 0.8rem;
+}
+
+// Lista de botones verticales
+.sidebar-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.35rem 0.5rem;
+    flex: 1;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+        width: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(160, 130, 90, 0.2);
+        border-radius: 3px;
+    }
+}
+
+// Botón de barra lateral — estilo horizontal icon+label
+.sbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    background: transparent;
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.18s ease;
+    text-align: left;
+
+    &:hover {
+        transform: translateX(3px);
+    }
+
+    &:active {
+        transform: scale(0.97);
+    }
+
+    &__icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.95rem;
+        transition: transform 0.15s;
+    }
+
+    &__label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        flex: 1;
+        text-align: left;
+    }
+
+    &__arrow {
+        font-size: 0.6rem;
+        opacity: 0.6;
+        transition: transform 0.2s;
+        margin-left: auto;
+
+        &--open {
+            transform: rotate(90deg);
+        }
+    }
+
+    // ── Variantes de color ────────────────────────────
+    &--blue {
+        color: #1d4ed8;
+
+        .sbar-btn__icon {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        &:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+        }
+    }
+
+    &--violet {
+        color: #7c3aed;
+
+        .sbar-btn__icon {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        &:hover {
+            background: #f5f3ff;
+            border-color: #ddd6fe;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.12);
+        }
+    }
+
+    &--orange {
+        color: #ea580c;
+
+        .sbar-btn__icon {
+            background: #ffedd5;
+            color: #ea580c;
+        }
+
+        &:hover {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.12);
+        }
+    }
+
+    &--gray {
+        color: #374151;
+
+        .sbar-btn__icon {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        &:hover {
+            background: #f9fafb;
+            border-color: #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+    }
+
+    &--cyan {
+        color: #0891b2;
+
+        .sbar-btn__icon {
+            background: #cffafe;
+            color: #0891b2;
+        }
+
+        &:hover {
+            background: #ecfeff;
+            border-color: #a5f3fc;
+            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.12);
+        }
+    }
+
+    // Cobrar — destacado verde
+    &--cobrar {
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-color: #047857;
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+
+        .sbar-btn__icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .sbar-btn__label {
+            font-size: 0.8rem;
+            letter-spacing: 0.04em;
+        }
+
+        &:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.35);
+            transform: translateX(2px) scale(1.01);
+        }
+    }
+
+    // Comprobante — azul oscuro
+    &--comprobante {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        border-color: #1d4ed8;
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.22);
+
+        .sbar-btn__icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .sbar-btn__label {
+            font-size: 0.75rem;
+        }
+
+        .sbar-btn__arrow {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        &:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.32);
+            transform: translateX(2px) scale(1.01);
+        }
+    }
+
+    &--red {
+        color: #dc2626;
+
+        .sbar-btn__icon {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        &:hover {
+            background: #fef2f2;
+            border-color: #fecaca;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.12);
+        }
+    }
+}
+
+// Wrapper relativo para el dropdown de comprobante
+.sbar-dropdown-wrap {
+    position: relative;
+}
+
+// Dropdown del comprobante (sale a la DERECHA de la sidebar)
+.sbar-comp-dropdown {
+    position: absolute;
+    top: 0;
+    left: calc(100% + 8px);
+    width: 210px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    z-index: 200;
+    animation: sidebar-slidein 0.2s ease both;
+}
+
+.sbar-comp-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid #f3f4f6;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &--factura:hover {
+        background: #eff6ff;
+    }
+
+    &--boleta:hover {
+        background: #f0fdf4;
+    }
+}
+
+.sbar-comp-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+
+    .sbar-comp-item--factura & {
+        background: #dbeafe;
+        color: #2563eb;
+    }
+
+    .sbar-comp-item--boleta & {
+        background: #d1fae5;
+        color: #059669;
+    }
+}
+
+.sbar-comp-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+
+    strong {
+        font-size: 0.78rem;
+        font-weight: 900;
+        color: #111827;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    small {
+        font-size: 0.65rem;
+        color: #9ca3af;
+        font-weight: 500;
+    }
+}
+
+// ── Columna DERECHA: panel de info ────────────────────
+.mesa-info-col {
+    width: 300px;
+    flex-shrink: 0;
+    border-left: 1.5px solid rgba(201, 140, 90, 0.14);
+    animation: infocol-slidein 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(160, 130, 90, 0.2);
+        border-radius: 4px;
+    }
+
+    .panel-mesa {
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        border-left: 0;
+        height: 100%;
+
+        &__header {
+            border-radius: 0;
+        }
+
+        &__items {
+            max-height: 300px;
+            overflow-y: auto;
+
+            &::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: rgba(160, 130, 90, 0.2);
+                border-radius: 4px;
+            }
+        }
+
+        &__actions {
+            border-radius: 0;
+        }
+    }
+}
+
+// Responsive: en tablets y móvil apila todo verticalmente
+@media (max-width: 900px) {
+    .mesa-page-layout {
+        flex-direction: column;
+    }
+
+    .mesa-actions-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1.5px solid rgba(201, 140, 90, 0.14);
+        animation: none;
+
+        .sidebar-btns {
+            flex-direction: row;
+            flex-wrap: wrap;
+            overflow-y: visible;
+            overflow-x: auto;
+        }
+
+        .sbar-btn {
+            width: auto;
+            flex: 0 0 auto;
+            min-width: 90px;
+        }
+    }
+
+    .mesa-info-col {
+        width: 100%;
+        border-left: none;
+        border-top: 1.5px solid rgba(201, 140, 90, 0.14);
+        animation: none;
     }
 }

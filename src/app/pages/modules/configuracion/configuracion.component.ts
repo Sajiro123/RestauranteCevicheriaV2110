@@ -12,6 +12,7 @@ import { MenuFormComponent } from './menu/menu-form/menu-form/menu-form.componen
 import { PerfilPermisosComponent } from './menu/perfil-permisos/perfil-permisos.component';
 import MenuListComponent from "./menu/menu-list/menu-list.component";
 import { RouterModule } from '@angular/router';
+import { AperturasComponent } from './aperturas/aperturas.component';
 
 @Component({
     selector: 'app-configuracion',
@@ -24,6 +25,7 @@ import { RouterModule } from '@angular/router';
         UsuarioComponent,
         MenuListComponent,
         PerfilPermisosComponent,
+        AperturasComponent,
         CommonModule,
         FormsModule,
         ImportsModule,
@@ -36,4 +38,14 @@ import { RouterModule } from '@angular/router';
 export class ConfiguracionComponent {
     selector: boolean = false;
     seleccciontext: string = '';
+    idperfil: number = 0;
+
+    constructor() {
+        try {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            this.idperfil = currentUser.idperfil || 0;
+        } catch (e) {
+            this.idperfil = 0;
+        }
+    }
 }

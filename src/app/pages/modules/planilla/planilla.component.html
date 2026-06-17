@@ -237,6 +237,16 @@
                             <input type="number" class="field-input" [(ngModel)]="p.descuento"
                                 (ngModelChange)="recalcularNeto(p)">
                         </div>
+                        <!-- <div class="form-field">
+                            <label style="font-size: 0.75rem; font-weight: 600;">Tipo Descuento</label>
+                            <select class="field-input" [(ngModel)]="p.tipo_descuento">
+                                <option [ngValue]="1">Descuento</option>
+                                <option [ngValue]="2">Adelanto</option>
+                            </select>
+                        </div> -->
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; margin-bottom: 1rem;">
                         <div class="form-field">
                             <label style="font-size: 0.75rem; font-weight: 600; color: #059669;">Extra (S/)</label>
                             <input type="number" class="field-input" [(ngModel)]="p.extra"
@@ -314,6 +324,14 @@
                 </div>
 
                 <div class="form-field">
+                    <label>Tipo <span class="req">*</span></label>
+                    <select class="field-input" formControlName="tipo">
+                        <option [ngValue]="1">1 — Descuento</option>
+                        <option [ngValue]="2">2 — Adelanto</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
                     <label>Notas / Motivo</label>
                     <textarea class="field-input" formControlName="notas" rows="3"
                         placeholder="Ej: Adelanto por emergencia familiar..."></textarea>
@@ -365,6 +383,11 @@
                         <div class="adelanto-item-name">{{ a.nombre_persona }}</div>
                         <div class="adelanto-item-meta">
                             <span><i class="pi pi-calendar"></i> {{ a.fecha_adelanto | date:'dd/MM/yyyy' }}</span>
+                            <span class="adelanto-tipo-badge" [style.background]="a.tipo === 2 ? '#fef3c7' : '#fee2e2'"
+                                [style.color]="a.tipo === 2 ? '#b45309' : '#b91c1c'"
+                                [style.border]="a.tipo === 2 ? '1px solid #fcd34d' : '1px solid #fca5a5'">
+                                {{ a.tipo === 2 ? '2 — Adelanto' : '1 — Descuento' }}
+                            </span>
                             <span *ngIf="a.notas" class="adelanto-item-nota">{{ a.notas }}</span>
                         </div>
                     </div>
@@ -374,8 +397,7 @@
                             (click)="marcarDescontado(a)">
                             <i class="pi pi-check"></i>
                         </button>
-                        <button class="btn-adelanto-action btn-del" title="Eliminar"
-                            (click)="eliminarAdelanto(a)">
+                        <button class="btn-adelanto-action btn-del" title="Eliminar" (click)="eliminarAdelanto(a)">
                             <i class="pi pi-trash"></i>
                         </button>
                     </div>

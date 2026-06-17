@@ -18,7 +18,7 @@ export class AperturaComponent {
     fecha_actual: string = '';
     cajaForm: FormGroup;
     texto_estado_caja: any = '';
-    estado_caja = 0;
+    estado_caja: number | null = null;
     GastosForm: FormGroup;
     EditGastoForm: FormGroup;
     CategoriaGastosList: { descripcion: string; idcategoriagastos: number }[] = [];
@@ -39,7 +39,14 @@ export class AperturaComponent {
     gastoEditando: any = null;
     modoEdicion = false;
 
-    constructor(private AperturaService_: AperturaService, private pedidoService_: PedidoService, private fb: FormBuilder, private messageService: MessageService, private confirmationService: ConfirmationService, private cd: ChangeDetectorRef) {
+    constructor(
+        private AperturaService_: AperturaService,
+        private pedidoService_: PedidoService,
+        private fb: FormBuilder,
+        private messageService: MessageService,
+        private confirmationService: ConfirmationService,
+        private cd: ChangeDetectorRef
+    ) {
         this.cajaForm = this.fb.group({
             estado: [1],
             caja: ['1', Validators.required],
@@ -88,23 +95,15 @@ export class AperturaComponent {
         this.ListarTrabajadores();
     }
 
-    GuardarCaja(data: any) {
-        if (data == 0) {
-            // Guard: no duplicar apertura si ya existe una hoy
-            if (this.data_apertura.length > 0) {
-                this.messageService.add({
-                    severity: 'warn',
-                    summary: 'Caja ya registrada',
-                    detail: 'Ya existe una apertura de caja para el día de hoy.',
-                    life: 4000
-                });
-                return;
-            }
+    GuardarCaja() {
+        debugger;
+        if (this.estado_caja == null) {
+            // ── SIN APERTURA: Abrir caja ──────────────────────────
             if (this.cajaForm.invalid) {
                 this.cajaForm.markAllAsTouched();
                 return;
             }
-            this.AperturaService_.registrarCaja(this.cajaForm.value).subscribe((response) => {
+            this.AperturaService_.registrarCaja(this.cajaForm.value).subscribe(() => {
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Apertura registrada',
@@ -113,13 +112,14 @@ export class AperturaComponent {
                 });
                 this.ListAperturaNow();
             });
-        } else {
+        } else if (this.estado_caja == 1) {
+            // ── ESTADO 1 (Abierta): Cerrar caja ──────────────────
             this.confirmationService.confirm({
                 message: '¿Estás seguro de cerrar la caja?',
                 header: 'Cerrar Caja',
                 icon: 'pi pi-exclamation-triangle',
                 accept: () => {
-                    this.AperturaService_.cerrarCaja(this.cajaForm.value).subscribe((response) => {
+                    this.AperturaService_.cerrarCaja(this.cajaForm.value).subscribe(() => {
                         this.messageService.add({
                             severity: 'success',
                             summary: 'Caja cerrada',
@@ -132,6 +132,7 @@ export class AperturaComponent {
                 }
             });
         }
+        // estado_caja === 2 (Cerrada): el botón no aparece en el HTML
     }
 
     activarEdicion() {
@@ -300,58 +301,52 @@ export class AperturaComponent {
 
     ListAperturaNow() {
         this.AperturaService_.ListarAperturaHoy().subscribe((response) => {
-            debugger;
             if (response.success) {
-                if (response.data) {
-                    if (response.data.length != 0) {
-                        this.estado_caja = response.data[0]?.estado;
-                        switch (response.data[0]?.estado) {
-                            case 2:
-                                this.texto_estado_caja = 'Caja ya se Cerro (Hoy)';
-                                this.cajaForm.disable();
-                                break;
-                            case 1:
-                                this.texto_estado_caja = 'Caja Abierta deseas cerrarla?';
-                                this.cajaForm.enable();
-                                break;
-                            default:
-                                this.cajaForm.enable();
-                                this.texto_estado_caja = 'Abrir Caja?';
-                                break;
-                        }
+                this.data_apertura = []; // Limpiar antes de asignar
+                if (response.data && response.data.length > 0) {
+                    const apertura = response.data[0];
+                    this.estado_caja = apertura.estado ?? null;
 
-                        this.data_apertura.push(response.data[0]);
-
-                        // Convertir trabajadores de string a array de números
-                        let trabajadoresArray: number[] = [];
-                        if (response.data[0]?.trabajadores) {
-                            trabajadoresArray = response.data[0].trabajadores
-                                .split(',')
-                                .map((id: string) => parseInt(id.trim()))
-                                .filter((id: number) => !isNaN(id));
-                        }
-
-                        this.cajaForm.patchValue({
-                            caja: 1,
-                            responsable: response.data[0]?.responsable,
-                            monto: response.data[0]?.total,
-                            turno: 'Mañana',
-                            estado: response.data[0]?.estado,
-                            trabajadores: trabajadoresArray
-                        });
-                    } else {
-                        this.cajaForm.enable();
-                        this.texto_estado_caja = 'Abrir Caja?';
+                    switch (this.estado_caja) {
+                        case 2:
+                            this.texto_estado_caja = 'Caja ya se Cerro (Hoy)';
+                            this.cajaForm.disable();
+                            break;
+                        case 1:
+                            this.texto_estado_caja = 'Caja Abierta deseas cerrarla?';
+                            this.cajaForm.enable();
+                            break;
+                        default:
+                            this.cajaForm.enable();
+                            this.texto_estado_caja = 'Abrir Caja?';
+                            break;
                     }
+
+                    this.data_apertura = [apertura];
+
+                    // Convertir trabajadores de string a array de números
+                    let trabajadoresArray: number[] = [];
+                    if (apertura.trabajadores) {
+                        trabajadoresArray = apertura.trabajadores
+                            .split(',')
+                            .map((id: string) => parseInt(id.trim()))
+                            .filter((id: number) => !isNaN(id));
+                    }
+
+                    this.cajaForm.patchValue({
+                        caja: 1,
+                        responsable: apertura.responsable,
+                        monto: apertura.total,
+                        turno: apertura.turno || 'Mañana',
+                        estado: apertura.estado,
+                        trabajadores: trabajadoresArray
+                    });
                 } else {
-                    this.texto_estado_caja = 'Abrir Caja Cerrada';
-                    this.estado_caja = 0;
+                    // No hay registro hoy — caja aún no abierta
+                    this.estado_caja = null;
+                    this.texto_estado_caja = 'Abrir Caja?';
+                    this.cajaForm.enable();
                 }
-                // else {
-                //     this.texto_estado_caja = 'Abrir Caja Cerrada';
-                //     this.estado_caja = 0;
-                //     this.cajaForm.enable();
-                // }
             } else {
                 alert('Hubo un problema al conectar con el servidor');
             }

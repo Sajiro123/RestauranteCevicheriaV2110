@@ -901,6 +901,17 @@ tfoot td {
     white-space: nowrap;
 }
 
+.adelanto-tipo-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
 .adelanto-item-monto {
     font-weight: 800;
     font-size: 0.95rem;

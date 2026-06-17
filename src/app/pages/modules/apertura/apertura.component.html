@@ -13,18 +13,18 @@
                 </div>
 
                 <div class="estado-badge" [ngClass]="{
-                    'badge-open': data_apertura.length > 0 && cajaForm.get('estado')?.value == 1,
-                    'badge-closed': cajaForm.get('estado')?.value == 2,
-                    'badge-none': data_apertura.length == 0
+                    'badge-open':   estado_caja == 1,
+                    'badge-closed': estado_caja == 2,
+                    'badge-none':   estado_caja == null
                 }">
                     <span class="badge-label">ESTADO ACTUAL</span>
-                    <span class="badge-value" *ngIf="data_apertura.length == 0">
-                        <span class="dot dot-red"></span> Cerrado
+                    <span class="badge-value" *ngIf="estado_caja == null">
+                        <span class="dot dot-red"></span> Sin Apertura
                     </span>
-                    <span class="badge-value" *ngIf="data_apertura.length > 0 && cajaForm.get('estado')?.value == 1">
+                    <span class="badge-value" *ngIf="estado_caja == 1">
                         <span class="dot dot-green"></span> Abierto
                     </span>
-                    <span class="badge-value" *ngIf="cajaForm.get('estado')?.value == 2">
+                    <span class="badge-value" *ngIf="estado_caja == 2">
                         <span class="dot dot-gray"></span> Cerrado (Hoy)
                     </span>
                 </div>
@@ -56,8 +56,8 @@
                     <input formControlName="estado" />
                 </div>
 
-                <!-- Form fields when caja is NOT open yet -->
-                <div class="estado-form" *ngIf="data_apertura.length == 0">
+                <!-- Form de apertura: solo cuando null (sin apertura hoy) -->
+                <div class="estado-form" *ngIf="estado_caja == null">
                     <div class="form-group">
                         <label>Seleccionar Turno</label>
                         <div class="turnos-grid">
@@ -92,6 +92,13 @@
                             [filter]="true" filterPlaceholder="Buscar..." display="chip" id="trabajadores"
                             [style]="{ width: '100%' }" [maxSelectedLabels]="trabajadoresList.length"
                             selectedItemsLabel="{0} trabajadores seleccionados">
+                            <ng-template let-worker pTemplate="item">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <img [src]="'https://ui-avatars.com/api/?name=' + worker.nombres + '&background=random&color=fff&bold=true'" 
+                                         alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;" />
+                                    <span>{{ worker.nombres }}</span>
+                                </div>
+                            </ng-template>
                         </p-multiSelect>
                     </div>
                     <div class="form-group">
@@ -103,15 +110,16 @@
                     </div>
                 </div>
 
-                <!-- Workers display / Edit mode when caja IS open -->
-                <div class="workers-display" *ngIf="data_apertura.length > 0">
+                <!-- Workers / detalle: visible cuando estado == 1 o == 2 -->
+                <div class="workers-display" *ngIf="estado_caja == 1 || estado_caja == 2">
 
                     <!-- MODO LECTURA -->
                     <ng-container *ngIf="!modoEdicion">
                         <div class="workers-display-header">
                             <i class="pi pi-users"></i>
                             <label>Personal en Campo</label>
-                            <span class="workers-count-badge">{{ cajaForm.get('trabajadores')?.value?.length || 0 }}</span>
+                            <span class="workers-count-badge">{{ cajaForm.get('trabajadores')?.value?.length || 0
+                                }}</span>
                         </div>
 
                         <!-- Alerta: caja ya abierta (solo lectura) -->
@@ -136,8 +144,9 @@
                         <div class="workers-list" *ngIf="cajaForm.get('trabajadores')?.value?.length > 0">
                             <div class="worker-item"
                                 *ngFor="let idp of cajaForm.get('trabajadores')?.value; let i = index">
-                                <div class="worker-avatar">
-                                    {{ getWorkerInitials(idp) }}
+                                <div class="worker-avatar" style="overflow: hidden;">
+                                    <img [src]="'https://ui-avatars.com/api/?name=' + getWorkerName(idp) + '&background=random&color=fff&bold=true'" 
+                                         alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;" />
                                 </div>
                                 <div class="worker-info">
                                     <span class="worker-name">{{ getWorkerName(idp) }}</span>
@@ -153,8 +162,7 @@
                         </div>
 
                         <!-- Botón editar (solo cuando estado=1, caja abierta) -->
-                        <button class="btn-edit-caja" type="button"
-                            *ngIf="cajaForm.get('estado')?.value == 1"
+                        <button class="btn-edit-caja" type="button" *ngIf="cajaForm.get('estado')?.value == 1"
                             (click)="activarEdicion()">
                             <i class="pi pi-pencil"></i> Editar Datos de Caja
                         </button>
@@ -197,12 +205,18 @@
                         <div class="form-group">
                             <label>Personal en Campo</label>
                             <p-multiSelect formControlName="trabajadores" [options]="trabajadoresList"
-                                optionLabel="nombres" optionValue="idpersona"
-                                placeholder="Seleccione trabajadores" [showToggleAll]="true"
-                                [filter]="true" filterPlaceholder="Buscar..." display="chip"
+                                optionLabel="nombres" optionValue="idpersona" placeholder="Seleccione trabajadores"
+                                [showToggleAll]="true" [filter]="true" filterPlaceholder="Buscar..." display="chip"
                                 id="trabajadores-edit" [style]="{ width: '100%' }"
                                 [maxSelectedLabels]="trabajadoresList.length"
                                 selectedItemsLabel="{0} trabajadores seleccionados">
+                                <ng-template let-worker pTemplate="item">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <img [src]="'https://ui-avatars.com/api/?name=' + worker.nombres + '&background=random&color=fff&bold=true'" 
+                                             alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;" />
+                                        <span>{{ worker.nombres }}</span>
+                                    </div>
+                                </ng-template>
                             </p-multiSelect>
                         </div>
                         <div class="form-group">
@@ -226,15 +240,13 @@
                 </div>
 
                 <!-- Botón principal: Abrir / Cerrar caja -->
-                <button class="btn-action" type="button"
-                    [disabled]="cajaForm.invalid || modoEdicion"
-                    *ngIf="texto_estado_caja != 'Caja ya se Cerro (Hoy)' && !modoEdicion"
-                    (click)="GuardarCaja(data_apertura.length)">
+                <button class="btn-action" type="button" *ngIf="estado_caja != 2 && !modoEdicion"
+                    [disabled]="(estado_caja == null && cajaForm.invalid) || modoEdicion" (click)="GuardarCaja()">
                     <i class="pi" [ngClass]="{
-                        'pi-lock-open': data_apertura.length == 0,
-                        'pi-lock': data_apertura.length > 0
+                        'pi-lock-open': estado_caja == null,
+                        'pi-lock':      estado_caja == 1
                     }"></i>
-                    {{ data_apertura.length == 0 ? 'Abrir Caja del Día' : 'Cerrar Caja del Día' }}
+                    {{ estado_caja == null ? 'Abrir Caja del Día' : 'Cerrar Caja del Día' }}
                 </button>
             </div>
         </div>
@@ -409,8 +421,33 @@
                         <span>S/ {{ cajaForm.get('monto')?.value }}</span>
                     </div>
                 </div>
-            </div>
-        </div>
+
+                <!-- Lista de Gastos (solo lectura) cuando la caja está cerrada -->
+                <div class="gastos-cierre" *ngIf="estado_caja == 2 && GastosList.length > 0">
+                    <div class="gastos-cierre-header">
+                        <i class="pi pi-list"></i>
+                        <span>Egresos del Día</span>
+                        <span class="gastos-cierre-count">{{ GastosList.length }}</span>
+                    </div>
+                    <div class="gastos-cierre-list">
+                        <div class="gasto-cierre-row" *ngFor="let gasto of GastosList">
+                            <div class="gasto-cierre-info">
+                                <span class="gasto-cierre-desc">{{ gasto.descripcion | uppercase }}</span>
+                                <span class="gasto-cierre-cat">{{ getCategoriaDescripcion(gasto.idcategoriagastos) }}</span>
+                            </div>
+                            <span class="gasto-cierre-monto">-S/ {{ gasto.monto | number:'1.2-2' }}</span>
+                        </div>
+                    </div>
+                    <div class="gastos-cierre-total">
+                        <span>Total Egresos</span>
+                        <span class="gastos-cierre-total-val">S/ {{ totalGastos() | number:'1.2-2' }}</span>
+                    </div>
+                </div>
+
+                <div class="gastos-cierre gastos-cierre-empty" *ngIf="estado_caja == 2 && GastosList.length == 0">
+                    <i class="pi pi-inbox"></i>
+                    <span>Sin egresos registrados hoy</span>
+                </div>
 
     </div>
 </div>

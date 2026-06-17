@@ -1,0 +1,241 @@
+<p-toast />
+<p-confirmDialog [style]="{ width: '420px' }" />
+
+<div class="aperturas-page">
+
+    <!-- ── HEADER ────────────────────────────────────────────── -->
+    <div class="ap-header">
+        <button class="btn-back" (click)="volver()" type="button">
+            <i class="pi pi-arrow-left"></i>
+            <span>Configuración</span>
+        </button>
+        <div class="ap-title-block">
+            <div class="ap-title-icon">
+                <i class="pi pi-calendar"></i>
+            </div>
+            <div>
+                <h1>Historial de Aperturas</h1>
+                <p class="ap-subtitle">Consulta, edita o elimina registros de apertura de caja.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── FILTROS ────────────────────────────────────────────── -->
+    <div class="ap-filters">
+        <div class="filter-field">
+            <span class="filter-label">Desde</span>
+            <input type="date" class="ap-input" [(ngModel)]="fechaDesde">
+        </div>
+        <div class="filter-field">
+            <span class="filter-label">Hasta</span>
+            <input type="date" class="ap-input" [(ngModel)]="fechaHasta">
+        </div>
+        <button class="btn-buscar" (click)="buscar()" type="button">
+            <i class="pi pi-search"></i> Buscar
+        </button>
+    </div>
+
+    <!-- ── TABLA ──────────────────────────────────────────────── -->
+    <div class="ap-table-card">
+
+        <!-- Loading -->
+        <div class="ap-loading" *ngIf="cargando">
+            <i class="pi pi-spin pi-spinner"></i> Cargando registros...
+        </div>
+
+        <!-- Vacío -->
+        <div class="ap-empty" *ngIf="!cargando && aperturas.length === 0">
+            <i class="pi pi-inbox"></i>
+            <span>No se encontraron aperturas para el rango seleccionado.</span>
+        </div>
+
+        <!-- Tabla -->
+        <div class="table-wrapper" *ngIf="!cargando && aperturas.length > 0">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Día</th>
+                        <th>Turno</th>
+                        <th>Responsable</th>
+                        <th>Personal</th>
+                        <th style="text-align:right;">Monto Inicial</th>
+                        <th style="text-align:center;">Estado</th>
+                        <th style="text-align:center; width:110px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let a of aperturas; let odd = odd" [class.row-odd]="odd">
+                        <!-- Fecha -->
+                        <td class="td-fecha">
+                            <i class="pi pi-calendar" style="margin-right:5px; color:#94a3b8;"></i>
+                            {{ a.fecha | date:'dd/MM/yyyy' }}
+                        </td>
+                        <!-- Día -->
+                        <td style="font-weight: 600; color: #475569; text-transform: capitalize;">
+                            {{ getDiaSemana(a.fecha) }}
+                        </td>
+                        <!-- Turno -->
+                        <td>
+                            <span class="badge-turno" [ngClass]="{
+                                'turno-manana': a.turno === 'Mañana',
+                                'turno-tarde':  a.turno === 'Tarde',
+                                'turno-noche':  a.turno === 'Noche'
+                            }">
+                                <i class="pi" [ngClass]="{
+                                    'pi-sun':   a.turno === 'Mañana',
+                                    'pi-cloud': a.turno === 'Tarde',
+                                    'pi-moon':  a.turno === 'Noche'
+                                }"></i>
+                                {{ a.turno || '—' }}
+                            </span>
+                        </td>
+                        <!-- Responsable -->
+                        <td class="td-responsable">{{ a.responsable || '—' }}</td>
+                        <!-- Personal -->
+                        <td>
+                            <div class="worker-tags" *ngIf="a.trabajadoresArray && a.trabajadoresArray.length > 0">
+                                <span class="worker-tag" *ngFor="let id of a.trabajadoresArray" [title]="getNombreTrabajador(id)">
+                                    <img [src]="'https://ui-avatars.com/api/?name=' + getNombreTrabajador(id) + '&background=random&color=fff&bold=true'" 
+                                         alt="Avatar" style="width: 16px; height: 16px; border-radius: 50%; margin-right: 6px; object-fit: cover;" />
+                                    {{ getNombreTrabajador(id) }}
+                                </span>
+                            </div>
+                            <span *ngIf="!a.trabajadoresArray || a.trabajadoresArray.length === 0"
+                                style="color:#94a3b8; font-size:0.8rem;">Sin personal</span>
+                        </td>
+                        <!-- Monto -->
+                        <td style="text-align:right; font-weight:700; color:#1e293b;">
+                            S/ {{ a.total | number:'1.2-2' }}
+                        </td>
+                        <!-- Estado -->
+                        <td style="text-align:center;">
+                            <span class="estado-badge" [ngClass]="getEstadoBadge(a.estado).cls">
+                                <span class="dot"></span>
+                                {{ getEstadoBadge(a.estado).label }}
+                            </span>
+                        </td>
+                        <!-- Acciones -->
+                        <td style="text-align:center;">
+                            <div class="action-btns">
+                                <button class="btn-icon btn-edit" title="Editar" (click)="abrirEditar(a)">
+                                    <i class="pi pi-pencil"></i>
+                                </button>
+                                <button class="btn-icon btn-del" title="Eliminar" (click)="eliminar(a)">
+                                    <i class="pi pi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Resumen de Asistencias del Rango -->
+        <div class="asistencias-resumen" *ngIf="!cargando && aperturas.length > 0 && resumenAsistencia.length > 0">
+            <div class="resumen-header">
+                <i class="pi pi-check-square"></i>
+                <span>Resumen de Asistencias del Rango</span>
+            </div>
+            <div class="resumen-grid-tags">
+                <div class="resumen-tag-card" *ngFor="let res of resumenAsistencia">
+                    <img [src]="'https://ui-avatars.com/api/?name=' + res.nombre + '&background=random&color=fff&bold=true'" 
+                         alt="Avatar" class="res-avatar" />
+                    <div class="res-info">
+                        <span class="res-nombre">{{ res.nombre }}</span>
+                        <span class="res-total">{{ res.asistencias }} {{ res.asistencias === 1 ? 'asistencia' : 'asistencias' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer conteo -->
+        <div class="ap-table-footer" *ngIf="!cargando && aperturas.length > 0">
+            <span>{{ aperturas.length }} registro{{ aperturas.length !== 1 ? 's' : '' }} encontrado{{ aperturas.length
+                !== 1 ? 's' : '' }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL EDITAR ────────────────────────────────────────── -->
+<p-dialog header="Editar Apertura" [(visible)]="editVisible" [modal]="true"
+    [style]="{ width: '560px', maxWidth: '96vw' }" [draggable]="false" [resizable]="false">
+
+    <div class="edit-form" [formGroup]="editForm" *ngIf="aperturaEditando">
+
+        <div class="edit-date-label">
+            <i class="pi pi-calendar"></i>
+            Apertura del <strong>{{ aperturaEditando.fecha | date:'dd/MM/yyyy' }}</strong>
+        </div>
+
+        <div class="form-grid-2">
+            <div class="form-field">
+                <label>Responsable <span class="req">*</span></label>
+                <select class="field-input" formControlName="responsable">
+                    <option value="">Seleccionar...</option>
+                    <option *ngFor="let t of trabajadoresList" [value]="t.nombres">{{ t.nombres }}</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label>Turno <span class="req">*</span></label>
+                <div class="turnos-row">
+                    <button type="button" class="turno-btn" [class.active]="editForm.get('turno')?.value === 'Mañana'"
+                        (click)="editForm.get('turno')?.setValue('Mañana')">
+                        <i class="pi pi-sun"></i> Mañana
+                    </button>
+                    <button type="button" class="turno-btn" [class.active]="editForm.get('turno')?.value === 'Tarde'"
+                        (click)="editForm.get('turno')?.setValue('Tarde')">
+                        <i class="pi pi-cloud"></i> Tarde
+                    </button>
+                    <button type="button" class="turno-btn" [class.active]="editForm.get('turno')?.value === 'Noche'"
+                        (click)="editForm.get('turno')?.setValue('Noche')">
+                        <i class="pi pi-moon"></i> Noche
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-grid-2">
+            <div class="form-field">
+                <label>Monto Inicial (S/) <span class="req">*</span></label>
+                <div class="monto-wrap">
+                    <span class="currency">S/</span>
+                    <input type="number" class="field-input" formControlName="total" min="0" step="0.50">
+                </div>
+            </div>
+            <div class="form-field">
+                <label>Estado <span class="req">*</span></label>
+                <select class="field-input" formControlName="estado">
+                    <option [ngValue]="1">🟢 Abierta</option>
+                    <option [ngValue]="2">🔴 Cerrada</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-field">
+            <label>Personal en Campo <span class="req">*</span></label>
+            <p-multiSelect formControlName="trabajadores" [options]="trabajadoresList" optionLabel="nombres"
+                optionValue="idpersona" placeholder="Seleccione trabajadores" [showToggleAll]="true" [filter]="true"
+                filterPlaceholder="Buscar..." display="chip" [style]="{ width: '100%' }"
+                [maxSelectedLabels]="trabajadoresList.length" selectedItemsLabel="{0} trabajadores seleccionados">
+                <ng-template let-worker pTemplate="item">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <img [src]="'https://ui-avatars.com/api/?name=' + worker.nombres + '&background=random&color=fff&bold=true'" 
+                             alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;" />
+                        <span>{{ worker.nombres }}</span>
+                    </div>
+                </ng-template>
+            </p-multiSelect>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <button class="btn-cancel" type="button" (click)="editVisible = false">
+            <i class="pi pi-times"></i> Cancelar
+        </button>
+        <button class="btn-save" type="button" (click)="guardarEdicion()" [disabled]="guardando">
+            <i class="pi" [class.pi-save]="!guardando" [class.pi-spin]="guardando" [class.pi-spinner]="guardando"></i>
+            {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
+        </button>
+    </ng-template>
+</p-dialog>
