@@ -2,7 +2,7 @@
 
 <div class="reportes-wrapper">
     <div class="reportes-card">
-        <p-tabView>
+        <p-tabView (onChange)="onTabChange($event)">
 
             <!-- ============================================================ -->
             <!-- PESTAÑA 1: REPORTE GENERAL -->
@@ -18,96 +18,112 @@
                     </div>
                 </div>
 
-                <!-- Filtro de Fechas -->
-                <div class="filter-bar-card">
-                    <div class="filter-item">
-                        <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
-                        <p-datepicker #dp1 [(ngModel)]="selectedRange" selectionMode="range" [numberOfMonths]="2"
-                            class="date-range" [showButtonBar]="true" placeholder="Selecciona un rango de fechas..."
-                            (onSelect)="handleCalendarBlur()" (onShow)="onDatePickerShow(dp1)" (onFocus)="onDatePickerShow(dp1)"
-                            [defaultDate]="oneWeekAgo" [style]="{ width: '280px' }" [appendTo]="'body'"
-                            [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate">
-                        </p-datepicker>
+                <!-- ALERTA SI FALTA CERRAR LA CAJA -->
+                <div *ngIf="!verificandoCaja && !cajaCerrada" class="caja-aviso-bloqueo animate-fadein">
+                    <div class="aviso-icon">
+                        <i class="pi pi-lock"></i>
+                    </div>
+                    <div class="aviso-info">
+                        <h4><i class="pi pi-exclamation-triangle"></i> Falta cerrar la caja</h4>
+                        <p>
+                            No es posible visualizar el <strong>Reporte Consolidado de Ventas</strong> porque aún no se ha realizado el cierre de caja de hoy. Debe realizar el cierre de caja para poder consultar la información de este reporte.
+                        </p>
                     </div>
                 </div>
 
-                <!-- Tabla con Cabecera Verde Oscuro -->
-                <div class="custom-table-darkgreen">
-                    <p-table stripedRows #dt [value]="Clients" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
-                        [rowHover]="true" dataKey="idpedido" [resizableColumns]="true"
-                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-                        [showCurrentPageReport]="true">
+                <!-- CONTENIDO HABILITADO CUANDO LA CAJA ESTÁ CERRADA -->
+                <div *ngIf="cajaCerrada">
+                    <!-- Filtro de Fechas -->
+                    <div class="filter-bar-card">
+                        <div class="filter-item">
+                            <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
+                            <p-datepicker #dp1 [(ngModel)]="selectedRange" selectionMode="range" [numberOfMonths]="2"
+                                class="date-range" [showButtonBar]="true" placeholder="Selecciona un rango de fechas..."
+                                (onSelect)="handleCalendarBlur()" (onShow)="onDatePickerShow(dp1)" (onFocus)="onDatePickerShow(dp1)"
+                                [defaultDate]="oneWeekAgo" [style]="{ width: '280px' }" [appendTo]="'body'"
+                                [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate">
+                            </p-datepicker>
+                        </div>
+                    </div>
 
-                        <ng-template pTemplate="header">
-                            <tr>
-                                <th pSortableColumn="fecha" style="width: 14%;">
-                                    📅 Fecha <p-sortIcon field="fecha" />
-                                </th>
-                                <th pSortableColumn="dia" style="width: 12%;">
-                                    📅 Día <p-sortIcon field="dia" />
-                                </th>
-                                <th pSortableColumn="efectivo" class="text-right">
-                                    💵 Efectivo <p-sortIcon field="efectivo" />
-                                </th>
-                                <th pSortableColumn="yape" class="text-right">
-                                    📱 Yape <p-sortIcon field="yape" />
-                                </th>
-                                <th pSortableColumn="plin" class="text-right">
-                                    📱 Plin <p-sortIcon field="plin" />
-                                </th>
-                                <th pSortableColumn="visa" class="text-right">
-                                    💳 Visa / POS <p-sortIcon field="visa" />
-                                </th>
-                                <th pSortableColumn="gastos" class="text-right">
-                                    📉 Gastos <p-sortIcon field="gastos" />
-                                </th>
-                                <th pSortableColumn="total" class="text-right font-black">
-                                    💰 Total Recaudado <p-sortIcon field="total" />
-                                </th>
-                                <th style="width: 4.5rem;" class="text-center">PDF</th>
-                            </tr>
-                        </ng-template>
+                    <!-- Tabla con Cabecera Verde Oscuro -->
+                    <div class="custom-table-darkgreen">
+                        <p-table stripedRows #dt [value]="Clients" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
+                            [rowHover]="true" dataKey="idpedido" [resizableColumns]="true"
+                            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+                            [showCurrentPageReport]="true">
 
-                        <ng-template pTemplate="body" let-product>
-                            <tr>
-                                <td class="font-bold text-gray-800">{{ product.fecha }}</td>
-                                <td style="text-transform: capitalize;" class="text-gray-600 font-medium">{{ product.dia }}</td>
-                                <td class="text-right font-semibold text-emerald-700">S/ {{ (product.efectivo || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-semibold text-purple-700">S/ {{ (product.yape || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-semibold text-cyan-700">S/ {{ (product.plin || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-semibold text-blue-700">S/ {{ (product.visa || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-semibold text-rose-600">S/ {{ (product.gastos || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-gray-900 text-base">S/ {{ (product.total || 0) | number:'1.2-2' }}</td>
-                                <td class="text-center">
-                                    <button type="button" class="p-2 rounded-lg text-rose-600 hover:bg-rose-50 hover:text-rose-800 transition-colors"
-                                        (click)="PdfReporteDiario(product.fecha)" pTooltip="Ver / Imprimir PDF" tooltipPosition="left">
-                                        <i class="pi pi-file-pdf text-xl"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </ng-template>
+                            <ng-template pTemplate="header">
+                                <tr>
+                                    <th pSortableColumn="fecha" style="width: 14%;">
+                                        📅 Fecha <p-sortIcon field="fecha" />
+                                    </th>
+                                    <th pSortableColumn="dia" style="width: 12%;">
+                                        📅 Día <p-sortIcon field="dia" />
+                                    </th>
+                                    <th pSortableColumn="efectivo" class="text-right">
+                                        💵 Efectivo <p-sortIcon field="efectivo" />
+                                    </th>
+                                    <th pSortableColumn="yape" class="text-right">
+                                        📱 Yape <p-sortIcon field="yape" />
+                                    </th>
+                                    <th pSortableColumn="plin" class="text-right">
+                                        📱 Plin <p-sortIcon field="plin" />
+                                    </th>
+                                    <th pSortableColumn="visa" class="text-right">
+                                        💳 Visa / POS <p-sortIcon field="visa" />
+                                    </th>
+                                    <th pSortableColumn="gastos" class="text-right">
+                                        📉 Gastos <p-sortIcon field="gastos" />
+                                    </th>
+                                    <th pSortableColumn="total" class="text-right">
+                                        💰 Total <p-sortIcon field="total" />
+                                    </th>
+                                    <th style="width: 10%;">PDF</th>
+                                </tr>
+                            </ng-template>
 
-                        <ng-template pTemplate="footer">
-                            <tr *ngIf="Clients && Clients.length > 0">
-                                <td colspan="2" class="text-gray-900 font-black tracking-wider uppercase">
-                                    TOTAL DEL PERIODO
-                                </td>
-                                <td class="text-right font-black text-emerald-800">S/ {{ (array_data_total.efectivo || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-purple-800">S/ {{ (array_data_total.yape || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-cyan-800">S/ {{ (array_data_total.plin || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-blue-800">S/ {{ (array_data_total.visa || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-rose-700">S/ {{ (array_data_total.gastos || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-gray-950 text-lg">S/ {{ (array_data_total.total || 0) | number:'1.2-2' }}</td>
-                                <td></td>
-                            </tr>
-                            <tr *ngIf="!Clients || Clients.length == 0">
-                                <td colspan="9" class="empty-state">
-                                    <i class="pi pi-calendar-times"></i>
-                                    <span>No hay registros en este rango de fechas. Seleccione otro periodo para consultar.</span>
-                                </td>
-                            </tr>
-                        </ng-template>
-                    </p-table>
+                            <ng-template pTemplate="body" let-customer let-rowIndex="rowIndex" let-rowgroup="rowgroup"
+                                let-rowspan="rowspan">
+                                <tr>
+                                    <td class="font-bold text-gray-800">{{ customer.fecha }}</td>
+                                    <td class="capitalize font-semibold text-gray-600">{{ customer.dia }}</td>
+                                    <td class="text-right font-medium text-emerald-700">S/ {{ customer.efectivo | number:'1.2-2' }}</td>
+                                    <td class="text-right font-medium text-purple-700">S/ {{ customer.yape | number:'1.2-2' }}</td>
+                                    <td class="text-right font-medium text-blue-700">S/ {{ customer.plin | number:'1.2-2' }}</td>
+                                    <td class="text-right font-medium text-indigo-700">S/ {{ customer.visa | number:'1.2-2' }}</td>
+                                    <td class="text-right font-semibold text-rose-600">S/ {{ (customer.gastos || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-extrabold text-gray-900">S/ {{ customer.total | number:'1.2-2' }}</td>
+                                    <td class="text-center">
+                                        <button pButton icon="pi pi-file-pdf"
+                                            class="p-button-rounded p-button-text p-button-danger hover:bg-rose-50"
+                                            (click)="PdfReporteDiario(customer.fecha)" title="Descargar Reporte del Día"></button>
+                                    </td>
+                                </tr>
+                            </ng-template>
+
+                            <ng-template pTemplate="footer">
+                                <tr *ngIf="Clients && Clients.length > 0">
+                                    <td colspan="2" class="font-bold text-gray-900 uppercase tracking-wider text-xs">
+                                        TOTAL GENERAL ({{ Clients.length }} DÍAS)
+                                    </td>
+                                    <td class="text-right font-bold text-emerald-800">S/ {{ (array_data_total.efectivo || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-bold text-purple-800">S/ {{ (array_data_total.yape || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-bold text-blue-800">S/ {{ (array_data_total.plin || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-bold text-indigo-800">S/ {{ (array_data_total.visa || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-bold text-rose-700">S/ {{ (array_data_total.gastos || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-black text-gray-950 text-lg">S/ {{ (array_data_total.total || 0) | number:'1.2-2' }}</td>
+                                    <td></td>
+                                </tr>
+                                <tr *ngIf="!Clients || Clients.length == 0">
+                                    <td colspan="9" class="empty-state">
+                                        <i class="pi pi-calendar-times"></i>
+                                        <span>No hay registros en este rango de fechas. Seleccione otro periodo para consultar.</span>
+                                    </td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </div>
                 </div>
             </p-tabPanel>
 

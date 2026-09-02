@@ -43,6 +43,10 @@ export class ReportesComponent implements OnInit {
     pdfUrl: SafeResourceUrl | null = null;
     fecha_actual: any;
 
+    // Estado de cierre de caja para el Reporte Consolidado
+    cajaCerrada: boolean = false;
+    verificandoCaja: boolean = true;
+
     // Date restrictions for calendar (null = sin restricción)
     minDate: Date | null = null;
     maxDate: Date | null = null;
@@ -102,6 +106,52 @@ export class ReportesComponent implements OnInit {
         this.selectedRange2 = null;
         this.selectedRange3 = null;
         this.selectedRange4 = null;
+
+        // Validar si la caja del día ya fue cerrada para permitir el Reporte Consolidado
+        this.verificarEstadoCaja();
+    }
+
+    verificarEstadoCaja(): Promise<boolean> {
+        return new Promise((resolve) => {
+            this.verificandoCaja = true;
+            this.AperturaService_.ListarAperturaHoy().subscribe({
+                next: (response: any) => {
+                    this.verificandoCaja = false;
+                    if (response && response.success && response.data && response.data.length > 0) {
+                        const apertura = response.data[0];
+                        // estado == 2 significa que la caja ya fue cerrada
+                        this.cajaCerrada = (apertura.estado == 2);
+                    } else {
+                        // Sin apertura hoy o estado !== 2
+                        this.cajaCerrada = false;
+                    }
+
+                    if (!this.cajaCerrada) {
+                        this.Clients = [];
+                        this.messageService.add({
+                            severity: 'warn',
+                            summary: 'Falta cerrar la caja',
+                            detail: 'No se puede visualizar el Reporte Consolidado de Ventas porque la caja aún no ha sido cerrada.',
+                            life: 5000
+                        });
+                    }
+
+                    resolve(this.cajaCerrada);
+                },
+                error: (err: any) => {
+                    console.error('Error al verificar estado de caja', err);
+                    this.verificandoCaja = false;
+                    this.cajaCerrada = false;
+                    resolve(false);
+                }
+            });
+        });
+    }
+
+    onTabChange(event: any) {
+        if (event && event.index === 0) {
+            this.verificarEstadoCaja();
+        }
     }
 
     onDatePickerShow(picker: any) {
@@ -127,6 +177,16 @@ export class ReportesComponent implements OnInit {
     }
 
     handleCalendarBlur() {
+        if (!this.cajaCerrada) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Falta cerrar la caja',
+                detail: 'No se puede consultar el Reporte Consolidado de Ventas porque la caja aún no ha sido cerrada.',
+                life: 4000
+            });
+            return;
+        }
+
         if (this.selectedRange && this.selectedRange.length === 2 && this.selectedRange[1] != null) {
             this.showRerportemount({
                 fechainicio: this.formatDateToMySQL(new Date(this.selectedRange[0])),
@@ -490,6 +550,17 @@ export class ReportesComponent implements OnInit {
     }
 
     showRerportemount(parameters: any = {}) {
+        if (!this.cajaCerrada) {
+            this.Clients = [];
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Falta cerrar la caja',
+                detail: 'No se puede consultar el Reporte Consolidado de Ventas porque la caja aún no ha sido cerrada.',
+                life: 4000
+            });
+            return;
+        }
+
         this.Clients = [];
         this.array_data_total = {}; // Reiniciar el total
 
