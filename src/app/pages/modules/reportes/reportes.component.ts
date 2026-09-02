@@ -195,12 +195,11 @@ export class ReportesComponent implements OnInit {
 
     handleCalendarBlur() {
         if (!this.cajaCerrada) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Falta cerrar la caja',
-                detail: 'No se puede consultar el Reporte Consolidado de Ventas porque la caja aún no ha sido cerrada.',
-                life: 4000
-            });
+            this.mostrarAvisoAmigable(
+                'Falta cerrar la caja',
+                'No es posible consultar el Reporte Consolidado de Ventas porque la caja aún no ha sido cerrada. Debe realizar el cierre de caja para poder consultar la información.',
+                'warning'
+            );
             return;
         }
 
@@ -311,13 +310,11 @@ export class ReportesComponent implements OnInit {
     PdfReporteDiario(fecha: string) {
         this.PedidoService.ValidarCierre(fecha).subscribe((responsevalidar) => {
             if (!responsevalidar.data) {
-                this.messageService.add({
-                    severity: 'info',
-                    summary: 'Cerrar Caja',
-                    detail: 'No se puede generar el reporte, la caja no ha sido cerrada para esta fecha',
-                    life: 3000
-                });
-
+                this.mostrarAvisoAmigable(
+                    'Falta cerrar la caja',
+                    `No se puede generar el reporte PDF para el día ${fecha} porque la caja aún no ha sido cerrada.`,
+                    'warning'
+                );
                 return;
             }
 
@@ -592,12 +589,11 @@ export class ReportesComponent implements OnInit {
     showRerportemount(parameters: any = {}) {
         if (!this.cajaCerrada) {
             this.Clients = [];
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Falta cerrar la caja',
-                detail: 'No se puede consultar el Reporte Consolidado de Ventas porque la caja aún no ha sido cerrada.',
-                life: 4000
-            });
+            this.mostrarAvisoAmigable(
+                'Falta cerrar la caja',
+                'No se puede consultar el Reporte Consolidado de Ventas porque la caja del día aún no ha sido cerrada.',
+                'warning'
+            );
             return;
         }
 
@@ -608,12 +604,11 @@ export class ReportesComponent implements OnInit {
             (response: any) => {
                 if (response && response.cajaNoCerrada) {
                     this.Clients = [];
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Falta cerrar la caja',
-                        detail: response.message || 'Falta cerrar la caja para consultar este reporte.',
-                        life: 4500
-                    });
+                    this.mostrarAvisoAmigable(
+                        'Falta cerrar la caja',
+                        response.message || 'Falta cerrar la caja para consultar este reporte.',
+                        'warning'
+                    );
                     return;
                 }
                 if (response && response.success) {
