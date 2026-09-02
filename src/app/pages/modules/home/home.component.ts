@@ -1240,6 +1240,20 @@ export class HomeComponent {
         this.Pedido_cobrar[metodo] = this.Pedido_cobrar.total;
     }
 
+    get totalCobradoIngresado(): number {
+        return +(
+            (Number(this.Pedido_cobrar?.efectivo) || 0) +
+            (Number(this.Pedido_cobrar?.visa) || 0) +
+            (Number(this.Pedido_cobrar?.yape) || 0) +
+            (Number(this.Pedido_cobrar?.plin) || 0)
+        ).toFixed(2);
+    }
+
+    get diferenciaCobro(): number {
+        const total = Number(this.Pedido_cobrar?.total) || 0;
+        return +(this.totalCobradoIngresado - total).toFixed(2);
+    }
+
     // Helper method to get mozo name for a mesa
     getNombreMozopedido(numeroMesa: string): string {
         // Find the pedido for this mesa
