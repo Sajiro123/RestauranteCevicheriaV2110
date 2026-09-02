@@ -588,8 +588,18 @@ export class ReportesComponent implements OnInit {
         this.array_data_total = {}; // Reiniciar el total
 
         this.PedidoService.showRerporte(parameters).subscribe(
-            (response: { success: any; data: any[] }) => {
-                if (response.success) {
+            (response: any) => {
+                if (response && response.cajaNoCerrada) {
+                    this.Clients = [];
+                    this.messageService.add({
+                        severity: 'warn',
+                        summary: 'Falta cerrar la caja',
+                        detail: response.message || 'Falta cerrar la caja para consultar este reporte.',
+                        life: 4500
+                    });
+                    return;
+                }
+                if (response && response.success) {
                     var yape_total = 0;
                     var plin_total = 0;
                     var visa_total = 0;

@@ -535,21 +535,46 @@ export class SupabaseService {
     }
 
     async getReporteRango(fechaInicio: string, fechaFin: string) {
+        // 1. Validar qué fechas en el rango consultado tienen la caja CERRADA (estado == 2 y deleted IS NULL)
+        const { data: aperturas, error: errorApertura } = await this.supabase
+            .from('apertura_caja')
+            .select('fecha, estado')
+            .gte('fecha', fechaInicio)
+            .lte('fecha', fechaFin)
+            .is('deleted', null);
+
+        if (errorApertura) return { success: false, data: null, error: errorApertura };
+
+        // Fechas que tienen estado == 2 (caja cerrada)
+        const fechasCerradas = (aperturas || [])
+            .filter((a: any) => Number(a.estado) === 2)
+            .map((a: any) => a.fecha);
+
+        // Si ninguna fecha del rango tiene la caja cerrada, no se traen ventas
+        if (fechasCerradas.length === 0) {
+            return {
+                success: false,
+                cajaNoCerrada: true,
+                message: 'Falta cerrar la caja. No se pueden consultar ventas de fechas con caja abierta o sin cerrar.',
+                data: [],
+                error: null
+            };
+        }
+
+        // 2. Consultar pedidos SOLO de las fechas con caja cerrada
         const { data, error } = await this.supabase
             .from('pedido')
             .select('yape, plin, visa, efectivo, fecha')
             .eq('estado', 3)
-            .gte('fecha', fechaInicio)
-            .lte('fecha', fechaFin);
+            .in('fecha', fechasCerradas);
 
         if (error) return { success: false, data: null, error };
 
-        // Obtener gastos del rango de fechas
+        // 3. Obtener gastos solo de las fechas con caja cerrada
         const { data: gastosData } = await this.supabase
             .from('gastos')
             .select('monto, fecha')
-            .gte('fecha', fechaInicio)
-            .lte('fecha', fechaFin)
+            .in('fecha', fechasCerradas)
             .is('deleted', null);
 
         // Agrupar ventas por fecha
