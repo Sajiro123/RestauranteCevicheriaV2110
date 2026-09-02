@@ -450,6 +450,16 @@ $avatar-colors: #ea580c, #2563eb, #7c3aed, #0891b2, #059669, #d97706;
     }
 }
 
+.btn-action-view {
+    background-color: #047857;
+    color: #ffffff;
+    margin-top: 1rem;
+
+    &:hover {
+        background-color: #065f46;
+    }
+}
+
 
 
 /* ===== CENTER COLUMN ===== */
@@ -812,81 +822,200 @@ $avatar-colors: #ea580c, #2563eb, #7c3aed, #0891b2, #059669, #d97706;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.resumen-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-
-.resumen-box {
-    background-color: #f8fafc;
-    border-radius: 10px;
-    padding: 1rem;
-
-    .resumen-label {
-        display: block;
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: #64748b;
-        margin-bottom: 0.3rem;
-    }
-
-    .resumen-value {
-        display: block;
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #1e293b;
-    }
-
-    &.red {
-        .resumen-label {
-            color: #ef4444;
-        }
-        .resumen-value {
-            color: #ef4444;
-        }
-    }
-}
-
-.gran-total {
-    margin-top: 0.5rem;
-
-    .gran-total-inner {
-        background: linear-gradient(135deg, #ea580c, #f97316);
-        border-radius: 12px;
-        padding: 1.25rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: white;
-    }
-
-    .gt-label {
-        display: block;
-        font-size: 0.7rem;
-        font-weight: 600;
-        opacity: 0.85;
-        margin-bottom: 0.25rem;
-    }
-
-    .gt-value {
-        display: block;
-        font-size: 1.75rem;
-        font-weight: 800;
-    }
-
-    .gt-icon {
-        font-size: 2rem;
-        opacity: 0.4;
-    }
-}
-
 .resumen-extra {
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid #e2e8f0;
 }
+
+/* =====  RESUMEN MEJORADO ===== */
+.resumen-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-bottom: 0.85rem;
+}
+
+.resumen-box {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    transition: transform 0.15s;
+
+    &:hover { transform: translateY(-1px); }
+
+    .resumen-box-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        i { font-size: 1rem; }
+    }
+
+    .resumen-box-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .resumen-label {
+        display: block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 0.18rem;
+    }
+
+    .resumen-value {
+        display: block;
+        font-size: 1rem;
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* — Efectivo — */
+    &.resumen-box--efectivo {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        .resumen-box-icon { background: #dcfce7; i { color: #16a34a; } }
+        .resumen-label { color: #166534; }
+        .resumen-value { color: #14532d; }
+    }
+    /* — Yape — */
+    &.resumen-box--yape {
+        background: #faf5ff;
+        border: 1px solid #e9d5ff;
+        .resumen-box-icon { background: #ede9fe; i { color: #7c3aed; } }
+        .resumen-label { color: #5b21b6; }
+        .resumen-value { color: #4c1d95; }
+    }
+    /* — Plin — */
+    &.resumen-box--plin {
+        background: #ecfeff;
+        border: 1px solid #a5f3fc;
+        .resumen-box-icon { background: #cffafe; i { color: #0891b2; } }
+        .resumen-label { color: #0e7490; }
+        .resumen-value { color: #164e63; }
+    }
+    /* — Tarjeta — */
+    &.resumen-box--tarjeta {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        .resumen-box-icon { background: #dbeafe; i { color: #2563eb; } }
+        .resumen-label { color: #1d4ed8; }
+        .resumen-value { color: #1e3a8a; }
+    }
+    /* — Gastos — */
+    &.resumen-box--gastos {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        .resumen-box-icon { background: #fee2e2; i { color: #dc2626; } }
+        .resumen-label { color: #b91c1c; }
+        .resumen-value { color: #991b1b; }
+        grid-column: 1 / -1; /* ocupa todo el ancho */
+    }
+}
+
+/* Gran total mejorado */
+.gran-total {
+    margin-top: 0.5rem;
+
+    .gran-total-inner {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-radius: 14px;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+        box-shadow: 0 4px 16px rgba(15,23,42,0.25);
+    }
+
+    .gt-label {
+        display: block;
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #f59e0b;
+        margin-bottom: 0.18rem;
+    }
+
+    .gt-sub {
+        display: block;
+        font-size: 0.65rem;
+        color: #94a3b8;
+        margin-bottom: 0.35rem;
+    }
+
+    .gt-value {
+        display: block;
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: #f0fdf4;
+        letter-spacing: -0.5px;
+    }
+
+    .gt-icon-wrap {
+        width: 48px;
+        height: 48px;
+        background: rgba(245,158,11,0.15);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gt-icon {
+        font-size: 1.6rem;
+        color: #f59e0b;
+        opacity: 0.9;
+    }
+}
+
+/* Subtotales desglose */
+.resumen-sub {
+    margin-top: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.resumen-sub-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+}
+
+.rsub-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #64748b;
+    font-weight: 600;
+    i { font-size: 0.75rem; }
+}
+
+.rsub-value {
+    font-weight: 800;
+    font-size: 0.82rem;
+    &.rsub-digital { color: #2563eb; }
+    &.rsub-cash    { color: #16a34a; }
+    &.rsub-gastos  { color: #dc2626; }
+}
+
 
 /* ===== MULTISELECT OVERRIDE (PrimeNG v19) ===== */
 ::ng-deep .p-multiselect {

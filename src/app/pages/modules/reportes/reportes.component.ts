@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ImportsModule } from '../../imports';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PedidoService } from '../../service/pedido.service';
@@ -12,6 +12,7 @@ import { AperturaService } from '../../service/apertura.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Router } from '@angular/router';
 import { validateSession } from '../../../model/util/functionscompartidas';
+import { PrimeNG } from 'primeng/config';
 
 @Component({
     selector: 'app-reportes',
@@ -20,11 +21,11 @@ import { validateSession } from '../../../model/util/functionscompartidas';
     templateUrl: './reportes.component.html',
     styleUrl: './reportes.component.scss'
 })
-export class ReportesComponent {
-    selectedRange: Date[] = [];
+export class ReportesComponent implements OnInit {
+    selectedRange: Date[] | null = null;
     selectedRange2: Date | null = null;
-    selectedRange3: Date[] = [];
-    selectedRange4: Date[] = [];
+    selectedRange3: Date[] | null = null;
+    selectedRange4: Date[] | null = null;
     expandedRows = {};
     expandedRowsEliminados = {};
     expandedRowsSinCobrar = {};
@@ -45,6 +46,7 @@ export class ReportesComponent {
     // Date restrictions for calendar (null = sin restricción)
     minDate: Date | null = null;
     maxDate: Date | null = null;
+    oneWeekAgo: Date = new Date();
 
     // Add properties for the edit modal
     Cobrar_Dialog: boolean = false;
@@ -63,8 +65,12 @@ export class ReportesComponent {
         private sanitizer: DomSanitizer,
         private AperturaService_: AperturaService,
         private messageService: MessageService,
-        private router: Router
+        private router: Router,
+        private primeng: PrimeNG
     ) {
+        // Establecer idioma español para PrimeNG
+        this.primeng.setTranslation(ES_LOCALE);
+
         // Validate session - will redirect to login if invalid
         if (!validateSession(this.router)) {
             return;
@@ -84,9 +90,26 @@ export class ReportesComponent {
             this.minDate = null;
             this.maxDate = null;
         }
+    }
 
-        // Set date restrictions: only today and yesterday allowed
+    ngOnInit(): void {
+        const today = new Date();
+        this.oneWeekAgo = new Date(today);
+        this.oneWeekAgo.setDate(today.getDate() - 7);
 
+        // Sin auto-precarga de data
+        this.selectedRange = null;
+        this.selectedRange2 = null;
+        this.selectedRange3 = null;
+        this.selectedRange4 = null;
+    }
+
+    onDatePickerShow(picker: any) {
+        if (picker && this.oneWeekAgo) {
+            picker.currentMonth = this.oneWeekAgo.getMonth();
+            picker.currentYear = this.oneWeekAgo.getFullYear();
+            picker.createMonths(picker.currentMonth, picker.currentYear);
+        }
     }
 
     expandAll() {
@@ -104,45 +127,35 @@ export class ReportesComponent {
     }
 
     handleCalendarBlur() {
-        if (this.selectedRange.length === 2) {
-            if (this.selectedRange[1] != null) {
-                this.showRerportemount({
-                    fechainicio: this.formatDateToMySQL(new Date(this.selectedRange[0])),
-                    fechafin: this.formatDateToMySQL(new Date(this.selectedRange[1]))
-                });
-            }
-        } else {
-            console.log('No se ha completado el rango de fechas');
+        if (this.selectedRange && this.selectedRange.length === 2 && this.selectedRange[1] != null) {
+            this.showRerportemount({
+                fechainicio: this.formatDateToMySQL(new Date(this.selectedRange[0])),
+                fechafin: this.formatDateToMySQL(new Date(this.selectedRange[1]))
+            });
         }
     }
 
     DayCalendarBlur() {
         if (this.selectedRange2) {
             this.showReporteDay(this.formatDateToMySQL(new Date(this.selectedRange2)));
-        } else {
-            console.log('No se ha completado el rango de fechas');
         }
     }
 
     DayCalendarBlurEliminados() {
-        if (this.selectedRange3.length === 2 && this.selectedRange3[1] != null) {
+        if (this.selectedRange3 && this.selectedRange3.length === 2 && this.selectedRange3[1] != null) {
             this.showReporteDayEliminados({
                 fechainicio: this.formatDateToMySQL(new Date(this.selectedRange3[0])),
                 fechafin: this.formatDateToMySQL(new Date(this.selectedRange3[1]))
             });
-        } else {
-            console.log('No se ha completado el rango de fechas');
         }
     }
 
     DayCalendarBlurSinCobrar() {
-        if (this.selectedRange4.length === 2 && this.selectedRange4[1] != null) {
+        if (this.selectedRange4 && this.selectedRange4.length === 2 && this.selectedRange4[1] != null) {
             this.showReporteDaySinCobrar({
                 fechainicio: this.formatDateToMySQL(new Date(this.selectedRange4[0])),
                 fechafin: this.formatDateToMySQL(new Date(this.selectedRange4[1]))
             });
-        } else {
-            console.log('No se ha completado el rango de fechas');
         }
     }
 
@@ -208,106 +221,257 @@ export class ReportesComponent {
                 return;
             }
 
-            this.PedidoService.ReporteDiario(fecha).subscribe((response) => {
+            this.AperturaService_.calcularResumenCaja(fecha).subscribe((resumenRes) => {
                 this.AperturaService_.ListGastos(fecha).subscribe((responsegastos) => {
-                    var data = response.data[0];
-                    var inicial = 140;
-                    var total = parseInt(data.yape) + parseInt(data.visa) + parseInt(data.efectivo) + parseInt(data.plin);
+                    const resumen = (resumenRes && resumenRes.data) ? resumenRes.data : {};
+                    const montoInicial = Number(resumen.montoInicial || 0);
+                    const ventasEfectivo = Number(resumen.ventasEfectivo || 0);
+                    const ventasYape = Number(resumen.ventasYape || 0);
+                    const ventasPlin = Number(resumen.ventasPlin || 0);
+                    const ventasTarjeta = Number(resumen.ventasTarjeta || 0);
+                    const totalVentas = Number(resumen.totalVentas || (ventasEfectivo + ventasYape + ventasPlin + ventasTarjeta));
+
+                    let gastosarray: any[] = [];
+                    let totalgastos = 0;
+                    if (responsegastos && responsegastos.data) {
+                        gastosarray = responsegastos.data;
+                        totalgastos = gastosarray.reduce((sum: number, item: any) => sum + (Number(item.monto) || 0), 0);
+                    }
+
+                    // Cálculos financieros correctos:
+                    // 1. Efectivo neto del día (sin caja inicial / ventas en efectivo - gastos en efectivo)
+                    const efectivoSinInicial = ventasEfectivo - totalgastos;
+                    // 2. Efectivo total físico en caja (con caja inicial / fondo de apertura)
+                    const efectivoConInicial = montoInicial + ventasEfectivo - totalgastos;
+                    // 3. Dinero en cuentas / billeteras digitales (Yape, Plin, Tarjeta)
+                    const dineroDigital = ventasYape + ventasPlin + ventasTarjeta;
+                    // 4. Balance neto del día (Ventas Totales - Gastos)
+                    const balanceNeto = totalVentas - totalgastos;
+
+                    // Formatear fecha en español legible sin errores gramaticales
+                    const [anio, mes, dia] = fecha.split('-').map(Number);
+                    const dateObj = new Date(anio, mes - 1, dia);
+                    const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                    const diaSemana = diasSemana[dateObj.getDay()];
+                    const mesNombre = meses[mes - 1];
+                    const fechaFormateada = `${diaSemana}, ${dia} de ${mesNombre} del ${anio}`;
+
+                    // Altura dinámica del ticket (80mm de ancho)
+                    const cantGastos = Math.max(gastosarray.length, 1);
+                    const altoCalculado = 126 + (cantGastos * 4.2);
+                    const pageHeight = Math.max(138, Math.ceil(altoCalculado));
 
                     const doc = new jsPDF({
                         orientation: 'portrait',
                         unit: 'mm',
-                        format: [80, inicial] // Ticket en tamaño pequeño
+                        format: [80, pageHeight]
                     });
 
-                    let yPosition = 12;
-                    const lineHeight = 8;
+                    const xLeft = 6;
+                    const xRight = 74;
+                    const xCenter = 40;
+                    let y = 8;
 
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(10);
-                    const date = new Date(fecha);
-                    date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-
-                    this.fecha_actual = date.toISOString().split('T')[0];
-
-                    var totalgastos = 0;
-                    var gastosarray = [];
-                    if (responsegastos.data) {
-                        gastosarray = responsegastos.data;
-                        totalgastos = responsegastos.data.reduce((sum: number, item: { monto: number }) => sum + +item.monto, 0);
-                    }
-
-                    const opciones: Intl.DateTimeFormatOptions = {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric'
+                    const drawDashedLine = (posY: number) => {
+                        doc.setDrawColor(160, 170, 185);
+                        doc.setLineWidth(0.2);
+                        doc.setLineDashPattern([1.2, 1.2], 0);
+                        doc.line(xLeft, posY, xRight, posY);
+                        doc.setLineDashPattern([], 0);
                     };
 
-                    var dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-                    var numeroDia = date.getDay() + 1;
-                    var nombreDia = dias[numeroDia];
+                    const drawSolidLine = (posY: number, width = 0.25) => {
+                        doc.setDrawColor(180, 190, 205);
+                        doc.setLineWidth(width);
+                        doc.line(xLeft, posY, xRight, posY);
+                    };
 
-                    // Convertir la fecha a texto en español
-                    const fechaFormateada = date.toLocaleDateString('es-PE', opciones);
-
-                    // Reemplazar "de junio de 2025" por "de junio del 2025"
-                    this.fecha_actual = fechaFormateada.replace(' de ', ' de ').replace(' de ', ' del ');
-                    var marginLeft = 9;
-                    // Estilo para el título
-                    doc.setFontSize(18);
+                    // ====== ENCABEZADO ======
                     doc.setFont('helvetica', 'bold');
-                    doc.text('Caja Resumen', marginLeft, yPosition);
-                    yPosition += 10;
+                    doc.setFontSize(13);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text('CEVICHERÍA WILLY', xCenter, y, { align: 'center' });
+                    y += 4.8;
 
-                    // Estilo para la fecha
-                    doc.setFontSize(12);
-                    doc.setFont('helvetica', 'normal');
-                    doc.text(this.fecha_actual, marginLeft, yPosition);
-                    yPosition += 10;
-
-                    // Estilo para los métodos de pago
+                    doc.setFontSize(8.5);
                     doc.setFont('helvetica', 'bold');
-                    doc.text(`Yape: ${data.yape}`, marginLeft, yPosition);
-                    yPosition += 7;
+                    doc.setTextColor(51, 65, 85);
+                    doc.text('REPORTE DE CIERRE DE CAJA', xCenter, y, { align: 'center' });
+                    y += 4.2;
 
-                    doc.text(`Plin: S/${data.plin}`, marginLeft, yPosition);
-                    yPosition += 7;
-
-                    doc.text(`Visa: S/${data.visa}`, marginLeft, yPosition);
-                    yPosition += 7;
-
-                    doc.text(`Efectivo: S/${data.efectivo}`, marginLeft, yPosition);
-                    yPosition += 7;
-
-                    // Línea divisoria
-                    doc.setDrawColor(0);
-                    doc.setLineWidth(0.5);
-                    doc.line(marginLeft, yPosition, 200 - marginLeft, yPosition);
-                    yPosition += 7;
-
-                    // Total
-                    doc.setFontSize(14);
-                    doc.text(`Total: S/ ${total}`, marginLeft, yPosition);
-                    yPosition += 7;
-                    doc.text(`Efectivo en Caja: S/${total - Math.round(totalgastos * 100) / 100}`, marginLeft, yPosition);
-                    yPosition += 7;
-                    doc.text(`Total Gastos: S/${Math.round(totalgastos * 100) / 100}`, marginLeft, yPosition);
-                    yPosition += 7;
-
-                    doc.text(`-------- Detalles Gastos ---------`, marginLeft, yPosition);
-
-                    yPosition += 7;
-                    doc.setFontSize(11);
+                    doc.setFontSize(7.5);
                     doc.setFont('helvetica', 'normal');
-                    if (gastosarray.length != 0) {
-                        gastosarray.forEach((element: any) => {
-                            doc.text('* ' + element.descripcion.toLowerCase(), 12, yPosition);
-                            doc.text('S/' + element.monto.toString(), 52, yPosition, { align: 'right' });
-                            yPosition += 6;
+                    doc.setTextColor(100, 116, 139);
+                    doc.text(fechaFormateada, xCenter, y, { align: 'center' });
+                    y += 3.8;
+
+                    doc.setFontSize(6.8);
+                    const horaActual = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+                    doc.text(`Impresión: ${horaActual} hrs`, xCenter, y, { align: 'center' });
+                    y += 4.5;
+
+                    drawDashedLine(y);
+                    y += 4.5;
+
+                    // ====== 1. INGRESOS POR VENTAS ======
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text('1. INGRESOS POR VENTAS', xLeft, y);
+                    y += 4.2;
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(51, 65, 85);
+
+                    doc.text('Efectivo', xLeft + 2, y);
+                    doc.text(`S/ ${ventasEfectivo.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 3.8;
+
+                    doc.text('Yape', xLeft + 2, y);
+                    doc.text(`S/ ${ventasYape.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 3.8;
+
+                    doc.text('Plin', xLeft + 2, y);
+                    doc.text(`S/ ${ventasPlin.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 3.8;
+
+                    doc.text('Tarjeta / Visa', xLeft + 2, y);
+                    doc.text(`S/ ${ventasTarjeta.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 4.2;
+
+                    drawSolidLine(y, 0.2);
+                    y += 3.5;
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text('TOTAL VENTAS (+)', xLeft + 2, y);
+                    doc.text(`S/ ${totalVentas.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 5;
+
+                    // ====== 2. DETALLE DE GASTOS ======
+                    drawDashedLine(y);
+                    y += 4.5;
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text('2. DETALLE DE GASTOS', xLeft, y);
+                    y += 4.2;
+
+                    if (gastosarray.length > 0) {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(7);
+                        doc.setTextColor(51, 65, 85);
+                        gastosarray.forEach((gasto: any) => {
+                            const desc = (gasto.descripcion || gasto.notas || 'Gasto vario').trim();
+                            const descCortada = desc.length > 25 ? desc.substring(0, 23) + '..' : desc;
+                            doc.text(`• ${descCortada}`, xLeft + 2, y);
+                            doc.text(`S/ ${Number(gasto.monto).toFixed(2)}`, xRight, y, { align: 'right' });
+                            y += 3.8;
                         });
+                    } else {
+                        doc.setFont('helvetica', 'italic');
+                        doc.setFontSize(7);
+                        doc.setTextColor(148, 163, 184);
+                        doc.text('Sin gastos registrados en el día', xLeft + 2, y);
+                        y += 3.8;
                     }
-                    yPosition += 4;
-                    // Cuando la imagen se cargue, agregarla al PDF
+
+                    drawSolidLine(y, 0.2);
+                    y += 3.5;
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(185, 28, 28);
+                    doc.text('TOTAL GASTOS (-)', xLeft + 2, y);
+                    doc.text(`S/ ${totalgastos.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 5;
+
+                    // ====== 3. ARQUEO Y LIQUIDACIÓN ======
+                    drawSolidLine(y, 0.35);
+                    y += 4.5;
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text('3. ARQUEO Y LIQUIDACIÓN', xLeft, y);
+                    y += 4.2;
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(71, 85, 105);
+
+                    doc.text('(+) Efectivo Ventas:', xLeft + 2, y);
+                    doc.text(`S/ ${ventasEfectivo.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 3.8;
+
+                    doc.text('(-) Gastos en Efectivo:', xLeft + 2, y);
+                    doc.text(`S/ ${totalgastos.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 4.2;
+
+                    drawSolidLine(y, 0.15);
+                    y += 3.5;
+
+                    // Efectivo sin caja inicial
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(7.8);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text('EFECTIVO SIN CAJA INICIAL:', xLeft + 2, y);
+                    doc.text(`S/ ${efectivoSinInicial.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 4.2;
+
+                    // Fondo de apertura / Caja inicial
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(71, 85, 105);
+                    doc.text('(+) Fondo / Caja Inicial:', xLeft + 2, y);
+                    doc.text(`S/ ${montoInicial.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 4.8;
+
+                    // Recuadro destacado: TOTAL EFECTIVO EN CAJA (con caja inicial)
+                    doc.setFillColor(241, 245, 249);
+                    doc.setDrawColor(203, 213, 225);
+                    doc.roundedRect(xLeft, y, 68, 7.5, 1.5, 1.5, 'FD');
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text('TOTAL EFECTIVO EN CAJA:', xLeft + 2, y + 5);
+
+                    doc.setFontSize(9);
+                    doc.setTextColor(5, 150, 105);
+                    doc.text(`S/ ${efectivoConInicial.toFixed(2)}`, xRight - 2, y + 5, { align: 'right' });
+                    y += 11;
+
+                    // Dinero Digital y Balance Neto
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(71, 85, 105);
+                    doc.text('Dinero Digital (Yape/Plin/Visa):', xLeft + 2, y);
+                    doc.text(`S/ ${dineroDigital.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 4;
+
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text('BALANCE NETO DEL DÍA:', xLeft + 2, y);
+                    doc.text(`S/ ${balanceNeto.toFixed(2)}`, xRight, y, { align: 'right' });
+                    y += 5.5;
+
+                    // ====== PIE DEL TICKET ======
+                    drawDashedLine(y);
+                    y += 4;
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(6.5);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text('Sistema de Gestión - Cevichería Willy', xCenter, y, { align: 'center' });
+                    y += 3.2;
+                    doc.text('*** Documento de Control Interno ***', xCenter, y, { align: 'center' });
+
                     const pdfBlob = doc.output('blob');
                     const pdfUrl = URL.createObjectURL(pdfBlob);
                     this.PDFdescargar(pdfUrl);
@@ -366,18 +530,22 @@ export class ReportesComponent {
                         this.array_data.push({
                             fecha: element.fecha,
                             dia: nombreDia,
-                            yape: element.yape,
-                            visa: element.visa,
-                            efectivo: element.efectivo,
-                            plin: element.plin,
+                            yape: element.yape || 0,
+                            visa: element.visa || 0,
+                            efectivo: element.efectivo || 0,
+                            plin: element.plin || 0,
+                            gastos: element.gastos || 0,
                             total: total
                         });
                     });
-                        this.Clients = this.array_data;
+                    // Ordenar por fecha ASC
+                    this.array_data.sort((a: any, b: any) => (a.fecha || '').localeCompare(b.fecha || ''));
+                    this.Clients = this.array_data;
                     this.array_data_total = {
                         efectivo: this.totalEfectivo,
                         plin: this.totalPlin,
                         visa: this.totalVisa,
+                        gastos: this.totalGastos,
                         total: this.totalGeneral,
                         yape: this.totalyape
                     };
@@ -412,17 +580,13 @@ export class ReportesComponent {
                             }
                         }
                     });
+                    // Ordenar por fecha y hora ASC
+                    response.data.sort((a: any, b: any) => (a.fecha || '').localeCompare(b.fecha || '') || (a.hora || '').localeCompare(b.hora || '') || (a.idpedido - b.idpedido));
                     this.PedidoReporte = response.data;
 
-                        await this.PedidoService.ReporteProductoDetalle(parameters).subscribe((response2: { success: any; data: any[] }) => {
-                                if (response2.success) {
-                            // this.PedidoDetalle =
-                                        var pedidodetalle: any = {};
-                            // response2.data.forEach((element: any) => {
-                            //     pedidodetalle = { ...element.pedidodetalle };
-                            // });
-                            // this.PedidoDetalle = pedidodetalle;
-                                        this.PedidoReporte = this.PedidoReporte.map((pedido: any) => {
+                    await this.PedidoService.ReporteProductoDetalle(parameters).subscribe((response2: { success: any; data: any[] }) => {
+                        if (response2.success) {
+                            this.PedidoReporte = this.PedidoReporte.map((pedido: any) => {
                                 const detalle = response2.data.filter((d: any) => d.idpedido === pedido.idpedido);
                                 return {
                                     ...pedido,
@@ -453,7 +617,6 @@ export class ReportesComponent {
                         if (element.fecha != undefined) {
                             const d = new Date(element.fecha);
                             if (!isNaN(d.getTime())) {
-                                debugger
                                 const yyyy = d.getFullYear();
                                 const mm = String(d.getMonth() + 1).padStart(2, '0');
                                 const dd = String(d.getDate()).padStart(2, '0');
@@ -464,6 +627,8 @@ export class ReportesComponent {
                             }
                         }
                     });
+                    // Ordenar por fecha y hora ASC
+                    response.data.sort((a: any, b: any) => (a.fecha || '').localeCompare(b.fecha || '') || (a.hora || '').localeCompare(b.hora || '') || (a.idpedido - b.idpedido));
                     this.PedidoReporteEliminados = response.data;
 
                     await this.PedidoService.ReporteProductoDetalleEliminados(parameters).subscribe((response2: { success: any; data: any[] }) => {
@@ -509,6 +674,8 @@ export class ReportesComponent {
                             }
                         }
                     });
+                    // Ordenar por fecha y hora ASC
+                    response.data.sort((a: any, b: any) => (a.fecha || '').localeCompare(b.fecha || '') || (a.hora || '').localeCompare(b.hora || '') || (a.idpedido - b.idpedido));
                     this.PedidoReporteSinCobrar = response.data;
 
                     await this.PedidoService.ReporteProductoDetalleSinCobrar(parameters).subscribe((response2: { success: any; data: any[] }) => {
@@ -551,12 +718,12 @@ export class ReportesComponent {
         // Usage example
     }
     formatDateToMySQL(date: Date): string {
-        date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-        const day = String(date.getDate()).padStart(2, '0');
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
 
-        return `${year}-${month}-${day}`; // Return the date in YYYY-MM-DD format
+        return `${year}-${month}-${day}`;
     }
 
     get totalEfectivo(): number {
@@ -573,6 +740,10 @@ export class ReportesComponent {
 
     get totalVisa(): number {
         return this.datosVisibles.reduce((sum, item) => sum + +item.visa, 0);
+    }
+
+    get totalGastos(): number {
+        return this.datosVisibles.reduce((sum, item) => sum + (+item.gastos || 0), 0);
     }
 
     get totalGeneral(): number {

@@ -13,6 +13,7 @@ import { PerfilPermisosComponent } from './menu/perfil-permisos/perfil-permisos.
 import MenuListComponent from "./menu/menu-list/menu-list.component";
 import { RouterModule } from '@angular/router';
 import { AperturasComponent } from './aperturas/aperturas.component';
+import { ComprasComponent } from './compras/compras.component';
 
 @Component({
     selector: 'app-configuracion',
@@ -26,6 +27,7 @@ import { AperturasComponent } from './aperturas/aperturas.component';
         MenuListComponent,
         PerfilPermisosComponent,
         AperturasComponent,
+        ComprasComponent,
         CommonModule,
         FormsModule,
         ImportsModule,

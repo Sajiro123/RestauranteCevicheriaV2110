@@ -243,6 +243,22 @@ export class SupabaseService {
     }
 
     async insertAperturaCaja(aperturaData: any) {
+        // Validación de anti-duplicidad: verificar si ya existe caja para esa fecha
+        const { data: existing } = await this.supabase
+            .from('apertura_caja')
+            .select('id, estado, fecha, turno')
+            .eq('fecha', aperturaData.fecha)
+            .is('deleted', null)
+            .maybeSingle();
+
+        if (existing) {
+            return {
+                success: false,
+                data: null,
+                error: { message: `Ya existe una apertura de caja registrada para hoy (${aperturaData.fecha}).` }
+            };
+        }
+
         const { data, error } = await this.supabase.from('apertura_caja').insert(aperturaData).select();
 
         return { success: !error, data, error };
@@ -262,6 +278,173 @@ export class SupabaseService {
             .is('deleted', null);
 
         return { success: !error, data, error };
+    }
+
+    // Cálculo consolidado de caja del día (ventas + inicial - gastos)
+    async calcularResumenCaja(fecha: string) {
+        try {
+            // 1. Obtener datos de apertura (monto inicial)
+            const { data: apertura } = await this.supabase
+                .from('apertura_caja')
+                .select('*')
+                .eq('fecha', fecha)
+                .is('deleted', null)
+                .maybeSingle();
+
+            const montoInicial = Number(apertura?.total) || 0;
+
+            // 2. Obtener pedidos cobrados (estado = 3)
+            const { data: pedidos, error: pedidosError } = await this.supabase
+                .from('pedido')
+                .select('yape, plin, visa, efectivo, total, descuento')
+                .eq('estado', 3)
+                .eq('fecha', fecha);
+
+            const ventasEfectivo = (pedidos || []).reduce((sum, p) => sum + (Number(p.efectivo) || 0), 0);
+            const ventasYape = (pedidos || []).reduce((sum, p) => sum + (Number(p.yape) || 0), 0);
+            const ventasPlin = (pedidos || []).reduce((sum, p) => sum + (Number(p.plin) || 0), 0);
+            const ventasTarjeta = (pedidos || []).reduce((sum, p) => sum + (Number(p.visa) || 0), 0);
+            const totalVentas = (pedidos || []).reduce((sum, p) => sum + (Number(p.total) || 0), 0);
+
+            // 3. Obtener gastos del día
+            const { data: gastos, error: gastosError } = await this.supabase
+                .from('gastos')
+                .select('monto')
+                .eq('fecha', fecha)
+                .is('deleted', null)
+                .is('app', null);
+
+            const totalGastos = (gastos || []).reduce((sum, g) => sum + (Number(g.monto) || 0), 0);
+
+            // 4. Calcular efectivo esperado en caja
+            const efectivoEsperado = montoInicial + ventasEfectivo - totalGastos;
+            const totalSistemaEsperado = efectivoEsperado + ventasYape + ventasPlin + ventasTarjeta;
+
+            return {
+                success: true,
+                data: {
+                    fecha,
+                    montoInicial,
+                    ventasEfectivo,
+                    ventasYape,
+                    ventasPlin,
+                    ventasTarjeta,
+                    totalVentas,
+                    totalGastos,
+                    efectivoEsperado,
+                    totalSistemaEsperado,
+                    cantidadPedidos: (pedidos || []).length
+                },
+                error: null
+            };
+        } catch (error) {
+            console.error('Error calculando resumen caja:', error);
+            return { success: false, data: null, error };
+        }
+    }
+
+    // Guardar cierre de caja con arqueo ciego (declarado vs sistema)
+    async guardarCierreCaja(cierreData: {
+        fecha: string;
+        efectivo_declarado: number;
+        yape_declarado: number;
+        plin_declarado: number;
+        tarjeta_declarado: number;
+        notas?: string;
+        turno?: string;
+    }) {
+        try {
+            const fecha = cierreData.fecha;
+            const resumen = await this.calcularResumenCaja(fecha);
+            const sys = resumen.data || {
+                montoInicial: 0,
+                ventasEfectivo: 0,
+                efectivoEsperado: 0,
+                ventasYape: 0,
+                ventasPlin: 0,
+                ventasTarjeta: 0,
+                totalGastos: 0,
+                totalSistemaEsperado: 0
+            };
+
+            // 1. Marcar apertura_caja como cerrada (estado = 2)
+            await this.supabase
+                .from('apertura_caja')
+                .update({ estado: 2 })
+                .eq('fecha', fecha)
+                .is('deleted', null);
+
+            // 2. Registrar en caja_semanal para historial
+            const dateObj = new Date(fecha + 'T12:00:00');
+            const oneJan = new Date(dateObj.getFullYear(), 0, 1);
+            const semana = Math.ceil((((dateObj.getTime() - oneJan.getTime()) / 86400000) + oneJan.getDay() + 1) / 7);
+            const dia = dateObj.getDay() === 0 ? 7 : dateObj.getDay();
+
+            const totalDeclarado = Number(cierreData.efectivo_declarado || 0) +
+                Number(cierreData.yape_declarado || 0) +
+                Number(cierreData.plin_declarado || 0) +
+                Number(cierreData.tarjeta_declarado || 0);
+
+            const registroCaja = {
+                fecha: fecha,
+                semana: semana.toString(),
+                dia: dia.toString(),
+                trabajo: cierreData.turno || 'mañana',
+                efectivo: cierreData.efectivo_declarado,
+                yape: cierreData.yape_declarado,
+                plin: cierreData.plin_declarado,
+                tarjeta: cierreData.tarjeta_declarado,
+                gastos: sys.totalGastos,
+                total: totalDeclarado,
+                notas: cierreData.notas || ''
+            };
+
+            const { data: existingCaja } = await this.supabase
+                .from('caja_semanal')
+                .select('id')
+                .eq('fecha', fecha)
+                .maybeSingle();
+
+            if (existingCaja) {
+                await this.supabase.from('caja_semanal').update(registroCaja).eq('id', existingCaja.id);
+            } else {
+                await this.supabase.from('caja_semanal').insert(registroCaja);
+            }
+
+            return {
+                success: true,
+                data: {
+                    declarado: {
+                        efectivo: cierreData.efectivo_declarado,
+                        yape: cierreData.yape_declarado,
+                        plin: cierreData.plin_declarado,
+                        tarjeta: cierreData.tarjeta_declarado,
+                        total: totalDeclarado
+                    },
+                    sistema: {
+                        montoInicial: sys.montoInicial,
+                        ventasEfectivo: sys.ventasEfectivo,
+                        efectivoEsperado: sys.efectivoEsperado,
+                        ventasYape: sys.ventasYape,
+                        ventasPlin: sys.ventasPlin,
+                        ventasTarjeta: sys.ventasTarjeta,
+                        totalGastos: sys.totalGastos,
+                        totalSistemaEsperado: sys.totalSistemaEsperado
+                    },
+                    diferencias: {
+                        efectivo: cierreData.efectivo_declarado - sys.efectivoEsperado,
+                        yape: cierreData.yape_declarado - sys.ventasYape,
+                        plin: cierreData.plin_declarado - sys.ventasPlin,
+                        tarjeta: cierreData.tarjeta_declarado - sys.ventasTarjeta,
+                        total: totalDeclarado - sys.totalSistemaEsperado
+                    }
+                },
+                error: null
+            };
+        } catch (error) {
+            console.error('Error guardando cierre caja:', error);
+            return { success: false, data: null, error };
+        }
     }
 
 
@@ -352,15 +535,28 @@ export class SupabaseService {
     }
 
     async getReporteRango(fechaInicio: string, fechaFin: string) {
-        const { data, error } = await this.supabase.from('pedido').select('yape, plin, visa, efectivo, fecha').eq('estado', 3).gte('fecha', fechaInicio).lte('fecha', fechaFin);
+        const { data, error } = await this.supabase
+            .from('pedido')
+            .select('yape, plin, visa, efectivo, fecha')
+            .eq('estado', 3)
+            .gte('fecha', fechaInicio)
+            .lte('fecha', fechaFin);
 
         if (error) return { success: false, data: null, error };
 
-        // Group by date and calculate totals
-        const groupedData = data.reduce((acc: any, curr: any) => {
+        // Obtener gastos del rango de fechas
+        const { data: gastosData } = await this.supabase
+            .from('gastos')
+            .select('monto, fecha')
+            .gte('fecha', fechaInicio)
+            .lte('fecha', fechaFin)
+            .is('deleted', null);
+
+        // Agrupar ventas por fecha
+        const groupedData = (data || []).reduce((acc: any, curr: any) => {
             const fecha = curr.fecha;
             if (!acc[fecha]) {
-                acc[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, fecha };
+                acc[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, gastos: 0, fecha };
             }
             acc[fecha].yape += curr.yape || 0;
             acc[fecha].plin += curr.plin || 0;
@@ -368,6 +564,15 @@ export class SupabaseService {
             acc[fecha].efectivo += curr.efectivo || 0;
             return acc;
         }, {});
+
+        // Sumar gastos por fecha
+        (gastosData || []).forEach((g: any) => {
+            const fecha = g.fecha;
+            if (!groupedData[fecha]) {
+                groupedData[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, gastos: 0, fecha };
+            }
+            groupedData[fecha].gastos = (groupedData[fecha].gastos || 0) + (Number(g.monto) || 0);
+        });
 
         return { success: true, data: Object.values(groupedData), error: null };
     }

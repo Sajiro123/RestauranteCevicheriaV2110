@@ -1,193 +1,170 @@
-/* Estilo general de la tarjeta */
-.card {
+/* ==========================================================================
+   ESTILOS ESPECÍFICOS DEL MÓDULO DE REPORTES (/uikit/reportes)
+   ========================================================================== */
+
+:host {
+    display: block;
+    padding: 1.25rem 0.5rem;
+}
+
+.reportes-wrapper {
+    max-width: 1440px;
+    margin: 0 auto;
+}
+
+.reportes-card {
     background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+}
+
+/* ─── TOOLBAR / HEADER DE CADA PESTAÑA ─── */
+.tab-header-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: linear-gradient(135deg, #2b3d52 0%, #354b65 50%, #445d7d 100%);
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    padding: 20px;
-    margin-top: 2%;
-}
+    padding: 1rem 1.5rem;
+    color: #ffffff;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 4px 12px rgba(43, 61, 82, 0.2);
 
-/* Título del toolbar */
-p-toolbar h4 {
-    margin: 0;
-    font-weight: 600;
-    font-size: 1.5rem;
-    color: white
-}
+    .tab-header-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
 
-p-toolbar {
-    border-bottom: 1px solid #dee2e6;
-    padding: 10px 20px;
-}
-
-/* Espaciado para el calendar */
-p-calendar {
-    margin-top: 10px;
-    margin-bottom: 20px;
-}
-
-/* Tabla general */
-.p-datatable {
-    font-size: 14px;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.p-datatable thead th {
-    background-color: #f4f6f9;
-    color: #2d3436;
-    font-weight: 600;
-    text-align: left;
-}
-
-.p-datatable tbody td {
-    padding: 10px;
-    color: #333;
-}
-
-.p-datatable tfoot td {
-    background-color: #f1f2f6;
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-/* Filas al pasar el mouse */
-.p-datatable tbody tr:hover {
-    background-color: #f0f8ff;
-    cursor: pointer;
-}
-
-/* Bordes personalizados */
-.table-bordered td,
-.table-bordered th {
-    border: 1px solid #dee2e6;
-}
-
-/* Ajuste de columnas */
-.p-datatable th,
-.p-datatable td {
-    white-space: nowrap;
-}
-
-/* Ajuste de la paginación */
-.p-paginator {
-    background-color: #fff;
-    border-top: 1px solid #ddd;
-    padding-top: 10px;
-}
-
-h4 {
-    margin: 0;
-    font-weight: 600;
-    color: rgb(200, 55, 55);
-}
-
-// ── Diseño Limpio (Mockup Style) para la Tabla de Reporte General ─────────────────
-
-::ng-deep .premium-table {
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-    
-    .p-datatable-header {
-        background: transparent;
-        border: none;
-    }
-
-    .p-datatable-thead > tr > th {
-        background-color: #515c6e; /* Gris oscuro del mockup */
-        color: #ffffff;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.5px;
-        padding: 1.2rem;
-        border: none;
-        
-        .p-sortable-column-icon {
-            color: rgba(255, 255, 255, 0.7);
+        i {
+            font-size: 1.5rem;
+            color: #e2e8f0;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 0.6rem;
+            border-radius: 10px;
         }
-        
-        &:hover {
-            background-color: #3f4857 !important;
+
+        h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            margin: 0.15rem 0 0 0;
+            font-size: 0.8rem;
+            color: #cbd5e1;
         }
     }
+}
 
-    .p-datatable-tbody > tr {
-        transition: background-color 0.2s;
-        border-bottom: 1px solid #f0f0f0;
-        
-        &.row-odd {
-            background-color: #fafafa;
-        }
+/* ─── FILTRO DE FECHAS ─── */
+.filter-bar-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
 
-        &:hover {
-            background-color: #f8fafc !important;
-        }
+    .filter-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
 
-        > td {
-            padding: 1.2rem;
-            border: none;
-            vertical-align: middle;
-            color: #333333;
-            font-size: 0.9rem;
-            
-            &.td-fecha {
-                font-weight: 500;
-                color: #111827;
-            }
-            
-            &.td-dia {
-                color: #4b5563;
-            }
-            
-            &.td-total {
-                font-weight: 700;
-                color: #111827;
+        label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #334155;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+
+            i {
+                color: #354b65;
                 font-size: 0.95rem;
             }
         }
     }
-
-    // Footer
-    .premium-tfoot > td {
-        background-color: #e5e7eb; /* Gris claro del mockup */
-        border: none;
-        padding: 1.5rem 1.2rem;
-        font-weight: 700;
-        font-size: 0.95rem;
-        color: #111827;
-
-        &.tfoot-label {
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            color: #374151;
-        }
-        
-        &.tfoot-total {
-            color: #92400e; /* Tono marrón/dorado del total final */
-            font-size: 1.25rem;
-            font-weight: 800;
-        }
-    }
 }
 
+/* ─── ESTILOS PARA ESTADO VACÍO (EMPTY STATE) ─── */
 .empty-state {
     text-align: center;
-    padding: 3rem !important;
+    padding: 3.5rem 1.5rem !important;
     background: #ffffff;
     color: #94a3b8;
 
     i {
-        font-size: 2.5rem;
+        font-size: 2.75rem;
         display: block;
-        margin-bottom: 1rem;
-        opacity: 0.5;
+        margin-bottom: 0.75rem;
+        color: #cbd5e1;
     }
     
     span {
-        font-size: 0.95rem;
-        font-weight: 500;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #64748b;
     }
 }
+
+/* ─── ESTILIZACIÓN DE PESTAÑAS (p-tabView) ─── */
+::ng-deep .p-tabview {
+    .p-tabview-nav {
+        border-bottom: 2px solid #e2e8f0;
+        gap: 0.5rem;
+        background: transparent;
+
+        li {
+            .p-tabview-nav-link {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-bottom: none;
+                border-radius: 10px 10px 0 0;
+                padding: 0.85rem 1.25rem;
+                font-weight: 700;
+                font-size: 0.9rem;
+                color: #64748b;
+                transition: all 0.2s ease;
+
+                &:hover {
+                    background: #f1f5f9;
+                    color: #354b65;
+                    border-color: #cbd5e1;
+                }
+            }
+
+            &.p-tabview-selected .p-tabview-nav-link {
+                background: #ffffff;
+                color: #354b65;
+                border-color: #354b65 #354b65 #ffffff #354b65;
+                border-top: 3px solid #354b65;
+                box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.03);
+            }
+        }
+    }
+
+    .p-tabview-panels {
+        background: transparent;
+        padding: 1.25rem 0 0 0;
+    }
+}
+
+/* PDF Dialog */
+.pdf-container {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+

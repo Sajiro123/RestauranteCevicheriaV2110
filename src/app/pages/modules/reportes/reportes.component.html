@@ -1,512 +1,580 @@
 <p-toast styleClass="text-2xl" />
 
-<div class="card" style="margin-top: 2%;">
-    <p-tabView>
-        <p-tabPanel header="Reporte General" [selected]="true">
-            <p-toolbar styleClass="gap-2 mt-5" [style]="{ 'background-color': 'rgb(31 63 111)' }">
-                <h4 class="font-medium text-surface-950 dark:text-surface-0 text-xl">Reporte Diario / Mensual</h4>
-            </p-toolbar>
-            <div class="row mt-5">
-                <div class="col-sm-12">
-                    <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
-                    <div class="col-sm-12">
-                        <p-datepicker [(ngModel)]="selectedRange" selectionMode="range" [numberOfMonths]="2"
-                            class="date-range" [showButtonBar]="true"
-                            placeholder="Selecciona un rango" (onSelect)="handleCalendarBlur()"
-                            [style]="{ width: '300px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
+<div class="reportes-wrapper">
+    <div class="reportes-card">
+        <p-tabView>
+
+            <!-- ============================================================ -->
+            <!-- PESTAÑA 1: REPORTE GENERAL -->
+            <!-- ============================================================ -->
+            <p-tabPanel header="Reporte General" [selected]="true">
+                <div class="tab-header-toolbar">
+                    <div class="tab-header-title">
+                        <i class="pi pi-chart-line"></i>
+                        <div>
+                            <h3>Reporte Consolidado de Ventas</h3>
+                            <p>Resumen diario y mensual por métodos de pago</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtro de Fechas -->
+                <div class="filter-bar-card">
+                    <div class="filter-item">
+                        <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
+                        <p-datepicker #dp1 [(ngModel)]="selectedRange" selectionMode="range" [numberOfMonths]="2"
+                            class="date-range" [showButtonBar]="true" placeholder="Selecciona un rango de fechas..."
+                            (onSelect)="handleCalendarBlur()" (onShow)="onDatePickerShow(dp1)" (onFocus)="onDatePickerShow(dp1)"
+                            [defaultDate]="oneWeekAgo" [style]="{ width: '280px' }" [appendTo]="'body'"
+                            [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate">
+                        </p-datepicker>
+                    </div>
+                </div>
+
+                <!-- Tabla con Cabecera Verde Oscuro -->
+                <div class="custom-table-darkgreen">
+                    <p-table stripedRows #dt [value]="Clients" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
+                        [rowHover]="true" dataKey="idpedido" [resizableColumns]="true"
+                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+                        [showCurrentPageReport]="true">
+
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th pSortableColumn="fecha" style="width: 14%;">
+                                    📅 Fecha <p-sortIcon field="fecha" />
+                                </th>
+                                <th pSortableColumn="dia" style="width: 12%;">
+                                    📅 Día <p-sortIcon field="dia" />
+                                </th>
+                                <th pSortableColumn="efectivo" class="text-right">
+                                    💵 Efectivo <p-sortIcon field="efectivo" />
+                                </th>
+                                <th pSortableColumn="yape" class="text-right">
+                                    📱 Yape <p-sortIcon field="yape" />
+                                </th>
+                                <th pSortableColumn="plin" class="text-right">
+                                    📱 Plin <p-sortIcon field="plin" />
+                                </th>
+                                <th pSortableColumn="visa" class="text-right">
+                                    💳 Visa / POS <p-sortIcon field="visa" />
+                                </th>
+                                <th pSortableColumn="gastos" class="text-right">
+                                    📉 Gastos <p-sortIcon field="gastos" />
+                                </th>
+                                <th pSortableColumn="total" class="text-right font-black">
+                                    💰 Total Recaudado <p-sortIcon field="total" />
+                                </th>
+                                <th style="width: 4.5rem;" class="text-center">PDF</th>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="body" let-product>
+                            <tr>
+                                <td class="font-bold text-gray-800">{{ product.fecha }}</td>
+                                <td style="text-transform: capitalize;" class="text-gray-600 font-medium">{{ product.dia }}</td>
+                                <td class="text-right font-semibold text-emerald-700">S/ {{ (product.efectivo || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-semibold text-purple-700">S/ {{ (product.yape || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-semibold text-cyan-700">S/ {{ (product.plin || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-semibold text-blue-700">S/ {{ (product.visa || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-semibold text-rose-600">S/ {{ (product.gastos || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-black text-gray-900 text-base">S/ {{ (product.total || 0) | number:'1.2-2' }}</td>
+                                <td class="text-center">
+                                    <button type="button" class="p-2 rounded-lg text-rose-600 hover:bg-rose-50 hover:text-rose-800 transition-colors"
+                                        (click)="PdfReporteDiario(product.fecha)" pTooltip="Ver / Imprimir PDF" tooltipPosition="left">
+                                        <i class="pi pi-file-pdf text-xl"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="footer">
+                            <tr *ngIf="Clients && Clients.length > 0">
+                                <td colspan="2" class="text-gray-900 font-black tracking-wider uppercase">
+                                    TOTAL DEL PERIODO
+                                </td>
+                                <td class="text-right font-black text-emerald-800">S/ {{ (array_data_total.efectivo || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-black text-purple-800">S/ {{ (array_data_total.yape || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-black text-cyan-800">S/ {{ (array_data_total.plin || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-black text-blue-800">S/ {{ (array_data_total.visa || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-black text-rose-700">S/ {{ (array_data_total.gastos || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-black text-gray-950 text-lg">S/ {{ (array_data_total.total || 0) | number:'1.2-2' }}</td>
+                                <td></td>
+                            </tr>
+                            <tr *ngIf="!Clients || Clients.length == 0">
+                                <td colspan="9" class="empty-state">
+                                    <i class="pi pi-calendar-times"></i>
+                                    <span>No hay registros en este rango de fechas. Seleccione otro periodo para consultar.</span>
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </p-tabPanel>
+
+            <!-- ============================================================ -->
+            <!-- PESTAÑA 2: REPORTE DETALLADO -->
+            <!-- ============================================================ -->
+            <p-tabPanel header="Reporte Detallado">
+                <div class="tab-header-toolbar">
+                    <div class="tab-header-title">
+                        <i class="pi pi-list"></i>
+                        <div>
+                            <h3>Reporte Detallado de Pedidos</h3>
+                            <p>Detalle orden por orden con desglose de platos y cobros</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtro Fecha Única -->
+                <div class="filter-bar-card">
+                    <div class="filter-item">
+                        <label><i class="pi pi-calendar"></i> Fecha a Consultar:</label>
+                        <p-datepicker #dp2 [(ngModel)]="selectedRange2" placeholder="Selecciona una fecha..."
+                            (onSelect)="DayCalendarBlur()" (onShow)="onDatePickerShow(dp2)" (onFocus)="onDatePickerShow(dp2)"
+                            [defaultDate]="oneWeekAgo" [style]="{ width: '280px' }" [appendTo]="'body'"
+                            [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate">
+                        </p-datepicker>
+                    </div>
+                </div>
+
+                <!-- Tabla con Cabecera Verde Oscuro -->
+                <div class="custom-table-darkgreen">
+                    <p-table stripedRows #dt [expandedRowKeys]="expandedRows" [value]="PedidoReporte" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan"
+                        [rows]="10" [paginator]="true" [rowHover]="true" dataKey="idpedido" [resizableColumns]="true"
+                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} pedidos"
+                        [showCurrentPageReport]="true">
+
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th style="width: 3.5rem;"></th>
+                                <th pSortableColumn="fecha">Fecha <p-sortIcon field="fecha" /></th>
+                                <th pSortableColumn="dia">Día <p-sortIcon field="dia" /></th>
+                                <th pSortableColumn="mesa">Mesa / Tipo <p-sortIcon field="mesa" /></th>
+                                <th pSortableColumn="hora">Hora <p-sortIcon field="hora" /></th>
+                                <th pSortableColumn="total_pedidos" class="text-center">Cant. Platos <p-sortIcon field="total_pedidos" /></th>
+                                <th pSortableColumn="efectivo" class="text-right">💵 Efectivo <p-sortIcon field="efectivo" /></th>
+                                <th pSortableColumn="yape" class="text-right">📱 Yape <p-sortIcon field="yape" /></th>
+                                <th pSortableColumn="plin" class="text-right">📱 Plin <p-sortIcon field="plin" /></th>
+                                <th pSortableColumn="visa" class="text-right">💳 Visa <p-sortIcon field="visa" /></th>
+                                <th pSortableColumn="total" class="text-right font-black">Total <p-sortIcon field="total" /></th>
+                                <th style="width: 4rem;" class="text-center">Editar</th>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="body" let-product let-expanded="expanded">
+                            <tr>
+                                <td>
+                                    <button type="button" pRipple [pRowToggler]="product"
+                                        class="p-1.5 rounded-full hover:bg-emerald-100 text-emerald-800 transition-colors">
+                                        <i class="pi" [ngClass]="expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                                    </button>
+                                </td>
+                                <td class="font-medium text-gray-800">{{ product.fecha }}</td>
+                                <td style="text-transform: capitalize;" class="text-gray-600">{{ product.dia }}</td>
+                                <td>
+                                    <span class="badge-pay" [ngClass]="product.mesa == 0 ? 'badge-delivery' : 'badge-mesa'">
+                                        <i class="pi" [ngClass]="product.mesa == 0 ? 'pi-send' : 'pi-table'"></i>
+                                        {{ product.mesa == 0 ? 'Delivery' : 'Mesa ' + product.mesa }}
+                                    </span>
+                                </td>
+                                <td class="text-gray-700 font-medium">{{ product.hora }}</td>
+                                <td class="text-center font-bold text-gray-800">{{ product.total_pedidos }}</td>
+                                <td class="text-right font-semibold text-emerald-700">S/ {{ (product.efectivo || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-semibold text-purple-700">S/ {{ (product.yape || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-semibold text-cyan-700">S/ {{ (product.plin || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-semibold text-blue-700">S/ {{ (product.visa || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-black text-gray-900">S/ {{ (product.total || 0) | number:'1.2-2' }}</td>
+                                <td class="text-center">
+                                    <button type="button" class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-emerald-700 transition-colors"
+                                        (click)="Editar(product)" pTooltip="Editar Cobro" tooltipPosition="left">
+                                        <i class="pi pi-cog text-base"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </ng-template>
+
+                        <!-- Fila Expandible con Detalle de Productos -->
+                        <ng-template #expandedrow let-product>
+                            <tr>
+                                <td colspan="12" class="p-0">
+                                    <div class="nested-subtable-container">
+                                        <div class="nested-subtable-title">
+                                            <i class="pi pi-shopping-bag"></i>
+                                            <span>Detalle de Consumo — {{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Pedido Delivery' }} (ID #{{ product.idpedido }})</span>
+                                        </div>
+                                        <p-table [value]="product.pedidodetalle" dataKey="idpedidodetalle">
+                                            <ng-template #header>
+                                                <tr>
+                                                    <th>Destino</th>
+                                                    <th>Plato / Producto</th>
+                                                    <th class="text-center">Cantidad</th>
+                                                    <th class="text-right">Precio Unitario</th>
+                                                    <th class="text-right font-bold">Total</th>
+                                                </tr>
+                                            </ng-template>
+                                            <ng-template #body let-productodetalle>
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge-pay" [ngClass]="productodetalle.lugarpedido == 1 ? 'badge-delivery' : 'badge-mesa'">
+                                                            {{ product.mesa == 0 ? 'Delivery' : (productodetalle.lugarpedido == 1 ? 'Para Llevar' : 'Salón / Mesa') }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="font-bold text-gray-800">{{ productodetalle.producto?.nombre }}</td>
+                                                    <td class="text-center font-bold">{{ productodetalle.cantidad }}</td>
+                                                    <td class="text-right">S/ {{ (productodetalle.precioU || 0) | number:'1.2-2' }}</td>
+                                                    <td class="text-right font-bold text-gray-900">S/ {{ (productodetalle.total || 0) | number:'1.2-2' }}</td>
+                                                </tr>
+                                            </ng-template>
+                                        </p-table>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="emptymessage">
+                            <tr>
+                                <td colspan="12" class="empty-state">
+                                    <i class="pi pi-inbox"></i>
+                                    <span>No hay pedidos registrados para la fecha seleccionada.</span>
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </p-tabPanel>
+
+            <!-- ============================================================ -->
+            <!-- PESTAÑA 3: REPORTE ELIMINADOS -->
+            <!-- ============================================================ -->
+            <p-tabPanel header="Reporte Eliminados">
+                <div class="tab-header-toolbar">
+                    <div class="tab-header-title">
+                        <i class="pi pi-trash"></i>
+                        <div>
+                            <h3>Reporte de Pedidos Anulados / Eliminados</h3>
+                            <p>Auditoría de pedidos cancelados con motivo y responsable</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtro Rango de Fechas -->
+                <div class="filter-bar-card">
+                    <div class="filter-item">
+                        <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
+                        <p-datepicker #dp3 [(ngModel)]="selectedRange3" selectionMode="range" [numberOfMonths]="2"
+                            placeholder="Selecciona un rango de fechas..." (onSelect)="DayCalendarBlurEliminados()"
+                            (onShow)="onDatePickerShow(dp3)" (onFocus)="onDatePickerShow(dp3)"
+                            [defaultDate]="oneWeekAgo" [style]="{ width: '280px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
                             [minDate]="minDate" [maxDate]="maxDate">
                         </p-datepicker>
                     </div>
                 </div>
-            </div>
-            <div>
-                <p-table stripedRows #dt
-                    [styleClass]="'table-sm mt-5 p-datatable-sm p-datatable-gridlines table-bordered p-datatable-striped ml-3'"
-                    columnResizeMode="expand" [value]="Clients" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
-                    [tableStyle]="{ 'min-width': '5rem' }" [rowHover]="true" dataKey="idpedido"
-                    [resizableColumns]="true"
-                    currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-                    [showCurrentPageReport]="true">
 
-                    <ng-template pTemplate="header">
-                        <tr>
-                            <th pSortableColumn="fecha" style="width:14%">
-                                📅 Fecha <p-sortIcon field="fecha" />
-                            </th>
-                            <th pSortableColumn="dia" style="width:12%">
-                                📅 Día <p-sortIcon field="dia" />
-                            </th>
-                            <th pSortableColumn="efectivo" class="col-efectivo">
-                                💵 Efectivo <p-sortIcon field="efectivo" />
-                            </th>
-                            <th pSortableColumn="yape" class="col-yape">
-                                📱 Yape <p-sortIcon field="yape" />
-                            </th>
-                            <th pSortableColumn="plin" class="col-plin">
-                                📱 Plin <p-sortIcon field="plin" />
-                            </th>
-                            <th pSortableColumn="visa" class="col-tarjeta">
-                                💳 Visa <p-sortIcon field="visa" />
-                            </th>
-                            <th pSortableColumn="total" class="col-total">
-                                Total <p-sortIcon field="total" />
-                            </th>
-                            <th style="width:3rem"></th>
-                        </tr>
-                    </ng-template>
+                <!-- Tabla con Cabecera Verde Oscuro -->
+                <div class="custom-table-darkgreen">
+                    <p-table stripedRows #dtEliminados [expandedRowKeys]="expandedRowsEliminados"
+                        [value]="PedidoReporteEliminados" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
+                        [rowHover]="true" dataKey="idpedido" [resizableColumns]="true"
+                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} eliminados"
+                        [showCurrentPageReport]="true">
 
-                    <ng-template pTemplate="body" let-product let-odd="odd">
-                        <tr [class.row-odd]="odd">
-                            <td class="td-fecha">{{ product.fecha }}</td>
-                            <td class="td-dia" style="text-transform: capitalize;">{{ product.dia }}</td>
-                            <td>S/ {{ product.efectivo | number:'1.2-2' }}</td>
-                            <td>S/ {{ product.yape | number:'1.2-2' }}</td>
-                            <td>S/ {{ product.plin | number:'1.2-2' }}</td>
-                            <td>S/ {{ product.visa | number:'1.2-2' }}</td>
-                            <td class="td-total">S/ {{ product.total | number:'1.2-2' }}</td>
-                            <td>
-                                <p-button type="button" pRipple icon="pi pi-file-pdf" [rounded]="true" severity="danger"
-                                    [text]="true" (click)="PdfReporteDiario(product.fecha)" pTooltip="Reporte PDF"
-                                    tooltipPosition="left" />
-                            </td>
-                        </tr>
-                    </ng-template>
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th style="width: 3.5rem;"></th>
+                                <th pSortableColumn="fecha">Fecha <p-sortIcon field="fecha" /></th>
+                                <th pSortableColumn="dia">Día <p-sortIcon field="dia" /></th>
+                                <th pSortableColumn="mesa">Mesa / Tipo <p-sortIcon field="mesa" /></th>
+                                <th pSortableColumn="hora">Hora <p-sortIcon field="hora" /></th>
+                                <th pSortableColumn="total_pedidos" class="text-center">Cant. Platos <p-sortIcon field="total_pedidos" /></th>
+                                <th pSortableColumn="motivo">Motivo de Anulación <p-sortIcon field="motivo" /></th>
+                                <th pSortableColumn="responsable">Responsable <p-sortIcon field="responsable" /></th>
+                                <th pSortableColumn="total" class="text-right font-black">Total Anulado <p-sortIcon field="total" /></th>
+                            </tr>
+                        </ng-template>
 
-                    <ng-template pTemplate="footer">
-                        <tr *ngIf="Clients.length != 0" class="premium-tfoot">
-                            <td colspan="2" class="tfoot-label">
-                                TOTAL PERIODO
-                            </td>
-                            <td>S/ {{ array_data_total.efectivo | number:'1.2-2' }}</td>
-                            <td>S/ {{ array_data_total.yape | number:'1.2-2' }}</td>
-                            <td>S/ {{ array_data_total.plin | number:'1.2-2' }}</td>
-                            <td>S/ {{ array_data_total.visa | number:'1.2-2' }}</td>
-                            <td class="tfoot-total">S/ {{ array_data_total.total | number:'1.2-2' }}</td>
-                            <td></td>
-                        </tr>
-                        <tr *ngIf="Clients.length == 0">
-                            <td colspan="8" class="empty-state">
-                                <i class="pi pi-calendar"></i>
-                                <span>No hay registros. Por favor, seleccione un rango de fechas válido.</span>
-                            </td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-            </div>
-            <!-- <p-confirmDialog [style]="{ width: '450px' }" /> -->
-        </p-tabPanel>
-        <p-tabPanel header="Reporte Detallado">
-            <p-toolbar styleClass="gap-2 mt-5" [style]="{ 'background-color': 'rgb(31 63 111)' }">
-                <h4 class="font-medium text-surface-950 dark:text-surface-0 text-xl">Reporte Detallado Diario</h4>
-            </p-toolbar>
-            <div class="row mt-5">
-                <div class="col-sm-12">
-                    <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
-                    <div class="col-sm-12">
-                        <p-datepicker [(ngModel)]="selectedRange2" placeholder="Selecciona una fecha"
-                            (onSelect)="DayCalendarBlur()" [style]="{ width: '300px' }" [appendTo]="'body'"
-                            [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate"> </p-datepicker>
+                        <ng-template pTemplate="body" let-product let-expanded="expanded">
+                            <tr>
+                                <td>
+                                    <button type="button" pRipple [pRowToggler]="product"
+                                        class="p-1.5 rounded-full hover:bg-emerald-100 text-emerald-800 transition-colors">
+                                        <i class="pi" [ngClass]="expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                                    </button>
+                                </td>
+                                <td class="font-medium text-gray-800">{{ product.fecha }}</td>
+                                <td style="text-transform: capitalize;" class="text-gray-600">{{ product.dia }}</td>
+                                <td>
+                                    <span class="badge-pay" [ngClass]="product.mesa == 0 ? 'badge-delivery' : 'badge-mesa'">
+                                        <i class="pi" [ngClass]="product.mesa == 0 ? 'pi-send' : 'pi-table'"></i>
+                                        {{ product.mesa == 0 ? 'Delivery' : 'Mesa ' + product.mesa }}
+                                    </span>
+                                </td>
+                                <td class="text-gray-700 font-medium">{{ product.hora }}</td>
+                                <td class="text-center font-bold text-gray-800">{{ product.total_pedidos }}</td>
+                                <td>
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                        <i class="pi pi-exclamation-circle mr-1"></i> {{ product.motivo || 'Sin especificar' }}
+                                    </span>
+                                </td>
+                                <td class="font-semibold text-gray-700">
+                                    <i class="pi pi-user mr-1 text-gray-400"></i> {{ product.responsable }}
+                                </td>
+                                <td class="text-right font-black text-rose-700">S/ {{ (product.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+                        </ng-template>
+
+                        <!-- Fila Expandible con Detalle de Productos Eliminados -->
+                        <ng-template #expandedrow let-product>
+                            <tr>
+                                <td colspan="9" class="p-0">
+                                    <div class="nested-subtable-container">
+                                        <div class="nested-subtable-title text-rose-800">
+                                            <i class="pi pi-ban text-rose-600"></i>
+                                            <span>Platos que fueron Anulados — {{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Delivery' }} (ID #{{ product.idpedido }})</span>
+                                        </div>
+                                        <p-table [value]="product.pedidodetalle" dataKey="idpedidodetalle">
+                                            <ng-template #header>
+                                                <tr>
+                                                    <th>Destino</th>
+                                                    <th>Plato / Producto</th>
+                                                    <th class="text-center">Cantidad</th>
+                                                    <th class="text-right">Precio Unitario</th>
+                                                    <th class="text-right font-bold">Total</th>
+                                                </tr>
+                                            </ng-template>
+                                            <ng-template #body let-productodetalle>
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge-pay" [ngClass]="productodetalle.lugarpedido == 1 ? 'badge-delivery' : 'badge-mesa'">
+                                                            {{ product.mesa == 0 ? 'Delivery' : (productodetalle.lugarpedido == 1 ? 'Para Llevar' : 'Salón / Mesa') }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="font-bold text-gray-800">{{ productodetalle.producto?.nombre }}</td>
+                                                    <td class="text-center font-bold">{{ productodetalle.cantidad }}</td>
+                                                    <td class="text-right">S/ {{ (productodetalle.precioU || 0) | number:'1.2-2' }}</td>
+                                                    <td class="text-right font-bold text-rose-700">S/ {{ (productodetalle.total || 0) | number:'1.2-2' }}</td>
+                                                </tr>
+                                            </ng-template>
+                                        </p-table>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="emptymessage">
+                            <tr>
+                                <td colspan="9" class="empty-state">
+                                    <i class="pi pi-check-circle"></i>
+                                    <span>No hay pedidos eliminados registrados en este periodo.</span>
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </p-tabPanel>
+
+            <!-- ============================================================ -->
+            <!-- PESTAÑA 4: PEDIDOS SIN COBRAR -->
+            <!-- ============================================================ -->
+            <p-tabPanel header="Pedidos Sin Cobrar">
+                <div class="tab-header-toolbar">
+                    <div class="tab-header-title">
+                        <i class="pi pi-clock"></i>
+                        <div>
+                            <h3>Pedidos Pendientes de Cobro</h3>
+                            <p>Control y gestión de órdenes abiertas sin registrar pago</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div>
-                <p-table stripedRows #dt [expandedRowKeys]="expandedRows"
-                    [styleClass]="'table-sm mt-5 p-datatable-sm p-datatable-gridlines table-bordered p-datatable-striped ml-3'"
-                    columnResizeMode="expand" [value]="PedidoReporte" rowGroupMode="rowspan" [rows]="10"
-                    [paginator]="true" [tableStyle]="{ 'min-width': '5rem' }" [rowHover]="true" dataKey="idpedido"
-                    [resizableColumns]="true"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-                    [showCurrentPageReport]="true">
-                    <ng-template pTemplate="header">
-                        <tr>
-                            <td style="width:3%" style="min-width:3rem"></td>
-                            <td style="width:5%" pSortableColumn="fecha" style="min-width:6rem">
-                                Fecha
-                                <p-sortIcon field="fecha" />
-                            </td>
-                            <th pSortableColumn="dia" style="min-width:15rem" style="min-width:3rem">
-                                Dia
-                                <p-sortIcon field="dia" />
-                            </th>
-                            <td style="width:5%" pSortableColumn="mesa" style="min-width:6rem">
-                                Mesa
-                                <p-sortIcon field="mesa" />
-                            </td>
-                            <th pSortableColumn="hora" style="min-width:3rem" style="min-width:3rem">
-                                Hora
-                                <p-sortIcon field="hora" />
-                            </th>
-                            <th pSortableColumn="total_pedidos" style="min-width:3rem">
-                                Total Pedidos
-                                <p-sortIcon field="total_pedidos" />
-                            </th>
 
-                            <th style="width:5%" pSortableColumn="efectivo" style="min-width:3rem">
-                                💵Efectivo
-                                <p-sortIcon field="efectivo" />
-                            </th>
-                            <th pSortableColumn="yape" style="min-width:3rem">
-                                📱Yape
-                                <p-sortIcon field="yape" />
-                            </th>
-                            <th pSortableColumn="plin" style="min-width:3rem">
-                                📱Plin
-                                <p-sortIcon field="plin" />
-                            </th>
-                            <th pSortableColumn="visa" style="min-width:3rem">
-                                💳Visa
-                                <p-sortIcon field="visa" />
-                            </th>
-                            <th pSortableColumn="total" style="min-width:3rem">
-                                Total
-                                <p-sortIcon field="total" />
-                            </th>
-                            <th></th>
-                        </tr>
-                    </ng-template>
-                    <ng-template pTemplate="body" let-product let-expanded="expanded">
-                        <tr>
-                            <td>
-                                <p-button type="button" pRipple [pRowToggler]="product" [text]="true" [rounded]="true"
-                                    [plain]="true" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
-                            </td>
-                            <td>{{ product.fecha }}</td>
-                            <td>{{ product.dia }}</td>
-                            <td>{{ product.mesa == 0 ? 'Delivery' : product.mesa }}</td>
-                            <td>{{ product.hora }}</td>
-                            <td>{{ product.total_pedidos }}</td>
-                            <td>{{ 'S/' + product.efectivo }}</td>
-                            <td>{{ 'S/' + product.yape }}</td>
-                            <td>{{ 'S/' + product.plin }}</td>
-                            <td>{{ 'S/' + product.visa }}</td>
-                            <td>{{ 'S/' + product.total }}</td>
-                            <td>
-                                <p-button type="button" [text]="true" [rounded]="true" [plain]="true"
-                                    [icon]="'pi pi-spin pi-cog'" (click)="Editar(product)" />
-                            </td>
-                        </tr>
-                    </ng-template>
+                <!-- Filtro Rango de Fechas -->
+                <div class="filter-bar-card">
+                    <div class="filter-item">
+                        <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
+                        <p-datepicker #dp4 [(ngModel)]="selectedRange4" selectionMode="range" [numberOfMonths]="2"
+                            placeholder="Selecciona un rango de fechas..." (onSelect)="DayCalendarBlurSinCobrar()"
+                            (onShow)="onDatePickerShow(dp4)" (onFocus)="onDatePickerShow(dp4)"
+                            [defaultDate]="oneWeekAgo" [style]="{ width: '280px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
+                            [minDate]="minDate" [maxDate]="maxDate">
+                        </p-datepicker>
+                    </div>
+                </div>
 
-                    <ng-template #expandedrow let-product>
-                        <tr>
-                            <td colspan="7">
-                                <div class="p-4">
-                                    <h5>{{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Delivery ' }}</h5>
-                                    <p-table [value]="product.pedidodetalle" dataKey="idpedidodetalle">
-                                        <ng-template #header>
-                        <tr>
-                            <th>Lugarpedido</th>
-                            <th>Plato <p-sortIcon field="nombre" /></th>
-                            <th>Cantidad <p-sortIcon field="cantidad" /></th>
-                            <th>Precio Unitario</th>
-                            <th>Total</th>
-                        </tr>
-                    </ng-template>
-                    <ng-template #body let-productodetalle>
-                        <tr>
-                            <td>{{ product.mesa == 0 ? 'Delivery' : productodetalle.lugarpedido == 1 ? 'llevar' : 'Mesa'
-                                }}</td>
-                            <td>{{ productodetalle.producto.nombre }}</td>
-                            <td>{{ productodetalle.cantidad }}</td>
-                            <td>{{ productodetalle.precioU }}</td>
-                            <td>{{ productodetalle.total }}</td>
-                        </tr>
-                    </ng-template>
+                <!-- Tabla con Cabecera Verde Oscuro -->
+                <div class="custom-table-darkgreen">
+                    <p-table stripedRows #dtSinCobrar [expandedRowKeys]="expandedRowsSinCobrar"
+                        [value]="PedidoReporteSinCobrar" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
+                        [rowHover]="true" dataKey="idpedido" [resizableColumns]="true"
+                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} pedidos por cobrar"
+                        [showCurrentPageReport]="true">
 
-                    <!-- <ng-template #emptymessage>
-                        <tr>
-                            <td colspan="6">There are no order for this product yet.</td>
-                        </tr>
-                    </ng-template> -->
-                </p-table>
-            </div>
-            </td>
-            </tr>
-            </ng-template>
-            </p-table>
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th style="width: 3.5rem;"></th>
+                                <th pSortableColumn="fecha">Fecha <p-sortIcon field="fecha" /></th>
+                                <th pSortableColumn="dia">Día <p-sortIcon field="dia" /></th>
+                                <th pSortableColumn="mesa">Mesa / Tipo <p-sortIcon field="mesa" /></th>
+                                <th pSortableColumn="hora">Hora <p-sortIcon field="hora" /></th>
+                                <th pSortableColumn="total_pedidos" class="text-center">Num. Pedidos <p-sortIcon field="total_pedidos" /></th>
+                                <th pSortableColumn="total" class="text-right font-black">Total por Cobrar <p-sortIcon field="total" /></th>
+                                <th style="width: 6rem;" class="text-center">Acción</th>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="body" let-product let-expanded="expanded">
+                            <tr>
+                                <td>
+                                    <button type="button" pRipple [pRowToggler]="product"
+                                        class="p-1.5 rounded-full hover:bg-emerald-100 text-emerald-800 transition-colors">
+                                        <i class="pi" [ngClass]="expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+                                    </button>
+                                </td>
+                                <td class="font-medium text-gray-800">{{ product.fecha }}</td>
+                                <td style="text-transform: capitalize;" class="text-gray-600">{{ product.dia }}</td>
+                                <td>
+                                    <span class="badge-pay" [ngClass]="product.mesa == 0 ? 'badge-delivery' : 'badge-mesa'">
+                                        <i class="pi" [ngClass]="product.mesa == 0 ? 'pi-send' : 'pi-table'"></i>
+                                        {{ product.mesa == 0 ? 'Delivery' : 'Mesa ' + product.mesa }}
+                                    </span>
+                                </td>
+                                <td class="text-gray-700 font-medium">{{ product.hora }}</td>
+                                <td class="text-center font-bold text-gray-800">{{ product.total_pedidos }}</td>
+                                <td class="text-right">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-sm font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                        S/ {{ (product.total || 0) | number:'1.2-2' }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition-all flex items-center gap-1.5 mx-auto"
+                                        (click)="Editar(product)">
+                                        <i class="pi pi-wallet"></i> Cobrar
+                                    </button>
+                                </td>
+                            </tr>
+                        </ng-template>
+
+                        <!-- Fila Expandible con Detalle de Productos Sin Cobrar -->
+                        <ng-template #expandedrow let-product>
+                            <tr>
+                                <td colspan="8" class="p-0">
+                                    <div class="nested-subtable-container">
+                                        <div class="nested-subtable-title text-amber-800">
+                                            <i class="pi pi-exclamation-triangle text-amber-600"></i>
+                                            <span>Detalle de Consumo Pendiente — {{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Delivery' }} (ID #{{ product.idpedido }})</span>
+                                        </div>
+                                        <p-table [value]="product.pedidodetalle" dataKey="idpedidodetalle">
+                                            <ng-template #header>
+                                                <tr>
+                                                    <th>Destino</th>
+                                                    <th>Plato / Producto</th>
+                                                    <th class="text-center">Cantidad</th>
+                                                    <th class="text-right">Precio Unitario</th>
+                                                    <th class="text-right font-bold">Total</th>
+                                                </tr>
+                                            </ng-template>
+                                            <ng-template #body let-productodetalle>
+                                                <tr>
+                                                    <td>
+                                                        <span class="badge-pay" [ngClass]="productodetalle.lugarpedido == 1 ? 'badge-delivery' : 'badge-mesa'">
+                                                            {{ product.mesa == 0 ? 'Delivery' : (productodetalle.lugarpedido == 1 ? 'Para Llevar' : 'Salón / Mesa') }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="font-bold text-gray-800">{{ productodetalle.producto?.nombre }}</td>
+                                                    <td class="text-center font-bold">{{ productodetalle.cantidad }}</td>
+                                                    <td class="text-right">S/ {{ (productodetalle.precioU || 0) | number:'1.2-2' }}</td>
+                                                    <td class="text-right font-bold text-gray-900">S/ {{ (productodetalle.total || 0) | number:'1.2-2' }}</td>
+                                                </tr>
+                                            </ng-template>
+                                        </p-table>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="emptymessage">
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    <i class="pi pi-check-circle"></i>
+                                    <span>Excelente: no hay pedidos pendientes de cobro en este periodo.</span>
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </p-tabPanel>
+
+        </p-tabView>
+    </div>
 </div>
-<!-- <p-confirmDialog [style]="{ width: '450px' }" /> -->
-</p-tabPanel>
-<p-tabPanel header="Reporte Eliminados">
-    <p-toolbar styleClass="gap-2 mt-5" [style]="{ 'background-color': 'rgb(31 63 111)' }">
-        <h4 class="font-medium text-surface-950 dark:text-surface-0 text-xl">Reporte Eliminados Diario</h4>
-    </p-toolbar>
-    <div class="row mt-5">
-        <div class="col-sm-12">
-            <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Fecha:</b></p>
-            <div class="col-sm-12">
-                <p-datepicker [(ngModel)]="selectedRange3" selectionMode="range" [numberOfMonths]="2"
-                    placeholder="Selecciona un rango" (onSelect)="DayCalendarBlurEliminados()"
-                    [style]="{ width: '300px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
-                    [minDate]="minDate" [maxDate]="maxDate"> </p-datepicker>
-            </div>
-        </div>
-    </div>
-    <div>
-        <p-table stripedRows #dtEliminados [expandedRowKeys]="expandedRowsEliminados"
-            [styleClass]="'table-sm mt-5 p-datatable-sm p-datatable-gridlines table-bordered p-datatable-striped ml-3'"
-            columnResizeMode="expand" [value]="PedidoReporteEliminados" rowGroupMode="rowspan" [rows]="10"
-            [paginator]="true" [tableStyle]="{ 'min-width': '5rem' }" [rowHover]="true" dataKey="idpedido"
-            [resizableColumns]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-            [showCurrentPageReport]="true">
-            <ng-template pTemplate="header">
-                <tr>
-                    <td style="width:3%" style="min-width:3rem"></td>
-                    <td style="width:5%" pSortableColumn="fecha" style="min-width:6rem">
-                        Fecha
-                        <p-sortIcon field="fecha" />
-                    </td>
-                    <th pSortableColumn="dia" style="min-width:15rem" style="min-width:3rem">
-                        Dia
-                        <p-sortIcon field="dia" />
-                    </th>
-                    <td style="width:5%" pSortableColumn="mesa" style="min-width:6rem">
-                        Mesa
-                        <p-sortIcon field="mesa" />
-                    </td>
-                    <th pSortableColumn="hora" style="min-width:3rem" style="min-width:3rem">
-                        Hora
-                        <p-sortIcon field="hora" />
-                    </th>
-                    <th pSortableColumn="total_pedidos" style="min-width:3rem">
-                        Total Pedidos
-                        <p-sortIcon field="total_pedidos" />
-                    </th>
 
-                    <th pSortableColumn="motivo" style="min-width:10rem">
-                        Motivo
-                        <p-sortIcon field="motivo" />
-                    </th>
-                    <th pSortableColumn="responsable" style="min-width:6rem">
-                        Responsable
-                        <p-sortIcon field="responsable" />
-                    </th>
-                    <th pSortableColumn="total" style="min-width:3rem">
-                        Total
-                        <p-sortIcon field="total" />
-                    </th>
-                    <th></th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-product let-expanded="expanded">
-                <tr>
-                    <td>
-                        <p-button type="button" pRipple [pRowToggler]="product" [text]="true" [rounded]="true"
-                            [plain]="true" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
-                    </td>
-                    <td>{{ product.fecha }}</td>
-                    <td>{{ product.dia }}</td>
-                    <td>{{ product.mesa == 0 ? 'Delivery' : product.mesa }}</td>
-                    <td>{{ product.hora }}</td>
-                    <td>{{ product.total_pedidos }}</td>
-                    <td>{{ product.motivo }}</td>
-                    <td>{{ product.responsable }}</td>
-                    <td>{{ 'S/' + product.total }}</td>
-                    <td>
-                    </td>
-                </tr>
-            </ng-template>
-
-            <ng-template #expandedrow let-product>
-                <tr>
-                    <td colspan="7">
-                        <div class="p-4">
-                            <h5>{{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Delivery ' }}</h5>
-                            <p-table [value]="product.pedidodetalle" dataKey="idpedidodetalle">
-                                <ng-template #header>
-                <tr>
-                    <th>Lugarpedido</th>
-                    <th>Plato <p-sortIcon field="nombre" /></th>
-                    <th>Cantidad <p-sortIcon field="cantidad" /></th>
-                    <th>Precio Unitario</th>
-                    <th>Total</th>
-                </tr>
-            </ng-template>
-            <ng-template #body let-productodetalle>
-                <tr>
-                    <td>{{ product.mesa == 0 ? 'Delivery' : productodetalle.lugarpedido == 1 ? 'llevar' : 'Mesa'
-                        }}</td>
-                    <td>{{ productodetalle.producto.nombre }}</td>
-                    <td>{{ productodetalle.cantidad }}</td>
-                    <td>{{ productodetalle.precioU }}</td>
-                    <td>{{ productodetalle.total }}</td>
-                </tr>
-            </ng-template>
-
-            <!-- <ng-template #emptymessage>
-                        <tr>
-                            <td colspan="6">There are no order for this product yet.</td>
-                        </tr>
-                    </ng-template> -->
-        </p-table>
-    </div>
-    </td>
-    </tr>
-    </ng-template>
-    </p-table>
-    </div>
-    <!-- <p-confirmDialog [style]="{ width: '450px' }" /> -->
-</p-tabPanel>
-<p-tabPanel header="Pedidos Sin Cobrar">
-    <p-toolbar styleClass="gap-2 mt-5" [style]="{ 'background-color': 'rgb(31 63 111)' }">
-        <h4 class="font-medium text-surface-950 dark:text-surface-0 text-xl">Reporte Pedidos Sin Cobrar</h4>
-    </p-toolbar>
-    <div class="row mt-5">
-        <div class="col-sm-12">
-            <p for="staticEmail" class="col-sm-12 col-form-label mt-5"><b>Rango de Fecha:</b></p>
-            <div class="col-sm-12">
-                <p-datepicker [(ngModel)]="selectedRange4" selectionMode="range" [numberOfMonths]="2"
-                    placeholder="Selecciona un rango" (onSelect)="DayCalendarBlurSinCobrar()"
-                    [style]="{ width: '300px' }" [appendTo]="'body'" [panelStyle]="{ 'z-index': '10000' }"
-                    [minDate]="minDate" [maxDate]="maxDate"> </p-datepicker>
-            </div>
-        </div>
-    </div>
-    <div>
-        <p-table stripedRows #dtSinCobrar [expandedRowKeys]="expandedRowsSinCobrar"
-            [styleClass]="'table-sm mt-5 p-datatable-sm p-datatable-gridlines table-bordered p-datatable-striped ml-3'"
-            columnResizeMode="expand" [value]="PedidoReporteSinCobrar" rowGroupMode="rowspan" [rows]="10"
-            [paginator]="true" [tableStyle]="{ 'min-width': '5rem' }" [rowHover]="true" dataKey="idpedido"
-            [resizableColumns]="true" currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-            [showCurrentPageReport]="true">
-            <ng-template pTemplate="header">
-                <tr>
-                    <td style="width:3%" style="min-width:3rem"></td>
-                    <td style="width:5%" pSortableColumn="fecha" style="min-width:6rem">
-                        Fecha
-                        <p-sortIcon field="fecha" />
-                    </td>
-                    <th pSortableColumn="dia" style="min-width:15rem" style="min-width:3rem">
-                        Dia
-                        <p-sortIcon field="dia" />
-                    </th>
-                    <td style="width:5%" pSortableColumn="mesa" style="min-width:6rem">
-                        Mesa
-                        <p-sortIcon field="mesa" />
-                    </td>
-                    <th pSortableColumn="hora" style="min-width:3rem" style="min-width:3rem">
-                        Hora
-                        <p-sortIcon field="hora" />
-                    </th>
-                    <th pSortableColumn="total_pedidos" style="min-width:3rem">
-                        Num. Pedidos
-                        <p-sortIcon field="total_pedidos" />
-                    </th>
-                    <th pSortableColumn="total" style="min-width:3rem">
-                        Total por Cobrar
-                        <p-sortIcon field="total" />
-                    </th>
-                    <th></th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-product let-expanded="expanded">
-                <tr>
-                    <td>
-                        <p-button type="button" pRipple [pRowToggler]="product" [text]="true" [rounded]="true"
-                            [plain]="true" [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" />
-                    </td>
-                    <td>{{ product.fecha }}</td>
-                    <td>{{ product.dia }}</td>
-                    <td>{{ product.mesa == 0 ? 'Delivery' : product.mesa }}</td>
-                    <td>{{ product.hora }}</td>
-                    <td>{{ product.total_pedidos }}</td>
-                    <td>{{ 'S/' + product.total }}</td>
-                    <td>
-                        <p-button type="button" [text]="true" [rounded]="true" [plain]="true"
-                            [icon]="'pi pi-spin pi-cog'" (click)="Editar(product)" />
-                    </td>
-                </tr>
-            </ng-template>
-
-            <ng-template #expandedrow let-product>
-                <tr>
-                    <td colspan="7">
-                        <div class="p-4">
-                            <h5>{{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Delivery ' }}</h5>
-                            <p-table [value]="product.pedidodetalle" dataKey="idpedidodetalle">
-                                <ng-template #header>
-                <tr>
-                    <th>Lugarpedido</th>
-                    <th>Plato <p-sortIcon field="nombre" /></th>
-                    <th>Cantidad <p-sortIcon field="cantidad" /></th>
-                    <th>Precio Unitario</th>
-                    <th>Total</th>
-                </tr>
-            </ng-template>
-            <ng-template #body let-productodetalle>
-                <tr>
-                    <td>{{ product.mesa == 0 ? 'Delivery' : productodetalle.lugarpedido == 1 ? 'llevar' : 'Mesa'
-                        }}</td>
-                    <td>{{ productodetalle.producto.nombre }}</td>
-                    <td>{{ productodetalle.cantidad }}</td>
-                    <td>{{ productodetalle.precioU }}</td>
-                    <td>{{ productodetalle.total }}</td>
-                </tr>
-            </ng-template>
-        </p-table>
-    </div>
-    </td>
-    </tr>
-    </ng-template>
-    </p-table>
-    </div>
-</p-tabPanel>
-</p-tabView>
-</div>
-<p-dialog [position]="'top'" [(visible)]="PDF_Dialog" [style]="{ width: '500px', height: '880px' }"
-    (onHide)="PDF_Dialog = false" [closeOnEscape]="true" header="Imprimir Cliente" [modal]="true" [draggable]="false"
-    [resizable]="false" styleClass="p-fluid">
+<!-- ============================================================ -->
+<!-- MODAL: VISOR DE REPORTE PDF -->
+<!-- ============================================================ -->
+<p-dialog [position]="'top'" [(visible)]="PDF_Dialog" [style]="{ width: '560px', maxHeight: '90vh' }"
+    (onHide)="PDF_Dialog = false" [closeOnEscape]="true" header="Reporte Diario de Caja" [modal]="true"
+    [draggable]="false" [resizable]="false">
     <div class="pdf-container">
-        <iframe *ngIf="pdfUrl" [src]="pdfUrl" width="100%" height="650px" frameborder="0"></iframe>
+        <iframe *ngIf="pdfUrl" [src]="pdfUrl" width="100%" height="600px" frameborder="0"></iframe>
     </div>
     <ng-template pTemplate="footer">
-        <p-button styleClass="p-button-raised p-button-danger" label="Cerrar" icon="pi pi-times"
-            (onClick)="hideDialogPdf()" [style]="{ 'margin-left': '20px', 'margin-top': '55px;' }"></p-button>
+        <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg shadow transition-colors flex items-center gap-2"
+                (click)="hideDialogPdf()">
+                <i class="pi pi-times"></i> Cerrar
+            </button>
+        </div>
     </ng-template>
 </p-dialog>
 
-<!-- Add the edit dialog similar to the one in home.component.html -->
-<p-dialog [(visible)]="Cobrar_Dialog" [position]="'top'" header="Cobrar Pedido" [style]="{ width: '600px' }"
-    [modal]="true" [draggable]="false" [resizable]="false" styleClass="p-fluid">
+<!-- ============================================================ -->
+<!-- MODAL: COBRAR / EDITAR PEDIDO -->
+<!-- ============================================================ -->
+<p-dialog [(visible)]="Cobrar_Dialog" [position]="'top'" header="Cobrar Pedido" [style]="{ width: '92vw', maxWidth: '600px' }"
+    [modal]="true" [draggable]="false" [resizable]="false">
     <ng-template pTemplate="content">
-        <div class="px-6 py-2 space-y-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="p-2 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
-                    <label for="efectivo" class="block text-sm font-medium text-gray-700">💵Efectivo</label>
+                    <label for="efectivo" class="block text-xs font-bold text-gray-700 uppercase mb-1">💵 Efectivo</label>
                     <input id="efectivo" type="number" [(ngModel)]="Pedido_cobrar.efectivo"
-                        class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
+                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-green-500/20 focus:border-green-600 outline-none" />
                 </div>
                 <div>
-                    <label for="visa" class="block text-sm font-medium text-gray-700">💳Visa</label>
+                    <label for="visa" class="block text-xs font-bold text-gray-700 uppercase mb-1">💳 Visa / POS</label>
                     <input id="visa" type="number" [(ngModel)]="Pedido_cobrar.visa"
-                        class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
+                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none" />
                 </div>
                 <div>
-                    <label for="yape" class="block text-sm font-medium text-gray-700">📱Yape</label>
+                    <label for="yape" class="block text-xs font-bold text-gray-700 uppercase mb-1">📱 Yape</label>
                     <input id="yape" type="number" [(ngModel)]="Pedido_cobrar.yape"
-                        class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
+                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 outline-none" />
                 </div>
                 <div>
-                    <label for="plin" class="block text-sm font-medium text-gray-700">📱Plin</label>
+                    <label for="plin" class="block text-xs font-bold text-gray-700 uppercase mb-1">📱 Plin</label>
                     <input id="plin" type="number" [(ngModel)]="Pedido_cobrar.plin"
-                        class="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
+                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-600 outline-none" />
                 </div>
             </div>
             <div>
-                <label for="total" class="block text-sm font-semibold text-gray-800">Total</label>
-                <input id="total" type="number" disabled [(ngModel)]="Pedido_cobrar.total"
-                    class="w-full mt-1 bg-gray-100 border border-gray-300 text-blue-600 font-bold text-lg rounded-md px-3 py-2 cursor-not-allowed" />
+                <label for="total" class="block text-xs font-bold text-gray-700 uppercase mb-1">Total Pedido</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 font-bold">S/</span>
+                    <input id="total" type="number" disabled [(ngModel)]="Pedido_cobrar.total"
+                        class="w-full pl-9 pr-3 py-3 bg-gray-100 border border-gray-300 text-emerald-800 font-black text-xl rounded-lg cursor-not-allowed" />
+                </div>
             </div>
         </div>
     </ng-template>
 
     <ng-template pTemplate="footer">
-        <div class="flex justify-end gap-4 px-6 pb-4">
-            <p-button styleClass="p-button-raised p-button-primary" icon="pi pi-save" label="Cobrar"
-                (onClick)="CobrarPedido(Pedido_cobrar)"> </p-button>
-
-            <p-button styleClass="p-button-raised p-button-danger" icon="pi pi-times" label="Cancelar"
-                (onClick)="hideDialog()"> </p-button>
+        <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-4 py-2 rounded-lg text-gray-600 font-semibold hover:bg-gray-100 transition-colors"
+                (click)="hideDialog()">
+                Cancelar
+            </button>
+            <button type="button" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow transition-all flex items-center gap-2"
+                (click)="CobrarPedido(Pedido_cobrar)">
+                <i class="pi pi-save"></i> Guardar Cobro
+            </button>
         </div>
     </ng-template>
 </p-dialog>

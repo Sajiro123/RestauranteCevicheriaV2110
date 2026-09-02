@@ -3,12 +3,13 @@ import { AperturaService } from '../../service/apertura.service';
 import { PedidoService } from '../../service/pedido.service';
 import { ImportsModule } from '../../imports';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { getFechaPeru, getFechaTextoPeru } from '../../../utils/date-time.helper';
 
 @Component({
     selector: 'app-apertura',
-    imports: [CommonModule, ImportsModule, FormsModule], // <-- Add this
+    imports: [CommonModule, ImportsModule, FormsModule, ReactiveFormsModule],
     providers: [MessageService, ConfirmationService],
     templateUrl: './apertura.component.html',
     styleUrl: './apertura.component.scss'
@@ -16,26 +17,23 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 export class AperturaComponent {
     data_apertura: any = [];
     fecha_actual: string = '';
+    fechaActual: string = '';
     cajaForm: FormGroup;
+    arqueoForm: FormGroup;
     texto_estado_caja: any = '';
     estado_caja: number | null = null;
     GastosForm: FormGroup;
     EditGastoForm: FormGroup;
     CategoriaGastosList: { descripcion: string; idcategoriagastos: number }[] = [];
     GastosList: { monto: number; descripcion: string; fecha: Date; idcategoriagastos: number; notas: string }[] = [];
-    fechaActual: string = new Date()
-        .toLocaleDateString('es-PE', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        })
-        .split('/')
-        .reverse()
-        .join('-');
     Resumenventahoy: any = [];
     isSubmitting = false;
+    isCerrando = false;
     trabajadoresList: any[] = [];
     editDialogVisible = false;
+    arqueoDialogVisible = false;
+    resultadoCierreDialogVisible = false;
+    resultadoCierre: any = null;
     gastoEditando: any = null;
     modoEdicion = false;
 
@@ -56,14 +54,17 @@ export class AperturaComponent {
             monto: ['', [Validators.required, Validators.min(0)]]
         });
 
-        let dateHoy = new Date();
-        dateHoy.setDate(dateHoy.getDate());
-        let hoy = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+        this.arqueoForm = this.fb.group({
+            efectivo_declarado: [0, [Validators.required, Validators.min(0)]],
+            yape_declarado: [0, [Validators.required, Validators.min(0)]],
+            plin_declarado: [0, [Validators.required, Validators.min(0)]],
+            tarjeta_declarado: [0, [Validators.required, Validators.min(0)]],
+            notas: ['']
+        });
 
         this.GastosForm = this.fb.group({
             descripcion: ['', Validators.required],
             monto: [0.0, Validators.required],
-            // fecha: [hoy, Validators.required],
             categoria: ['', Validators.required],
             notas: ['']
         });
@@ -77,62 +78,159 @@ export class AperturaComponent {
     }
 
     ngOnInit(): void {
-        const date = new Date();
-        this.fecha_actual = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
-
-        const opciones: Intl.DateTimeFormatOptions = {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-        };
-        // Convertir la fecha a texto en español
-        const fechaFormateada = date.toLocaleDateString('es-PE', opciones);
-
-        // Reemplazar "de junio de 2025" por "de junio del 2025"
-        this.fecha_actual = fechaFormateada.replace(' de ', ' de ').replace(' de ', ' del ');
+        this.fechaActual = getFechaPeru();
+        this.fecha_actual = getFechaTextoPeru();
         this.ListAperturaNow();
         this.ListGastos();
         this.ListarTrabajadores();
     }
 
     GuardarCaja() {
-        debugger;
         if (this.estado_caja == null) {
             // ── SIN APERTURA: Abrir caja ──────────────────────────
             if (this.cajaForm.invalid) {
                 this.cajaForm.markAllAsTouched();
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Formulario incompleto',
+                    detail: 'Por favor completa todos los campos requeridos para abrir caja.',
+                    life: 3500
+                });
                 return;
             }
-            this.AperturaService_.registrarCaja(this.cajaForm.value).subscribe(() => {
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Apertura registrada',
-                    detail: 'Apertura registrada para el día de hoy',
-                    life: 3000
-                });
-                this.ListAperturaNow();
-            });
-        } else if (this.estado_caja == 1) {
-            // ── ESTADO 1 (Abierta): Cerrar caja ──────────────────
-            this.confirmationService.confirm({
-                message: '¿Estás seguro de cerrar la caja?',
-                header: 'Cerrar Caja',
-                icon: 'pi pi-exclamation-triangle',
-                accept: () => {
-                    this.AperturaService_.cerrarCaja(this.cajaForm.value).subscribe(() => {
+
+            if (this.isSubmitting) return;
+            this.isSubmitting = true;
+
+            this.AperturaService_.registrarCaja(this.cajaForm.value).subscribe({
+                next: (res: any) => {
+                    this.isSubmitting = false;
+                    if (res && res.success === false) {
+                        this.messageService.add({
+                            severity: 'error',
+                            summary: 'No se pudo abrir caja',
+                            detail: res.error?.message || 'Ya existe una caja abierta para hoy.',
+                            life: 4000
+                        });
+                        this.ListAperturaNow();
+                    } else {
                         this.messageService.add({
                             severity: 'success',
-                            summary: 'Caja cerrada',
-                            detail: 'La caja fue cerrada correctamente',
+                            summary: 'Apertura registrada',
+                            detail: 'Apertura de caja registrada para el día de hoy',
                             life: 3000
                         });
-                        this.modoEdicion = false;
                         this.ListAperturaNow();
+                    }
+                },
+                error: (err: any) => {
+                    this.isSubmitting = false;
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Error al conectar con el servidor',
+                        life: 3000
                     });
                 }
             });
+        } else if (this.estado_caja == 1) {
+            // ── ESTADO 1 (Abierta): Abrir modal de arqueo ciego ──
+            this.abrirModalArqueo();
         }
-        // estado_caja === 2 (Cerrada): el botón no aparece en el HTML
+    }
+
+    abrirModalArqueo() {
+        this.arqueoForm.reset({
+            efectivo_declarado: 0,
+            yape_declarado: 0,
+            plin_declarado: 0,
+            tarjeta_declarado: 0,
+            notas: ''
+        });
+        this.arqueoDialogVisible = true;
+    }
+
+    confirmarCierreArqueo() {
+        if (this.arqueoForm.invalid) {
+            this.arqueoForm.markAllAsTouched();
+            return;
+        }
+
+        this.isCerrando = true;
+        const fecha = getFechaPeru();
+        const payload = {
+            fecha: fecha,
+            turno: this.cajaForm.get('turno')?.value || 'Mañana',
+            efectivo_declarado: Number(this.arqueoForm.value.efectivo_declarado) || 0,
+            yape_declarado: Number(this.arqueoForm.value.yape_declarado) || 0,
+            plin_declarado: Number(this.arqueoForm.value.plin_declarado) || 0,
+            tarjeta_declarado: Number(this.arqueoForm.value.tarjeta_declarado) || 0,
+            notas: this.arqueoForm.value.notas || ''
+        };
+
+        this.AperturaService_.guardarCierreCaja(payload).subscribe({
+            next: (res: any) => {
+                this.isCerrando = false;
+                if (res.success) {
+                    this.resultadoCierre = res.data;
+                    this.arqueoDialogVisible = false;
+                    this.resultadoCierreDialogVisible = true;
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Caja Cerrada y Cuadrada',
+                        detail: 'El cierre de caja y arqueo fue registrado con éxito',
+                        life: 4000
+                    });
+                    this.modoEdicion = false;
+                    this.ListAperturaNow();
+                    this.ListarReporteHoy();
+                } else {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error al cerrar caja',
+                        detail: res.error?.message || 'Ocurrió un problema al guardar el cierre',
+                        life: 4000
+                    });
+                }
+            },
+            error: (err: any) => {
+                this.isCerrando = false;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error de servidor',
+                    detail: 'No se pudo procesar el cierre de caja',
+                    life: 4000
+                });
+            }
+        });
+    }
+
+    verDetalleCierreActual() {
+        const fecha = getFechaPeru();
+        this.AperturaService_.calcularResumenCaja(fecha).subscribe((res) => {
+            if (res.success && res.data) {
+                const sys = res.data;
+                const montoApertura = this.cajaForm.get('monto')?.value || sys.montoInicial || 0;
+                this.resultadoCierre = {
+                    declarado: {
+                        efectivo: sys.efectivoEsperado,
+                        yape: sys.ventasYape,
+                        plin: sys.ventasPlin,
+                        tarjeta: sys.ventasTarjeta,
+                        total: sys.totalSistemaEsperado
+                    },
+                    sistema: sys,
+                    diferencias: {
+                        efectivo: 0,
+                        yape: 0,
+                        plin: 0,
+                        tarjeta: 0,
+                        total: 0
+                    }
+                };
+                this.resultadoCierreDialogVisible = true;
+            }
+        });
     }
 
     activarEdicion() {
@@ -270,7 +368,7 @@ export class AperturaComponent {
     }
 
     ListarReporteHoy() {
-        const fecha = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+        const fecha = getFechaPeru();
         this.pedidoService_.ReporteDiario(fecha).subscribe((response) => {
             if (response.success) {
                 if (response.data) {
@@ -373,15 +471,7 @@ export class AperturaComponent {
     }
 
     ListGastos() {
-        const fecha = new Date()
-            .toLocaleDateString('es-PE', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            })
-            .split('/')
-            .reverse()
-            .join('-');
+        const fecha = getFechaPeru();
         this.AperturaService_.ListGastos(fecha).subscribe((response) => {
             if (response.success) {
                 if (response.data) {

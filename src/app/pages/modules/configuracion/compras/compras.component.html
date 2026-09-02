@@ -1,0 +1,260 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="compras-host">
+
+    <!-- ══════════════════════════════════════════════════════
+         HEADER
+    ══════════════════════════════════════════════════════ -->
+    <div class="compras-header">
+        <div class="header-left">
+            <button class="btn-back" (click)="goBack()" title="Volver a Configuración">
+                <i class="pi pi-arrow-left"></i>
+            </button>
+            <div class="header-title-group">
+                <span class="header-icon">🛍️</span>
+                <div>
+                    <h1 class="header-title">Gestor de Compras & Suministros</h1>
+                    <p class="header-subtitle">Lista dinámica de compras del restaurante</p>
+                </div>
+            </div>
+        </div>
+        <div class="header-stats">
+            <div class="stat-pill stat-pendiente">
+                <i class="pi pi-clock"></i>
+                <span>{{ totalPendientes }} pendiente{{ totalPendientes !== 1 ? 's' : '' }}</span>
+            </div>
+            <div class="stat-pill stat-comprado">
+                <i class="pi pi-check-circle"></i>
+                <span>{{ totalComprados }} comprado{{ totalComprados !== 1 ? 's' : '' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         BARRA DE PROGRESO
+    ══════════════════════════════════════════════════════ -->
+    <div class="progress-section" *ngIf="items.length > 0">
+        <div class="progress-label">
+            <span>Progreso de compras</span>
+            <strong>{{ progreso }}%</strong>
+        </div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" [style.width.%]="progreso"></div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         TOOLBAR DE ACCIONES
+    ══════════════════════════════════════════════════════ -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <button class="btn-primary" id="btn-agregar-item" (click)="toggleFormulario()">
+                <i [class]="mostrarFormulario ? 'pi pi-times' : 'pi pi-plus'"></i>
+                <span>{{ mostrarFormulario ? 'Cancelar' : 'Agregar Ítem' }}</span>
+            </button>
+            <button class="btn-success" id="btn-marcar-comprado" (click)="marcarSeleccionadosComprado()" [disabled]="totalPendientes === 0">
+                <i class="pi pi-check-square"></i>
+                <span>Marcar Pendientes</span>
+            </button>
+        </div>
+        <div class="toolbar-right">
+            <button class="btn-danger-soft" id="btn-limpiar-comprados" (click)="limpiarComprados()" [disabled]="totalComprados === 0">
+                <i class="pi pi-filter-slash"></i>
+                <span>Quitar Comprados</span>
+            </button>
+            <button class="btn-ghost-danger" id="btn-vaciar-lista" (click)="vaciarLista()" [disabled]="items.length === 0">
+                <i class="pi pi-trash"></i>
+                <span>Vaciar Lista</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         FORMULARIO RÁPIDO DE ENTRADA
+    ══════════════════════════════════════════════════════ -->
+    <div class="quick-form" *ngIf="mostrarFormulario">
+        <h3 class="form-title"><i class="pi pi-plus-circle"></i> Nuevo Ítem de Compra</h3>
+        <div class="form-row">
+            <div class="form-field">
+                <label for="input-producto">Producto *</label>
+                <input
+                    #inputProducto
+                    id="input-producto"
+                    type="text"
+                    [(ngModel)]="nuevoProducto"
+                    placeholder="Ej: Cebolla roja"
+                    (keyup.enter)="onProductoEnter()"
+                    autocomplete="off"
+                />
+            </div>
+            <div class="form-field form-field-sm">
+                <label for="input-cantidad">Cantidad *</label>
+                <input
+                    #inputCantidad
+                    id="input-cantidad"
+                    type="text"
+                    [(ngModel)]="nuevaCantidad"
+                    placeholder="Ej: 2 kg"
+                    (keyup.enter)="onCantidadEnter()"
+                    autocomplete="off"
+                />
+            </div>
+            <div class="form-field">
+                <label for="select-categoria">Categoría</label>
+                <select id="select-categoria" [(ngModel)]="nuevaCategoria">
+                    <option *ngFor="let cat of categorias" [value]="cat.value">{{ cat.label }}</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="select-prioridad">Prioridad</label>
+                <select id="select-prioridad" [(ngModel)]="nuevaPrioridad">
+                    <option *ngFor="let p of prioridades" [value]="p.value">{{ p.label }}</option>
+                </select>
+            </div>
+            <div class="form-field form-field-action">
+                <label>&nbsp;</label>
+                <button class="btn-primary btn-add-action" id="btn-confirmar-agregar" (click)="agregarItem()">
+                    <i class="pi pi-plus"></i> Agregar
+                </button>
+            </div>
+        </div>
+        <p class="form-hint">
+            <i class="pi pi-info-circle"></i>
+            Presiona <kbd>Enter</kbd> en "Producto" para saltar a "Cantidad", y <kbd>Enter</kbd> en "Cantidad" para agregar.
+        </p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         FILTROS
+    ══════════════════════════════════════════════════════ -->
+    <div class="filters-bar">
+        <div class="search-box">
+            <i class="pi pi-search"></i>
+            <input
+                id="input-busqueda"
+                type="text"
+                [(ngModel)]="busqueda"
+                placeholder="Buscar producto..."
+                autocomplete="off"
+            />
+        </div>
+        <div class="filter-chips">
+            <span class="filter-label">Categoría:</span>
+            <button
+                *ngFor="let f of filtrosCategorias"
+                class="chip"
+                [class.chip-active]="filtroCategoria === f"
+                (click)="filtroCategoria = f"
+            >{{ f }}</button>
+        </div>
+        <div class="filter-chips">
+            <span class="filter-label">Estado:</span>
+            <button
+                *ngFor="let e of filtrosEstado"
+                class="chip"
+                [class.chip-active]="filtroEstado === e"
+                (click)="filtroEstado = e"
+            >{{ e }}</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         TABLA DE ITEMS
+    ══════════════════════════════════════════════════════ -->
+    <div class="table-wrapper">
+        <table class="compras-table" aria-label="Lista de compras">
+            <thead>
+                <tr>
+                    <th style="width:48px">✓</th>
+                    <th>Categoría</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Prioridad</th>
+                    <th>Estado</th>
+                    <th style="width:80px">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr
+                    *ngFor="let item of itemsFiltrados; trackBy: trackById"
+                    class="item-row"
+                    [class.row-comprado]="item.estado === 'comprado'"
+                    [class.row-alta]="item.prioridad === 'Alta' && item.estado === 'pendiente'"
+                >
+                    <td>
+                        <button
+                            class="check-btn"
+                            [class.checked]="item.estado === 'comprado'"
+                            (click)="toggleEstado(item)"
+                            [attr.aria-label]="item.estado === 'comprado' ? 'Marcar pendiente' : 'Marcar comprado'"
+                            [attr.title]="item.estado === 'comprado' ? 'Desmarcar' : 'Marcar como comprado'"
+                        >
+                            <i [class]="item.estado === 'comprado' ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <span class="categoria-badge">
+                            {{ getCategoriaEmoji(item.categoria) }} {{ item.categoria }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="producto-nombre" [class.tachado]="item.estado === 'comprado'">
+                            {{ item.producto }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="cantidad-pill">{{ item.cantidad }}</span>
+                    </td>
+                    <td>
+                        <span class="prioridad-badge" [ngClass]="getPrioridadClass(item.prioridad)">
+                            {{ getPrioridadEmoji(item.prioridad) }} {{ item.prioridad }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="estado-tag" [class.estado-comprado]="item.estado === 'comprado'">
+                            {{ item.estado === 'comprado' ? '✅ Comprado' : '⏳ Pendiente' }}
+                        </span>
+                    </td>
+                    <td>
+                        <button
+                            class="btn-delete-row"
+                            (click)="eliminarItem(item)"
+                            title="Eliminar ítem"
+                            [attr.aria-label]="'Eliminar ' + item.producto"
+                        >
+                            <i class="pi pi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+
+                <!-- Estado vacío -->
+                <tr *ngIf="itemsFiltrados.length === 0">
+                    <td colspan="7" class="empty-state">
+                        <div class="empty-inner">
+                            <span class="empty-icon">🛒</span>
+                            <p class="empty-title">Lista vacía</p>
+                            <p class="empty-sub">
+                                {{ items.length === 0 ? 'Agrega tu primer ítem pulsando "+ Agregar Ítem"' : 'Ningún ítem coincide con los filtros aplicados.' }}
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         FOOTER RESUMEN
+    ══════════════════════════════════════════════════════ -->
+    <div class="compras-footer" *ngIf="items.length > 0">
+        <span>Total: <strong>{{ items.length }}</strong> ítem{{ items.length !== 1 ? 's' : '' }}</span>
+        <span class="footer-sep">·</span>
+        <span>Pendientes: <strong class="text-pendiente">{{ totalPendientes }}</strong></span>
+        <span class="footer-sep">·</span>
+        <span>Comprados: <strong class="text-comprado">{{ totalComprados }}</strong></span>
+        <span class="footer-sep">·</span>
+        <span class="footer-hint"><i class="pi pi-save"></i> Guardado automáticamente en este dispositivo</span>
+    </div>
+
+</div>

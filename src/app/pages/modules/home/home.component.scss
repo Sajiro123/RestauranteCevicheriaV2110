@@ -1981,36 +1981,131 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
     }
 }
 
-// Responsive: en tablets y móvil apila todo verticalmente
+// ============================================================
+// RESPONSIVE MÓVIL (Solo se aplica en pantallas <= 900px)
+// En PC/Desktop el diseño original permanece 100% intacto.
+// ============================================================
 @media (max-width: 900px) {
     .mesa-page-layout {
         flex-direction: column;
     }
 
+    // Plano de mesas fluido y optimizado para dedos en móvil
+    .mesa-holo-grid, .mesa-holo-grid--piso2 {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)) !important;
+        gap: 0.65rem !important;
+        padding: 0.75rem !important;
+        min-height: auto !important;
+        background-image: none !important;
+        
+        .mesa-card-holo, .mesa-bar-card {
+            grid-column: auto !important;
+            grid-row: auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .mesa, .mesa-bar-surface {
+            border-radius: 12px !important;
+            aspect-ratio: auto !important;
+            min-height: 80px !important;
+            padding: 8px 4px !important;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1) !important;
+            transform: none !important;
+            
+            &__brillo { 
+                display: none !important; 
+            }
+            &__titulo { 
+                font-size: 0.85rem !important; 
+                margin-bottom: 3px !important; 
+            }
+            &__estado { 
+                padding: 2px 6px !important; 
+                font-size: 0.65rem !important; 
+            }
+            .mesa-info-bar {
+                position: static !important;
+                margin-top: 4px !important;
+                font-size: 0.7rem !important;
+            }
+        }
+    }
+
+    // El panel de acciones (botones) se convierte en Bottom Sheet fijo abajo
     .mesa-actions-sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1.5px solid rgba(201, 140, 90, 0.14);
-        animation: none;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-height: 70vh !important;
+        z-index: 1000 !important;
+        background: #ffffff !important;
+        border-radius: 20px 20px 0 0 !important;
+        box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.2) !important;
+        animation: mobile-sheet-up 0.28s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+        margin: 0 !important;
+        border: none !important;
+
+        .sidebar-mesa-header {
+            padding: 0.75rem 1.25rem !important;
+            border-radius: 20px 20px 0 0 !important;
+        }
 
         .sidebar-btns {
-            flex-direction: row;
-            flex-wrap: wrap;
-            overflow-y: visible;
-            overflow-x: auto;
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+            padding: 10px 12px 20px 12px !important;
+            overflow-y: auto !important;
+            max-height: calc(70vh - 80px) !important;
+            align-items: stretch !important;
         }
 
         .sbar-btn {
-            width: auto;
-            flex: 0 0 auto;
-            min-width: 90px;
+            width: 100% !important;
+            min-width: 0 !important;
+            justify-content: flex-start !important;
+            padding: 10px 12px !important;
+            font-size: 0.75rem !important;
+        }
+
+        .sbar-dropdown-wrap {
+            width: 100% !important;
+        }
+
+        .sbar-comp-dropdown {
+            left: 0 !important;
+            bottom: calc(100% + 5px) !important;
+            top: auto !important;
+            width: 100% !important;
         }
     }
 
+    // La cuenta de la mesa (resumen) se muestra debajo de las mesas
     .mesa-info-col {
-        width: 100%;
-        border-left: none;
-        border-top: 1.5px solid rgba(201, 140, 90, 0.14);
-        animation: none;
+        width: 100% !important;
+        border-left: none !important;
+        border-top: none !important;
+        margin-top: 1rem !important;
+        background: transparent !important;
+        animation: none !important;
+        padding-bottom: 300px !important; // Evita que el Bottom Sheet tape el final
+
+        .panel-mesa {
+            border-radius: 14px !important;
+            border: 1px solid rgba(201, 140, 90, 0.18) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+            &__header { 
+                border-radius: 14px 14px 0 0 !important; 
+            }
+        }
     }
+}
+
+@keyframes mobile-sheet-up {
+    0% { transform: translateY(100%); }
+    100% { transform: translateY(0); }
 }

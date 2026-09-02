@@ -6,22 +6,21 @@
 .layout-sidebar {
     position: fixed;
     width: 20rem;
-    height: calc(100vh - 8rem);
+    height: calc(100vh - 4rem);
     z-index: 999;
     overflow-y: auto;
     user-select: none;
-    top: 6rem;
-    left: 2rem;
+    top: 4rem;
+    left: 0;
     transition:
         transform var(--layout-section-transition-duration),
         left var(--layout-section-transition-duration);
     background-color: #ffffff;
-    border-radius: 14px;
-    padding: 0.5rem 1rem;
-    border: 1px solid #eef0f4;
-    box-shadow:
-        0 1px 4px rgba(0, 0, 0, 0.04),
-        0 4px 16px rgba(0, 0, 0, 0.03);
+    border-radius: 0;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-right: 1px solid var(--surface-border, #eef0f4);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.04);
 
     &::-webkit-scrollbar {
         width: 3px;
@@ -42,6 +41,132 @@
 :root[class*='app-dark'] .layout-sidebar {
     background-color: var(--surface-overlay);
     border-color: var(--surface-border);
+}
+
+/* ============================================
+   BRAND HEADER (Large & Visible Circular Logo)
+   ============================================ */
+.sidebar-brand-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: -17px;
+    padding: 0.5rem 0.75rem 0.85rem 0.75rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid #f0f1f5;
+    text-align: center;
+
+    .brand-link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.65rem;
+        text-decoration: none;
+        width: 100%;
+    }
+
+    .brand-logo-circle {
+        width: 5.75rem; // ~92px
+        height: 5.75rem;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #eef0f4;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        padding: 0.5rem;
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+
+        &:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .brand-logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    }
+
+    .brand-user-role {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #047857; // Verde oscuro elegante
+        color: #ffffff !important; // Texto blanco
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        box-shadow: 0 2px 6px rgba(4, 120, 87, 0.25);
+        margin-top: -0.1rem;
+
+        i {
+            font-size: 0.68rem;
+            color: #ffffff !important;
+        }
+    }
+
+    .brand-name {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #1a1d26;
+        letter-spacing: -0.01em;
+        line-height: 1.25;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .brand-address {
+        font-size: 0.75rem;
+        color: #717b90;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        line-height: 1.2;
+        max-width: 95%;
+        margin-top: -0.2rem;
+
+        i {
+            font-size: 0.75rem;
+            color: var(--primary-color, #20b2aa);
+        }
+    }
+}
+
+:root[class*='app-dark'] .sidebar-brand-header {
+    border-bottom-color: var(--surface-border);
+
+    .brand-logo-circle {
+        background: var(--surface-card);
+        border-color: var(--surface-border);
+    }
+
+    .brand-user-role {
+        background: #059669;
+        color: #ffffff !important;
+        box-shadow: 0 2px 6px rgba(5, 150, 105, 0.35);
+
+        i {
+            color: #ffffff !important;
+        }
+    }
+
+    .brand-name {
+        color: var(--text-color);
+    }
+
+    .brand-address {
+        color: var(--text-color-secondary);
+    }
 }
 
 /* ============================================

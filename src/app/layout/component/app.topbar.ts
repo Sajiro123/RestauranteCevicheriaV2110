@@ -14,13 +14,12 @@ import { ImportsModule } from '../../pages/imports';
     standalone: true,
     imports: [ImportsModule, RouterModule, CommonModule, StyleClassModule, AppConfigurator],
     template: ` <div class="layout-topbar">
-        <div class="layout-topbar-logo-container">
-            <button class="layout-menu-button layout-topbar-action" (click)="layoutService.onMenuToggle()">
-                <i class="pi pi-bars"></i>
+        <div class="layout-topbar-logo-container flex items-center gap-3 min-w-0">
+            <button class="layout-menu-button layout-topbar-action flex-shrink-0" (click)="layoutService.onMenuToggle()" title="Menú">
+                <i class="pi pi-bars text-lg"></i>
             </button>
-            <a class="layout-topbar-logo" routerLink="/">
-            <img [src]="empresaLogo" width="25%" />
-                <span style="width: 100% !important;">{{empresaNombre}}</span>
+            <a class="layout-topbar-logo flex items-center min-w-0" routerLink="/">
+                <span class="text-xl sm:text-2xl font-black text-surface-900 dark:text-surface-0 tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{{empresaNombre}}</span>
             </a>
         </div>
 
@@ -48,7 +47,7 @@ import { ImportsModule } from '../../pages/imports';
             <div class="flex items-center gap-4 ml-4">
                 <div class="flex items-center gap-2" *ngIf="currentUser">
                     <i class="pi pi-user text-primary"></i>
-                    <span class="text-surface-900 dark:text-surface-0 font-medium">{{ currentUser.nombre }}</span>
+                    <span class="text-surface-900 dark:text-surface-0 font-medium">{{ userRole }}</span>
                 </div>
                 <p-button
                     icon="pi pi-sign-out"
@@ -82,6 +81,18 @@ export class AppTopbar implements OnInit {
     showProfileButton: boolean = false;
     empresaLogo: string = 'assets/img/logo.png';
     empresaNombre: string = 'Sistema';
+
+    get userRole(): string {
+        try {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (currentUser.idperfil === 1) return 'Administrador';
+            if (currentUser.idperfil === 2) return 'Cajero';
+            if (currentUser.idperfil === 3) return 'Mozo';
+            return 'Operador';
+        } catch (e) {
+            return 'Administrador';
+        }
+    }
 
     constructor(
         public layoutService: LayoutService,

@@ -143,6 +143,7 @@ export class PedidoService {
                 .select('*')
                 .eq('fecha', fecha)
                 .eq('estado', 2)
+                .is('deleted', null)
                 .then(({ data, error }: { data: any; error: any }) => ({ success: !error, data: data && data.length > 0 ? data[0] : null, error }))
         );
     }
