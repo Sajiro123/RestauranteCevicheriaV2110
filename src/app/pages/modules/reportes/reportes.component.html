@@ -18,33 +18,18 @@
                     </div>
                 </div>
 
-                <!-- ALERTA SI FALTA CERRAR LA CAJA -->
-                <div *ngIf="!verificandoCaja && !cajaCerrada" class="caja-aviso-bloqueo animate-fadein">
-                    <div class="aviso-icon">
-                        <i class="pi pi-lock"></i>
-                    </div>
-                    <div class="aviso-info">
-                        <h4><i class="pi pi-exclamation-triangle"></i> Falta cerrar la caja</h4>
-                        <p>
-                            No es posible visualizar el <strong>Reporte Consolidado de Ventas</strong> porque aún no se ha realizado el cierre de caja de hoy. Debe realizar el cierre de caja para poder consultar la información de este reporte.
-                        </p>
+                <!-- Filtro de Fechas -->
+                <div class="filter-bar-card">
+                    <div class="filter-item">
+                        <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
+                        <p-datepicker #dp1 [(ngModel)]="selectedRange" selectionMode="range" [numberOfMonths]="2"
+                            class="date-range" [showButtonBar]="true" placeholder="Selecciona un rango de fechas..."
+                            (onSelect)="handleCalendarBlur()" (onShow)="onDatePickerShow(dp1)" (onFocus)="onDatePickerShow(dp1)"
+                            [defaultDate]="oneWeekAgo" [style]="{ width: '280px' }" [appendTo]="'body'"
+                            [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate">
+                        </p-datepicker>
                     </div>
                 </div>
-
-                <!-- CONTENIDO HABILITADO CUANDO LA CAJA ESTÁ CERRADA -->
-                <div *ngIf="cajaCerrada">
-                    <!-- Filtro de Fechas -->
-                    <div class="filter-bar-card">
-                        <div class="filter-item">
-                            <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
-                            <p-datepicker #dp1 [(ngModel)]="selectedRange" selectionMode="range" [numberOfMonths]="2"
-                                class="date-range" [showButtonBar]="true" placeholder="Selecciona un rango de fechas..."
-                                (onSelect)="handleCalendarBlur()" (onShow)="onDatePickerShow(dp1)" (onFocus)="onDatePickerShow(dp1)"
-                                [defaultDate]="oneWeekAgo" [style]="{ width: '280px' }" [appendTo]="'body'"
-                                [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate">
-                            </p-datepicker>
-                        </div>
-                    </div>
 
                     <!-- Tabla con Cabecera Verde Oscuro -->
                     <div class="custom-table-darkgreen">
@@ -124,7 +109,6 @@
                             </ng-template>
                         </p-table>
                     </div>
-                </div>
             </p-tabPanel>
 
             <!-- ============================================================ -->

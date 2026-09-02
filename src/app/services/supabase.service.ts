@@ -555,7 +555,7 @@ export class SupabaseService {
             return {
                 success: false,
                 cajaNoCerrada: true,
-                message: 'Falta cerrar la caja. No se pueden consultar ventas de fechas con caja abierta o sin cerrar.',
+                message: 'Aún falta cerrar la caja. No se pueden consultar ventas de fechas cuya caja aún no ha sido cerrada.',
                 data: [],
                 error: null
             };

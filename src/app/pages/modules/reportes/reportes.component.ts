@@ -194,15 +194,6 @@ export class ReportesComponent implements OnInit {
     }
 
     handleCalendarBlur() {
-        if (!this.cajaCerrada) {
-            this.mostrarAvisoAmigable(
-                'Falta cerrar la caja',
-                'No es posible consultar el Reporte Consolidado de Ventas porque la caja aún no ha sido cerrada. Debe realizar el cierre de caja para poder consultar la información.',
-                'warning'
-            );
-            return;
-        }
-
         if (this.selectedRange && this.selectedRange.length === 2 && this.selectedRange[1] != null) {
             this.showRerportemount({
                 fechainicio: this.formatDateToMySQL(new Date(this.selectedRange[0])),
@@ -587,16 +578,6 @@ export class ReportesComponent implements OnInit {
     }
 
     showRerportemount(parameters: any = {}) {
-        if (!this.cajaCerrada) {
-            this.Clients = [];
-            this.mostrarAvisoAmigable(
-                'Falta cerrar la caja',
-                'No se puede consultar el Reporte Consolidado de Ventas porque la caja del día aún no ha sido cerrada.',
-                'warning'
-            );
-            return;
-        }
-
         this.Clients = [];
         this.array_data_total = {}; // Reiniciar el total
 
@@ -605,8 +586,8 @@ export class ReportesComponent implements OnInit {
                 if (response && response.cajaNoCerrada) {
                     this.Clients = [];
                     this.mostrarAvisoAmigable(
-                        'Falta cerrar la caja',
-                        response.message || 'Falta cerrar la caja para consultar este reporte.',
+                        'Aún falta cerrar la caja',
+                        response.message || 'No es posible consultar el Reporte Consolidado de Ventas porque la caja para la fecha seleccionada aún no ha sido cerrada. Debe realizar el cierre de caja para poder visualizar la información.',
                         'warning'
                     );
                     return;
