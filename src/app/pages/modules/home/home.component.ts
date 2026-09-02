@@ -128,6 +128,8 @@ export class HomeComponent {
     mesaSeleccionada: Mesa | null = null;
     pedido_mesa_status: boolean = false;
     isOrderViewActive: boolean = false;
+    isKeypadCollapsed: boolean = false;
+    mobileActiveTab: 'platos' | 'pedido' = 'platos';
     activeTabIndex: number = 0;
     highlightToolbar: boolean = false;
 
@@ -605,18 +607,18 @@ export class HomeComponent {
                             tr.onclick = (event) => {
                                 this.agregarProducto(element, true);
                             };
-                            tr.className = 'border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors group';
+                            tr.className = 'border-b border-slate-100 hover:bg-blue-50/60 active:bg-blue-100/60 cursor-pointer transition-colors group';
                             tr.innerHTML = `
-                                <td class="py-3 px-3">
-                                    <div class="font-extrabold text-slate-800 text-sm xl:text-base leading-tight group-hover:text-blue-700 transition-colors">
+                                <td class="py-2.5 px-3">
+                                    <div class="font-bold text-slate-800 text-xs sm:text-sm leading-snug group-hover:text-blue-700 transition-colors">
                                         ${element.nombre || ''}
                                     </div>
-                                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                        N° Carta ${element.numero_carta || 'No tiene'}
+                                    <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
+                                        Carta: ${element.numero_carta || 'S/N'}
                                     </div>
                                 </td>
-                                <td class="py-3 px-3 text-right">
-                                    <div class="inline-flex items-center justify-center bg-blue-50 text-blue-700 font-black text-sm px-2.5 py-1 rounded-lg border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                <td class="py-2.5 px-3 text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center justify-center bg-blue-50 text-blue-700 font-black text-xs sm:text-sm px-2.5 py-1 rounded-lg border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                                         S/ ${element.preciounitario || '0.00'}
                                     </div>
                                 </td>

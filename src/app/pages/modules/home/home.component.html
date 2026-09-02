@@ -512,161 +512,194 @@
 <!-- FULL SCREEN ORDER VIEW -->
 <!-- ========================================== -->
 <div *ngIf="cajaAbierta && isOrderViewActive"
-    class="w-full h-[calc(100vh-80px)] lg:h-[calc(100vh-60px)] flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden font-sans bg-[#f8fafc] animate-fadein rounded-xl border border-gray-200 shadow-sm">
+    class="w-full h-[calc(100vh-7.5rem)] flex flex-col lg:flex-row overflow-hidden font-sans bg-[#f8fafc] animate-fadein rounded-2xl border border-gray-200 shadow-sm">
+
+    <!-- MOBILE / TABLET TAB SWITCHER (visible only on screens < 1024px) -->
+    <div class="lg:hidden flex items-center bg-white border-b border-gray-200 p-2 gap-2 flex-shrink-0">
+        <button type="button"
+            class="flex-1 py-2 px-3 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all"
+            [ngClass]="mobileActiveTab === 'platos' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            (click)="mobileActiveTab = 'platos'">
+            <i class="pi pi-list"></i> Platos y Búsqueda
+        </button>
+        <button type="button"
+            class="flex-1 py-2 px-3 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all relative"
+            [ngClass]="mobileActiveTab === 'pedido' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            (click)="mobileActiveTab = 'pedido'">
+            <i class="pi pi-shopping-cart"></i> Pedido
+            <span *ngIf="NuevoPedido.pedidodetalle.length > 0"
+                class="px-1.5 py-0.5 rounded-full text-[10px] font-black"
+                [ngClass]="mobileActiveTab === 'pedido' ? 'bg-white text-blue-700' : 'bg-blue-600 text-white'">
+                {{ NuevoPedido.pedidodetalle.length }}
+            </span>
+            <span class="font-extrabold ml-1">S/ {{ total() }}</span>
+        </button>
+    </div>
 
     <!-- LEFT: Products & Calculator -->
-    <div class="w-full lg:w-1/2 xl:w-7/12 flex flex-col bg-[#f4f6f8] border-r border-gray-200">
-        <div class="p-4 bg-[#f4f6f8] flex flex-col h-full">
-            <div class="flex items-center gap-3 mb-4">
-                <p-button icon="pi pi-arrow-left" [rounded]="true" [text]="true" severity="secondary"
-                    (click)="returntoMesas()"></p-button>
-                <h2 class="text-2xl font-black text-gray-900 m-0">{{ tipomodal == 'Editar' ? 'Editar Pedido' : 'Nuevo
-                    Pedido' }}</h2>
+    <div class="w-full lg:w-[55%] xl:w-[58%] flex flex-col bg-[#f4f6f8] border-r border-gray-200 h-full overflow-hidden"
+        [ngClass]="{'hidden lg:flex': mobileActiveTab !== 'platos'}">
+        <div class="p-3 sm:p-4 bg-[#f4f6f8] flex flex-col h-full overflow-hidden">
+            <!-- Header Bar -->
+            <div class="flex items-center justify-between gap-2 mb-2 sm:mb-3 flex-shrink-0">
+                <div class="flex items-center gap-2 min-w-0">
+                    <p-button icon="pi pi-arrow-left" [rounded]="true" [text]="true" severity="secondary"
+                        styleClass="p-2" (click)="returntoMesas()"></p-button>
+                    <h2 class="text-lg sm:text-xl font-black text-gray-900 m-0 truncate">
+                        {{ tipomodal == 'Editar' ? 'Editar Pedido' : 'Nuevo Pedido' }}
+                    </h2>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 border border-blue-200">
+                        {{ mesaSeleccionada?.numero === '0' ? 'Delivery' : 'Mesa ' + mesaSeleccionada?.numero }}
+                    </span>
+                </div>
             </div>
 
-            <div class="mb-4">
+            <!-- Search Bar -->
+            <div class="mb-2 flex-shrink-0">
                 <p-iconfield>
                     <p-inputicon styleClass="pi pi-search text-gray-400 font-bold" />
                     <input pInputText type="text" name="plato" id="idplatotext"
                         (keypress)="AddKeyPress($event, buscarPlato)" (ngModelChange)="onBuscarPlatoChange($event)"
-                        placeholder="Buscar platos/productos..."
-                        class="h-12 w-full pl-10 pr-4 py-2 border border-gray-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-medium"
+                        placeholder="Buscar platos o productos..."
+                        class="h-10 w-full pl-9 pr-3 py-1.5 border border-gray-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-xs sm:text-sm font-medium"
                         [(ngModel)]="buscarPlato" />
                 </p-iconfield>
             </div>
-            <!-- Quick Search Chips (below search input) -->
-            <div class="mb-3">
-                <div class="flex items-center gap-2.5 overflow-x-auto pb-1.5 no-scrollbar">
+
+            <!-- Quick Search Chips -->
+            <div class="mb-2 flex-shrink-0">
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-blue-600 text-white text-base font-bold shadow-sm transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-bold shadow-sm transition-all flex-shrink-0 hover:bg-blue-700 active:scale-95"
                         (click)="quickSearchPlato('')">
                         Todos
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-red-600 text-white text-base font-bold shadow-sm transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-red-600 text-white text-xs font-bold shadow-sm transition-all flex-shrink-0 hover:bg-red-700 active:scale-95"
                         (click)="quickSearchPlato('Taper')">
                         Taper
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 text-xs font-semibold transition-all flex-shrink-0 shadow-2xs active:scale-95"
                         (click)="quickSearchPlato('arroz mariscos')">
                         Arroz Mariscos
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 text-xs font-semibold transition-all flex-shrink-0 shadow-2xs active:scale-95"
                         (click)="quickSearchPlato('chicha morada')">
                         Chicha Morada
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 text-xs font-semibold transition-all flex-shrink-0 shadow-2xs active:scale-95"
                         (click)="quickSearchPlato('arroz duo')">
                         Arroz Duo
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 text-xs font-semibold transition-all flex-shrink-0 shadow-2xs active:scale-95"
                         (click)="quickSearchPlato('trio mixto')">
                         Trio Mixto
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 text-xs font-semibold transition-all flex-shrink-0 shadow-2xs active:scale-95"
                         (click)="quickSearchPlato('gaseosa 1l')">
                         Gaseosa 1L
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 text-xs font-semibold transition-all flex-shrink-0 shadow-2xs active:scale-95"
                         (click)="quickSearchPlato('ceviche')">
                         Ceviche
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 text-xs font-semibold transition-all flex-shrink-0 shadow-2xs active:scale-95"
                         (click)="quickSearchPlato('chaufa trio')">
                         Chaufa Trio
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 text-xs font-semibold transition-all flex-shrink-0 shadow-2xs active:scale-95"
                         (click)="quickSearchPlato('gaseosa')">
                         Gaseosa
                     </button>
                     <button type="button"
-                        class="whitespace-nowrap px-5 py-2.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600 text-base font-semibold transition-all flex-shrink-0"
+                        class="whitespace-nowrap px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 text-xs font-semibold transition-all flex-shrink-0 shadow-2xs active:scale-95"
                         (click)="quickSearchPlato('chilcano')">
                         Chilcano
                     </button>
                 </div>
             </div>
 
-            <div class="mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <!-- Header -->
-                <div class="flex items-center justify-between px-4 py-2.5 border-b border-slate-100 bg-slate-50">
-                    <span
-                        class="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                        <i class="pi pi-th-large text-slate-400 text-[10px]"></i> Ingreso por Codigo
+            <!-- Keypad Card -->
+            <div class="mb-2 bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden flex-shrink-0">
+                <!-- Header with collapse toggle -->
+                <div class="flex items-center justify-between px-3 py-1.5 border-b border-slate-100 bg-slate-50 cursor-pointer select-none"
+                    (click)="isKeypadCollapsed = !isKeypadCollapsed">
+                    <span class="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="pi pi-th-large text-slate-400 text-[10px]"></i> Ingreso por Código
+                        <i class="pi" [ngClass]="isKeypadCollapsed ? 'pi-chevron-down' : 'pi-chevron-up'" style="font-size: 8px;"></i>
                     </span>
                     <button type="button"
-                        class="text-[11px] font-black text-red-400 hover:text-red-600 uppercase tracking-wider transition-colors"
-                        (click)="setNumbersSelectDashboard('clear')">
+                        class="text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors px-1.5 py-0.5 rounded hover:bg-red-50"
+                        (click)="$event.stopPropagation(); setNumbersSelectDashboard('clear')">
                         Limpiar
                     </button>
                 </div>
 
-                <!-- Keypad + number display + add button -->
-                <div class="p-3 flex gap-2 items-stretch">
-                    <!-- Left: number display + grid -->
-                    <div class="flex-1 flex flex-col gap-1.5">
-                        <!-- Number display (hidden input shown as display) -->
+                <!-- Keypad body -->
+                <div class="p-2 flex gap-2 items-stretch" *ngIf="!isKeypadCollapsed">
+                    <!-- Left: display + grid -->
+                    <div class="flex-1 flex flex-col gap-1">
+                        <!-- Number display -->
                         <input type="number" (keypress)="AddKeyPressCalculator($event, buscarPlato)" id="NumberLote"
-                            name="NumberLote" placeholder="Ingresa Codigo" [(ngModel)]="numeroPlato"
-                            class="w-full h-8 text-center text-xl font-black border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50 tracking-widest transition-all mb-0.5" />
-                        <!-- Row 1: 1â€“5 -->
-                        <div class="grid grid-cols-5 gap-1.5">
+                            name="NumberLote" placeholder="Ingresa Código" [(ngModel)]="numeroPlato"
+                            class="w-full h-7 text-center text-base font-black border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50 tracking-widest transition-all" />
+                        <!-- Row 1: 1–5 -->
+                        <div class="grid grid-cols-5 gap-1">
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(1)">1</button>
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(2)">2</button>
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(3)">3</button>
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(4)">4</button>
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(5)">5</button>
                         </div>
-                        <!-- Row 2: 6â€“0 -->
-                        <div class="grid grid-cols-5 gap-1.5">
+                        <!-- Row 2: 6–0 -->
+                        <div class="grid grid-cols-5 gap-1">
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(6)">6</button>
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(7)">7</button>
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(8)">8</button>
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(9)">9</button>
                             <button type="button"
-                                class="h-10 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-xl font-black text-slate-700 text-base transition-all shadow-sm"
+                                class="h-8 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 active:scale-95 border border-slate-200 rounded-lg font-black text-slate-700 text-sm transition-all shadow-2xs"
                                 (click)="setNumbersSelectDashboard(0)">0</button>
                         </div>
                     </div>
 
-                    <!-- Right: big + button -->
+                    <!-- Right: + button -->
                     <button
-                        class="bg-[#3b82f6] hover:bg-blue-700 active:scale-95 text-white font-black w-16 rounded-2xl shadow-md transition-all flex items-center justify-center text-3xl self-stretch"
-                        (click)="ListarPedidoNumeroCalculadora()">
+                        class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black w-14 rounded-xl shadow-sm transition-all flex items-center justify-center text-2xl self-stretch"
+                        (click)="ListarPedidoNumeroCalculadora()" title="Agregar código">
                         <i class="pi pi-plus"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Search Results / Categories List -->
-            <div
-                class="max-h-[200px] lg:max-h-none lg:flex-1 overflow-y-auto w-full custom-scrollbar bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="flex-1 min-h-[140px] overflow-y-auto w-full custom-scrollbar bg-white rounded-xl shadow-2xs border border-gray-200">
                 <table class="w-full text-left" id="listarPlatos">
                     <tbody class="divide-y divide-gray-100">
                         <!-- content populated dynamically by js based on buscarPlato -->
@@ -677,135 +710,126 @@
         </div>
     </div>
 
-    <!-- RIGHT: Order Summary Details (like mockup) -->
-    <div class="w-full lg:w-1/2 xl:w-5/12 flex flex-col bg-white flex-shrink-0 h-full">
+    <!-- RIGHT: Order Summary Details -->
+    <div class="w-full lg:w-[45%] xl:w-[42%] flex flex-col bg-white flex-shrink-0 h-full overflow-hidden"
+        [ngClass]="{'hidden lg:flex': mobileActiveTab !== 'pedido'}">
 
         <!-- HEADER -->
-        <div
-            class="px-4 py-5 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white gap-4 w-full">
-            <h2 class="text-2xl font-bold text-gray-800 m-0 w-full sm:w-1/3 flex items-center gap-2">
-                Order #{{ NuevoPedido.idpedido || '...' }}
+        <div class="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-200 flex flex-wrap justify-between items-center bg-white gap-2 w-full flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <h2 class="text-lg sm:text-xl font-black text-gray-800 m-0">
+                    Order #{{ NuevoPedido.idpedido || '...' }}
+                </h2>
                 <span *ngIf="NuevoPedido.idmozo"
-                    class="text-sm xl:text-base font-bold text-blue-700 bg-blue-100 py-1.5 px-3 rounded inline-block">Mozo:
-                    {{ getNombreMozo(NuevoPedido.idmozo) }}</span>
-            </h2>
+                    class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 py-0.5 px-2 rounded-md inline-flex items-center gap-1">
+                    <i class="pi pi-user text-[10px]"></i> {{ getNombreMozo(NuevoPedido.idmozo) }}
+                </span>
+            </div>
 
-            <div class="flex w-full sm:w-2/3 items-center justify-end gap-2 text-sm justify-end">
-                <!-- Select Table / Context -->
-                <div class="relative w-full sm:w-auto max-w-[140px]" *ngIf="mesaSeleccionada">
-                    <!-- Read-only Table switcher for now to prevent context breaks -->
-                    <select
-                        class="w-full appearance-none bg-white border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline text-gray-700 font-semibold cursor-not-allowed pointer-events-none"
-                        disabled>
-                        <option selected>{{ mesaSeleccionada.numero === '0' ? 'Delivery' : 'Table ' +
-                            mesaSeleccionada.numero }}</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                        <i class="pi pi-chevron-down text-[10px]"></i>
-                    </div>
+            <div class="flex items-center gap-2">
+                <!-- Table badge/select -->
+                <div class="text-xs font-bold bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200">
+                    <i class="pi pi-table mr-1 text-slate-500"></i> {{ mesaSeleccionada?.numero === '0' ? 'Delivery' : 'Mesa ' + mesaSeleccionada?.numero }}
                 </div>
 
-                <div class="relative w-full sm:w-auto max-w-[140px]">
-                    <select
-                        class="w-full appearance-none bg-white border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline text-gray-700 font-semibold text-sm">
-                        <option value="dine-in" [selected]="NuevoPedido.delivery == 0">Dine-in</option>
-                        <option value="to-go" [selected]="NuevoPedido.delivery == 1">Delivery / To-go</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                        <i class="pi pi-chevron-down text-[10px]"></i>
-                    </div>
-                </div>
+                <!-- Dine-in / To-go select -->
+                <select [(ngModel)]="NuevoPedido.delivery"
+                    class="bg-white border border-gray-300 px-2.5 py-1 rounded-lg shadow-2xs text-gray-700 font-bold text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <option [value]="0">Salón / Mesa</option>
+                    <option [value]="1">Delivery / Llevar</option>
+                </select>
             </div>
         </div>
 
         <!-- ITEMS LIST -->
-        <div class="flex-1 overflow-y-auto p-4 bg-white custom-scrollbar w-full">
-
+        <div class="flex-1 overflow-y-auto p-2 sm:p-3 bg-white custom-scrollbar w-full">
             <div class="w-full max-w-full">
-                <!-- Headers -->
-                <div
-                    class="flex w-full text-[10px] xl:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-200 pb-2 px-3">
-                    <div class="w-[34%]">Producto</div>
-                    <div class="w-[8%] text-center">Llevar</div>
-                    <div class="w-[20%] text-center">Cant.</div>
-                    <div class="w-[15%] text-right">Precio</div>
-                    <div class="w-[15%] text-right">Total</div>
-                    <div class="w-[8%]"></div>
+                <!-- Headers (ALIGNED PERFECTLY WITH ROWS) -->
+                <div class="flex w-full text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 border-b border-slate-200 pb-1.5 px-2 items-center">
+                    <div class="w-8 sm:w-9 text-center"></div>
+                    <div class="flex-1 min-w-0 px-2">Producto</div>
+                    <div class="w-12 sm:w-14 text-center">Llevar</div>
+                    <div class="w-18 sm:w-20 text-center">Cant.</div>
+                    <div class="w-14 sm:w-16 text-right">Precio</div>
+                    <div class="w-14 sm:w-16 text-right pr-1">Total</div>
                 </div>
 
                 <!-- Empty State -->
-                <div class="text-center py-12" *ngIf="NuevoPedido.pedidodetalle.length === 0">
-                    <i class="pi pi-shopping-bag text-5xl text-gray-200 mb-4 block"></i>
-                    <p class="text-gray-400 font-medium">Añadir platos a este pedido</p>
+                <div class="text-center py-10" *ngIf="NuevoPedido.pedidodetalle.length === 0">
+                    <i class="pi pi-shopping-bag text-4xl text-gray-200 mb-2 block"></i>
+                    <p class="text-gray-400 font-medium text-xs sm:text-sm">Añadir platos a este pedido</p>
                 </div>
 
                 <!-- List Items -->
-                <div class="space-y-1 w-full flex flex-col items-center pb-1">
+                <div class="space-y-1 w-full flex flex-col pb-1">
                     <div *ngFor="let pedidosnew of NuevoPedido.pedidodetalle; let i = index"
-                        class="flex w-full items-center py-1.5 px-3 rounded border border-slate-100 bg-white hover:border-blue-200 hover:shadow-sm transition-all group"
+                        class="flex w-full items-center py-1.5 px-2 rounded-lg border border-slate-100 bg-white hover:border-blue-200 hover:shadow-2xs transition-all group"
                         [hidden]="pedidosnew.total == 0">
 
                         <!-- TRASH & SETTINGS -->
-                        <div class="w-[8%] flex flex-col items-center justify-center gap-0.5 pr-2">
+                        <div class="w-8 sm:w-9 flex items-center justify-center gap-1 text-center flex-shrink-0">
                             <button
-                                class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded hover:bg-slate-100"
-                                (click)="abrirToppingPanel(pedidosnew, $event)">
-                                <i class="pi pi-cog text-[11px]"></i>
+                                class="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-blue-50"
+                                (click)="abrirToppingPanel(pedidosnew, $event)" title="Personalizar">
+                                <i class="pi pi-cog text-xs"></i>
                             </button>
                             <button
-                                class="text-slate-400 hover:text-red-400 transition-colors p-1 rounded hover:bg-slate-100"
-                                (click)="remove(pedidosnew); trashPedido(pedidosnew)">
-                                <i class="fa-regular fa-trash-can text-[11px]"></i>
+                                class="text-slate-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                                (click)="remove(pedidosnew); trashPedido(pedidosnew)" title="Eliminar">
+                                <i class="fa-regular fa-trash-can text-xs"></i>
                             </button>
                         </div>
 
                         <!-- ITEM INFO -->
-                        <div class="w-[34%] pr-2 flex flex-col justify-center overflow-hidden">
-                            <h4 class="font-extrabold text-slate-800 m-0 text-[11px] xl:text-[13px] leading-tight truncate"
-                                [title]="pedidosnew.nombre">{{
-                                pedidosnew.nombre }}</h4>
+                        <div class="flex-1 min-w-0 px-2 overflow-hidden">
+                            <h4 class="font-extrabold text-slate-800 m-0 text-xs sm:text-sm leading-tight truncate"
+                                [title]="pedidosnew.nombre">
+                                {{ pedidosnew.nombre }}
+                            </h4>
                             <div class="flex flex-wrap gap-0.5 mt-0.5"
                                 *ngIf="pedidosnew.idtoppings && pedidosnew.idtoppings.length > 0">
                                 @for (topping of pedidosnew.idtoppings; track topping.idtoppings) {
                                 <span *ngIf="topping.idtoppings != 0"
-                                    class="text-[8px] xl:text-[9px] text-blue-700 bg-blue-50 px-1.5 py-[1px] rounded font-bold border border-blue-100">{{
-                                    topping.nombre }}</span>
+                                    class="text-[8px] sm:text-[9px] text-blue-700 bg-blue-50 px-1.5 py-[1px] rounded font-bold border border-blue-100">
+                                    {{ topping.nombre }}
+                                </span>
                                 }
                             </div>
                         </div>
 
                         <!-- LLEVAR TOGGLE COLUMN -->
-                        <div class="w-[8%] flex justify-center items-center" title="Para llevar">
+                        <div class="w-12 sm:w-14 flex justify-center items-center flex-shrink-0" title="Para llevar">
                             <p-toggleSwitch [(ngModel)]="pedidosnew.lugarpedido" [trueValue]="'1'" [falseValue]="'0'"
                                 styleClass="scale-[0.55] origin-center"></p-toggleSwitch>
                         </div>
 
                         <!-- QUANTITY (- 1 +) -->
-                        <div class="w-[20%] flex justify-center items-center">
-                            <div
-                                class="flex items-center justify-between bg-white border border-slate-200 rounded shadow-sm h-5 xl:h-6 w-[55px] xl:w-[65px] px-0.5">
+                        <div class="w-18 sm:w-20 flex justify-center items-center flex-shrink-0">
+                            <div class="flex items-center justify-between bg-white border border-slate-200 rounded-lg shadow-2xs h-6 w-16 sm:w-18 px-0.5">
                                 <button (click)="decrementnewPedido(pedidosnew)"
-                                    class="w-4 h-4 xl:w-5 xl:h-5 flex items-center justify-center rounded-sm bg-slate-50 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"><i
-                                        class="pi pi-minus text-[7px]"></i></button>
-                                <span class="font-black text-[10px] xl:text-[11px] text-center text-slate-800">{{
-                                    pedidosnew.cantidad }}</span>
+                                    class="w-5 h-5 flex items-center justify-center rounded bg-slate-50 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors">
+                                    <i class="pi pi-minus text-[8px]"></i>
+                                </button>
+                                <span class="font-black text-xs text-center text-slate-800">
+                                    {{ pedidosnew.cantidad }}
+                                </span>
                                 <button (click)="incrementnewPedido(pedidosnew)"
-                                    class="w-4 h-4 xl:w-5 xl:h-5 flex items-center justify-center rounded-sm bg-slate-50 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"><i
-                                        class="pi pi-plus text-[7px]"></i></button>
+                                    class="w-5 h-5 flex items-center justify-center rounded bg-slate-50 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors">
+                                    <i class="pi pi-plus text-[8px]"></i>
+                                </button>
                             </div>
                         </div>
 
                         <!-- PRICE (editable) -->
-                        <div class="w-[15%] flex justify-end items-center flex-shrink-0">
+                        <div class="w-14 sm:w-16 flex justify-end items-center flex-shrink-0">
                             <input type="number" [(ngModel)]="pedidosnew.preciounitario"
                                 (ngModelChange)="pricechange(pedidosnew)" min="0.01" step="0.01"
-                                class="w-[70px] xl:w-[80px] text-right text-slate-600 text-sm xl:text-[15px] font-bold bg-transparent border border-transparent hover:border-slate-200 focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-200 rounded px-1 py-0.5 outline-none transition-all" />
+                                class="w-14 text-right text-slate-600 text-xs sm:text-sm font-bold bg-transparent border border-transparent hover:border-slate-200 focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-200 rounded px-1 py-0.5 outline-none transition-all" />
                         </div>
 
                         <!-- TOTAL -->
-                        <div
-                            class="w-[15%] text-right text-blue-600 font-black text-sm xl:text-[15px] flex-shrink-0 tracking-tight">
-                            {{ pedidosnew.total }}
+                        <div class="w-14 sm:w-16 text-right text-blue-600 font-black text-xs sm:text-sm flex-shrink-0 tracking-tight pr-1">
+                            S/ {{ pedidosnew.total }}
                         </div>
                     </div>
                 </div>
@@ -902,43 +926,41 @@
             </p-dialog>
 
             <!-- Notes -->
-
-            <div class="w-full mt-6">
+            <div class="w-full mt-2">
                 <textarea [(ngModel)]="comentarios"
-                    class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium text-gray-800 resize-none min-h-[80px]"
-                    placeholder="Solicitud especial..."></textarea>
+                    class="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs font-medium text-gray-800 resize-none min-h-[42px] max-h-[55px]"
+                    placeholder="Solicitud especial o notas del pedido..."></textarea>
             </div>
 
-            <div class="w-full mt-3" *ngIf="NuevoPedido.delivery == 1">
+            <div class="w-full mt-1.5" *ngIf="NuevoPedido.delivery == 1">
                 <input id="cliente" type="text" [(ngModel)]="NuevoPedido.cliente"
-                    class="w-full h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium text-gray-800 shadow-sm"
+                    class="w-full h-8 px-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs font-medium text-gray-800 shadow-2xs"
                     placeholder="Nombre completo del cliente / Teléfono" required />
             </div>
 
         </div>
 
         <!-- FOOTER TOTALS -->
-        <div
-            class="p-4 lg:p-6 bg-gray-50 border-t border-gray-200 rounded-tl-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
-            <div class="flex justify-between items-center mb-5 px-2">
-                <span class="text-sm font-bold text-gray-400 uppercase tracking-widest">Subtotal</span>
-                <span class="text-lg font-bold text-gray-700">S/ {{ total() }}</span>
+        <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl lg:rounded-b-none lg:rounded-tl-2xl shadow-[0_-4px_16px_rgba(0,0,0,0.03)] flex-shrink-0">
+            <div class="flex justify-between items-center mb-1 px-1">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Subtotal</span>
+                <span class="text-sm font-bold text-slate-700">S/ {{ total() }}</span>
             </div>
-            <div class="flex justify-between items-center mb-6 px-2">
-                <span class="text-xl font-bold text-gray-800">Total</span>
-                <span class="text-3xl font-black text-gray-900 tracking-tight">S/ {{ total() }}</span>
+            <div class="flex justify-between items-center mb-3 px-1">
+                <span class="text-base sm:text-lg font-bold text-slate-800">Total</span>
+                <span class="text-2xl sm:text-3xl font-black text-blue-600 tracking-tight">S/ {{ total() }}</span>
             </div>
 
-            <div class="flex w-full gap-3">
+            <div class="flex w-full gap-2">
                 <button
-                    class="flex-1 py-4 px-2 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl shadow-sm hover:bg-gray-50 hover:shadow transition-all text-sm xl:text-base"
+                    class="flex-1 py-2.5 px-2 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl shadow-2xs hover:bg-slate-100 transition-all text-xs sm:text-sm active:scale-95 flex items-center justify-center gap-1"
                     (click)="returntoMesas()">
-                    Cerrar
+                    <i class="pi pi-times"></i> Cerrar
                 </button>
                 <button
-                    class="flex-[1.5] py-4 px-2 bg-blue-500 text-white font-black rounded-xl shadow-md hover:bg-blue-600 hover:shadow-lg transition-all text-sm xl:text-base"
+                    class="flex-[1.6] py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-sm transition-all text-xs sm:text-sm active:scale-95 flex items-center justify-center gap-1.5"
                     (click)="FunctionButtonPedido(NuevoPedido)">
-                    {{ tipomodal == 'Registrar' ? 'Registrar Pedido' : 'Actualizar Pedido' }}
+                    <i class="pi pi-check"></i> {{ tipomodal == 'Registrar' ? 'Registrar Pedido' : 'Actualizar Pedido' }}
                 </button>
             </div>
         </div>
