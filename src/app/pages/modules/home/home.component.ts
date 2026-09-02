@@ -1102,16 +1102,16 @@ export class HomeComponent {
                         this.mesas.forEach((element: any) => {
                             this.estadomesa[element.numero] = { mesa: element.numero, value: 0, piso: element.piso };
                         });
-                        await this.ListarPedidos();
+                        this.ListarPedidos();
                         resolve();
                     } else {
-                        alert('Error al intentar consultar');
+                        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al consultar las mesas', life: 3000 });
                         resolve();
                     }
                 },
                 error: (error) => {
                     console.error('Error al intentar consultar', error);
-                    alert('Hubo un problema al conectar con el servidor');
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Hubo un problema al conectar con el servidor', life: 3000 });
                     resolve();
                 }
             });
@@ -1147,13 +1147,13 @@ export class HomeComponent {
                             this.LimpiarNuevoPedido();
                         }
                     } else {
-                        alert('Error al intentar consultar');
+                        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al consultar los pedidos de las mesas', life: 3000 });
                     }
                     resolve();
                 },
                 error: (error) => {
                     console.error('Error al intentar consultar', error);
-                    alert('Hubo un problema al conectar con el servidor');
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Hubo un problema al conectar con el servidor', life: 3000 });
                     resolve();
                 }
             });
@@ -1238,6 +1238,20 @@ export class HomeComponent {
 
         // Colocar el total en el método elegido
         this.Pedido_cobrar[metodo] = this.Pedido_cobrar.total;
+    }
+
+    get totalCobradoIngresado(): number {
+        return +(
+            (Number(this.Pedido_cobrar?.efectivo) || 0) +
+            (Number(this.Pedido_cobrar?.visa) || 0) +
+            (Number(this.Pedido_cobrar?.yape) || 0) +
+            (Number(this.Pedido_cobrar?.plin) || 0)
+        ).toFixed(2);
+    }
+
+    get diferenciaCobro(): number {
+        const total = Number(this.Pedido_cobrar?.total) || 0;
+        return +(this.totalCobradoIngresado - total).toFixed(2);
     }
 
     // Helper method to get mozo name for a mesa

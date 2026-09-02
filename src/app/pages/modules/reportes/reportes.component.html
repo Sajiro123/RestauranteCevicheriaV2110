@@ -2,7 +2,7 @@
 
 <div class="reportes-wrapper">
     <div class="reportes-card">
-        <p-tabView>
+        <p-tabView (onChange)="onTabChange($event)">
 
             <!-- ============================================================ -->
             <!-- PESTAÑA 1: REPORTE GENERAL -->
@@ -31,84 +31,84 @@
                     </div>
                 </div>
 
-                <!-- Tabla con Cabecera Verde Oscuro -->
-                <div class="custom-table-darkgreen">
-                    <p-table stripedRows #dt [value]="Clients" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
-                        [rowHover]="true" dataKey="idpedido" [resizableColumns]="true"
-                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-                        [showCurrentPageReport]="true">
+                    <!-- Tabla con Cabecera Verde Oscuro -->
+                    <div class="custom-table-darkgreen">
+                        <p-table stripedRows #dt [value]="Clients" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
+                            [rowHover]="true" dataKey="idpedido" [resizableColumns]="true"
+                            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+                            [showCurrentPageReport]="true">
 
-                        <ng-template pTemplate="header">
-                            <tr>
-                                <th pSortableColumn="fecha" style="width: 14%;">
-                                    📅 Fecha <p-sortIcon field="fecha" />
-                                </th>
-                                <th pSortableColumn="dia" style="width: 12%;">
-                                    📅 Día <p-sortIcon field="dia" />
-                                </th>
-                                <th pSortableColumn="efectivo" class="text-right">
-                                    💵 Efectivo <p-sortIcon field="efectivo" />
-                                </th>
-                                <th pSortableColumn="yape" class="text-right">
-                                    📱 Yape <p-sortIcon field="yape" />
-                                </th>
-                                <th pSortableColumn="plin" class="text-right">
-                                    📱 Plin <p-sortIcon field="plin" />
-                                </th>
-                                <th pSortableColumn="visa" class="text-right">
-                                    💳 Visa / POS <p-sortIcon field="visa" />
-                                </th>
-                                <th pSortableColumn="gastos" class="text-right">
-                                    📉 Gastos <p-sortIcon field="gastos" />
-                                </th>
-                                <th pSortableColumn="total" class="text-right font-black">
-                                    💰 Total Recaudado <p-sortIcon field="total" />
-                                </th>
-                                <th style="width: 4.5rem;" class="text-center">PDF</th>
-                            </tr>
-                        </ng-template>
+                            <ng-template pTemplate="header">
+                                <tr>
+                                    <th pSortableColumn="fecha" style="width: 14%;">
+                                        📅 Fecha <p-sortIcon field="fecha" />
+                                    </th>
+                                    <th pSortableColumn="dia" style="width: 12%;">
+                                        📅 Día <p-sortIcon field="dia" />
+                                    </th>
+                                    <th pSortableColumn="efectivo" class="text-right">
+                                        💵 Efectivo <p-sortIcon field="efectivo" />
+                                    </th>
+                                    <th pSortableColumn="yape" class="text-right">
+                                        📱 Yape <p-sortIcon field="yape" />
+                                    </th>
+                                    <th pSortableColumn="plin" class="text-right">
+                                        📱 Plin <p-sortIcon field="plin" />
+                                    </th>
+                                    <th pSortableColumn="visa" class="text-right">
+                                        💳 Visa / POS <p-sortIcon field="visa" />
+                                    </th>
+                                    <th pSortableColumn="gastos" class="text-right">
+                                        📉 Gastos <p-sortIcon field="gastos" />
+                                    </th>
+                                    <th pSortableColumn="total" class="text-right">
+                                        💰 Total <p-sortIcon field="total" />
+                                    </th>
+                                    <th style="width: 10%;">PDF</th>
+                                </tr>
+                            </ng-template>
 
-                        <ng-template pTemplate="body" let-product>
-                            <tr>
-                                <td class="font-bold text-gray-800">{{ product.fecha }}</td>
-                                <td style="text-transform: capitalize;" class="text-gray-600 font-medium">{{ product.dia }}</td>
-                                <td class="text-right font-semibold text-emerald-700">S/ {{ (product.efectivo || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-semibold text-purple-700">S/ {{ (product.yape || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-semibold text-cyan-700">S/ {{ (product.plin || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-semibold text-blue-700">S/ {{ (product.visa || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-semibold text-rose-600">S/ {{ (product.gastos || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-gray-900 text-base">S/ {{ (product.total || 0) | number:'1.2-2' }}</td>
-                                <td class="text-center">
-                                    <button type="button" class="p-2 rounded-lg text-rose-600 hover:bg-rose-50 hover:text-rose-800 transition-colors"
-                                        (click)="PdfReporteDiario(product.fecha)" pTooltip="Ver / Imprimir PDF" tooltipPosition="left">
-                                        <i class="pi pi-file-pdf text-xl"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </ng-template>
+                            <ng-template pTemplate="body" let-customer let-rowIndex="rowIndex" let-rowgroup="rowgroup"
+                                let-rowspan="rowspan">
+                                <tr>
+                                    <td class="font-bold text-gray-800">{{ customer.fecha }}</td>
+                                    <td class="capitalize font-semibold text-gray-600">{{ customer.dia }}</td>
+                                    <td class="text-right font-medium text-emerald-700">S/ {{ customer.efectivo | number:'1.2-2' }}</td>
+                                    <td class="text-right font-medium text-purple-700">S/ {{ customer.yape | number:'1.2-2' }}</td>
+                                    <td class="text-right font-medium text-blue-700">S/ {{ customer.plin | number:'1.2-2' }}</td>
+                                    <td class="text-right font-medium text-indigo-700">S/ {{ customer.visa | number:'1.2-2' }}</td>
+                                    <td class="text-right font-semibold text-rose-600">S/ {{ (customer.gastos || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-extrabold text-gray-900">S/ {{ customer.total | number:'1.2-2' }}</td>
+                                    <td class="text-center">
+                                        <button pButton icon="pi pi-file-pdf"
+                                            class="p-button-rounded p-button-text p-button-danger hover:bg-rose-50"
+                                            (click)="PdfReporteDiario(customer.fecha)" title="Descargar Reporte del Día"></button>
+                                    </td>
+                                </tr>
+                            </ng-template>
 
-                        <ng-template pTemplate="footer">
-                            <tr *ngIf="Clients && Clients.length > 0">
-                                <td colspan="2" class="text-gray-900 font-black tracking-wider uppercase">
-                                    TOTAL DEL PERIODO
-                                </td>
-                                <td class="text-right font-black text-emerald-800">S/ {{ (array_data_total.efectivo || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-purple-800">S/ {{ (array_data_total.yape || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-cyan-800">S/ {{ (array_data_total.plin || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-blue-800">S/ {{ (array_data_total.visa || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-rose-700">S/ {{ (array_data_total.gastos || 0) | number:'1.2-2' }}</td>
-                                <td class="text-right font-black text-gray-950 text-lg">S/ {{ (array_data_total.total || 0) | number:'1.2-2' }}</td>
-                                <td></td>
-                            </tr>
-                            <tr *ngIf="!Clients || Clients.length == 0">
-                                <td colspan="9" class="empty-state">
-                                    <i class="pi pi-calendar-times"></i>
-                                    <span>No hay registros en este rango de fechas. Seleccione otro periodo para consultar.</span>
-                                </td>
-                            </tr>
-                        </ng-template>
-                    </p-table>
-                </div>
+                            <ng-template pTemplate="footer">
+                                <tr *ngIf="Clients && Clients.length > 0">
+                                    <td colspan="2" class="font-bold text-gray-900 uppercase tracking-wider text-xs">
+                                        TOTAL GENERAL ({{ Clients.length }} DÍAS)
+                                    </td>
+                                    <td class="text-right font-bold text-emerald-800">S/ {{ (array_data_total.efectivo || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-bold text-purple-800">S/ {{ (array_data_total.yape || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-bold text-blue-800">S/ {{ (array_data_total.plin || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-bold text-indigo-800">S/ {{ (array_data_total.visa || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-bold text-rose-700">S/ {{ (array_data_total.gastos || 0) | number:'1.2-2' }}</td>
+                                    <td class="text-right font-black text-gray-950 text-lg">S/ {{ (array_data_total.total || 0) | number:'1.2-2' }}</td>
+                                    <td></td>
+                                </tr>
+                                <tr *ngIf="!Clients || Clients.length == 0">
+                                    <td colspan="9" class="empty-state">
+                                        <i class="pi pi-calendar-times"></i>
+                                        <span>No hay registros en este rango de fechas. Seleccione otro periodo para consultar.</span>
+                                    </td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </div>
             </p-tabPanel>
 
             <!-- ============================================================ -->
@@ -528,55 +528,252 @@
 <!-- ============================================================ -->
 <!-- MODAL: COBRAR / EDITAR PEDIDO -->
 <!-- ============================================================ -->
-<p-dialog [(visible)]="Cobrar_Dialog" [position]="'top'" header="Cobrar Pedido" [style]="{ width: '92vw', maxWidth: '600px' }"
-    [modal]="true" [draggable]="false" [resizable]="false">
-    <ng-template pTemplate="content">
-        <div class="p-2 space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                    <label for="efectivo" class="block text-xs font-bold text-gray-700 uppercase mb-1">💵 Efectivo</label>
-                    <input id="efectivo" type="number" [(ngModel)]="Pedido_cobrar.efectivo"
-                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-green-500/20 focus:border-green-600 outline-none" />
-                </div>
-                <div>
-                    <label for="visa" class="block text-xs font-bold text-gray-700 uppercase mb-1">💳 Visa / POS</label>
-                    <input id="visa" type="number" [(ngModel)]="Pedido_cobrar.visa"
-                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none" />
-                </div>
-                <div>
-                    <label for="yape" class="block text-xs font-bold text-gray-700 uppercase mb-1">📱 Yape</label>
-                    <input id="yape" type="number" [(ngModel)]="Pedido_cobrar.yape"
-                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 outline-none" />
-                </div>
-                <div>
-                    <label for="plin" class="block text-xs font-bold text-gray-700 uppercase mb-1">📱 Plin</label>
-                    <input id="plin" type="number" [(ngModel)]="Pedido_cobrar.plin"
-                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-600 outline-none" />
-                </div>
+<p-dialog [(visible)]="Cobrar_Dialog" [position]="'top'" [style]="{ width: '95vw', maxWidth: '580px' }"
+    [modal]="true" [draggable]="false" [resizable]="false" [closable]="true" (onHide)="hideDialog()">
+
+    <ng-template pTemplate="header">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shadow-2xs">
+                <i class="pi pi-credit-card text-lg"></i>
             </div>
             <div>
-                <label for="total" class="block text-xs font-bold text-gray-700 uppercase mb-1">Total Pedido</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 font-bold">S/</span>
-                    <input id="total" type="number" disabled [(ngModel)]="Pedido_cobrar.total"
-                        class="w-full pl-9 pr-3 py-3 bg-gray-100 border border-gray-300 text-emerald-800 font-black text-xl rounded-lg cursor-not-allowed" />
+                <h3 class="text-lg font-black text-gray-900 m-0 leading-tight">Cobrar Pedido</h3>
+                <span class="text-xs text-gray-500 font-semibold">
+                    Orden #{{ Pedido_cobrar.idpedido || '...' }}
+                </span>
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="content">
+        <div class="space-y-4 pt-1 pb-2">
+
+            <!-- BANNER DE TOTAL A COBRAR -->
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-4 text-white shadow-md">
+                <div class="flex justify-between items-start mb-1">
+                    <span class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Total a Cobrar</span>
+                    <!-- Badge de Estado del Pago -->
+                    <span *ngIf="diferenciaCobro === 0"
+                        class="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5 animate-fadein">
+                        <i class="pi pi-check-circle text-xs"></i> Monto Exacto
+                    </span>
+                    <span *ngIf="diferenciaCobro < 0"
+                        class="px-2.5 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-400/30 flex items-center gap-1.5 animate-fadein">
+                        <i class="pi pi-clock text-xs"></i> Falta S/ {{ (-diferenciaCobro) | number:'1.2-2' }}
+                    </span>
+                    <span *ngIf="diferenciaCobro > 0"
+                        class="px-2.5 py-1 rounded-full text-xs font-black bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center gap-1.5 animate-fadein">
+                        <i class="pi pi-info-circle text-xs"></i> Exceso S/ {{ diferenciaCobro | number:'1.2-2' }}
+                    </span>
                 </div>
+
+                <div class="flex items-baseline gap-1">
+                    <span class="text-2xl font-black text-slate-300">S/</span>
+                    <span class="text-4xl font-black tracking-tight text-white">{{ (Pedido_cobrar.total || 0) | number:'1.2-2' }}</span>
+                </div>
+
+                <!-- Resumen de progreso -->
+                <div class="mt-3 pt-3 border-t border-slate-700/60 flex justify-between items-center text-xs text-slate-300 font-semibold">
+                    <span>Ingresado: <strong class="text-white font-black">S/ {{ totalCobradoIngresado | number:'1.2-2' }}</strong></span>
+                    <span *ngIf="diferenciaCobro < 0" class="text-amber-300 font-bold">Resta: S/ {{ (-diferenciaCobro) | number:'1.2-2' }}</span>
+                    <span *ngIf="diferenciaCobro === 0" class="text-emerald-400 font-bold">✓ 100% Cubierto</span>
+                    <span *ngIf="diferenciaCobro > 0" class="text-blue-300 font-bold">Vuelto sugerido: S/ {{ diferenciaCobro | number:'1.2-2' }}</span>
+                </div>
+            </div>
+
+            <!-- BOTONES DE PAGO RÁPIDO (100% en un clic) -->
+            <div>
+                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">
+                    ⚡ Pago Rápido (100% en un solo método):
+                </label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button type="button"
+                        class="py-2.5 px-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
+                        [ngClass]="Pedido_cobrar.efectivo === Pedido_cobrar.total && Pedido_cobrar.total > 0 ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-200'"
+                        (click)="pagarTodo('efectivo')">
+                        💵 Efectivo
+                    </button>
+
+                    <button type="button"
+                        class="py-2.5 px-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
+                        [ngClass]="Pedido_cobrar.visa === Pedido_cobrar.total && Pedido_cobrar.total > 0 ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white hover:bg-blue-50 text-blue-700 border-blue-200'"
+                        (click)="pagarTodo('visa')">
+                        💳 Visa / POS
+                    </button>
+
+                    <button type="button"
+                        class="py-2.5 px-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
+                        [ngClass]="Pedido_cobrar.yape === Pedido_cobrar.total && Pedido_cobrar.total > 0 ? 'bg-purple-600 text-white border-purple-600 shadow-sm' : 'bg-white hover:bg-purple-50 text-purple-700 border-purple-200'"
+                        (click)="pagarTodo('yape')">
+                        📱 Yape
+                    </button>
+
+                    <button type="button"
+                        class="py-2.5 px-3 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-95 cursor-pointer"
+                        [ngClass]="Pedido_cobrar.plin === Pedido_cobrar.total && Pedido_cobrar.total > 0 ? 'bg-cyan-600 text-white border-cyan-600 shadow-sm' : 'bg-white hover:bg-cyan-50 text-cyan-700 border-cyan-200'"
+                        (click)="pagarTodo('plin')">
+                        📱 Plin
+                    </button>
+                </div>
+            </div>
+
+            <!-- DESGLOSE DE MÉTODOS DE PAGO (PAGO MIXTO) -->
+            <div>
+                <label class="block text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">
+                    Desglose de Pago (Personalizado o Mixto):
+                </label>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <!-- Efectivo -->
+                    <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-emerald-300 transition-all">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-emerald-800 flex items-center gap-1">
+                                💵 Efectivo
+                            </span>
+                            <button *ngIf="Pedido_cobrar.efectivo > 0" type="button"
+                                class="text-[10px] text-slate-400 hover:text-red-500 font-bold transition-colors cursor-pointer"
+                                (click)="Pedido_cobrar.efectivo = 0">Limpiar</button>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-xs font-extrabold text-slate-400">S/</span>
+                            <input id="efectivo" type="number" min="0" step="0.5" [(ngModel)]="Pedido_cobrar.efectivo"
+                                class="w-full pl-8 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-500 shadow-2xs"
+                                placeholder="0.00" />
+                        </div>
+                    </div>
+
+                    <!-- Visa / POS -->
+                    <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-blue-300 transition-all">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-blue-800 flex items-center gap-1">
+                                💳 Visa / POS
+                            </span>
+                            <button *ngIf="Pedido_cobrar.visa > 0" type="button"
+                                class="text-[10px] text-slate-400 hover:text-red-500 font-bold transition-colors cursor-pointer"
+                                (click)="Pedido_cobrar.visa = 0">Limpiar</button>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-xs font-extrabold text-slate-400">S/</span>
+                            <input id="visa" type="number" min="0" step="0.5" [(ngModel)]="Pedido_cobrar.visa"
+                                class="w-full pl-8 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 shadow-2xs"
+                                placeholder="0.00" />
+                        </div>
+                    </div>
+
+                    <!-- Yape -->
+                    <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-purple-300 transition-all">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-purple-800 flex items-center gap-1">
+                                📱 Yape
+                            </span>
+                            <button *ngIf="Pedido_cobrar.yape > 0" type="button"
+                                class="text-[10px] text-slate-400 hover:text-red-500 font-bold transition-colors cursor-pointer"
+                                (click)="Pedido_cobrar.yape = 0">Limpiar</button>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-xs font-extrabold text-slate-400">S/</span>
+                            <input id="yape" type="number" min="0" step="0.5" [(ngModel)]="Pedido_cobrar.yape"
+                                class="w-full pl-8 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-500 shadow-2xs"
+                                placeholder="0.00" />
+                        </div>
+                    </div>
+
+                    <!-- Plin -->
+                    <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-cyan-300 transition-all">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-cyan-800 flex items-center gap-1">
+                                📱 Plin
+                            </span>
+                            <button *ngIf="Pedido_cobrar.plin > 0" type="button"
+                                class="text-[10px] text-slate-400 hover:text-red-500 font-bold transition-colors cursor-pointer"
+                                (click)="Pedido_cobrar.plin = 0">Limpiar</button>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-xs font-extrabold text-slate-400">S/</span>
+                            <input id="plin" type="number" min="0" step="0.5" [(ngModel)]="Pedido_cobrar.plin"
+                                class="w-full pl-8 pr-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-500 shadow-2xs"
+                                placeholder="0.00" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MENSAJE DE VALIDACIÓN EN TIEMPO REAL -->
+            <div *ngIf="diferenciaCobro !== 0"
+                class="p-2.5 rounded-xl border text-xs font-medium flex items-center gap-2 animate-fadein"
+                [ngClass]="diferenciaCobro < 0 ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-blue-50 text-blue-900 border-blue-200'">
+                <i class="pi" [ngClass]="diferenciaCobro < 0 ? 'pi-exclamation-circle text-amber-600' : 'pi-info-circle text-blue-600'"></i>
+                <span *ngIf="diferenciaCobro < 0">
+                    Falta ingresar <strong>S/ {{ (-diferenciaCobro) | number:'1.2-2' }}</strong> para completar el total del pedido.
+                </span>
+                <span *ngIf="diferenciaCobro > 0">
+                    El monto ingresado excede el total por <strong>S/ {{ diferenciaCobro | number:'1.2-2' }}</strong>.
+                </span>
             </div>
         </div>
     </ng-template>
 
     <ng-template pTemplate="footer">
-        <div class="flex justify-end gap-2 pt-2">
-            <button type="button" class="px-4 py-2 rounded-lg text-gray-600 font-semibold hover:bg-gray-100 transition-colors"
+        <div class="flex items-center justify-end gap-2.5 pt-2 pb-1">
+            <button type="button"
+                class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 transition-all text-xs sm:text-sm active:scale-95 cursor-pointer"
                 (click)="hideDialog()">
                 Cancelar
             </button>
-            <button type="button" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow transition-all flex items-center gap-2"
+            <button type="button"
+                class="px-6 py-2.5 rounded-xl font-black text-white transition-all text-xs sm:text-sm shadow-md flex items-center gap-2 active:scale-95 cursor-pointer"
+                [ngClass]="diferenciaCobro === 0 ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30' : 'bg-slate-400 opacity-60 cursor-not-allowed'"
+                [disabled]="diferenciaCobro !== 0"
                 (click)="CobrarPedido(Pedido_cobrar)">
-                <i class="pi pi-save"></i> Guardar Cobro
+                <i class="pi pi-check-circle"></i> Confirmar Cobro (S/ {{ (Pedido_cobrar.total || 0) | number:'1.2-2' }})
             </button>
         </div>
     </ng-template>
+</p-dialog>
+
+<!-- ============================================================ -->
+<!-- MODAL AMIGABLE DE AVISO (CAJA NO CERRADA / ADVERTENCIAS) -->
+<!-- ============================================================ -->
+<p-dialog [(visible)]="avisoModalDialog" [modal]="true" [draggable]="false" [resizable]="false"
+    [style]="{ width: '92vw', maxWidth: '440px' }" [closable]="true">
+    <div class="p-4 text-center">
+        <!-- Ícono decorativo -->
+        <div class="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-3.5 shadow-sm"
+            [ngClass]="{
+                'bg-amber-100 text-amber-600 border border-amber-200': avisoModalData.tipo === 'warning',
+                'bg-blue-100 text-blue-600 border border-blue-200': avisoModalData.tipo === 'info',
+                'bg-rose-100 text-rose-600 border border-rose-200': avisoModalData.tipo === 'error'
+            }">
+            <i class="pi text-3xl" [ngClass]="{
+                'pi-lock': avisoModalData.tipo === 'warning',
+                'pi-info-circle': avisoModalData.tipo === 'info',
+                'pi-exclamation-triangle': avisoModalData.tipo === 'error'
+            }"></i>
+        </div>
+
+        <!-- Título -->
+        <h3 class="text-xl font-black text-gray-900 m-0 mb-2">
+            {{ avisoModalData.titulo }}
+        </h3>
+
+        <!-- Mensaje amigable -->
+        <p class="text-sm text-gray-600 font-medium leading-relaxed m-0 mb-5">
+            {{ avisoModalData.mensaje }}
+        </p>
+
+        <!-- Botón Entendido -->
+        <div class="flex items-center justify-center">
+            <button type="button"
+                class="px-6 py-2.5 rounded-xl font-bold text-white transition-all text-sm shadow-md active:scale-95 cursor-pointer"
+                [ngClass]="{
+                    'bg-amber-600 hover:bg-amber-700 shadow-amber-600/30': avisoModalData.tipo === 'warning',
+                    'bg-blue-600 hover:bg-blue-700 shadow-blue-600/30': avisoModalData.tipo === 'info',
+                    'bg-rose-600 hover:bg-rose-700 shadow-rose-600/30': avisoModalData.tipo === 'error'
+                }"
+                (click)="avisoModalDialog = false">
+                Entendido
+            </button>
+        </div>
+    </div>
 </p-dialog>
 
 <p-confirmDialog [style]="{ width: '450px' }" />

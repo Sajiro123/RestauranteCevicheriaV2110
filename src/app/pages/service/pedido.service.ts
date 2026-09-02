@@ -160,6 +160,7 @@ export class PedidoService {
                 .eq('estado', 3)
                 .eq('fecha', parameters)
                 .order('idpedido', { ascending: false })
+                .is('deleted', null)
                 .then(({ data, error }: { data: any; error: any }) => {
                     if (data) {
                         data.forEach((item: any) => {
@@ -245,6 +246,7 @@ export class PedidoService {
                 .gte('fecha', parameters.fechainicio)
                 .lte('fecha', parameters.fechafin)
                 .order('idpedido', { ascending: false })
+                .is('deleted', null)
                 .then(({ data, error }: { data: any; error: any }) => {
                     if (data) {
                         data.forEach((item: any) => {
@@ -292,6 +294,7 @@ export class PedidoService {
                 .gte('fecha', parameters.fechainicio)
                 .lte('fecha', parameters.fechafin)
                 .order('mesa')
+                .is('deleted', null)
                 .then(({ data, error }: { data: any; error: any }) => ({ success: !error, data, error }))
         );
     }

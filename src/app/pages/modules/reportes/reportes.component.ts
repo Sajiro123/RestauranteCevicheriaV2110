@@ -43,6 +43,27 @@ export class ReportesComponent implements OnInit {
     pdfUrl: SafeResourceUrl | null = null;
     fecha_actual: any;
 
+    // Estado de cierre de caja para el Reporte Consolidado
+    cajaCerrada: boolean = false;
+    verificandoCaja: boolean = true;
+
+    // Modal amigable de aviso (caja no cerrada / advertencias)
+    avisoModalDialog: boolean = false;
+    avisoModalData: {
+        titulo: string;
+        mensaje: string;
+        tipo: 'warning' | 'info' | 'error';
+    } = {
+        titulo: '',
+        mensaje: '',
+        tipo: 'warning'
+    };
+
+    mostrarAvisoAmigable(titulo: string, mensaje: string, tipo: 'warning' | 'info' | 'error' = 'warning') {
+        this.avisoModalData = { titulo, mensaje, tipo };
+        this.avisoModalDialog = true;
+    }
+
     // Date restrictions for calendar (null = sin restricción)
     minDate: Date | null = null;
     maxDate: Date | null = null;
@@ -102,6 +123,52 @@ export class ReportesComponent implements OnInit {
         this.selectedRange2 = null;
         this.selectedRange3 = null;
         this.selectedRange4 = null;
+
+        // Validar si la caja del día ya fue cerrada para permitir el Reporte Consolidado
+        this.verificarEstadoCaja();
+    }
+
+    verificarEstadoCaja(): Promise<boolean> {
+        return new Promise((resolve) => {
+            this.verificandoCaja = true;
+            this.AperturaService_.ListarAperturaHoy().subscribe({
+                next: (response: any) => {
+                    this.verificandoCaja = false;
+                    if (response && response.success && response.data && response.data.length > 0) {
+                        const apertura = response.data[0];
+                        // estado == 2 significa que la caja ya fue cerrada
+                        this.cajaCerrada = (apertura.estado == 2);
+                    } else {
+                        // Sin apertura hoy o estado !== 2
+                        this.cajaCerrada = false;
+                    }
+
+                    if (!this.cajaCerrada) {
+                        this.Clients = [];
+                        this.messageService.add({
+                            severity: 'warn',
+                            summary: 'Falta cerrar la caja',
+                            detail: 'No se puede visualizar el Reporte Consolidado de Ventas porque la caja aún no ha sido cerrada.',
+                            life: 5000
+                        });
+                    }
+
+                    resolve(this.cajaCerrada);
+                },
+                error: (err: any) => {
+                    console.error('Error al verificar estado de caja', err);
+                    this.verificandoCaja = false;
+                    this.cajaCerrada = false;
+                    resolve(false);
+                }
+            });
+        });
+    }
+
+    onTabChange(event: any) {
+        if (event && event.index === 0) {
+            this.verificarEstadoCaja();
+        }
     }
 
     onDatePickerShow(picker: any) {
@@ -178,6 +245,29 @@ export class ReportesComponent implements OnInit {
         this.Cobrar_Dialog = false;
     }
 
+    pagarTodo(metodo: 'efectivo' | 'visa' | 'yape' | 'plin') {
+        this.Pedido_cobrar.efectivo = 0;
+        this.Pedido_cobrar.visa = 0;
+        this.Pedido_cobrar.yape = 0;
+        this.Pedido_cobrar.plin = 0;
+
+        this.Pedido_cobrar[metodo] = this.Pedido_cobrar.total;
+    }
+
+    get totalCobradoIngresado(): number {
+        return +(
+            (Number(this.Pedido_cobrar?.efectivo) || 0) +
+            (Number(this.Pedido_cobrar?.visa) || 0) +
+            (Number(this.Pedido_cobrar?.yape) || 0) +
+            (Number(this.Pedido_cobrar?.plin) || 0)
+        ).toFixed(2);
+    }
+
+    get diferenciaCobro(): number {
+        const total = Number(this.Pedido_cobrar?.total) || 0;
+        return +(this.totalCobradoIngresado - total).toFixed(2);
+    }
+
     // Add the CobrarPedido function
     CobrarPedido(pedido: any) {
         const total_ingresado = Number(pedido.yape || 0) + Number(pedido.visa || 0) + Number(pedido.plin || 0) + Number(pedido.efectivo || 0);
@@ -211,13 +301,11 @@ export class ReportesComponent implements OnInit {
     PdfReporteDiario(fecha: string) {
         this.PedidoService.ValidarCierre(fecha).subscribe((responsevalidar) => {
             if (!responsevalidar.data) {
-                this.messageService.add({
-                    severity: 'info',
-                    summary: 'Cerrar Caja',
-                    detail: 'No se puede generar el reporte, la caja no ha sido cerrada para esta fecha',
-                    life: 3000
-                });
-
+                this.mostrarAvisoAmigable(
+                    'Falta cerrar la caja',
+                    `No se puede generar el reporte PDF para el día ${fecha} porque la caja aún no ha sido cerrada.`,
+                    'warning'
+                );
                 return;
             }
 
@@ -494,8 +582,17 @@ export class ReportesComponent implements OnInit {
         this.array_data_total = {}; // Reiniciar el total
 
         this.PedidoService.showRerporte(parameters).subscribe(
-            (response: { success: any; data: any[] }) => {
-                if (response.success) {
+            (response: any) => {
+                if (response && response.cajaNoCerrada) {
+                    this.Clients = [];
+                    this.mostrarAvisoAmigable(
+                        'Aún falta cerrar la caja',
+                        response.message || 'No es posible consultar el Reporte Consolidado de Ventas porque la caja para la fecha seleccionada aún no ha sido cerrada. Debe realizar el cierre de caja para poder visualizar la información.',
+                        'warning'
+                    );
+                    return;
+                }
+                if (response && response.success) {
                     var yape_total = 0;
                     var plin_total = 0;
                     var visa_total = 0;
@@ -550,12 +647,21 @@ export class ReportesComponent implements OnInit {
                         yape: this.totalyape
                     };
                 } else {
-                    alert('Error al intentar consultar');
+                    this.Clients = [];
+                    this.mostrarAvisoAmigable(
+                        'Falta cerrar la caja',
+                        response?.message || 'No es posible visualizar las ventas de este rango porque la caja aún no ha sido cerrada. Debe realizar el cierre de caja para consultar este reporte.',
+                        'warning'
+                    );
                 }
             },
             (error: any) => {
                 console.error('Error al intentar consultar', error);
-                alert('Hubo un problema al conectar con el servidor');
+                this.mostrarAvisoAmigable(
+                    'Error de conexión',
+                    'Hubo un problema al conectar con el servidor para consultar las ventas. Por favor, revise su conexión a internet.',
+                    'error'
+                );
             }
         );
     }
@@ -594,16 +700,20 @@ export class ReportesComponent implements OnInit {
                                 };
                             });
                         } else {
-                            alert('Error al intentar consultar los detalles del producto');
+                            this.mostrarAvisoAmigable('Detalles no disponibles', 'No se pudieron consultar los detalles de los productos.', 'info');
                         }
                     });
                 } else {
-                    alert('Error al intentar consultar');
+                    this.mostrarAvisoAmigable(
+                        'Sin pedidos',
+                        `No se encontraron pedidos registrados para la fecha ${parameters}.`,
+                        'info'
+                    );
                 }
             },
             (error: any) => {
                 console.error('Error al intentar consultar', error);
-                alert('Hubo un problema al conectar con el servidor');
+                this.mostrarAvisoAmigable('Error de conexión', 'Hubo un problema al conectar con el servidor para obtener los pedidos del día.', 'error');
             }
         );
     }
@@ -641,16 +751,20 @@ export class ReportesComponent implements OnInit {
                                 };
                             });
                         } else {
-                            alert('Error al intentar consultar los detalles del producto');
+                            this.mostrarAvisoAmigable('Detalles no disponibles', 'No se pudieron consultar los detalles de los productos eliminados.', 'info');
                         }
                     });
                 } else {
-                    alert('Error al intentar consultar');
+                    this.mostrarAvisoAmigable(
+                        'Sin pedidos eliminados',
+                        'No se encontraron pedidos anulados o eliminados en el rango de fechas seleccionado.',
+                        'info'
+                    );
                 }
             },
             (error: any) => {
                 console.error('Error al intentar consultar', error);
-                alert('Hubo un problema al conectar con el servidor');
+                this.mostrarAvisoAmigable('Error de conexión', 'Hubo un problema al conectar con el servidor.', 'error');
             }
         );
     }
@@ -688,16 +802,20 @@ export class ReportesComponent implements OnInit {
                                 };
                             });
                         } else {
-                            alert('Error al intentar consultar los detalles del producto');
+                            this.mostrarAvisoAmigable('Detalles no disponibles', 'No se pudieron consultar los detalles de los productos sin cobrar.', 'info');
                         }
                     });
                 } else {
-                    alert('Error al intentar consultar');
+                    this.mostrarAvisoAmigable(
+                        'Sin pedidos pendientes',
+                        'No se encontraron pedidos sin cobrar en el rango de fechas seleccionado.',
+                        'info'
+                    );
                 }
             },
             (error: any) => {
                 console.error('Error al intentar consultar', error);
-                alert('Hubo un problema al conectar con el servidor');
+                this.mostrarAvisoAmigable('Error de conexión', 'Hubo un problema al conectar con el servidor.', 'error');
             }
         );
     }
