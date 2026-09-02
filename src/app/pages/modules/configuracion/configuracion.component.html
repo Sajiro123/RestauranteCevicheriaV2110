@@ -59,6 +59,17 @@
                         </div>
                     </div>
                 </li>
+                <li>
+                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'compras';selector = true">
+                        <div class="icon orange" aria-hidden="true">
+                            <i class="fa-solid fa-cart-shopping"></i>
+                        </div>
+                        <div class="text-content">
+                            <p class="title">Lista de Compras</p>
+                            <p class="subtitle">Gestor de compras y suministros del restaurante.</p>
+                        </div>
+                    </div>
+                </li>
             </ul>
         </section>
 
@@ -140,4 +151,5 @@
     <app-menu-list *ngIf="seleccciontext == 'menulista'" (backToMain)="selector = false; seleccciontext = ''"></app-menu-list>
     <app-perfil-permisos *ngIf="seleccciontext == 'menuperfil'" (backToMain)="selector = false; seleccciontext = ''"></app-perfil-permisos>
     <app-aperturas *ngIf="seleccciontext == 'aperturas'" (backToMain)="selector = false; seleccciontext = ''"></app-aperturas>
+    <app-compras *ngIf="seleccciontext == 'compras'" (backToMain)="selector = false; seleccciontext = ''"></app-compras>
 </div>

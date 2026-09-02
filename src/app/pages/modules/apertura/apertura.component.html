@@ -239,14 +239,22 @@
                     </ng-container>
                 </div>
 
-                <!-- Botón principal: Abrir / Cerrar caja -->
+                <!-- Botón principal: Abrir / Cerrar caja con Arqueo -->
                 <button class="btn-action" type="button" *ngIf="estado_caja != 2 && !modoEdicion"
-                    [disabled]="(estado_caja == null && cajaForm.invalid) || modoEdicion" (click)="GuardarCaja()">
+                    [disabled]="(estado_caja == null && (cajaForm.invalid || isSubmitting)) || modoEdicion" (click)="GuardarCaja()">
                     <i class="pi" [ngClass]="{
-                        'pi-lock-open': estado_caja == null,
-                        'pi-lock':      estado_caja == 1
+                        'pi-lock-open': estado_caja == null && !isSubmitting,
+                        'pi-lock':      estado_caja == 1,
+                        'pi-spin pi-spinner': isSubmitting
                     }"></i>
-                    {{ estado_caja == null ? 'Abrir Caja del Día' : 'Cerrar Caja del Día' }}
+                    {{ isSubmitting ? 'Procesando...' : (estado_caja == null ? 'Abrir Caja del Día' : 'Cerrar Caja (Arqueo Ciego)') }}
+                </button>
+
+                <!-- Botón Ver Cierre cuando ya está cerrada -->
+                <button class="btn-action btn-action-view" type="button" *ngIf="estado_caja == 2"
+                    (click)="verDetalleCierreActual()">
+                    <i class="pi pi-file-check"></i>
+                    Ver Resumen y Cuadre de Caja
                 </button>
             </div>
         </div>
@@ -384,34 +392,76 @@
                     <h2>Resumen del Día</h2>
                 </div>
 
+                <!-- KPI Ingresos por método -->
                 <div class="resumen-grid" *ngFor="let data of Resumenventahoy">
-                    <div class="resumen-box">
-                        <span class="resumen-label">Efectivo</span>
-                        <span class="resumen-value">S/ {{ data.efectivo || 0 | number : '1.2-2' }}</span>
+                    <!-- Efectivo -->
+                    <div class="resumen-box resumen-box--efectivo">
+                        <div class="resumen-box-icon"><i class="pi pi-money-bill"></i></div>
+                        <div class="resumen-box-content">
+                            <span class="resumen-label">Efectivo</span>
+                            <span class="resumen-value">S/ {{ data.efectivo || 0 | number : '1.2-2' }}</span>
+                        </div>
                     </div>
-                    <div class="resumen-box">
-                        <span class="resumen-label">Yape / Plin</span>
-                        <span class="resumen-value">S/ {{ (data.yape || 0) + (data.plin || 0) | number : '1.2-2'
-                            }}</span>
+                    <!-- Yape -->
+                    <div class="resumen-box resumen-box--yape">
+                        <div class="resumen-box-icon"><i class="pi pi-mobile"></i></div>
+                        <div class="resumen-box-content">
+                            <span class="resumen-label">Yape</span>
+                            <span class="resumen-value">S/ {{ data.yape || 0 | number : '1.2-2' }}</span>
+                        </div>
                     </div>
-                    <div class="resumen-box">
-                        <span class="resumen-label">Tarjeta</span>
-                        <span class="resumen-value">S/ {{ data.visa || 0 | number : '1.2-2' }}</span>
+                    <!-- Plin -->
+                    <div class="resumen-box resumen-box--plin">
+                        <div class="resumen-box-icon"><i class="pi pi-mobile"></i></div>
+                        <div class="resumen-box-content">
+                            <span class="resumen-label">Plin</span>
+                            <span class="resumen-value">S/ {{ data.plin || 0 | number : '1.2-2' }}</span>
+                        </div>
                     </div>
-                    <div class="resumen-box red">
-                        <span class="resumen-label">Gastos (Egresos)</span>
-                        <span class="resumen-value">-S/ {{ totalGastos() | number : '1.2-2' }}</span>
+                    <!-- Tarjeta (visa) -->
+                    <div class="resumen-box resumen-box--tarjeta">
+                        <div class="resumen-box-icon"><i class="pi pi-credit-card"></i></div>
+                        <div class="resumen-box-content">
+                            <span class="resumen-label">Tarjeta / POS</span>
+                            <span class="resumen-value">S/ {{ data.visa || 0 | number : '1.2-2' }}</span>
+                        </div>
+                    </div>
+                    <!-- Gastos -->
+                    <div class="resumen-box resumen-box--gastos">
+                        <div class="resumen-box-icon"><i class="pi pi-arrow-down-left"></i></div>
+                        <div class="resumen-box-content">
+                            <span class="resumen-label">Gastos (Egresos)</span>
+                            <span class="resumen-value">-S/ {{ totalGastos() | number : '1.2-2' }}</span>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Total Neto destacado -->
                 <div class="gran-total" *ngFor="let data of Resumenventahoy">
                     <div class="gran-total-inner">
                         <div>
                             <span class="gt-label">GRAN TOTAL NETO</span>
+                            <span class="gt-sub">Ingresos - Gastos del día</span>
                             <span class="gt-value">S/ {{ (data.yape || 0) + (data.plin || 0) + (data.visa || 0) +
                                 (data.efectivo || 0) - totalGastos() | number : '1.2-2' }}</span>
                         </div>
-                        <i class="pi pi-wallet gt-icon"></i>
+                        <div class="gt-icon-wrap"><i class="pi pi-wallet gt-icon"></i></div>
+                    </div>
+                </div>
+
+                <!-- Subtotales digitales vs efectivo -->
+                <div class="resumen-sub" *ngFor="let data of Resumenventahoy">
+                    <div class="resumen-sub-row">
+                        <span class="rsub-label"><i class="pi pi-mobile"></i> Digital (Yape + Plin + Tarjeta)</span>
+                        <span class="rsub-value rsub-digital">S/ {{ ((data.yape || 0) + (data.plin || 0) + (data.visa || 0)) | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="resumen-sub-row">
+                        <span class="rsub-label"><i class="pi pi-money-bill"></i> Efectivo</span>
+                        <span class="rsub-value rsub-cash">S/ {{ (data.efectivo || 0) | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="resumen-sub-row">
+                        <span class="rsub-label"><i class="pi pi-minus-circle"></i> Total Gastos</span>
+                        <span class="rsub-value rsub-gastos">-S/ {{ totalGastos() | number:'1.2-2' }}</span>
                     </div>
                 </div>
 
@@ -453,3 +503,259 @@
 </div>
 
 <p-confirmDialog [style]="{ width: '450px' }" />
+
+<!-- ============================================================ -->
+<!-- MODAL: ARQUEO CIEGO DE CIERRE DE CAJA -->
+<!-- ============================================================ -->
+<p-dialog [(visible)]="arqueoDialogVisible" [modal]="true" [style]="{ width: '92vw', maxWidth: '560px' }"
+    [draggable]="false" [resizable]="false" header="Arqueo y Cierre de Caja">
+    
+    <div class="p-2 space-y-4" [formGroup]="arqueoForm">
+        <!-- Aviso de Arqueo Ciego -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3">
+            <i class="pi pi-shield text-amber-600 text-xl flex-shrink-0 mt-0.5"></i>
+            <div class="text-xs text-amber-800 leading-relaxed">
+                <strong>Arqueo Ciego:</strong> Ingresa únicamente los montos físicos contados y vouchers reales recaudados en tu turno. El sistema realizará el cuadre automático tras guardar.
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            <!-- Efectivo Físico -->
+            <div class="form-group-modal">
+                <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+                    <i class="pi pi-money-bill text-green-600 mr-1"></i> Efectivo Físico (S/)
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 font-bold text-sm">S/</span>
+                    <input type="number" step="0.10" formControlName="efectivo_declarado" placeholder="0.00"
+                        class="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-base focus:ring-2 focus:ring-green-500/20 focus:border-green-600 outline-none" />
+                </div>
+            </div>
+
+            <!-- Yape Reportado -->
+            <div class="form-group-modal">
+                <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+                    <i class="pi pi-mobile text-purple-600 mr-1"></i> Yape Reportado (S/)
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 font-bold text-sm">S/</span>
+                    <input type="number" step="0.10" formControlName="yape_declarado" placeholder="0.00"
+                        class="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-base focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 outline-none" />
+                </div>
+            </div>
+
+            <!-- Plin Reportado -->
+            <div class="form-group-modal">
+                <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+                    <i class="pi pi-mobile text-cyan-600 mr-1"></i> Plin Reportado (S/)
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 font-bold text-sm">S/</span>
+                    <input type="number" step="0.10" formControlName="plin_declarado" placeholder="0.00"
+                        class="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-base focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-600 outline-none" />
+                </div>
+            </div>
+
+            <!-- Tarjeta / Visa -->
+            <div class="form-group-modal">
+                <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">
+                    <i class="pi pi-credit-card text-blue-600 mr-1"></i> Tarjeta / POS (S/)
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 font-bold text-sm">S/</span>
+                    <input type="number" step="0.10" formControlName="tarjeta_declarado" placeholder="0.00"
+                        class="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-base focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Notas / Observaciones -->
+        <div class="form-group-modal">
+            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Observaciones / Justificaciones</label>
+            <textarea formControlName="notas" rows="2" placeholder="Opcional: detalles del arqueo o justificación de novedades..."
+                class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-800 focus:ring-2 focus:ring-gray-400/20 focus:border-gray-500 outline-none"></textarea>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-4 py-2 rounded-lg text-gray-600 font-semibold hover:bg-gray-100 transition-colors"
+                (click)="arqueoDialogVisible = false" [disabled]="isCerrando">
+                Cancelar
+            </button>
+            <button type="button" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow transition-all flex items-center gap-2"
+                [disabled]="isCerrando || arqueoForm.invalid" (click)="confirmarCierreArqueo()">
+                <i class="pi" [ngClass]="isCerrando ? 'pi-spin pi-spinner' : 'pi-check-circle'"></i>
+                {{ isCerrando ? 'Procesando Cuadre...' : 'Guardar y Comparar Cierre' }}
+            </button>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<!-- ============================================================ -->
+<!-- MODAL: RESULTADO Y COMPARATIVA DE CUADRE DE CAJA -->
+<!-- ============================================================ -->
+<p-dialog [(visible)]="resultadoCierreDialogVisible" [modal]="true" [style]="{ width: '94vw', maxWidth: '680px' }"
+    [draggable]="false" [resizable]="false" header="Resumen y Cuadre de Cierre de Caja">
+
+    <div class="p-2 space-y-4" *ngIf="resultadoCierre">
+
+        <!-- Banner de Estado de Cuadre -->
+        <div class="p-4 rounded-xl flex items-center justify-between"
+            [ngClass]="{
+                'bg-emerald-50 border border-emerald-200 text-emerald-900': resultadoCierre.diferencias.total === 0,
+                'bg-blue-50 border border-blue-200 text-blue-900': resultadoCierre.diferencias.total > 0,
+                'bg-rose-50 border border-rose-200 text-rose-900': resultadoCierre.diferencias.total < 0
+            }">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 rounded-full"
+                    [ngClass]="{
+                        'bg-emerald-200 text-emerald-800': resultadoCierre.diferencias.total === 0,
+                        'bg-blue-200 text-blue-800': resultadoCierre.diferencias.total > 0,
+                        'bg-rose-200 text-rose-800': resultadoCierre.diferencias.total < 0
+                    }">
+                    <i class="pi text-xl" [ngClass]="{
+                        'pi-check-circle': resultadoCierre.diferencias.total === 0,
+                        'pi-plus-circle': resultadoCierre.diferencias.total > 0,
+                        'pi-exclamation-triangle': resultadoCierre.diferencias.total < 0
+                    }"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base m-0">
+                        {{ resultadoCierre.diferencias.total === 0 ? '¡Caja Cuadrada Exacta!' : (resultadoCierre.diferencias.total > 0 ? 'Sobrante de Caja Detectado' : 'Faltante de Caja Detectado') }}
+                    </h3>
+                    <p class="text-xs opacity-90 m-0">Fecha de cierre: {{ fecha_actual }}</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="text-xs uppercase font-bold tracking-wider opacity-75">Diferencia Total</span>
+                <div class="text-xl font-black"
+                    [ngClass]="{
+                        'text-emerald-700': resultadoCierre.diferencias.total === 0,
+                        'text-blue-700': resultadoCierre.diferencias.total > 0,
+                        'text-rose-700': resultadoCierre.diferencias.total < 0
+                    }">
+                    {{ resultadoCierre.diferencias.total > 0 ? '+' : '' }}S/ {{ resultadoCierre.diferencias.total | number:'1.2-2' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla Comparativa -->
+        <div class="overflow-hidden border border-gray-200 rounded-xl shadow-sm">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-700 uppercase font-bold border-b border-gray-200">
+                        <th class="p-3">Método</th>
+                        <th class="p-3 text-right">Declarado (Cajero)</th>
+                        <th class="p-3 text-right">Sistema (Esperado)</th>
+                        <th class="p-3 text-right">Diferencia</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 text-gray-800 font-medium">
+                    <!-- Efectivo -->
+                    <tr>
+                        <td class="p-3 flex items-center gap-1.5 font-bold">
+                            <i class="pi pi-money-bill text-green-600"></i> Efectivo en Caja
+                        </td>
+                        <td class="p-3 text-right font-bold text-gray-900">S/ {{ resultadoCierre.declarado.efectivo | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right text-gray-600">S/ {{ resultadoCierre.sistema.efectivoEsperado | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right font-bold"
+                            [ngClass]="{
+                                'text-emerald-600': resultadoCierre.diferencias.efectivo >= 0,
+                                'text-rose-600': resultadoCierre.diferencias.efectivo < 0
+                            }">
+                            {{ resultadoCierre.diferencias.efectivo > 0 ? '+' : '' }}S/ {{ resultadoCierre.diferencias.efectivo | number:'1.2-2' }}
+                        </td>
+                    </tr>
+
+                    <!-- Yape -->
+                    <tr>
+                        <td class="p-3 flex items-center gap-1.5 font-bold">
+                            <i class="pi pi-mobile text-purple-600"></i> Yape
+                        </td>
+                        <td class="p-3 text-right font-bold text-gray-900">S/ {{ resultadoCierre.declarado.yape | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right text-gray-600">S/ {{ resultadoCierre.sistema.ventasYape | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right font-bold"
+                            [ngClass]="{
+                                'text-emerald-600': resultadoCierre.diferencias.yape >= 0,
+                                'text-rose-600': resultadoCierre.diferencias.yape < 0
+                            }">
+                            {{ resultadoCierre.diferencias.yape > 0 ? '+' : '' }}S/ {{ resultadoCierre.diferencias.yape | number:'1.2-2' }}
+                        </td>
+                    </tr>
+
+                    <!-- Plin -->
+                    <tr>
+                        <td class="p-3 flex items-center gap-1.5 font-bold">
+                            <i class="pi pi-mobile text-cyan-600"></i> Plin
+                        </td>
+                        <td class="p-3 text-right font-bold text-gray-900">S/ {{ resultadoCierre.declarado.plin | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right text-gray-600">S/ {{ resultadoCierre.sistema.ventasPlin | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right font-bold"
+                            [ngClass]="{
+                                'text-emerald-600': resultadoCierre.diferencias.plin >= 0,
+                                'text-rose-600': resultadoCierre.diferencias.plin < 0
+                            }">
+                            {{ resultadoCierre.diferencias.plin > 0 ? '+' : '' }}S/ {{ resultadoCierre.diferencias.plin | number:'1.2-2' }}
+                        </td>
+                    </tr>
+
+                    <!-- Tarjeta -->
+                    <tr>
+                        <td class="p-3 flex items-center gap-1.5 font-bold">
+                            <i class="pi pi-credit-card text-blue-600"></i> Tarjeta (POS)
+                        </td>
+                        <td class="p-3 text-right font-bold text-gray-900">S/ {{ resultadoCierre.declarado.tarjeta | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right text-gray-600">S/ {{ resultadoCierre.sistema.ventasTarjeta | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right font-bold"
+                            [ngClass]="{
+                                'text-emerald-600': resultadoCierre.diferencias.tarjeta >= 0,
+                                'text-rose-600': resultadoCierre.diferencias.tarjeta < 0
+                            }">
+                            {{ resultadoCierre.diferencias.tarjeta > 0 ? '+' : '' }}S/ {{ resultadoCierre.diferencias.tarjeta | number:'1.2-2' }}
+                        </td>
+                    </tr>
+
+                    <!-- TOTAL -->
+                    <tr class="bg-gray-50 text-sm font-black border-t-2 border-gray-300">
+                        <td class="p-3 uppercase">Gran Total Recaudado</td>
+                        <td class="p-3 text-right text-gray-900 font-black">S/ {{ resultadoCierre.declarado.total | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right text-gray-700">S/ {{ resultadoCierre.sistema.totalSistemaEsperado | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right"
+                            [ngClass]="{
+                                'text-emerald-700': resultadoCierre.diferencias.total >= 0,
+                                'text-rose-700': resultadoCierre.diferencias.total < 0
+                            }">
+                            {{ resultadoCierre.diferencias.total > 0 ? '+' : '' }}S/ {{ resultadoCierre.diferencias.total | number:'1.2-2' }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tarjetas Desglose de Gastos y Apertura -->
+        <div class="grid grid-cols-3 gap-2.5 text-center text-xs">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-2.5">
+                <span class="block text-gray-500 font-medium">Monto Apertura</span>
+                <span class="text-sm font-bold text-gray-800">S/ {{ resultadoCierre.sistema.montoInicial | number:'1.2-2' }}</span>
+            </div>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-2.5">
+                <span class="block text-gray-500 font-medium">Egresos / Gastos</span>
+                <span class="text-sm font-bold text-rose-600">-S/ {{ resultadoCierre.sistema.totalGastos | number:'1.2-2' }}</span>
+            </div>
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-2.5">
+                <span class="block text-gray-500 font-medium">Total Pedidos</span>
+                <span class="text-sm font-bold text-indigo-600">{{ resultadoCierre.sistema.cantidadPedidos || 0 }} órdenes</span>
+            </div>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-lg shadow transition-colors flex items-center gap-2"
+                (click)="resultadoCierreDialogVisible = false">
+                <i class="pi pi-check"></i> Entendido
+            </button>
+        </div>
+    </ng-template>
+</p-dialog>

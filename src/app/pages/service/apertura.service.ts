@@ -105,4 +105,12 @@ export class AperturaService {
     ListarTrabajadores(): Observable<any> {
         return from(this.supabaseService.getTrabajadores());
     }
+
+    calcularResumenCaja(fecha: string): Observable<any> {
+        return from(this.supabaseService.calcularResumenCaja(fecha));
+    }
+
+    guardarCierreCaja(cierreData: any): Observable<any> {
+        return from(this.supabaseService.guardarCierreCaja(cierreData));
+    }
 }

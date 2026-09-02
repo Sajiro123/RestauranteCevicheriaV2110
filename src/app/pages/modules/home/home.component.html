@@ -1,4 +1,4 @@
-﻿<style>
+<style>
     /* Small utility tweaks to preserve some original class names and give better admin UX */
 </style>
 <p-toast styleClass="text-2xl" />
@@ -35,9 +35,9 @@
 <div *ngIf="cajaAbierta && !isOrderViewActive"
     class="bg-[#e8dece] w-full h-[calc(100vh-80px)] lg:h-[calc(100vh-60px)] flex flex-col lg:flex-row overflow-hidden font-sans">
 
-    <!-- LEFT: Delivery Sidebar -->
+    <!-- RIGHT: Delivery Sidebar -->
     <aside
-        class="order-2 lg:order-1 w-full lg:w-[320px] bg-white lg:border-r border-t lg:border-t-0 border-gray-200 flex flex-col flex-shrink-0 h-[35vh] lg:h-full z-10 lg:static relative shadow-sm">
+        class="order-2 lg:order-2 w-full lg:w-[320px] bg-white lg:border-l border-t lg:border-t-0 border-gray-200 flex flex-col flex-shrink-0 h-[35vh] lg:h-full z-10 lg:static relative shadow-sm">
         <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white z-20">
             <h2 class="text-2xl font-black text-gray-800 m-0 tracking-tight">Delivery</h2>
             <p-button [label]="'Nuevo'" icon="pi pi-plus" size="small" severity="info"
@@ -80,8 +80,8 @@
         </div>
     </aside>
 
-    <!-- CENTER/RIGHT: Main Content Area -->
-    <div class="order-1 lg:order-2 flex-1 flex h-full overflow-hidden relative">
+    <!-- CENTER/LEFT: Main Content Area -->
+    <div class="order-1 lg:order-1 flex-1 flex h-full overflow-hidden relative">
 
         <main class="flex-1 h-full overflow-y-auto px-4 lg:px-6 pt-2 pb-6 bg-[#e8dece] custom-scrollbar">
             <div class="w-full">
