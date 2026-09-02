@@ -47,6 +47,23 @@ export class ReportesComponent implements OnInit {
     cajaCerrada: boolean = false;
     verificandoCaja: boolean = true;
 
+    // Modal amigable de aviso (caja no cerrada / advertencias)
+    avisoModalDialog: boolean = false;
+    avisoModalData: {
+        titulo: string;
+        mensaje: string;
+        tipo: 'warning' | 'info' | 'error';
+    } = {
+        titulo: '',
+        mensaje: '',
+        tipo: 'warning'
+    };
+
+    mostrarAvisoAmigable(titulo: string, mensaje: string, tipo: 'warning' | 'info' | 'error' = 'warning') {
+        this.avisoModalData = { titulo, mensaje, tipo };
+        this.avisoModalDialog = true;
+    }
+
     // Date restrictions for calendar (null = sin restricción)
     minDate: Date | null = null;
     maxDate: Date | null = null;
@@ -654,12 +671,21 @@ export class ReportesComponent implements OnInit {
                         yape: this.totalyape
                     };
                 } else {
-                    alert('Error al intentar consultar');
+                    this.Clients = [];
+                    this.mostrarAvisoAmigable(
+                        'Falta cerrar la caja',
+                        response?.message || 'No es posible visualizar las ventas de este rango porque la caja aún no ha sido cerrada. Debe realizar el cierre de caja para consultar este reporte.',
+                        'warning'
+                    );
                 }
             },
             (error: any) => {
                 console.error('Error al intentar consultar', error);
-                alert('Hubo un problema al conectar con el servidor');
+                this.mostrarAvisoAmigable(
+                    'Error de conexión',
+                    'Hubo un problema al conectar con el servidor para consultar las ventas. Por favor, revise su conexión a internet.',
+                    'error'
+                );
             }
         );
     }
@@ -698,16 +724,20 @@ export class ReportesComponent implements OnInit {
                                 };
                             });
                         } else {
-                            alert('Error al intentar consultar los detalles del producto');
+                            this.mostrarAvisoAmigable('Detalles no disponibles', 'No se pudieron consultar los detalles de los productos.', 'info');
                         }
                     });
                 } else {
-                    alert('Error al intentar consultar');
+                    this.mostrarAvisoAmigable(
+                        'Sin pedidos',
+                        `No se encontraron pedidos registrados para la fecha ${parameters}.`,
+                        'info'
+                    );
                 }
             },
             (error: any) => {
                 console.error('Error al intentar consultar', error);
-                alert('Hubo un problema al conectar con el servidor');
+                this.mostrarAvisoAmigable('Error de conexión', 'Hubo un problema al conectar con el servidor para obtener los pedidos del día.', 'error');
             }
         );
     }
@@ -745,16 +775,20 @@ export class ReportesComponent implements OnInit {
                                 };
                             });
                         } else {
-                            alert('Error al intentar consultar los detalles del producto');
+                            this.mostrarAvisoAmigable('Detalles no disponibles', 'No se pudieron consultar los detalles de los productos eliminados.', 'info');
                         }
                     });
                 } else {
-                    alert('Error al intentar consultar');
+                    this.mostrarAvisoAmigable(
+                        'Sin pedidos eliminados',
+                        'No se encontraron pedidos anulados o eliminados en el rango de fechas seleccionado.',
+                        'info'
+                    );
                 }
             },
             (error: any) => {
                 console.error('Error al intentar consultar', error);
-                alert('Hubo un problema al conectar con el servidor');
+                this.mostrarAvisoAmigable('Error de conexión', 'Hubo un problema al conectar con el servidor.', 'error');
             }
         );
     }
@@ -792,16 +826,20 @@ export class ReportesComponent implements OnInit {
                                 };
                             });
                         } else {
-                            alert('Error al intentar consultar los detalles del producto');
+                            this.mostrarAvisoAmigable('Detalles no disponibles', 'No se pudieron consultar los detalles de los productos sin cobrar.', 'info');
                         }
                     });
                 } else {
-                    alert('Error al intentar consultar');
+                    this.mostrarAvisoAmigable(
+                        'Sin pedidos pendientes',
+                        'No se encontraron pedidos sin cobrar en el rango de fechas seleccionado.',
+                        'info'
+                    );
                 }
             },
             (error: any) => {
                 console.error('Error al intentar consultar', error);
-                alert('Hubo un problema al conectar con el servidor');
+                this.mostrarAvisoAmigable('Error de conexión', 'Hubo un problema al conectar con el servidor.', 'error');
             }
         );
     }
