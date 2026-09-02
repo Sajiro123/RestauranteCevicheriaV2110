@@ -98,6 +98,22 @@ export class PlanillaComponent implements OnInit {
         this.cargarEmpresa();
     }
 
+    get totalSalarioBase(): number {
+        return this.planillas.reduce((sum, p) => sum + (Number(p.salario) || 0), 0);
+    }
+
+    get totalDescuentos(): number {
+        return this.planillas.reduce((sum, p) => sum + (Number(p.descuento) || 0), 0);
+    }
+
+    get totalExtras(): number {
+        return this.planillas.reduce((sum, p) => sum + (Number(p.extra) || 0), 0);
+    }
+
+    get totalMontoNeto(): number {
+        return this.planillas.reduce((sum, p) => sum + (Number(p.monto_neto) || 0), 0);
+    }
+
     // ── Adelantos: abrir modal ───────────────────────────────────────
     abrirModalAdelantos() {
         this.displayAdelantosModal = true;

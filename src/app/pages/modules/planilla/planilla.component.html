@@ -118,6 +118,29 @@
                         </td>
                     </tr>
                 </tbody>
+                <tfoot *ngIf="planillas.length > 0">
+                    <tr>
+                        <td colspan="2" class="tfoot-label">
+                            TOTAL GENERAL ({{ planillas.length }} {{ planillas.length === 1 ? 'REGISTRO' : 'REGISTROS' }})
+                        </td>
+                        <td class="tfoot-salario" style="text-align: right;">
+                            S/ {{ totalSalarioBase | number:'1.2-2' }}
+                        </td>
+                        <td colspan="2" style="text-align: center; color: rgba(255, 255, 255, 0.4); font-size: 0.8rem;">
+                            —
+                        </td>
+                        <td class="tfoot-gastos" style="text-align: right;">
+                            S/ {{ totalDescuentos | number:'1.2-2' }}
+                        </td>
+                        <td class="tfoot-extra" style="text-align: right;">
+                            S/ {{ totalExtras | number:'1.2-2' }}
+                        </td>
+                        <td class="tfoot-total" style="text-align: right;">
+                            S/ {{ totalMontoNeto | number:'1.2-2' }}
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
