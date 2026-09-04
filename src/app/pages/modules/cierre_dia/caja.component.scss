@@ -1,33 +1,44 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-// ── Tokens Maré Gold ──────────────────────────────────────────────
-$gold: #000000;
-$gold-dark: #855300;
-$gold-light: #fef3c7;
-$navy: #1e293b;
-$navy-light: #334155;
-$surface: #f7f9fb;
-$surface-low: #f2f4f6;
-$surface-card: #ffffff;
-$border: rgba(226, 232, 240, 0.5);
-$text-main: #191c1e;
-$text-sub: #534434;
-$text-muted: #000000;
+// ── Tokens Corporativos (Slate Navy & Neutros) ────────────────────
+$corp-header-start: #2b3d52;
+$corp-header-end: #354b65;
+$corp-header-hover: #445d7d;
+$corp-border: #e2e8f0;
+$corp-border-subtle: #f1f5f9;
+$corp-bg-zebra: #f8fafc;
+$corp-bg-hover: #f1f5f9;
+$corp-bg-card: #ffffff;
+$corp-text-main: #0f172a;
+$corp-text-sub: #334155;
+$corp-text-muted: #64748b;
 
-// ── Payment colors ────────────────────────────────────────────────
-$plin-bg: #ede9fe;
-$plin-txt: #5b21b6;
+// Botones Neutros
+$btn-neutral-dark: #1e293b;
+$btn-neutral-dark-hover: #0f172a;
+$btn-neutral-border: #cbd5e1;
+
+// Payment Badges (Clean Soft Palette)
+$plin-bg: #cffafe;
+$plin-txt: #155e75;
+$plin-border: #a5f3fc;
+
 $yape-bg: #f3e8ff;
-$yape-txt: #7c3aed;
-$efectivo-bg: #d1fae5;
-$efectivo-txt: #065f46;
+$yape-txt: #6b21a8;
+$yape-border: #e9d5ff;
+
+$efectivo-bg: #dcfce7;
+$efectivo-txt: #166534;
+$efectivo-border: #bbf7d0;
+
 $tarjeta-bg: #dbeafe;
-$tarjeta-txt: #1d4ed8;
+$tarjeta-txt: #1e40af;
+$tarjeta-border: #bfdbfe;
 
 :host {
     display: block;
     font-family: 'Inter', sans-serif;
-    background: $surface;
+    background: #f8fafc;
     min-height: 100vh;
     padding: 1.5rem;
 }
@@ -46,45 +57,30 @@ $tarjeta-txt: #1d4ed8;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 1rem;
-    background: $surface-card;
-    border-radius: 16px;
+    background: $corp-bg-card;
+    border-radius: 12px;
     padding: 1.25rem 1.75rem;
-    box-shadow: 0 2px 12px rgba(25, 28, 30, 0.06);
+    border: 1px solid $corp-border;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .page-title {
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    flex-direction: column;
 
     h1 {
-        font-size: 1.4rem;
-        font-weight: 800;
-        color: $text-main;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: $corp-text-main;
         margin: 0;
-        letter-spacing: -0.3px;
+        letter-spacing: -0.02em;
     }
 
     .page-subtitle {
-        font-size: 0.78rem;
-        color: $text-muted;
-        margin: 0.1rem 0 0;
-    }
-}
-
-.title-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, $gold 0%, $gold-dark 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-
-    i {
-        color: #fff;
-        font-size: 1.2rem;
+        font-size: 0.82rem;
+        color: $corp-text-muted;
+        margin: 0.25rem 0 0;
+        font-weight: 400;
     }
 }
 
@@ -104,7 +100,7 @@ $tarjeta-txt: #1d4ed8;
 .filter-label {
     font-size: 0.72rem;
     font-weight: 600;
-    color: $text-muted;
+    color: $corp-text-muted;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -112,28 +108,26 @@ $tarjeta-txt: #1d4ed8;
 .date-input {
     height: 38px;
     padding: 0 0.75rem;
-    border: 1.5px solid $border;
+    border: 1.5px solid $corp-border;
     border-radius: 8px;
     font-family: inherit;
     font-size: 0.85rem;
-    color: $text-main;
-    background: $surface-low;
+    color: $corp-text-main;
+    background: #ffffff;
     outline: none;
-    transition:
-        border-color 0.2s,
-        background 0.2s;
+    transition: all 0.2s ease;
 
     &:focus {
-        border-color: $gold;
-        background: $surface-card;
+        border-color: $corp-header-end;
+        box-shadow: 0 0 0 3px rgba(53, 75, 101, 0.12);
     }
 }
 
-// ── BUTTONS ───────────────────────────────────────────────────────
+// ── BOTONES COLORES NEUTROS ───────────────────────────────────────
 .btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.45rem;
     height: 38px;
     padding: 0 1rem;
     border-radius: 8px;
@@ -151,45 +145,58 @@ $tarjeta-txt: #1d4ed8;
     }
 }
 
+// Botón Nuevo Registro (Neutro Slate Oscuro)
 .btn-primary {
-    background: linear-gradient(135deg, $gold 0%, $gold-dark 100%);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba($gold, 0.35);
+    background: $btn-neutral-dark;
+    color: #ffffff;
+    border: 1px solid $btn-neutral-dark-hover;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
     &:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba($gold, 0.5);
+        background: $btn-neutral-dark-hover;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
     }
 }
 
+// Botón Limpiar (Neutro Ghost Suave)
 .btn-ghost {
-    background: $surface-low;
-    color: $navy-light;
-    border: 1.5px solid $border;
+    background: #f8fafc;
+    color: #475569;
+    border: 1.5px solid $corp-border;
 
     &:hover:not(:disabled) {
-        background: #e2e8f0;
+        background: #f1f5f9;
+        color: $corp-text-main;
+        border-color: $btn-neutral-border;
     }
 }
 
+// Botón Reporte PDF (Neutro con borde y sutil toque rojo en icono)
 .btn-pdf {
-    background: #1d4ed8;
-    color: #fff;
+    background: #ffffff;
+    color: #334155;
+    border: 1.5px solid $btn-neutral-border;
+
+    i {
+        color: #dc2626;
+    }
 
     &:hover:not(:disabled) {
-        background: #1e40af;
-        transform: translateY(-1px);
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #0f172a;
     }
 }
 
 
-// ── TABLE CARD ────────────────────────────────────────────────────
+// ── TABLE CARD & GENERAL CORPORATE TABLE CSS ──────────────────────
 .table-card {
-    background: $surface-card;
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(25, 28, 30, 0.06);
+    background: $corp-bg-card;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.07), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    border: 1px solid $corp-border;
     overflow: hidden;
-    animation: fadeInUp 0.4s ease;
+    animation: fadeInUp 0.3s ease;
 }
 
 .table-wrapper {
@@ -199,7 +206,7 @@ $tarjeta-txt: #1d4ed8;
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(8px);
     }
     to {
         opacity: 1;
@@ -209,140 +216,166 @@ $tarjeta-txt: #1d4ed8;
 
 table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 0.83rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.85rem;
+    font-family: inherit;
 }
 
+/* Cabecera Estilo General Slate Navy */
 thead tr {
-    background: $navy;
+    background: linear-gradient(180deg, $corp-header-start 0%, $corp-header-end 100%);
 }
 
 thead th {
-    padding: 0.9rem 1rem;
+    padding: 0.85rem 1rem;
     text-align: left;
-    font-size: 0.68rem;
+    font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: rgba(255, 255, 255, 0.75);
+    letter-spacing: 0.04em;
+    color: #ffffff;
     white-space: nowrap;
+    border: 1px solid $corp-header-start;
+    border-top: none;
+    vertical-align: middle;
 
-    &.th-total {
-        color: $efectivo-bg;
+    &:first-child {
+        border-left: none;
     }
-    &.th-plin {
-        color: #c4b5fd;
-    }
-    &.th-yape {
-        color: #d8b4fe;
-    }
-    &.th-efectivo {
-        color: #6ee7b7;
-    }
-    &.th-tarjeta {
-        color: #93c5fd;
+
+    &:last-child {
+        border-right: none;
     }
 }
 
+/* Cuerpo de la tabla */
 tbody tr {
-    transition: background 0.15s;
-    border-bottom: 1px solid $surface-low;
+    background-color: #ffffff;
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid $corp-border-subtle;
 
-    &.row-odd {
-        background: #fafafa;
+    &.row-odd,
+    &:nth-child(even) {
+        background-color: $corp-bg-zebra;
     }
+
     &:hover {
-        background: $gold-light;
+        background-color: $corp-bg-hover !important;
+
+        > td {
+            color: $corp-header-end;
+        }
     }
 }
 
 tbody td {
     padding: 0.75rem 1rem;
-    color: $text-main;
+    color: $corp-text-sub;
     font-weight: 500;
+    border: 1px solid $corp-border-subtle;
     vertical-align: middle;
+    white-space: nowrap;
+
+    &:first-child {
+        border-left: none;
+    }
+
+    &:last-child {
+        border-right: none;
+    }
 }
 
 // ── Specific TD styles ────────────────────────────────────────────
 .td-center {
     text-align: center;
 }
+
 .td-trabajo {
-    font-weight: 700;
+    font-weight: 600;
     text-transform: capitalize;
+    color: $corp-text-main;
 }
+
 .td-fecha {
     font-variant-numeric: tabular-nums;
-    color: $text-sub;
+    color: #475569;
 }
+
 .td-dia {
-    color: $text-sub;
+    color: #475569;
+    text-transform: capitalize;
 }
+
 .td-total {
     font-weight: 800;
-    color: $gold-dark;
+    color: $corp-text-main;
     font-size: 0.9rem;
 }
+
 .td-gastos {
-    color: #dc2626;
-    font-weight: 600;
+    color: #e11d48;
+    font-weight: 700;
 }
+
 .td-gastos-app {
-    color: #b45309;
-    font-weight: 600;
+    color: #d97706;
+    font-weight: 700;
 }
+
 .td-notas {
     max-width: 160px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: $text-muted;
+    color: $corp-text-muted;
     font-style: italic;
 }
 
-// Semana badge
+// Badge Semana
 .badge-semana {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: $navy;
-    color: $gold;
-    font-weight: 800;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: $corp-header-end;
+    color: #ffffff;
+    font-weight: 700;
     font-size: 0.75rem;
 }
 
-// Payment badges
-@mixin pay-badge($bg, $txt) {
+// Payment Badges (Píldoras Corporativas)
+@mixin pay-badge($bg, $txt, $border) {
     display: inline-block;
-    padding: 0.2rem 0.55rem;
-    border-radius: 20px;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
     background: $bg;
     color: $txt;
+    border: 1px solid $border;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     white-space: nowrap;
 }
 
 .badge-plin {
-    @include pay-badge($plin-bg, $plin-txt);
+    @include pay-badge($plin-bg, $plin-txt, $plin-border);
 }
 .badge-yape {
-    @include pay-badge($yape-bg, $yape-txt);
+    @include pay-badge($yape-bg, $yape-txt, $yape-border);
 }
 .badge-efectivo {
-    @include pay-badge($efectivo-bg, $efectivo-txt);
+    @include pay-badge($efectivo-bg, $efectivo-txt, $efectivo-border);
 }
 .badge-tarjeta {
-    @include pay-badge($tarjeta-bg, $tarjeta-txt);
+    @include pay-badge($tarjeta-bg, $tarjeta-txt, $tarjeta-border);
 }
 
-// ── ACTION BUTTONS ────────────────────────────────────────────────
+// ── ACTION BUTTONS (Filas - Neutros) ──────────────────────────────
 .td-actions {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.35rem;
     align-items: center;
 }
 
@@ -350,31 +383,35 @@ tbody td {
 .btn-delete {
     width: 30px;
     height: 30px;
-    border-radius: 8px;
-    border: none;
+    border-radius: 6px;
+    border: 1px solid $corp-border;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 0.8rem;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
 }
 
 .btn-edit {
-    background: #eff6ff;
-    color: #2563eb;
+    background: #f8fafc;
+    color: #334155;
     &:hover {
-        background: #dbeafe;
-        transform: scale(1.1);
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: $corp-text-main;
+        transform: translateY(-1px);
     }
 }
 
 .btn-delete {
-    background: #fef2f2;
-    color: #dc2626;
+    background: #f8fafc;
+    color: #64748b;
     &:hover {
         background: #fee2e2;
-        transform: scale(1.1);
+        color: #dc2626;
+        border-color: #fecaca;
+        transform: translateY(-1px);
     }
 }
 
@@ -382,233 +419,543 @@ tbody td {
 .empty-state {
     text-align: center;
     padding: 3rem !important;
-    color: $text-muted;
+    color: $corp-text-muted;
 
     i {
-        font-size: 2.5rem;
+        font-size: 2.2rem;
         display: block;
         margin-bottom: 0.75rem;
         opacity: 0.4;
     }
     span {
-        font-size: 0.9rem;
+        font-size: 0.88rem;
+        font-weight: 500;
     }
 }
 
-// ── TFOOT ─────────────────────────────────────────────────────────
+// ── TFOOT (Totales Corporativo) ───────────────────────────────────
 tfoot tr {
-    background: linear-gradient(90deg, $navy 0%, $navy-light 100%);
+    background: #f8fafc;
 }
 
 tfoot td {
-    padding: 0.9rem 1rem;
+    padding: 0.85rem 1rem;
     font-weight: 800;
-    font-size: 0.85rem;
-    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.88rem;
+    color: #0f172a;
+    border: 1px solid $corp-border;
+    border-top: 2px solid $corp-header-end;
+    vertical-align: middle;
 }
 
 .tfoot-label {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.75rem;
+    color: $corp-header-end;
+    font-size: 0.8rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.05em;
+
+    i {
+        margin-right: 0.35rem;
+    }
 }
 .tfoot-plin {
-    color: #c4b5fd;
+    color: #0e7490;
 }
 .tfoot-yape {
-    color: #d8b4fe;
+    color: #7e22ce;
 }
 .tfoot-efectivo {
-    color: #6ee7b7;
+    color: #15803d;
 }
 .tfoot-tarjeta {
-    color: #93c5fd;
+    color: #1d4ed8;
 }
 .tfoot-total {
-    color: rgb(255, 255, 255);
+    color: #0f172a;
     font-size: 0.95rem;
+    font-weight: 900;
 }
 .tfoot-gastos {
-    color: #fca5a5;
+    color: #e11d48;
 }
 .tfoot-gapp {
-    color: #fcd34d;
+    color: #d97706;
 }
 
-// ── DIALOG FORM ───────────────────────────────────────────────────
-.dialog-form {
-    padding: 0.5rem 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-}
-
-.form-section-title {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: $text-sub;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
+// ── DIALOG FORM & MODERN MODAL ────────────────────────────────────
+.dialog-header-wrapper {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding-bottom: 0.35rem;
-    border-bottom: 1px solid $surface-low;
+    gap: 0.85rem;
+    width: 100%;
 }
 
-.form-grid-4 {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+.dialog-header-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #ffffff;
+    font-size: 1.15rem;
+
+    &.is-edit {
+        background: rgba(59, 130, 246, 0.25);
+        border: 1px solid rgba(147, 197, 253, 0.4);
+    }
 }
 
-.form-grid-2 {
+.dialog-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+}
+
+.dialog-header-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.dialog-header-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.badge-modal-id {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.badge-modal-semana {
+    background: #3b82f6;
+    color: #ffffff;
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.dialog-header-desc {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.76rem;
+    margin: 0;
+    font-weight: 400;
+}
+
+.dialog-form-modern {
+    padding: 0.5rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.dialog-card-group {
+    background: #ffffff;
+    border: 1px solid $corp-border;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.card-group-title {
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: $corp-header-end;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid $corp-border-subtle;
+
+    i {
+        font-size: 0.85rem;
+    }
+}
+
+.grid-jornada {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: 1.4fr 1.1fr 1fr;
+    gap: 0.85rem;
 }
 
 .form-field {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.3rem;
+}
 
-    label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: $text-sub;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-    }
+.field-label {
+    font-size: 0.73rem;
+    font-weight: 700;
+    color: $corp-text-sub;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
 
-    .label-plin {
-        color: $plin-txt;
-    }
-    .label-yape {
-        color: $yape-txt;
-    }
-    .label-efectivo {
-        color: $efectivo-txt;
-    }
-    .label-tarjeta {
-        color: $tarjeta-txt;
-    }
+.input-with-icon {
+    position: relative;
+    width: 100%;
+}
+
+.input-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.85rem;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.input-pl {
+    padding-left: 2.25rem !important;
 }
 
 .field-input {
     width: 100%;
-    padding: 0.55rem 0.75rem;
-    border: 1.5px solid $border;
+    height: 38px;
+    padding: 0 0.75rem;
+    border: 1.5px solid $corp-border;
     border-radius: 8px;
     font-family: inherit;
-    font-size: 0.875rem;
-    color: $text-main;
-    background: $surface-low;
+    font-size: 0.85rem;
+    color: $corp-text-main;
+    background: #ffffff;
     outline: none;
-    transition:
-        border-color 0.2s,
-        background 0.2s,
-        box-shadow 0.2s;
+    transition: all 0.2s ease;
     box-sizing: border-box;
 
     &:focus {
-        border-color: $gold;
-        background: #fff;
-        box-shadow: 0 0 0 3px rgba($gold, 0.15);
+        border-color: $corp-header-end;
+        box-shadow: 0 0 0 3px rgba(53, 75, 101, 0.12);
     }
 
     &.readonly {
-        background: #eef0f2;
-        color: $text-muted;
+        background: #f1f5f9;
+        color: $corp-text-muted;
         cursor: not-allowed;
     }
 }
 
-// Colored left border on payment inputs
-.input-plin {
-    border-left: 3px solid $plin-txt;
-}
-.input-yape {
-    border-left: 3px solid $yape-txt;
-}
-.input-efectivo {
-    border-left: 3px solid $efectivo-txt;
-}
-.input-tarjeta {
-    border-left: 3px solid $tarjeta-txt;
+.select-turno {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 1rem;
+    padding-right: 1.8rem !important;
 }
 
-.btn-autocomplete {
+.btn-autocomplete-modern {
     margin-top: 0.35rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    font-size: 0.78rem;
+    gap: 0.35rem;
+    font-size: 0.74rem;
     font-weight: 600;
-    color: $efectivo-txt;
-    background: $efectivo-bg;
-    border: none;
+    color: #0284c7;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
     border-radius: 6px;
-    padding: 0.3rem 0.65rem;
+    padding: 0.25rem 0.65rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
+    align-self: flex-start;
 
     &:hover:not(:disabled) {
-        filter: brightness(0.95);
+        background: #e0f2fe;
+        border-color: #7dd3fc;
+        color: #0369a1;
     }
+
     &:disabled {
-        opacity: 0.5;
+        opacity: 0.45;
         cursor: not-allowed;
     }
 }
 
-.total-preview {
+.chip-day-display {
+    height: 38px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(135deg, $gold-light, #fef9c3);
-    border: 1.5px solid rgba($gold, 0.4);
-    border-radius: 10px;
-    padding: 0.75rem 1.25rem;
+    gap: 0.45rem;
+    padding: 0 0.75rem;
+    background: #f8fafc;
+    border: 1.5px solid $corp-border;
+    border-radius: 8px;
 
-    .total-label {
-        font-size: 0.8rem;
+    i {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+
+    .chip-day-name {
         font-weight: 700;
-        color: $gold-dark;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
+        color: $corp-text-main;
+        font-size: 0.85rem;
+        text-transform: capitalize;
     }
 
-    .total-value {
-        font-size: 1.3rem;
-        font-weight: 800;
-        color: $gold-dark;
+    .chip-semana-pill {
+        margin-left: auto;
+        background: $corp-header-end;
+        color: #ffffff;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.15rem 0.45rem;
+        border-radius: 9999px;
     }
 }
 
-.gastos-app-section {
-    margin-top: 0.5rem;
+// ── PAYMENT METHODS GRID ──────────────────────────────────────────
+.payment-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
 }
 
-.gastos-app-list {
+.pay-method-card {
+    border-radius: 10px;
+    border: 1.5px solid $corp-border;
+    padding: 0.65rem 0.85rem;
+    background: #ffffff;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    background: #fffaf0;
-    border: 1px solid rgba(180, 83, 9, 0.2);
-    border-radius: 8px;
-    padding: 0.75rem;
-    margin-top: 0.5rem;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+
+    &:focus-within {
+        border-color: #94a3b8;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    &.pay-plin {
+        border-left: 4px solid #06b6d4;
+        .pay-name { color: #0891b2; }
+        .dot-plin { background: #06b6d4; }
+    }
+
+    &.pay-yape {
+        border-left: 4px solid #9333ea;
+        .pay-name { color: #7e22ce; }
+        .dot-yape { background: #9333ea; }
+    }
+
+    &.pay-efectivo {
+        border-left: 4px solid #16a34a;
+        .pay-name { color: #15803d; }
+        .dot-efectivo { background: #16a34a; }
+    }
+
+    &.pay-tarjeta {
+        border-left: 4px solid #2563eb;
+        .pay-name { color: #1d4ed8; }
+        .dot-tarjeta { background: #2563eb; }
+    }
 }
 
-.gasto-app-item {
+.pay-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.pay-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+
+.pay-name {
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.pay-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.currency-symbol {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #94a3b8;
+}
+
+.pay-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    font-weight: 700;
+    color: $corp-text-main;
+    background: transparent;
+    font-family: inherit;
+
+    &::placeholder {
+        color: #cbd5e1;
+        font-weight: 500;
+    }
+}
+
+// ── TOTAL CALCULATED CARD ─────────────────────────────────────────
+.total-calculated-card {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-radius: 10px;
+    padding: 0.85rem 1.25rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px dashed rgba(180, 83, 9, 0.2);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.total-calc-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.total-calc-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: #ffffff;
+}
+
+.total-calc-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.total-calc-sub {
+    display: block;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.total-calc-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+
+    .curr-prefix {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .num-val {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #ffffff;
+    }
+}
+
+// ── GASTOS Y NOTAS ────────────────────────────────────────────────
+.grid-gastos-notas {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 1rem;
+}
+
+.currency-symbol-input {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.input-pl-curr {
+    padding-left: 2.2rem !important;
+    font-weight: 700;
+    color: #dc2626;
+}
+
+.field-hint {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: 0.2rem;
+}
+
+.textarea-notes {
+    height: auto !important;
+    min-height: 72px;
+    padding: 0.5rem 0.75rem !important;
+    resize: none;
+    line-height: 1.4;
+}
+
+// ── GASTOS APP BOX ────────────────────────────────────────────────
+.gastos-app-box {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.25rem;
+}
+
+.gastos-app-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #b45309;
+    margin-bottom: 0.45rem;
+
+    i {
+        font-size: 0.85rem;
+    }
+}
+
+.gastos-app-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.gastos-app-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0;
+    border-bottom: 1px dashed #fef08a;
 
     &:last-child {
         border-bottom: none;
@@ -616,48 +963,119 @@ tfoot td {
     }
 }
 
-.gasto-app-desc {
-    font-size: 0.8rem;
-    color: $text-sub;
-    font-weight: 500;
+.gastos-app-info {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
 }
 
-.gasto-app-monto {
-    font-size: 0.85rem;
+.gastos-app-tag {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.gastos-app-text {
+    font-size: 0.78rem;
+    color: #475569;
+}
+
+.gastos-app-val {
+    font-size: 0.82rem;
     font-weight: 700;
     color: #b45309;
 }
 
-.dialog-actions {
+// ── MODAL FOOTER ACTIONS ──────────────────────────────────────────
+.modal-footer-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 0.75rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid $surface-low;
+    padding-top: 0.75rem;
+    border-top: 1px solid $corp-border-subtle;
+}
+
+.btn-cancel-modal {
+    height: 40px;
+    padding: 0 1.25rem;
+    border-radius: 8px;
+    border: 1.5px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    &:hover {
+        background: #f8fafc;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+}
+
+.btn-save-modal {
+    height: 40px;
+    padding: 0 1.5rem;
+    border-radius: 8px;
+    border: none;
+    background: #1e293b;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &:hover:not(:disabled) {
+        background: #0f172a;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 }
 
 // ── Dialog override ───────────────────────────────────────────────
-::ng-deep .p-dialog {
+::ng-deep .caja-modal-dialog {
     border-radius: 16px !important;
     overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    border: none !important;
 
     .p-dialog-header {
-        background: $navy;
-        color: #fff;
-        font-weight: 700;
-        font-size: 1rem;
-        padding: 1.1rem 1.5rem;
+        background: linear-gradient(180deg, $corp-header-start 0%, $corp-header-end 100%) !important;
+        color: #ffffff !important;
+        padding: 1.2rem 1.5rem !important;
+        border-bottom: none !important;
 
         .p-dialog-header-close {
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.8);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+
             &:hover {
-                background: rgba(255, 255, 255, 0.1) !important;
+                background: rgba(255, 255, 255, 0.18) !important;
+                color: #ffffff;
             }
         }
     }
 
     .p-dialog-content {
-        padding: 1.5rem !important;
+        background: #f8fafc !important;
+        padding: 1.25rem 1.5rem 1.5rem !important;
     }
 }
 
@@ -672,10 +1090,27 @@ tfoot td {
         align-items: flex-start;
     }
 
-    .form-grid-4 {
-        grid-template-columns: 1fr 1fr;
-    }
-    .form-grid-2 {
+    .grid-jornada {
         grid-template-columns: 1fr;
+    }
+
+    .payment-methods-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-gastos-notas {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 540px) {
+    .payment-methods-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .total-calculated-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
     }
 }

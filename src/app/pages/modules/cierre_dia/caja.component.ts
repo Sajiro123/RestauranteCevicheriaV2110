@@ -34,21 +34,65 @@ export class CajaComponent implements OnInit {
     private messageService: MessageService
   ) { }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    const { inicio, fin } = this.getFechasSemanaAnterior();
+    this.fechaInicio = inicio;
+    this.fechaFin = fin;
+    this.loadData(this.fechaInicio, this.fechaFin);
+  }
 
-  loadData(startDate: string, endDate: string) {
+  isSaving: boolean = false;
+
+  getFechasSemanaAnterior(): { inicio: string; fin: string } {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diasDesdeLunes = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+    const lunesPasado = new Date(now);
+    lunesPasado.setDate(now.getDate() - diasDesdeLunes - 7);
+    const domingoPasado = new Date(lunesPasado);
+    domingoPasado.setDate(lunesPasado.getDate() + 6);
+    const format = (d: Date) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+    return { inicio: format(lunesPasado), fin: format(domingoPasado) };
+  }
+
+  loadData(startDate?: string, endDate?: string) {
+    if (!startDate || !endDate) {
+      const { inicio, fin } = this.getFechasSemanaAnterior();
+      startDate = inicio;
+      endDate = fin;
+      this.fechaInicio = inicio;
+      this.fechaFin = fin;
+    }
+
     this.cajaService.getByDateRange(startDate, endDate).then((res) => {
-      this.cajas = res.data || [];
+      const raw = res.data || [];
+      // Deduplicar registros con la misma fecha y turno por seguridad para la tabla y totales
+      const mapUnicos = new Map<string, Caja>();
+      raw.forEach((item: Caja) => {
+        const key = `${item.fecha}_${(item.trabajo || '').trim().toLowerCase()}`;
+        if (!mapUnicos.has(key)) {
+          mapUnicos.set(key, item);
+        }
+      });
+      this.cajas = Array.from(mapUnicos.values());
       this.cajasFiltradas = [...this.cajas];
       this.loadGastosAppValuesForFilteredDates();
+    }).catch((err) => {
+      console.error('Error cargando caja semanal:', err);
     });
   }
 
   async loadGastosAppValuesForFilteredDates() {
     this.gastosAppValues = {};
-    for (const caja of this.cajasFiltradas) {
-      this.gastosAppValues[caja.fecha] = await this.getGastosAppForDate(caja.fecha);
-    }
+    const uniqueDates = [...new Set(this.cajasFiltradas.map(c => c.fecha).filter(Boolean))];
+    await Promise.all(uniqueDates.map(async (fecha) => {
+      this.gastosAppValues[fecha] = await this.getGastosAppForDate(fecha);
+    }));
   }
 
   resetForm(): Caja {
@@ -76,14 +120,16 @@ export class CajaComponent implements OnInit {
   }
 
   filtrarPorRangoFechas() {
-    if (!this.fechaInicio || !this.fechaFin) return;
-    this.loadData(this.fechaInicio, this.fechaFin);
+    if (this.fechaInicio && this.fechaFin) {
+      this.loadData(this.fechaInicio, this.fechaFin);
+    }
   }
 
   limpiarFiltros() {
-    this.fechaInicio = '';
-    this.fechaFin = '';
-    this.cajasFiltradas = [...this.cajas];
+    const { inicio, fin } = this.getFechasSemanaAnterior();
+    this.fechaInicio = inicio;
+    this.fechaFin = fin;
+    this.loadData(this.fechaInicio, this.fechaFin);
   }
 
   async generateWeeklyReportPDF() {
@@ -356,21 +402,38 @@ export class CajaComponent implements OnInit {
   }
 
   save() {
+    if (this.isSaving) return;
     this.form.total = (this.form.plin||0) + (this.form.yape||0) + (this.form.efectivo||0) + (this.form.tarjeta||0);
+    this.isSaving = true;
+
     if (this.editingId) {
       this.cajaService.update(this.editingId, this.form).then(({ error }) => {
+        this.isSaving = false;
         if (error) { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el registro.' }); return; }
-        if (this.fechaInicio && this.fechaFin) this.loadData(this.fechaInicio, this.fechaFin);
+        this.loadData(this.fechaInicio || undefined, this.fechaFin || undefined);
         this.editingId = null; this.form = this.resetForm(); this.displayDialog = false;
         this.messageService.add({ severity: 'success', summary: 'Actualizado', detail: 'Registro actualizado correctamente.' });
-      });
+      }).catch(() => { this.isSaving = false; });
     } else {
+      // Validar si ya existe un registro con la misma fecha y turno
+      const yaExiste = this.cajas.some(c => c.fecha === this.form.fecha && (c.trabajo || '').trim().toLowerCase() === (this.form.trabajo || '').trim().toLowerCase());
+      if (yaExiste) {
+        this.isSaving = false;
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Registro duplicado',
+          detail: `Ya existe un registro para el día ${this.form.fecha} con turno "${this.form.trabajo}". Use el botón de editar en la tabla si desea modificarlo.`
+        });
+        return;
+      }
+
       this.cajaService.create(this.form).then(({ error }) => {
+        this.isSaving = false;
         if (error) { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el registro.' }); return; }
-        if (this.fechaInicio && this.fechaFin) this.loadData(this.fechaInicio, this.fechaFin);
+        this.loadData(this.fechaInicio || undefined, this.fechaFin || undefined);
         this.form = this.resetForm(); this.displayDialog = false;
         this.messageService.add({ severity: 'success', summary: 'Registrado', detail: 'Registro guardado correctamente.' });
-      });
+      }).catch(() => { this.isSaving = false; });
     }
   }
 
@@ -378,7 +441,9 @@ export class CajaComponent implements OnInit {
 
   delete(id: number) {
     if (confirm('Eliminar registro?')) {
-      this.cajaService.delete(id).then(() => { if (this.fechaInicio && this.fechaFin) this.loadData(this.fechaInicio, this.fechaFin); });
+      this.cajaService.delete(id).then(() => {
+        this.loadData(this.fechaInicio || undefined, this.fechaFin || undefined);
+      });
     }
   }
 

@@ -592,51 +592,57 @@ export class ReportesComponent implements OnInit {
                     );
                     return;
                 }
-                if (response && response.success) {
-                    var yape_total = 0;
-                    var plin_total = 0;
-                    var visa_total = 0;
-                    var efectivo_total = 0;
-                    var yape_total = 0;
-                    var TOTAL_TOTAL = 0;
-                    this.array_data = [] as any;
+                if (response && response.success && Array.isArray(response.data)) {
+                    // Mapa para unificar por fecha normalizada (YYYY-MM-DD) y evitar duplicados
+                    const mapaPorFecha = new Map<string, any>();
+
                     response.data.forEach((element: any) => {
-                        yape_total += parseInt(element.yape);
-                        plin_total += parseInt(element.plin);
-                        visa_total += parseInt(element.visa);
-                        efectivo_total += parseInt(element.efectivo);
-                        var total = parseInt(element.yape) + parseInt(element.visa) + parseInt(element.efectivo) + parseInt(element.plin);
-                        TOTAL_TOTAL += total;
+                        const rawFecha = element.fecha ? String(element.fecha).trim().split('T')[0].split(' ')[0] : '';
+                        if (!rawFecha) return;
 
-                        let nombreDia = '';
-                        if (element.fecha != undefined) {
-                            const d = new Date(element.fecha);
-                            if (!isNaN(d.getTime())) {
-                                const yyyy = d.getFullYear();
-                                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                                const dd = String(d.getDate()).padStart(2, '0');
-                                element.fecha = `${yyyy}-${mm}-${dd}`;
+                        const yape = Number(element.yape) || 0;
+                        const plin = Number(element.plin) || 0;
+                        const visa = Number(element.visa) || 0;
+                        const efectivo = Number(element.efectivo) || 0;
+                        const gastos = Number(element.gastos) || 0;
 
+                        if (!mapaPorFecha.has(rawFecha)) {
+                            // Calcular nombre del día sin desfase de zona horaria
+                            let nombreDia = '';
+                            const partes = rawFecha.split('-');
+                            if (partes.length === 3) {
+                                const y = parseInt(partes[0], 10);
+                                const m = parseInt(partes[1], 10) - 1;
+                                const d = parseInt(partes[2], 10);
+                                const dateObj = new Date(y, m, d);
                                 const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-                                nombreDia = dias[d.getDay()];
+                                nombreDia = dias[dateObj.getDay()];
                             }
-                        } else {
-                            element.fecha = '';
-                        }
 
-                        this.array_data.push({
-                            fecha: element.fecha,
-                            dia: nombreDia,
-                            yape: element.yape || 0,
-                            visa: element.visa || 0,
-                            efectivo: element.efectivo || 0,
-                            plin: element.plin || 0,
-                            gastos: element.gastos || 0,
-                            total: total
-                        });
+                            mapaPorFecha.set(rawFecha, {
+                                fecha: rawFecha,
+                                dia: nombreDia,
+                                yape,
+                                plin,
+                                visa,
+                                efectivo,
+                                gastos,
+                                total: yape + plin + visa + efectivo
+                            });
+                        } else {
+                            // Si ya existe la fecha, consolidar montos en la misma fila
+                            const existente = mapaPorFecha.get(rawFecha);
+                            existente.yape += yape;
+                            existente.plin += plin;
+                            existente.visa += visa;
+                            existente.efectivo += efectivo;
+                            existente.gastos += gastos;
+                            existente.total = existente.yape + existente.plin + existente.visa + existente.efectivo;
+                        }
                     });
+
                     // Ordenar por fecha ASC
-                    this.array_data.sort((a: any, b: any) => (a.fecha || '').localeCompare(b.fecha || ''));
+                    this.array_data = Array.from(mapaPorFecha.values()).sort((a: any, b: any) => (a.fecha || '').localeCompare(b.fecha || ''));
                     this.Clients = this.array_data;
                     this.array_data_total = {
                         efectivo: this.totalEfectivo,
@@ -674,15 +680,16 @@ export class ReportesComponent implements OnInit {
                     this.array_data = [] as any;
                     response.data.forEach((element: any) => {
                         if (element.fecha != undefined) {
-                            const d = new Date(element.fecha);
-                            if (!isNaN(d.getTime())) {
-                                const yyyy = d.getFullYear();
-                                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                                const dd = String(d.getDate()).padStart(2, '0');
-                                element.fecha = `${yyyy}-${mm}-${dd}`;
-
+                            const rawFecha = String(element.fecha).trim().split('T')[0].split(' ')[0];
+                            const partes = rawFecha.split('-');
+                            if (partes.length === 3) {
+                                const y = parseInt(partes[0], 10);
+                                const m = parseInt(partes[1], 10) - 1;
+                                const d = parseInt(partes[2], 10);
+                                const dateObj = new Date(y, m, d);
+                                element.fecha = rawFecha;
                                 const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-                                element.dia = dias[d.getDay()];
+                                element.dia = dias[dateObj.getDay()];
                             }
                         }
                     });

@@ -5,7 +5,6 @@
   <!-- ====== HEADER ====== -->
   <div class="page-header">
     <div class="page-title">
-      <span class="title-icon"><i class="pi pi-wallet"></i></span>
       <div>
         <h1>Registro Caja Semanal</h1>
         <p class="page-subtitle">Control de ingresos y gastos del restaurante</p>
@@ -25,11 +24,11 @@
         <input type="date" [(ngModel)]="fechaFin" class="date-input" (change)="filtrarPorRangoFechas()">
       </div>
 
-      <button class="btn btn-ghost" (click)="limpiarFiltros()">
+      <button class="btn btn-ghost" (click)="limpiarFiltros()" title="Limpiar filtros">
         <i class="pi pi-times"></i> Limpiar
       </button>
 
-      <button class="btn btn-pdf" (click)="generateWeeklyReportPDF()" [disabled]="isGeneratingPDF">
+      <button class="btn btn-pdf" (click)="generateWeeklyReportPDF()" [disabled]="isGeneratingPDF" title="Descargar Reporte PDF">
         <i class="pi pi-file-pdf"></i>
         <span *ngIf="!isGeneratingPDF">Reporte PDF</span>
         <span *ngIf="isGeneratingPDF">Generando...</span>
@@ -42,105 +41,199 @@
   </div>
 
   <!-- ====== DIALOG ====== -->
-  <p-dialog [(visible)]="displayDialog" [style]="{width: '42vw'}" [maximizable]="true" [modal]="true"
-    [draggable]="false" [resizable]="false" header="{{editingId ? '✏️ Editar Registro' : '➕ Nuevo Registro'}}"
-    [closeOnEscape]="true">
-
-    <form (ngSubmit)="save()" class="dialog-form">
-
-      <!-- Fila 1: Semana + Trabajo + Fecha + Día -->
-      <div class="form-grid-4">
-        <div class="form-field">
-          <label>Semana</label>
-          <input type="number" [(ngModel)]="form.semana" name="semana" readonly class="field-input readonly">
+  <p-dialog [(visible)]="displayDialog" [style]="{width: '94vw', maxWidth: '660px'}" [maximizable]="false" [modal]="true"
+    [draggable]="false" [resizable]="false" [closeOnEscape]="true" styleClass="caja-modal-dialog">
+    
+    <ng-template pTemplate="header">
+      <div class="dialog-header-wrapper">
+        <div class="dialog-header-icon" [class.is-edit]="editingId">
+          <i [class]="editingId ? 'pi pi-pencil' : 'pi pi-plus'"></i>
         </div>
-        <div class="form-field">
-          <label>Trabajo</label>
-          <input type="text" [(ngModel)]="form.trabajo" name="trabajo" required class="field-input"
-            placeholder="mañana / noche">
-        </div>
-        <div class="form-field">
-          <label>Fecha</label>
-          <input type="date" [(ngModel)]="form.fecha" name="fecha" required (change)="onDateChange($event)"
-            class="field-input">
-          <button type="button" (click)="autocompleteFromReport()" [disabled]="!form.fecha" class="btn-autocomplete">
-            <i class="pi pi-bolt"></i> Autocompletar
-          </button>
-        </div>
-        <div class="form-field">
-          <label>Día</label>
-          <input type="text" [value]="getDayName(form.dia)" readonly class="field-input readonly">
-          <input type="hidden" [(ngModel)]="form.dia" name="dia">
+        <div class="dialog-header-text">
+          <div class="dialog-header-title-wrap">
+            <h2 class="dialog-header-title">{{ editingId ? 'Editar Registro de Caja' : 'Nuevo Registro de Caja' }}</h2>
+            <span *ngIf="editingId" class="badge-modal-id">ID #{{ editingId }}</span>
+            <span *ngIf="form.semana" class="badge-modal-semana">Semana {{ form.semana }}</span>
+          </div>
+          <p class="dialog-header-desc">
+            {{ editingId ? 'Actualice los ingresos y gastos correspondientes a esta jornada.' : 'Complete los datos de cierre del día y turno para el control semanal.' }}
+          </p>
         </div>
       </div>
+    </ng-template>
 
-      <!-- Fila 2: Métodos de pago -->
-      <div class="form-section-title">
-        <i class="pi pi-credit-card"></i> Ingresos por método de pago
-      </div>
-      <div class="form-grid-4">
-        <div class="form-field">
-          <label class="label-plin">Plin</label>
-          <input type="number" step="0.01" [(ngModel)]="form.plin" name="plin" class="field-input input-plin"
-            placeholder="0.00">
-        </div>
-        <div class="form-field">
-          <label class="label-yape">Yape</label>
-          <input type="number" step="0.01" [(ngModel)]="form.yape" name="yape" class="field-input input-yape"
-            placeholder="0.00">
-        </div>
-        <div class="form-field">
-          <label class="label-efectivo">Efectivo</label>
-          <input type="number" step="0.01" [(ngModel)]="form.efectivo" name="efectivo"
-            class="field-input input-efectivo" placeholder="0.00">
-        </div>
-        <div class="form-field">
-          <label class="label-tarjeta">Tarjeta</label>
-          <input type="number" step="0.01" [(ngModel)]="form.tarjeta" name="tarjeta" class="field-input input-tarjeta"
-            placeholder="0.00">
-        </div>
-      </div>
+    <form (ngSubmit)="save()" class="dialog-form-modern">
 
-      <!-- Total preview -->
-      <div class="total-preview">
-        <span class="total-label"><i class="pi pi-chart-bar"></i> Total Calculado</span>
-        <span class="total-value">S/. {{ ((form.plin||0) + (form.yape||0) + (form.efectivo||0) + (form.tarjeta||0)) |
-          number:'1.2-2' }}</span>
-      </div>
+      <!-- Bloque 1: Jornada y Fecha -->
+      <div class="dialog-card-group">
+        <div class="card-group-title">
+          <i class="pi pi-calendar"></i> Datos de la Jornada
+        </div>
 
-      <!-- Fila 3: Gastos + Notas -->
-      <div class="form-grid-2">
-        <div class="form-field">
-          <label>Gastos</label>
-          <input type="number" step="0.01" [(ngModel)]="form.gastos" name="gastos" class="field-input"
-            placeholder="0.00">
-        </div>
-        <div class="form-field">
-          <label>Notas</label>
-          <textarea [(ngModel)]="form.notas" name="notas" class="field-input" rows="2"
-            placeholder="Observaciones..."></textarea>
-        </div>
-      </div>
+        <div class="grid-jornada">
+          <!-- Fecha con autocompletar -->
+          <div class="form-field field-fecha-wrap">
+            <label class="field-label">Fecha de Cierre</label>
+            <div class="input-with-icon">
+              <i class="pi pi-calendar-plus input-icon"></i>
+              <input type="date" [(ngModel)]="form.fecha" name="fecha" required (change)="onDateChange($event)"
+                class="field-input input-pl">
+            </div>
+            <button type="button" (click)="autocompleteFromReport()" [disabled]="!form.fecha" class="btn-autocomplete-modern">
+              <i class="pi pi-bolt"></i> Autocompletar ventas del día
+            </button>
+          </div>
 
-      <!-- Detalles de Gastos App -->
-      <div class="gastos-app-section" *ngIf="gastosAppDetalles.length > 0">
-        <div class="form-section-title">
-          <i class="pi pi-mobile"></i> Detalles de Gastos App
-        </div>
-        <div class="gastos-app-list">
-          <div *ngFor="let g of gastosAppDetalles" class="gasto-app-item">
-            <span class="gasto-app-desc">{{ g.descripcion || g.notas || 'Sin descripción' }}</span>
-            <span class="gasto-app-monto">S/. {{ g.monto | number:'1.2-2' }}</span>
+          <!-- Turno / Trabajo -->
+          <div class="form-field">
+            <label class="field-label">Turno de Trabajo</label>
+            <div class="input-with-icon">
+              <i class="pi pi-clock input-icon"></i>
+              <select [(ngModel)]="form.trabajo" name="trabajo" required class="field-input input-pl select-turno">
+                <option value="mañana">Turno Mañana</option>
+                <option value="noche">Turno Noche</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Día y Semana (Chips informativos) -->
+          <div class="form-field field-info-chips">
+            <label class="field-label">Día de la semana</label>
+            <div class="chip-day-display">
+              <i class="pi pi-calendar"></i>
+              <span class="chip-day-name">{{ getDayName(form.dia) || 'Seleccione fecha' }}</span>
+              <span class="chip-semana-pill" *ngIf="form.semana">Sem. {{ form.semana }}</span>
+            </div>
+            <input type="hidden" [(ngModel)]="form.dia" name="dia">
           </div>
         </div>
       </div>
 
-      <!-- Botones -->
-      <div class="dialog-actions">
-        <button type="button" (click)="hideDialog()" class="btn btn-ghost">Cancelar</button>
-        <button type="submit" class="btn btn-primary">
-          <i class="pi pi-check"></i>
-          {{ editingId ? 'Actualizar' : 'Guardar Registro' }}
+      <!-- Bloque 2: Métodos de Pago -->
+      <div class="dialog-card-group">
+        <div class="card-group-title">
+          <i class="pi pi-wallet"></i> Recaudación por Método de Pago
+        </div>
+
+        <div class="payment-methods-grid">
+          <!-- Plin -->
+          <div class="pay-method-card pay-plin">
+            <div class="pay-card-header">
+              <span class="pay-dot dot-plin"></span>
+              <span class="pay-name">Plin</span>
+            </div>
+            <div class="pay-input-wrap">
+              <span class="currency-symbol">S/.</span>
+              <input type="number" step="0.01" [(ngModel)]="form.plin" name="plin" class="pay-input" placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Yape -->
+          <div class="pay-method-card pay-yape">
+            <div class="pay-card-header">
+              <span class="pay-dot dot-yape"></span>
+              <span class="pay-name">Yape</span>
+            </div>
+            <div class="pay-input-wrap">
+              <span class="currency-symbol">S/.</span>
+              <input type="number" step="0.01" [(ngModel)]="form.yape" name="yape" class="pay-input" placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Efectivo -->
+          <div class="pay-method-card pay-efectivo">
+            <div class="pay-card-header">
+              <span class="pay-dot dot-efectivo"></span>
+              <span class="pay-name">Efectivo</span>
+            </div>
+            <div class="pay-input-wrap">
+              <span class="currency-symbol">S/.</span>
+              <input type="number" step="0.01" [(ngModel)]="form.efectivo" name="efectivo" class="pay-input" placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Tarjeta / POS -->
+          <div class="pay-method-card pay-tarjeta">
+            <div class="pay-card-header">
+              <span class="pay-dot dot-tarjeta"></span>
+              <span class="pay-name">Tarjeta / POS</span>
+            </div>
+            <div class="pay-input-wrap">
+              <span class="currency-symbol">S/.</span>
+              <input type="number" step="0.01" [(ngModel)]="form.tarjeta" name="tarjeta" class="pay-input" placeholder="0.00">
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Calculado Card -->
+        <div class="total-calculated-card">
+          <div class="total-calc-info">
+            <div class="total-calc-icon">
+              <i class="pi pi-calculator"></i>
+            </div>
+            <div>
+              <span class="total-calc-label">Total Ingresos Recaudados</span>
+              <span class="total-calc-sub">Suma de Plin + Yape + Efectivo + Tarjeta</span>
+            </div>
+          </div>
+          <div class="total-calc-value">
+            <span class="curr-prefix">S/.</span>
+            <span class="num-val">{{ ((form.plin||0) + (form.yape||0) + (form.efectivo||0) + (form.tarjeta||0)) | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloque 3: Gastos y Observaciones -->
+      <div class="dialog-card-group">
+        <div class="card-group-title">
+          <i class="pi pi-receipt"></i> Gastos y Observaciones
+        </div>
+
+        <div class="grid-gastos-notas">
+          <!-- Gastos Manuales -->
+          <div class="form-field">
+            <label class="field-label">Gastos Registrados (Caja)</label>
+            <div class="input-with-icon">
+              <span class="currency-symbol-input">S/.</span>
+              <input type="number" step="0.01" [(ngModel)]="form.gastos" name="gastos" class="field-input input-pl-curr" placeholder="0.00">
+            </div>
+            <span class="field-hint">Monto de gastos directos de la jornada</span>
+          </div>
+
+          <!-- Notas -->
+          <div class="form-field">
+            <label class="field-label">Notas u Observaciones</label>
+            <textarea [(ngModel)]="form.notas" name="notas" class="field-input textarea-notes" rows="2"
+              placeholder="Detalle o anotaciones del turno..."></textarea>
+          </div>
+        </div>
+
+        <!-- Detalles de Gastos App si existen -->
+        <div class="gastos-app-box" *ngIf="gastosAppDetalles.length > 0">
+          <div class="gastos-app-header">
+            <i class="pi pi-mobile"></i>
+            <span>Gastos desde la App Móvil ({{ gastosAppDetalles.length }} registros)</span>
+          </div>
+          <div class="gastos-app-items">
+            <div *ngFor="let g of gastosAppDetalles" class="gastos-app-row">
+              <div class="gastos-app-info">
+                <span class="gastos-app-tag">{{ g.categoriagastos?.descripcion || 'Gasto' }}</span>
+                <span class="gastos-app-text">{{ g.descripcion || g.notas || 'Sin detalle' }}</span>
+              </div>
+              <span class="gastos-app-val">S/. {{ g.monto | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="modal-footer-actions">
+        <button type="button" (click)="hideDialog()" class="btn btn-cancel-modal">
+          <i class="pi pi-times"></i> Cancelar
+        </button>
+        <button type="submit" class="btn btn-save-modal" [disabled]="isSaving">
+          <i class="pi" [class.pi-check]="!isSaving" [class.pi-spin]="isSaving" [class.pi-spinner]="isSaving"></i>
+          {{ isSaving ? 'Guardando...' : (editingId ? 'Actualizar Registro' : 'Guardar Registro') }}
         </button>
       </div>
 
@@ -169,18 +262,11 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Estado vacío: sin filtro -->
-          <tr *ngIf="cajasFiltradas.length === 0 && (!fechaInicio || !fechaFin)">
-            <td colspan="13" class="empty-state">
-              <i class="pi pi-calendar"></i>
-              <span>Seleccione un rango de fechas para consultar</span>
-            </td>
-          </tr>
-          <!-- Estado vacío: con filtro -->
-          <tr *ngIf="cajasFiltradas.length === 0 && fechaInicio && fechaFin">
+          <!-- Estado vacío -->
+          <tr *ngIf="cajasFiltradas.length === 0">
             <td colspan="13" class="empty-state">
               <i class="pi pi-inbox"></i>
-              <span>No hay registros para el período seleccionado</span>
+              <span>No hay registros para mostrar</span>
             </td>
           </tr>
 
@@ -212,7 +298,7 @@
         </tbody>
 
         <!-- TOTALES -->
-        <tfoot *ngIf="fechaInicio && fechaFin && cajasFiltradas.length > 0">
+        <tfoot *ngIf="cajasFiltradas.length > 0">
           <tr>
             <td colspan="4" class="tfoot-label">
               <i class="pi pi-sigma"></i> TOTALES
