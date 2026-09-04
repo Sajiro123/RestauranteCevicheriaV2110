@@ -545,10 +545,21 @@ export class SupabaseService {
 
         if (errorApertura) return { success: false, data: null, error: errorApertura };
 
-        // Fechas que tienen estado == 2 (caja cerrada)
-        const fechasCerradas = (aperturas || [])
-            .filter((a: any) => Number(a.estado) === 2)
-            .map((a: any) => a.fecha);
+        // Helper para normalizar cualquier fecha a formato YYYY-MM-DD
+        const normalizarFecha = (f: any): string => {
+            if (!f) return '';
+            return String(f).trim().split('T')[0].split(' ')[0];
+        };
+
+        // Fechas que tienen estado == 2 (caja cerrada) normalizadas
+        const fechasCerradas = Array.from(
+            new Set(
+                (aperturas || [])
+                    .filter((a: any) => Number(a.estado) === 2)
+                    .map((a: any) => normalizarFecha(a.fecha))
+                    .filter((f: string) => !!f)
+            )
+        );
 
         // Si ninguna fecha del rango tiene la caja cerrada, no se traen ventas
         if (fechasCerradas.length === 0) {
@@ -577,26 +588,29 @@ export class SupabaseService {
             .in('fecha', fechasCerradas)
             .is('deleted', null);
 
-        // Agrupar ventas por fecha
-        const groupedData = (data || []).reduce((acc: any, curr: any) => {
-            const fecha = curr.fecha;
-            if (!acc[fecha]) {
-                acc[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, gastos: 0, fecha };
-            }
-            acc[fecha].yape += curr.yape || 0;
-            acc[fecha].plin += curr.plin || 0;
-            acc[fecha].visa += curr.visa || 0;
-            acc[fecha].efectivo += curr.efectivo || 0;
-            return acc;
-        }, {});
+        // Agrupar ventas y gastos por fecha unificada (YYYY-MM-DD)
+        const groupedData: Record<string, any> = {};
 
-        // Sumar gastos por fecha
-        (gastosData || []).forEach((g: any) => {
-            const fecha = g.fecha;
+        (data || []).forEach((curr: any) => {
+            const fecha = normalizarFecha(curr.fecha);
+            if (!fecha) return;
             if (!groupedData[fecha]) {
                 groupedData[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, gastos: 0, fecha };
             }
-            groupedData[fecha].gastos = (groupedData[fecha].gastos || 0) + (Number(g.monto) || 0);
+            groupedData[fecha].yape += Number(curr.yape) || 0;
+            groupedData[fecha].plin += Number(curr.plin) || 0;
+            groupedData[fecha].visa += Number(curr.visa) || 0;
+            groupedData[fecha].efectivo += Number(curr.efectivo) || 0;
+        });
+
+        // Sumar gastos por fecha unificada (YYYY-MM-DD)
+        (gastosData || []).forEach((g: any) => {
+            const fecha = normalizarFecha(g.fecha);
+            if (!fecha) return;
+            if (!groupedData[fecha]) {
+                groupedData[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, gastos: 0, fecha };
+            }
+            groupedData[fecha].gastos += Number(g.monto) || 0;
         });
 
         return { success: true, data: Object.values(groupedData), error: null };

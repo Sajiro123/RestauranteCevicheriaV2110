@@ -10,22 +10,38 @@
 
 <!-- Show message if caja is not open -->
 <div *ngIf="!verificandoCaja && !cajaAbierta"
-    class="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-    <div
-        class="text-center p-12 bg-white rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all duration-300 hover:shadow-3xl">
-        <div class="mb-8">
-            <i class="pi pi-exclamation-triangle text-8xl text-red-500 mb-6 animate-pulse"></i>
-            <h1 class="text-5xl font-bold text-gray-800 mb-4">Â¡Falta abrir caja!</h1>
-            <p class="text-2xl text-gray-600 mb-8 leading-relaxed">Para poder tomar pedidos es necesario abrir la caja
-                del día.</p>
+    class="flex items-center justify-center min-h-[calc(100vh-5rem)] bg-surface-50 dark:bg-surface-950 p-6">
+    <div class="flex flex-col items-center p-10 sm:p-14 bg-surface-0 dark:bg-surface-900 rounded-3xl shadow-xl border border-surface-200 dark:border-surface-800 max-w-lg w-full relative overflow-hidden">
+        
+        <!-- Decorative Background Elements -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl"></div>
+
+        <!-- Icon Container -->
+        <div class="relative flex items-center justify-center w-24 h-24 mb-6 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 shadow-sm border border-orange-200 dark:border-orange-500/30">
+            <i class="pi pi-lock text-4xl"></i>
+            <!-- Small pulse dot -->
+            <span class="absolute top-1 right-1 flex h-4 w-4">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-4 w-4 bg-orange-500"></span>
+            </span>
         </div>
-        <button
-            class="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold text-2xl py-5 px-10 rounded-full transition-all duration-300 ease-in-out transform hover:scale-110 hover:shadow-xl shadow-lg"
-            (click)="irAApertura()">
-            <i class="pi pi-arrow-right mr-3"></i>Ir a Abrir Caja
-        </button>
-        <div class="mt-8 text-gray-500 text-lg">
-            <p>¿Necesitas ayuda? Contacta al administrador del sistema</p>
+
+        <!-- Content -->
+        <div class="text-center z-10 relative mb-8">
+            <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0 mb-3 tracking-tight">¡Apertura Requerida!</h1>
+            <p class="text-lg text-surface-500 dark:text-surface-400 leading-relaxed m-0">
+                Para comenzar a tomar pedidos y registrar ventas, es necesario realizar la apertura de la caja del día.
+            </p>
+        </div>
+
+        <!-- Actions -->
+        <div class="w-full z-10 relative">
+            <button (click)="irAApertura()"
+                class="w-full flex items-center justify-center gap-3 bg-primary hover:bg-primary-600 text-primary-contrast font-semibold text-lg py-4 px-8 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg focus:ring-4 focus:ring-primary/30 active:scale-[0.98] border-none cursor-pointer">
+                <i class="pi pi-key text-xl"></i>
+                <span>Ir a Abrir Caja</span>
+            </button>
         </div>
     </div>
 </div>
