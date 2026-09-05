@@ -93,13 +93,13 @@ import { ImportsModule } from '../imports';
                     <form (ngSubmit)="onSubmit()" [formGroup]="loginForm" class="flex flex-col gap-6">
                         <!-- Username -->
                         <div class="flex flex-col gap-2">
-                            <label for="username" class="font-medium text-surface-900 dark:text-surface-100 text-sm">Usuario</label>
+                            <label for="username" class="font-medium text-surface-900 dark:text-surface-100 text-sm">Usuario o Correo</label>
                             <div class="relative username-container-custom">
                                 <i class="pi pi-user absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 z-10"></i>
-                                <input pInputText id="username" type="text" formControlName="username" placeholder="Tu nombre de usuario" class="w-full py-3" style="padding-left: 2.5rem !important;" [class.ng-invalid]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" />
+                                <input pInputText id="username" type="text" formControlName="username" placeholder="Tu usuario o correo (ej. alex o maria@willys.com)" class="w-full py-3" style="padding-left: 2.5rem !important;" [class.ng-invalid]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched" />
                             </div>
                             <small class="text-red-500" *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
-                                El usuario es requerido.
+                                El usuario o correo es requerido.
                             </small>
                         </div>
 

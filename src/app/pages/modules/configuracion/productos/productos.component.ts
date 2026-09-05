@@ -27,6 +27,8 @@ export class ProductosComponent {
     isEditing: boolean = false;
     selectedCategory: any = null;
     filteredProductos: any[] = [];
+    loading: boolean = false;
+    searchTerm: string = '';
 
     constructor(private supabaseService: SupabaseService, private messageService: MessageService, private confirmationService: ConfirmationService, private fb: FormBuilder) {
         this.productoForm = this.fb.group({
@@ -38,15 +40,32 @@ export class ProductosComponent {
         });
     }
 
+    // Métricas para los KPI cards
+    get totalProductos(): number {
+        return this.productos.length;
+    }
+
+    get totalCategorias(): number {
+        return this.categorias.length;
+    }
+
+    get precioPromedio(): number {
+        if (this.productos.length === 0) return 0;
+        const sum = this.productos.reduce((acc, p) => acc + (Number(p.preciounitario) || 0), 0);
+        return sum / this.productos.length;
+    }
+
     goBack() {
         this.backToMain.emit();
     }
+
     ngOnInit(): void {
         this.loadProductos();
         this.loadCategorias();
     }
 
     async loadProductos() {
+        this.loading = true;
         try {
             const { data, error } = await this.supabaseService.client
                 .from('producto')
@@ -62,7 +81,7 @@ export class ProductosComponent {
 
             if (error) throw error;
             this.productos = data || [];
-            this.filteredProductos = [...this.productos];
+            this.filterProductos();
         } catch (error) {
             console.error('Error loading productos:', error);
             this.messageService.add({
@@ -70,23 +89,70 @@ export class ProductosComponent {
                 summary: 'Error',
                 detail: 'Error al cargar productos'
             });
+        } finally {
+            this.loading = false;
         }
     }
 
     onCategoryChange() {
-        if (this.selectedCategory) {
-            this.filteredProductos = this.productos.filter(producto =>
-                producto.idcategoria === this.selectedCategory.idcategoria
-            );
-        } else {
-            this.filteredProductos = [...this.productos];
-        }
+        this.filterProductos();
     }
 
     clearCategoryFilter() {
         this.selectedCategory = null;
-        this.filteredProductos = [...this.productos];
+        this.filterProductos();
     }
+
+    selectCategoryChip(cat: any) {
+        if (this.selectedCategory && this.selectedCategory.idcategoria === cat?.idcategoria) {
+            this.selectedCategory = null;
+        } else {
+            this.selectedCategory = cat;
+        }
+        this.filterProductos();
+    }
+
+    getCategoryCount(idcategoria: number): number {
+        return this.productos.filter(p => p.idcategoria === idcategoria).length;
+    }
+
+    toggleCategoryFilter() {
+        if (this.selectedCategory) {
+            this.selectedCategory = null;
+        } else if (this.categorias.length > 0) {
+            this.selectedCategory = this.categorias[0];
+        }
+        this.filterProductos();
+    }
+
+    onSearch(event: Event) {
+        this.searchTerm = (event.target as HTMLInputElement).value;
+        this.filterProductos();
+    }
+
+    filterProductos() {
+        let list = [...this.productos];
+
+        if (this.selectedCategory) {
+            list = list.filter(producto =>
+                producto.idcategoria === this.selectedCategory.idcategoria
+            );
+        }
+
+        if (this.searchTerm) {
+            const term = this.searchTerm.toLowerCase().trim();
+            list = list.filter(p =>
+                (p.nombre || '').toLowerCase().includes(term) ||
+                (p.acronimo || '').toLowerCase().includes(term) ||
+                (p.categoria?.nombre || '').toLowerCase().includes(term) ||
+                String(p.numero_carta || '').includes(term) ||
+                String(p.codigo || '').includes(term)
+            );
+        }
+
+        this.filteredProductos = list;
+    }
+
     async loadCategorias() {
         try {
             const { data, error } = await this.supabaseService.client.from('categoria').select('*').is('deleted', null).order('nombre');

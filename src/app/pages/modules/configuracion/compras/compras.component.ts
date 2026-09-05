@@ -245,6 +245,10 @@ export class ComprasComponent implements OnInit {
         });
     }
 
+    get totalItems(): number {
+        return this.items.length;
+    }
+
     get totalPendientes(): number {
         return this.items.filter(i => i.estado === 'pendiente').length;
     }
@@ -256,6 +260,14 @@ export class ComprasComponent implements OnInit {
     get progreso(): number {
         if (this.items.length === 0) return 0;
         return Math.round((this.totalComprados / this.items.length) * 100);
+    }
+
+    filterByEstado(estado: string): void {
+        this.filtroEstado = estado;
+    }
+
+    filterByCategoria(cat: string): void {
+        this.filtroCategoria = cat;
     }
 
     // ─── Helpers de vista ─────────────────────────────────────────

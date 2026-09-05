@@ -1,166 +1,368 @@
-<div class="card">
-    <p-toast />
+<p-toast position="top-right" />
+<p-confirmDialog [style]="{ width: '450px' }" />
 
-    <div class="flex items-center mb-4">
-        <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
-            class="mr-4" pTooltip="Volver a Configuración" />
-        <h2 class="text-2xl font-semibold text-surface-900 dark:text-surface-0 m-0">Gestión de Personal</h2>
+<div class="personal-wrapper animate-fadein">
+
+    <!-- ── CABECERA DEL MÓDULO CON PALETA CORPORATIVA (#2b3d52 / #354b65 / #445d7d) ── -->
+    <header class="module-header">
+        <div class="header-main-row">
+            <button type="button" class="btn-back" (click)="goBack()" pTooltip="Volver a Configuración" tooltipPosition="bottom">
+                <i class="pi pi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
+
+            <div class="header-identity">
+                <div class="header-icon-circle">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="header-title-box">
+                    <h1>Gestión de Personal y Colaboradores</h1>
+                    <p class="subtitle">Directorio de colaboradores, cargos, turnos y accesos del personal del restaurante</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── MÉTRICAS / KPIS DE RESUMEN (PLOMO CORPORATIVO + BORDE NEGRO) ── -->
+        <div class="header-kpis">
+            <div class="kpi-card kpi-total" (click)="filterByState('TODOS'); selectPerfilChip(null)" [class.active]="selectedStateFilter === 'TODOS' && selectedPerfilId === null">
+                <div class="kpi-icon icon-total">
+                    <i class="fa-solid fa-users-gear"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalPersonal }}</span>
+                    <span class="kpi-lbl">Total Colaboradores</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-activo" (click)="filterByState('ACTIVOS')" [class.active]="selectedStateFilter === 'ACTIVOS'">
+                <div class="kpi-icon icon-activo">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalActivos }}</span>
+                    <span class="kpi-lbl">Personal Activo</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-inactivo" (click)="filterByState('INACTIVOS')" [class.active]="selectedStateFilter === 'INACTIVOS'">
+                <div class="kpi-icon icon-inactivo">
+                    <i class="fa-solid fa-user-xmark"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalInactivos }}</span>
+                    <span class="kpi-lbl">Inactivos / Bajas</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-perfil">
+                <div class="kpi-icon icon-perfil">
+                    <i class="fa-solid fa-id-badge"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalPerfiles }}</span>
+                    <span class="kpi-lbl">Cargos / Perfiles</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── CARD PRINCIPAL Y TABLA DE PERSONAL ── -->
+    <div class="content-card">
+
+        <!-- ── BARRA DE ACCIONES Y FILTROS ── -->
+        <div class="table-toolbar">
+            <div class="toolbar-left">
+                <button pButton label="Nuevo Personal" icon="pi pi-plus" class="btn-create" (click)="openNew()"></button>
+
+                <!-- Chips de filtro por estado y tipo (con 'Todos') -->
+                <div class="filter-chips">
+                    <button type="button" class="chip-item" [class.active]="selectedStateFilter === 'TODOS' && selectedPerfilId === null" (click)="filterByState('TODOS'); selectPerfilChip(null)">
+                        Todos ({{ totalPersonal }})
+                    </button>
+                    <button type="button" class="chip-item" [class.active]="selectedStateFilter === 'ACTIVOS'" (click)="filterByState('ACTIVOS')">
+                        ✅ Activos ({{ totalActivos }})
+                    </button>
+                    <button type="button" class="chip-item" [class.active]="selectedStateFilter === 'INACTIVOS'" (click)="filterByState('INACTIVOS')">
+                        ⛔ Inactivos ({{ totalInactivos }})
+                    </button>
+                    <button *ngFor="let p of perfiles" type="button" class="chip-item"
+                        [class.active]="selectedPerfilId === p.idperfil"
+                        (click)="selectPerfilChip(p.idperfil)">
+                        👤 {{ p.nombre }}
+                    </button>
+                </div>
+            </div>
+
+            <div class="toolbar-right">
+                <div class="search-box">
+                    <i class="pi pi-search search-icon"></i>
+                    <input pInputText type="text" [value]="searchTerm" (input)="onSearch($event)" placeholder="Buscar por nombre, cargo o dirección..." class="search-input" />
+                    <button *ngIf="searchTerm" type="button" class="btn-clear-search" (click)="searchTerm = ''; applyFilter()">
+                        <i class="pi pi-times"></i>
+                    </button>
+                </div>
+                <button pButton icon="pi pi-refresh" class="p-button-outlined p-button-secondary btn-refresh" (click)="loadPersonal(); loadPerfiles()" pTooltip="Recargar datos" tooltipPosition="top"></button>
+            </div>
+        </div>
+
+        <!-- ── TABLA CON ESTILOS GLOBALES (.custom-table-slate) ── -->
+        <div class="custom-table-slate">
+            <p-table #dt [value]="filteredPersonal" [rows]="10" [paginator]="true"
+                [rowsPerPageOptions]="[10, 20, 50]" [loading]="loading"
+                [rowHover]="true" dataKey="idpersona" stripedRows
+                currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} colaboradores"
+                [showCurrentPageReport]="true">
+
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="idpersona" style="width: 100px; text-align: center;">
+                            # ID <p-sortIcon field="idpersona" />
+                        </th>
+                        <th pSortableColumn="nombres">
+                            Colaborador / Personal <p-sortIcon field="nombres" />
+                        </th>
+                        <th pSortableColumn="idperfil" style="width: 170px;">
+                            Cargo / Perfil <p-sortIcon field="idperfil" />
+                        </th>
+                        <th style="min-width: 180px;">
+                            Dirección y Referencia
+                        </th>
+                        <th pSortableColumn="cumpleanos" style="width: 140px; text-align: center;">
+                            Cumpleaños <p-sortIcon field="cumpleanos" />
+                        </th>
+                        <th pSortableColumn="idestado" style="width: 120px; text-align: center;">
+                            Estado <p-sortIcon field="idestado" />
+                        </th>
+                        <th style="width: 130px; text-align: center;">
+                            Acciones
+                        </th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-persona let-rowIndex="rowIndex">
+                    <tr>
+                        <!-- 1. ID -->
+                        <td style="text-align: center;">
+                            <span class="id-badge">
+                                #{{ persona.idpersona < 10 ? '0' + persona.idpersona : persona.idpersona }}
+                            </span>
+                        </td>
+
+                        <!-- 2. Colaborador con Avatar Circular de Iniciales -->
+                        <td>
+                            <div class="employee-cell">
+                                <div class="avatar-circle">
+                                    {{ getInitials(persona.nombres, persona.apellidopat) }}
+                                </div>
+                                <div class="employee-meta">
+                                    <span class="employee-name">{{ persona.nombres }} {{ persona.apellidopat }} {{ persona.apellidomat }}</span>
+                                    <span class="employee-sub flex align-items-center gap-2 mt-1">
+                                        <span *ngIf="persona.tieneUsuario" class="px-2 py-0.5 border-round text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 inline-flex align-items-center gap-1">
+                                            <i class="fa-solid fa-key text-xs"></i> Con Usuario: {{ persona.correo }}
+                                        </span>
+                                        <span *ngIf="!persona.tieneUsuario" class="px-2 py-0.5 border-round text-xs font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 inline-flex align-items-center gap-1">
+                                            <i class="fa-solid fa-user-slash text-xs"></i> Sin Usuario
+                                        </span>
+                                        <span *ngIf="persona.numerodoc" class="font-mono text-xs opacity-75">| DNI: {{ persona.numerodoc }}</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- 3. Cargo / Perfil -->
+                        <td>
+                            <span class="role-badge">
+                                <i class="fa-solid fa-briefcase"></i>
+                                {{ getPerfilName(persona.idperfil) || 'Sin asignar' }}
+                            </span>
+                        </td>
+
+                        <!-- 4. Dirección -->
+                        <td>
+                            <div class="address-cell">
+                                <span class="address-text">{{ persona.direccion || '—' }}</span>
+                                <span class="reference-text" *ngIf="persona.referencia">Ref: {{ persona.referencia }}</span>
+                            </div>
+                        </td>
+
+                        <!-- 5. Cumpleaños -->
+                        <td style="text-align: center;">
+                            <span class="birthday-pill" *ngIf="persona.cumpleanos">
+                                <i class="fa-solid fa-cake-candles"></i>
+                                {{ persona.cumpleanos | date : 'dd/MM/yyyy' }}
+                            </span>
+                            <span class="text-muted" *ngIf="!persona.cumpleanos">—</span>
+                        </td>
+
+                        <!-- 6. Estado -->
+                        <td style="text-align: center;">
+                            <span class="status-pill" [ngClass]="persona.idestado == 1 ? 'active' : 'inactive'">
+                                <span class="status-dot"></span>
+                                {{ persona.idestado == 1 ? 'Activo' : 'Inactivo' }}
+                            </span>
+                        </td>
+
+                        <!-- 7. Acciones -->
+                        <td style="text-align: center;">
+                            <div class="actions-group">
+                                <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm btn-edit"
+                                    (click)="editPersona(persona)" pTooltip="Editar colaborador" tooltipPosition="top"></button>
+                                <button pButton icon="pi pi-trash" class="p-button-rounded p-button-text p-button-sm btn-delete"
+                                    (click)="deletePersona(persona)" pTooltip="Eliminar colaborador" tooltipPosition="top"></button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state-box">
+                                <div class="empty-icon-circle">
+                                    <i class="fa-solid fa-user-slash"></i>
+                                </div>
+                                <h3>No se encontró personal</h3>
+                                <p>No existen colaboradores registrados con los filtros o término de búsqueda aplicado.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
     </div>
 
-    <p-toolbar styleClass="mb-6">
-        <ng-template #start>
-            <p-button label="Nuevo Personal" icon="pi pi-plus" severity="secondary" class="mr-2"
-                (onClick)="openNew()" />
-        </ng-template>
-    </p-toolbar>
-
-    <p-table #dt [value]="personal" [rows]="10" [paginator]="true"
-        [globalFilterFields]="['nombres', 'apellidopat', 'apellidomat', 'direccion']"
-        [tableStyle]="{ 'min-width': '75rem' }" [(selection)]="selectedPersonal" [rowHover]="true" dataKey="idpersona"
-        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} personal" [showCurrentPageReport]="true"
-        [rowsPerPageOptions]="[10, 20, 30]">
-        <ng-template #caption>
-            <div class="flex items-center justify-between">
-                <h5 class="m-0">Gestionar Personal</h5>
-                <p-iconfield>
-                    <p-inputicon styleClass="pi pi-search" />
-                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Buscar..." />
-                </p-iconfield>
+    <!-- ── DIALOG DE CREACIÓN / EDICIÓN ── -->
+    <p-dialog [(visible)]="personalDialog" [style]="{ width: '620px' }" [modal]="true"
+        [closable]="true" styleClass="personal-dialog" [formGroup]="personalForm">
+        <ng-template pTemplate="header">
+            <div class="dialog-header-custom">
+                <div class="dialog-header-icon">
+                    <i [class]="isEditing ? 'pi pi-user-edit' : 'pi pi-user-plus'"></i>
+                </div>
+                <div>
+                    <h3 class="dialog-title">{{ isEditing ? 'Editar Colaborador' : 'Nuevo Colaborador' }}</h3>
+                    <span class="dialog-subtitle">Complete la información del personal del restaurante</span>
+                </div>
             </div>
         </ng-template>
 
-        <ng-template #header>
-            <tr>
-                <th pSortableColumn="nombres" style="min-width:12rem">
-                    Nombres
-                    <p-sortIcon field="nombres" />
-                </th>
-                <th pSortableColumn="apellidopat" style="min-width:10rem">
-                    Apellido Paterno
-                    <p-sortIcon field="apellidopat" />
-                </th>
-                <th pSortableColumn="apellidomat" style="min-width:10rem">
-                    Apellido Materno
-                    <p-sortIcon field="apellidomat" />
-                </th>
-                <th pSortableColumn="direccion" style="min-width:15rem">
-                    Dirección
-                    <p-sortIcon field="direccion" />
-                </th>
-                <th pSortableColumn="cumpleanos" style="min-width:10rem">
-                    Cumpleaños
-                    <p-sortIcon field="cumpleanos" />
-                </th>
-                <th pSortableColumn="idperfil" style="min-width:10rem">
-                    Perfil
-                    <p-sortIcon field="idperfil" />
-                </th>
-                <th pSortableColumn="idestado" style="min-width:8rem">
-                    Estado
-                    <p-sortIcon field="idestado" />
-                </th>
-                <th style="min-width:12rem">Acciones</th>
-            </tr>
-        </ng-template>
-
-        <ng-template #body let-persona>
-            <tr>
-                <td style="min-width:12rem">{{ persona.nombres }}</td>
-                <td>{{ persona.apellidopat }}</td>
-                <td>{{ persona.apellidomat }}</td>
-                <td>{{ persona.direccion || 'N/A' }}</td>
-                <td>{{ persona.cumpleanos ? (persona.cumpleanos | date : 'dd/MM/yyyy') : 'N/A' }}</td>
-                <td>{{ getPerfilName(persona.idperfil) }}</td>
-                <td>
-                    <p-tag [value]="getEstadoLabel(persona.idestado)"
-                        [severity]="getEstadoSeverity(persona.idestado)" />
-                </td>
-                <td>
-                    <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
-                        (click)="editPersona(persona)" />
-                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
-                        (click)="deletePersona(persona)" />
-                </td>
-            </tr>
-        </ng-template>
-    </p-table>
-
-    <p-dialog [(visible)]="personalDialog" [style]="{ width: '600px' }"
-        [header]="isEditing ? 'Editar Personal' : 'Nuevo Personal'" [modal]="true" [formGroup]="personalForm">
-        <ng-template #content>
-            <div class="flex flex-col gap-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="nombres" class="block font-bold mb-3">Nombres *</label>
-                        <input type="text" pInputText id="nombres" formControlName="nombres" required autofocus fluid
+        <ng-template pTemplate="content">
+            <div class="dialog-form-body">
+                <div class="form-grid-2">
+                    <div class="form-field">
+                        <label for="nombres">Nombres <span class="req">*</span></label>
+                        <input type="text" pInputText id="nombres" formControlName="nombres" placeholder="Ej: Juan Carlos"
                             [class.ng-invalid]="personalForm.get('nombres')?.invalid && submitted" />
-                        <small class="text-red-500"
-                            *ngIf="submitted && personalForm.get('nombres')?.errors?.['required']"> Los nombres son
-                            requeridos. </small>
+                        <small class="error-msg" *ngIf="submitted && personalForm.get('nombres')?.errors?.['required']">
+                            El nombre es obligatorio
+                        </small>
                     </div>
 
-                    <div>
-                        <label for="apellidopat" class="block font-bold mb-3">Apellido Paterno *</label>
-                        <input type="text" pInputText id="apellidopat" formControlName="apellidopat" required fluid
+                    <div class="form-field">
+                        <label for="apellidopat">Apellido Paterno <span class="req">*</span></label>
+                        <input type="text" pInputText id="apellidopat" formControlName="apellidopat" placeholder="Ej: Pérez"
                             [class.ng-invalid]="personalForm.get('apellidopat')?.invalid && submitted" />
-                        <small class="text-red-500"
-                            *ngIf="submitted && personalForm.get('apellidopat')?.errors?.['required']"> El apellido
-                            paterno es requerido. </small>
+                        <small class="error-msg" *ngIf="submitted && personalForm.get('apellidopat')?.errors?.['required']">
+                            El apellido paterno es obligatorio
+                        </small>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="apellidomat" class="block font-bold mb-3">Apellido Materno *</label>
-                        <input type="text" pInputText id="apellidomat" formControlName="apellidomat" required fluid
+                <div class="form-grid-2">
+                    <div class="form-field">
+                        <label for="apellidomat">Apellido Materno <span class="req">*</span></label>
+                        <input type="text" pInputText id="apellidomat" formControlName="apellidomat" placeholder="Ej: Gómez"
                             [class.ng-invalid]="personalForm.get('apellidomat')?.invalid && submitted" />
-                        <small class="text-red-500"
-                            *ngIf="submitted && personalForm.get('apellidomat')?.errors?.['required']"> El apellido
-                            materno es requerido. </small>
+                        <small class="error-msg" *ngIf="submitted && personalForm.get('apellidomat')?.errors?.['required']">
+                            El apellido materno es obligatorio
+                        </small>
                     </div>
 
-                    <div>
-                        <label for="cumpleanos" class="block font-bold mb-3">Cumpleaños</label>
-                        <p-datepicker formControlName="cumpleanos" inputId="cumpleanos" placeholder="Seleccionar fecha"
-                            fluid />
+                    <div class="form-field">
+                        <label for="cumpleanos">Fecha de Cumpleaños</label>
+                        <p-datepicker formControlName="cumpleanos" inputId="cumpleanos" placeholder="dd/mm/aaaa" fluid />
                     </div>
                 </div>
 
-                <div>
-                    <label for="direccion" class="block font-bold mb-3">Dirección</label>
-                    <input type="text" pInputText id="direccion" formControlName="direccion" fluid />
+                <div class="form-grid-2">
+                    <div class="form-field">
+                        <label for="numerodoc">DNI / Documento</label>
+                        <input type="text" pInputText id="numerodoc" formControlName="numerodoc" placeholder="Ej: 75486273" />
+                    </div>
+
+                    <div class="form-field">
+                        <label for="celular">Celular / Teléfono</label>
+                        <input type="text" pInputText id="celular" formControlName="celular" placeholder="Ej: 987654321" />
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="idperfil" class="block font-bold mb-3">Perfil *</label>
+                <div class="user-access-panel p-3 mb-3 border-round border-1 surface-border surface-50 dark:surface-900">
+                    <div class="flex align-items-center justify-content-between">
+                        <div>
+                            <span class="font-bold block text-sm text-900 dark:text-100">¿Habilitar cuenta de acceso al sistema (Login)?</span>
+                            <small class="text-500">Permite a este colaborador iniciar sesión en el punto de venta y pedidos</small>
+                        </div>
+                        <p-checkbox formControlName="tieneUsuario" [binary]="true" inputId="tieneUsuario"></p-checkbox>
+                    </div>
+
+                    <div *ngIf="personalForm.get('tieneUsuario')?.value" class="form-grid-2 mt-3 pt-3 border-top-1 surface-border">
+                        <div class="form-field">
+                            <label for="correo">Correo Electrónico (Login) <span class="req">*</span></label>
+                            <input type="email" pInputText id="correo" formControlName="correo" placeholder="Ej: usuario@willys.com" />
+                        </div>
+                        <div class="form-field">
+                            <label for="password">
+                                Contraseña
+                                <small *ngIf="isEditing && persona?.tieneUsuario" class="text-500 font-normal">(Dejar en blanco para no cambiar)</small>
+                                <small *ngIf="!isEditing || !persona?.tieneUsuario" class="text-indigo-500 font-normal">(Obligatoria)</small>
+                            </label>
+                            <input type="password" pInputText id="password" formControlName="password" placeholder="••••••••" />
+                        </div>
+                        <div class="form-field">
+                            <label for="pinSeguridad">PIN Rápido (4 dígitos)</label>
+                            <input type="password" pInputText id="pinSeguridad" formControlName="pinSeguridad" maxlength="4" placeholder="1234" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-field" *ngIf="!personalForm.get('tieneUsuario')?.value">
+                    <label for="correo">Correo Electrónico (Opcional)</label>
+                    <input type="email" pInputText id="correo" formControlName="correo" placeholder="Ej: usuario@correo.com" />
+                </div>
+
+                <div class="form-field">
+                    <label for="direccion">Dirección Domiciliaria</label>
+                    <input type="text" pInputText id="direccion" formControlName="direccion" placeholder="Ej: Av. Principal 123" />
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-field">
+                        <label for="idperfil">Cargo / Perfil <span class="req">*</span></label>
                         <p-select formControlName="idperfil" inputId="idperfil" [options]="perfiles"
-                            optionLabel="nombre" optionValue="idperfil" placeholder="Seleccione un perfil" fluid
+                            optionLabel="nombre" optionValue="idperfil" placeholder="Seleccione un cargo" fluid
                             [class.ng-invalid]="personalForm.get('idperfil')?.invalid && submitted" />
-                        <small class="text-red-500"
-                            *ngIf="submitted && personalForm.get('idperfil')?.errors?.['required']"> El perfil es
-                            requerido. </small>
+                        <small class="error-msg" *ngIf="submitted && personalForm.get('idperfil')?.errors?.['required']">
+                            El cargo es obligatorio
+                        </small>
                     </div>
 
-                    <div>
-                        <label for="idestado" class="block font-bold mb-3">Estado *</label>
+                    <div class="form-field">
+                        <label for="idestado">Estado Operativo <span class="req">*</span></label>
                         <p-select formControlName="idestado" inputId="idestado" [options]="estados" optionLabel="label"
-                            optionValue="value" placeholder="Seleccione un estado" fluid />
+                            optionValue="value" placeholder="Seleccione estado" fluid />
                     </div>
                 </div>
 
-                <div>
-                    <label for="referencia" class="block font-bold mb-3">Referencia</label>
-                    <textarea id="referencia" pTextarea formControlName="referencia" rows="3" fluid> </textarea>
+                <div class="form-field">
+                    <label for="referencia">Referencia / Observaciones</label>
+                    <textarea id="referencia" pTextarea formControlName="referencia" rows="2" placeholder="Referencia de domicilio, teléfono secundario, etc." fluid></textarea>
                 </div>
             </div>
         </ng-template>
 
-        <ng-template #footer>
-            <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" />
-            <p-button label="Guardar" icon="pi pi-check" (click)="savePersona()" />
+        <ng-template pTemplate="footer">
+            <button pButton label="Cancelar" icon="pi pi-times" class="p-button-text p-button-secondary" (click)="hideDialog()"></button>
+            <button pButton label="Guardar Colaborador" icon="pi pi-check" class="btn-create" (click)="savePersona()"></button>
         </ng-template>
     </p-dialog>
-
-    <p-confirmdialog [style]="{ width: '450px' }" />
 </div>

@@ -1,146 +1,213 @@
-<div class="container">
-    <div *ngIf="!selector" class="cards-grid">
-        <!-- Restaurante Card -->
-        <section class="card" aria-label="Restaurante">
-            <h2>Restaurante</h2>
-            <ul class="card-list">
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'toppings';selector = true">
-                        <div class="icon green" aria-hidden="true">
-                            <i class="fa-solid fa-flask"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Topping Platos</p>
-                            <p class="subtitle">Creación, modificación de toppíngs en cada plato.</p>
-                        </div>
-                    </div>
-                </li>
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'productos';selector = true">
-                        <div class="icon green" aria-hidden="true">
-                            <i class="fa-solid fa-utensils"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Productos</p>
-                            <p class="subtitle">Creación, modificación de productos del menú.</p>
-                        </div>
-                    </div>
-                </li>
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'personal';selector = true">
-                        <div class="icon green" aria-hidden="true">
-                            <i class="fa-solid fa-users"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Personal</p>
-                            <p class="subtitle">Gestión de empleados y personal del restaurante.</p>
-                        </div>
-                    </div>
-                </li>
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'clientes';selector = true">
-                        <div class="icon green" aria-hidden="true">
-                            <i class="fa-solid fa-address-book"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Clientes</p>
-                            <p class="subtitle">Gestión de clientes del restaurante.</p>
-                        </div>
-                    </div>
-                </li>
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'vouchers';selector = true">
-                        <div class="icon green" aria-hidden="true">
-                            <i class="fa-solid fa-ticket"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Vouchers</p>
-                            <p class="subtitle">Gestión de vales de delivery y descuentos.</p>
-                        </div>
-                    </div>
-                </li>
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'compras';selector = true">
-                        <div class="icon orange" aria-hidden="true">
-                            <i class="fa-solid fa-cart-shopping"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Lista de Compras</p>
-                            <p class="subtitle">Gestor de compras y suministros del restaurante.</p>
-                        </div>
-                    </div>
-                </li>
-            </ul>
-        </section>
+<div class="config-wrapper">
+    <div *ngIf="!selector" class="config-content animate-fadein">
 
-        <!-- Administración Card -->
-        <section class="card" aria-label="Administración" *ngIf="idperfil === 1">
-            <h2>Administración</h2>
-            <ul class="card-list">
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'usuarios';selector = true">
-                        <div class="icon blue" aria-hidden="true">
-                            <i class="fa-solid fa-user-group"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Usuarios</p>
-                            <p class="subtitle">Gestión de usuarios y permisos del sistema.</p>
-                        </div>
+        <!-- HEADER DEL MÓDULO -->
+        <header class="config-header">
+            <div class="header-main">
+                <div class="header-icon-box">
+                    <i class="pi pi-sliders-h"></i>
+                </div>
+                <div class="header-text">
+                    <div class="header-title-row">
+                        <h1>Configuración del Sistema</h1>
+                        <span class="role-badge" *ngIf="idperfil === 1">
+                            <i class="pi pi-shield"></i> Superadministrador
+                        </span>
                     </div>
-                </li>
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'menulista';selector = true">
-                        <div class="icon blue" aria-hidden="true">
-                            <i class="fa-solid fa-list"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Menú</p>
-                            <p class="subtitle">Gestión de menú del sistema.</p>
-                        </div>
-                    </div>
-                </li>
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'menuperfil';selector = true">
-                        <div class="icon blue" aria-hidden="true">
-                            <i class="fa-solid fa-lock"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Menú Perfil</p>
-                            <p class="subtitle">Gestión de permisos por perfil.</p>
-                        </div>
-                    </div>
-                </li>
-                <li>
-                    <div class="list-item" tabindex="0" (click)="seleccciontext = 'aperturas';selector = true">
-                        <div class="icon orange" aria-hidden="true">
-                            <i class="fa-solid fa-cash-register"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Aperturas de Caja</p>
-                            <p class="subtitle">Historial de aperturas, personal y estado de caja.</p>
-                        </div>
-                    </div>
-                </li>
-            </ul>
-        </section>
+                    <p class="header-desc">
+                        Gestione los parámetros operativos del restaurante, módulos administrativos y nóminas contables.
+                    </p>
+                </div>
+            </div>
+        </header>
 
-        <!-- Contabilidad Card -->
-        <section class="card" aria-label="Contabilidad" *ngIf="idperfil === 1">
-            <h2>Contabilidad</h2>
-            <ul class="card-list">
-                <li>
-                    <div class="list-item" tabindex="0" routerLink="/planilla">
-                        <div class="icon green" aria-hidden="true">
-                            <i class="fa-solid fa-file-invoice-dollar"></i>
-                        </div>
-                        <div class="text-content">
-                            <p class="title">Gestión de Planilla</p>
-                            <p class="subtitle">Revise, ajuste y apruebe la nómina.</p>
-                        </div>
+        <!-- GRID DE TARJETAS (Restaurante, Administración, Contabilidad) -->
+        <div class="cards-grid">
+
+            <!-- 1. RESTAURANTE CARD -->
+            <section class="config-card card-restaurante" aria-label="Restaurante">
+                <div class="card-header">
+                    <div class="card-header-icon icon-restaurante">
+                        <i class="fa-solid fa-utensils"></i>
                     </div>
-                </li>
-            </ul>
-        </section>
+                    <div class="card-header-text">
+                        <h2>Restaurante</h2>
+                        <span class="card-header-sub">Operativa gastronómica y atención</span>
+                    </div>
+                    <span class="module-counter">6 módulos</span>
+                </div>
+
+                <ul class="module-list">
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'toppings'; selector = true">
+                            <div class="module-icon icon-teal">
+                                <i class="fa-solid fa-flask"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Topping Platos</span>
+                                <span class="module-desc">Creación y personalización de toppings por plato</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'productos'; selector = true">
+                            <div class="module-icon icon-amber">
+                                <i class="fa-solid fa-bowl-food"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Productos y Menú</span>
+                                <span class="module-desc">Catálogo, precios y categorías de platos</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'personal'; selector = true">
+                            <div class="module-icon icon-blue">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Personal y Colaboradores</span>
+                                <span class="module-desc">Gestión de empleados, mozos y turnos de trabajo</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'clientes'; selector = true">
+                            <div class="module-icon icon-green">
+                                <i class="fa-solid fa-address-book"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Directorio de Clientes</span>
+                                <span class="module-desc">Historial de clientes, teléfonos y delivery</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'vouchers'; selector = true">
+                            <div class="module-icon icon-purple">
+                                <i class="fa-solid fa-ticket"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Vouchers y Promociones</span>
+                                <span class="module-desc">Gestión de vales de delivery y descuentos</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'compras'; selector = true">
+                            <div class="module-icon icon-rose">
+                                <i class="fa-solid fa-cart-shopping"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Lista de Compras</span>
+                                <span class="module-desc">Gestor de suministros e insumos del restaurante</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 2. ADMINISTRACIÓN CARD -->
+            <section class="config-card card-admin" aria-label="Administración" *ngIf="idperfil === 1">
+                <div class="card-header">
+                    <div class="card-header-icon icon-admin">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="card-header-text">
+                        <h2>Administración</h2>
+                        <span class="card-header-sub">Seguridad, accesos y cajas</span>
+                    </div>
+                    <span class="module-counter">4 módulos</span>
+                </div>
+
+                <ul class="module-list">
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'usuarios'; selector = true">
+                            <div class="module-icon icon-navy">
+                                <i class="fa-solid fa-user-gear"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Usuarios del Sistema</span>
+                                <span class="module-desc">Gestión de credenciales, roles y accesos</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'menulista'; selector = true">
+                            <div class="module-icon icon-indigo">
+                                <i class="fa-solid fa-list-check"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Estructura del Menú</span>
+                                <span class="module-desc">Configuración de vistas y rutas del sistema</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'menuperfil'; selector = true">
+                            <div class="module-icon icon-violet">
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Permisos por Perfil</span>
+                                <span class="module-desc">Restricciones y accesos según el rol de usuario</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'aperturas'; selector = true">
+                            <div class="module-icon icon-amber">
+                                <i class="fa-solid fa-cash-register"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Aperturas de Caja</span>
+                                <span class="module-desc">Historial de aperturas, turnos y arqueos</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 3. CONTABILIDAD CARD -->
+            <section class="config-card card-contabilidad" aria-label="Contabilidad" *ngIf="idperfil === 1">
+                <div class="card-header">
+                    <div class="card-header-icon icon-contabilidad">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+                    <div class="card-header-text">
+                        <h2>Contabilidad</h2>
+                        <span class="card-header-sub">Finanzas, nómina y gestión de pagos</span>
+                    </div>
+                    <span class="module-counter">1 módulo</span>
+                </div>
+
+                <ul class="module-list">
+                    <li>
+                        <div class="module-item" tabindex="0" routerLink="/planilla">
+                            <div class="module-icon icon-emerald">
+                                <i class="fa-solid fa-money-check-dollar"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Gestión de Planilla</span>
+                                <span class="module-desc">Revise, ajuste y apruebe nóminas, sueldos y adelantos</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+        </div>
     </div>
     <app-toppings *ngIf="seleccciontext == 'toppings'" (backToMain)="selector = false; seleccciontext = ''"></app-toppings>
     <app-productos *ngIf="seleccciontext == 'productos'" (backToMain)="selector = false; seleccciontext = ''"></app-productos>

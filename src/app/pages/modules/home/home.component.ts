@@ -132,6 +132,7 @@ export class HomeComponent {
     mobileActiveTab: 'platos' | 'pedido' = 'platos';
     activeTabIndex: number = 0;
     highlightToolbar: boolean = false;
+    isDeliveryCollapsed: boolean = false;
 
     numeroPlato: number | null = null;
     comentarios: string = '';
@@ -650,6 +651,10 @@ export class HomeComponent {
         this.isOrderViewActive = false;
         this.mesaSeleccionada = null;
         this.pedido_mesa_status = false;
+        this.isDeliveryCollapsed = false;
+    }
+    toggleDeliveryCollapse() {
+        this.isDeliveryCollapsed = !this.isDeliveryCollapsed;
     }
     incrementnewPedido(product: NuevoPedidodetalle) {
         product.cantidad++;
@@ -1360,6 +1365,9 @@ export class HomeComponent {
 
         if (this.pedido_mesa_status) {
             this.hydrateNuevoPedido(mesa.numero, this.pedido_mesa_status, this.mesaSeleccionada);
+            if (typeof window !== 'undefined' && window.innerWidth < 1440) {
+                this.isDeliveryCollapsed = true;
+            }
         }
 
         // Fix: Ensure timeout callback properly handles component state

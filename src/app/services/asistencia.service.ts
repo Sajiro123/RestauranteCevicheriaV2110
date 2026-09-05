@@ -7,7 +7,7 @@ const WIFI_HOME_IP = '38.25.26.24'; // ← CAMBIAR POR TU IP PÚBLICA REAL
 
 export interface Asistencia {
     id?: number;
-    usuario_id: number;
+    usuario_id: number | string;
     fecha: string;
     hora_registro: string;
     ip_cliente: string;
@@ -55,7 +55,7 @@ export class AsistenciaService {
     // 'America/Lima'), nunca el reloj del cliente.
     // ─────────────────────────────────────────────────────────────
 
-    async registrar(usuarioId: number): Promise<AsistenciaResult> {
+    async registrar(usuarioId: number | string): Promise<AsistenciaResult> {
         // 1. Obtener IP pública del cliente
         const ipCliente = await this.obtenerIpPublica();
 
@@ -93,7 +93,7 @@ export class AsistenciaService {
     // Obtener mis asistencias (historial)
     // ─────────────────────────────────────────────────────────────
 
-    async getMisAsistencias(usuarioId: number, limite: number = 30): Promise<{ success: boolean; data: Asistencia[]; error?: any }> {
+    async getMisAsistencias(usuarioId: number | string, limite: number = 30): Promise<{ success: boolean; data: Asistencia[]; error?: any }> {
         const { data, error } = await this.supabaseService.client
             .from('asistencias')
             .select('*')
@@ -135,7 +135,7 @@ export class AsistenciaService {
     // Verificar si ya marcó hoy
     // ─────────────────────────────────────────────────────────────
 
-    async yaMarcoHoy(usuarioId: number): Promise<boolean> {
+    async yaMarcoHoy(usuarioId: number | string): Promise<boolean> {
         // Obtener la fecha actual de Perú desde el servidor de BD
         // para no depender del reloj del cliente.
         const { data: fechaServer } = await this.supabaseService.client

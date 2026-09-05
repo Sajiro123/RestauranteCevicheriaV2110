@@ -198,25 +198,27 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 // --- Container (Mayólica tile pattern) ---
 :root {
     --mesa-card-radius: 22px;
-    --mesa-grid-gap-row: 1.2rem;
-    --mesa-grid-gap-col: 1.2rem;
+    --mesa-grid-gap-row: 1.3rem;
+    --mesa-grid-gap-col: 1.1rem;
     --mesa-tile-size: 80px; // Tamaño de cada loseta/mayólica
-    --mesa-card-max: 137px; // Tamaño fijo de las mesas
+    --mesa-card-max: 137px; // Tamaño normal de las mesas
     --mesa-card-size: 137px;
 }
 
 .mesa-holo-grid {
     position: relative;
     border-radius: 0 0 1rem 1rem;
-    padding: 2rem 1.5rem 2.5rem;
+    padding: 1.75rem 1.25rem 2.25rem;
     min-height: 520px;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(115px, 137px));
     grid-template-rows: repeat(3, auto);
-    gap: 1.5rem 1.2rem;
+    gap: 1.4rem 1.2rem;
     justify-items: center;
+    justify-content: center;
     align-items: center;
-    overflow: visible;
+    overflow: hidden;
+    transition: all 0.28s ease;
 
     // ============================================================
     // FONDO MAYOLICA — losetas de cerámica con cuadros visibles
@@ -252,7 +254,7 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 }
 
 .mesa-holo-grid--piso2 {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(115px, 137px));
 }
 
 // Hidden — kept for DOM compatibility
@@ -266,14 +268,14 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 
 // --- BAR static card ---
 .mesa-bar-card {
-    width: 117px !important;
+    width: 100% !important;
+    max-width: 137px;
     display: flex;
     flex-direction: column;
     align-items: center;
     pointer-events: none;
     z-index: 1;
-    // Igual tamaño que las demás tarjetas
-    width: clamp(160px, 75%, var(--mesa-card-max));
+    transition: all 0.28s ease;
 }
 
 .mesa-bar-surface {
@@ -289,6 +291,7 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
         repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 2px, transparent 2px, transparent 6px),
         linear-gradient(135deg, darken($color-madera-oscura, 10%), darken($color-madera-oscura, 25%));
     box-shadow: $sombra-flotante, inset 0 2px 4px rgba(255, 255, 255, 0.2);
+    transition: border-radius 0.28s ease;
 
     &::after {
         content: '';
@@ -320,8 +323,9 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
     align-items: center;
     cursor: pointer;
     z-index: 1;
-    // Tamaño fijo de 137px como quiere el usuario
-    width: 137px;
+    width: 100%;
+    max-width: 137px;
+    transition: all 0.28s ease;
 }
 
 // --- ESTILOS DEL COMPONENTE (.mesa BEM) ---
@@ -842,7 +846,7 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 
     // ── Cuenta de mesa ──────────────────────────────────────
     &__cuenta {
-        padding: 0 1.25rem;
+        padding: 0 0.85rem;
         display: flex;
         flex-direction: column;
         gap: 0;
@@ -855,9 +859,9 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
         font-size: 0.65rem;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.16em;
+        letter-spacing: 0.14em;
         color: #9ca3af;
-        padding-bottom: 0.5rem;
+        padding-bottom: 0.4rem;
         border-bottom: 1px dashed #e5e7eb;
         margin-bottom: 0.25rem;
 
@@ -874,12 +878,12 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
     &__item {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        padding: 0.55rem 0.5rem;
+        gap: 0.55rem;
+        padding: 0.45rem 0.35rem;
         border-bottom: 1px solid #f3f4f6;
         transition: background 0.15s;
         border-radius: 8px;
-        margin: 0 -0.5rem;
+        margin: 0;
 
         &:last-child {
             border-bottom: none;
@@ -908,18 +912,23 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 
     &__item-name {
         flex: 1;
-        font-size: 0.83rem;
+        font-size: 0.84rem;
         font-weight: 600;
-        color: #374151;
-        line-height: 1.3;
+        color: #1f2937;
+        line-height: 1.35;
+        word-break: break-word;
+        white-space: normal;
+        padding-right: 0.35rem;
     }
 
     &__item-price {
-        font-size: 0.83rem;
+        font-size: 0.88rem;
         font-weight: 800;
-        color: #111827;
+        color: #0f172a;
         font-variant-numeric: tabular-nums;
         flex-shrink: 0;
+        white-space: nowrap;
+        margin-left: 0.25rem;
     }
 
     // Estado vacío
@@ -1459,19 +1468,70 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
     gap: 0;
     align-items: stretch;
     min-height: 0;
-    // Cuando hay mesa seleccionada los sidebars aparecen
+
+    // ── Estado dinámico: SOLO cuando hay mesa seleccionada (Editar / Cuenta abierta) ──
+    &--selected {
+        .mesa-holo-grid {
+            grid-template-columns: repeat(5, minmax(65px, 108px));
+            gap: 0.75rem 0.5rem;
+            padding: 1rem 0.5rem 1.25rem;
+
+            .mesa-card-holo,
+            .mesa-bar-card {
+                width: 100% !important;
+                max-width: 108px;
+                min-width: 65px;
+            }
+
+            .mesa,
+            .mesa-bar-surface {
+                border-radius: 16px;
+
+                .mesa__titulo {
+                    font-size: clamp(0.7rem, 1.4vw, 0.88rem);
+                    margin: 0 0 4px 0;
+                }
+
+                .mesa__estado {
+                    padding: 2px 6px;
+                    gap: 3px;
+                }
+
+                .mesa__punto {
+                    width: 6px;
+                    height: 6px;
+                }
+
+                .mesa__texto {
+                    font-size: clamp(0.5rem, 1vw, 0.68rem);
+                }
+
+                .mesa-info-bar {
+                    font-size: 0.7rem;
+                    padding: 1px 4px;
+                }
+            }
+        }
+
+        .mesa-holo-grid--piso2 {
+            grid-template-columns: repeat(4, minmax(65px, 108px));
+        }
+    }
 }
 
 // ── Columna CENTRAL: plano de mesas ────────────────────
 .mesa-floor-col {
     flex: 1;
     min-width: 0;
-    // El tabView ya tiene su propio overflow-x en mesa-holo-grid
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
+    z-index: 1;
 }
 
 // ── Columna IZQUIERDA: sidebar de botones ──────────────
 .mesa-actions-sidebar {
-    width: 200px;
+    width: 138px;
     flex-shrink: 0;
     background: #fff;
     border-right: 1.5px solid rgba(201, 140, 90, 0.14);
@@ -1488,21 +1548,21 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 .sidebar-mesa-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.85rem 0.8rem 0.65rem;
+    gap: 0.35rem;
+    padding: 0.5rem 0.45rem;
     border-bottom: 1.5px solid rgba(201, 140, 90, 0.12);
     background: linear-gradient(135deg, #fdf6ee, #fff);
 }
 
 .sidebar-mesa-badge {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: 0.95rem;
+    font-size: 0.78rem;
     color: #fff;
     transition: background 0.3s;
 
@@ -1526,15 +1586,15 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 }
 
 .sidebar-mesa-piso {
-    font-size: 0.55rem;
+    font-size: 0.52rem;
     font-weight: 700;
     color: $color-madera-clara;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
 }
 
 .sidebar-mesa-num {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 900;
     color: #1c1917;
     white-space: nowrap;
@@ -1543,7 +1603,7 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 }
 
 .sidebar-mesa-status {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     font-weight: 700;
     color: $color-turquesa;
     text-transform: uppercase;
@@ -1555,8 +1615,8 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 }
 
 .sidebar-close-btn {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     border: 1.5px solid #e5e7eb;
     background: #f9fafb;
@@ -1565,7 +1625,7 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     flex-shrink: 0;
     transition: background 0.2s, color 0.2s, transform 0.2s;
 
@@ -1582,7 +1642,7 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding: 0.5rem 0.8rem;
+    padding: 0.35rem 0.55rem;
     background: #f9fafb;
     border-bottom: 1px solid #f3f4f6;
 }
@@ -1590,13 +1650,13 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 .sidebar-stat {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.7rem;
+    gap: 0.35rem;
+    font-size: 0.65rem;
     font-weight: 600;
     color: #6b7280;
 
     i {
-        font-size: 0.65rem;
+        font-size: 0.62rem;
         color: #9ca3af;
     }
 
@@ -1604,14 +1664,14 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        margin-top: 0.2rem;
-        padding-top: 0.25rem;
+        margin-top: 0.15rem;
+        padding-top: 0.2rem;
         border-top: 1px dashed #e5e7eb;
     }
 }
 
 .sidebar-stat__label {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     color: #9ca3af;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -1619,7 +1679,7 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 }
 
 .sidebar-stat__value {
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 900;
     color: #111827;
     letter-spacing: -0.02em;
@@ -1629,15 +1689,15 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 .sidebar-divider {
     height: 1px;
     background: rgba(201, 140, 90, 0.10);
-    margin: 0.3rem 0.8rem;
+    margin: 0.25rem 0.55rem;
 }
 
 // Lista de botones verticales
 .sidebar-btns {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    padding: 0.35rem 0.5rem;
+    gap: 0.15rem;
+    padding: 0.25rem 0.35rem;
     flex: 1;
     overflow-y: auto;
 
@@ -1655,10 +1715,10 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 .sbar-btn {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.35rem;
     width: 100%;
-    padding: 0.6rem 0.75rem;
-    border-radius: 10px;
+    padding: 0.38rem 0.42rem;
+    border-radius: 7px;
     border: 1.5px solid transparent;
     cursor: pointer;
     background: transparent;
@@ -1670,7 +1730,7 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
     text-align: left;
 
     &:hover {
-        transform: translateX(3px);
+        transform: translateX(2px);
     }
 
     &:active {
@@ -1678,26 +1738,26 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
     }
 
     &__icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 9px;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        font-size: 0.95rem;
+        font-size: 0.76rem;
         transition: transform 0.15s;
     }
 
     &__label {
-        font-size: 0.75rem;
+        font-size: 0.68rem;
         font-weight: 700;
         flex: 1;
         text-align: left;
     }
 
     &__arrow {
-        font-size: 0.6rem;
+        font-size: 0.58rem;
         opacity: 0.6;
         transition: transform 0.2s;
         margin-left: auto;
@@ -1859,8 +1919,8 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 .sbar-comp-dropdown {
     position: absolute;
     top: 0;
-    left: calc(100% + 8px);
-    width: 210px;
+    left: calc(100% + 4px);
+    width: 185px;
     background: #fff;
     border-radius: 14px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
@@ -1935,11 +1995,15 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 
 // ── Columna DERECHA: panel de info ────────────────────
 .mesa-info-col {
-    width: 300px;
+    width: 330px;
     flex-shrink: 0;
-    border-left: 1.5px solid rgba(201, 140, 90, 0.14);
+    border-left: 1.5px solid rgba(201, 140, 90, 0.18);
     animation: infocol-slidein 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
     overflow-y: auto;
+    background: #fff;
+    position: relative;
+    z-index: 20;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
 
     &::-webkit-scrollbar {
         width: 4px;
@@ -1956,13 +2020,64 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
         box-shadow: none;
         border-left: 0;
         height: 100%;
+        gap: 0.5rem;
 
         &__header {
             border-radius: 0;
+            padding: 0.65rem 0.75rem 0.55rem;
+            gap: 0.4rem;
+            flex-wrap: nowrap;
+        }
+
+        &__badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            font-size: 0.85rem;
+        }
+
+        &__title {
+            font-size: 1.1rem;
+            font-weight: 900;
+        }
+
+        &__label {
+            font-size: 0.55rem;
+        }
+
+        &__mozo-tag {
+            font-size: 0.68rem;
+            padding: 0.2rem 0.45rem;
+            white-space: nowrap;
+        }
+
+        &__total-badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 8px;
+            align-items: flex-end;
+        }
+
+        &__total-label {
+            font-size: 0.48rem;
+        }
+
+        &__total-amount {
+            font-size: 0.92rem;
+        }
+
+        &__close-btn {
+            width: 26px;
+            height: 26px;
+            font-size: 0.72rem;
+        }
+
+        &__cuenta {
+            padding: 0 0.75rem;
         }
 
         &__items {
-            max-height: 300px;
+            max-height: calc(100vh - 270px);
+            min-height: 140px;
             overflow-y: auto;
 
             &::-webkit-scrollbar {
@@ -1973,6 +2088,51 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
                 background: rgba(160, 130, 90, 0.2);
                 border-radius: 4px;
             }
+        }
+
+        &__item {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.45rem 0.35rem;
+            gap: 0.5rem;
+            margin: 0;
+            border-bottom: 1px solid #f8fafc;
+        }
+
+        &__item-qty {
+            min-width: 22px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-align: center;
+            background: #eff6ff;
+            color: #2563eb;
+            border-radius: 6px;
+            padding: 2px 4px;
+            margin-top: 1px;
+            flex-shrink: 0;
+        }
+
+        &__item-name {
+            flex: 1;
+            min-width: 0;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #1f2937;
+            line-height: 1.35;
+            word-break: break-word;
+            white-space: normal;
+            overflow-wrap: break-word;
+            padding-right: 0.35rem;
+        }
+
+        &__item-price {
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: #0f172a;
+            white-space: nowrap;
+            margin-left: auto;
+            flex-shrink: 0;
+            margin-top: 1px;
         }
 
         &__actions {
@@ -2108,4 +2268,13 @@ $sombra-hover: 0 20px 32px rgba(0, 0, 0, 0.25);
 @keyframes mobile-sheet-up {
     0% { transform: translateY(100%); }
     100% { transform: translateY(0); }
+}
+
+// ── Responsive Order View Fixes ───────────────────────────
+@media (max-width: 1023px) {
+    .order-view-container {
+        height: calc(100dvh - 6.5rem) !important;
+        max-height: calc(100dvh - 6.5rem) !important;
+        margin-bottom: 0.5rem;
+    }
 }

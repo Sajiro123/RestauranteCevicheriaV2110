@@ -1,260 +1,339 @@
-<p-toast />
-<p-confirmDialog />
+<p-toast position="top-right" />
+<p-confirmDialog [style]="{ width: '450px' }" />
 
-<div class="compras-host">
+<div class="compras-wrapper animate-fadein">
 
-    <!-- ══════════════════════════════════════════════════════
-         HEADER
-    ══════════════════════════════════════════════════════ -->
-    <div class="compras-header">
-        <div class="header-left">
-            <button class="btn-back" (click)="goBack()" title="Volver a Configuración">
+    <!-- ── CABECERA DEL MÓDULO CON PALETA CORPORATIVA (#2b3d52 / #354b65 / #445d7d) ── -->
+    <header class="module-header">
+        <div class="header-main-row">
+            <button type="button" class="btn-back" (click)="goBack()" pTooltip="Volver a Configuración" tooltipPosition="bottom">
                 <i class="pi pi-arrow-left"></i>
+                <span>Volver</span>
             </button>
-            <div class="header-title-group">
-                <span class="header-icon">🛍️</span>
-                <div>
-                    <h1 class="header-title">Gestor de Compras & Suministros</h1>
-                    <p class="header-subtitle">Lista dinámica de compras del restaurante</p>
+
+            <div class="header-identity">
+                <div class="header-icon-circle">
+                    <i class="fa-solid fa-cart-flatbed"></i>
+                </div>
+                <div class="header-title-box">
+                    <h1>Gestor de Compras & Suministros</h1>
+                    <p class="subtitle">Lista y abastecimiento dinámico de insumos, descartables y compras del restaurante</p>
                 </div>
             </div>
         </div>
-        <div class="header-stats">
-            <div class="stat-pill stat-pendiente">
-                <i class="pi pi-clock"></i>
-                <span>{{ totalPendientes }} pendiente{{ totalPendientes !== 1 ? 's' : '' }}</span>
-            </div>
-            <div class="stat-pill stat-comprado">
-                <i class="pi pi-check-circle"></i>
-                <span>{{ totalComprados }} comprado{{ totalComprados !== 1 ? 's' : '' }}</span>
-            </div>
-        </div>
-    </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         BARRA DE PROGRESO
-    ══════════════════════════════════════════════════════ -->
-    <div class="progress-section" *ngIf="items.length > 0">
-        <div class="progress-label">
-            <span>Progreso de compras</span>
-            <strong>{{ progreso }}%</strong>
-        </div>
-        <div class="progress-bar-track">
-            <div class="progress-bar-fill" [style.width.%]="progreso"></div>
-        </div>
-    </div>
+        <!-- ── MÉTRICAS / KPIS DE RESUMEN (PLOMO CORPORATIVO + BORDE NEGRO) ── -->
+        <div class="header-kpis">
+            <div class="kpi-card kpi-total" (click)="filterByEstado('Todos'); filterByCategoria('Todas')" [class.active]="filtroEstado === 'Todos' && filtroCategoria === 'Todas'">
+                <div class="kpi-icon icon-total">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalItems }}</span>
+                    <span class="kpi-lbl">Total Ítems</span>
+                </div>
+            </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         TOOLBAR DE ACCIONES
-    ══════════════════════════════════════════════════════ -->
-    <div class="toolbar">
-        <div class="toolbar-left">
-            <button class="btn-primary" id="btn-agregar-item" (click)="toggleFormulario()">
-                <i [class]="mostrarFormulario ? 'pi pi-times' : 'pi pi-plus'"></i>
-                <span>{{ mostrarFormulario ? 'Cancelar' : 'Agregar Ítem' }}</span>
-            </button>
-            <button class="btn-success" id="btn-marcar-comprado" (click)="marcarSeleccionadosComprado()" [disabled]="totalPendientes === 0">
-                <i class="pi pi-check-square"></i>
-                <span>Marcar Pendientes</span>
-            </button>
-        </div>
-        <div class="toolbar-right">
-            <button class="btn-danger-soft" id="btn-limpiar-comprados" (click)="limpiarComprados()" [disabled]="totalComprados === 0">
-                <i class="pi pi-filter-slash"></i>
-                <span>Quitar Comprados</span>
-            </button>
-            <button class="btn-ghost-danger" id="btn-vaciar-lista" (click)="vaciarLista()" [disabled]="items.length === 0">
-                <i class="pi pi-trash"></i>
-                <span>Vaciar Lista</span>
-            </button>
-        </div>
-    </div>
+            <div class="kpi-card kpi-pendiente" (click)="filterByEstado('Pendiente')" [class.active]="filtroEstado === 'Pendiente'">
+                <div class="kpi-icon icon-pendiente">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalPendientes }}</span>
+                    <span class="kpi-lbl">Pendientes</span>
+                </div>
+            </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         FORMULARIO RÁPIDO DE ENTRADA
-    ══════════════════════════════════════════════════════ -->
-    <div class="quick-form" *ngIf="mostrarFormulario">
-        <h3 class="form-title"><i class="pi pi-plus-circle"></i> Nuevo Ítem de Compra</h3>
-        <div class="form-row">
-            <div class="form-field">
-                <label for="input-producto">Producto *</label>
-                <input
-                    #inputProducto
-                    id="input-producto"
-                    type="text"
-                    [(ngModel)]="nuevoProducto"
-                    placeholder="Ej: Cebolla roja"
-                    (keyup.enter)="onProductoEnter()"
-                    autocomplete="off"
-                />
+            <div class="kpi-card kpi-comprado" (click)="filterByEstado('Comprado')" [class.active]="filtroEstado === 'Comprado'">
+                <div class="kpi-icon icon-comprado">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalComprados }}</span>
+                    <span class="kpi-lbl">Ya Comprados</span>
+                </div>
             </div>
-            <div class="form-field form-field-sm">
-                <label for="input-cantidad">Cantidad *</label>
-                <input
-                    #inputCantidad
-                    id="input-cantidad"
-                    type="text"
-                    [(ngModel)]="nuevaCantidad"
-                    placeholder="Ej: 2 kg"
-                    (keyup.enter)="onCantidadEnter()"
-                    autocomplete="off"
-                />
+
+            <div class="kpi-card kpi-progreso">
+                <div class="kpi-icon icon-progreso">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ progreso }}%</span>
+                    <span class="kpi-lbl">Progreso Abastecido</span>
+                </div>
             </div>
-            <div class="form-field">
-                <label for="select-categoria">Categoría</label>
-                <select id="select-categoria" [(ngModel)]="nuevaCategoria">
-                    <option *ngFor="let cat of categorias" [value]="cat.value">{{ cat.label }}</option>
-                </select>
+        </div>
+    </header>
+
+    <!-- ── CARD PRINCIPAL ── -->
+    <div class="content-card">
+
+        <!-- ── BARRA DE PROGRESO CORPORATIVA ── -->
+        <div class="progress-section" *ngIf="items.length > 0">
+            <div class="progress-info-row">
+                <div class="progress-title">
+                    <i class="fa-solid fa-bars-progress"></i>
+                    <span>Estado del Abastecimiento</span>
+                </div>
+                <div class="progress-stats">
+                    <span class="prog-pill pill-pendientes"><strong>{{ totalPendientes }}</strong> pendientes</span>
+                    <span class="prog-pill pill-comprados"><strong>{{ totalComprados }}</strong> comprados</span>
+                    <span class="prog-percentage">{{ progreso }}%</span>
+                </div>
             </div>
-            <div class="form-field">
-                <label for="select-prioridad">Prioridad</label>
-                <select id="select-prioridad" [(ngModel)]="nuevaPrioridad">
-                    <option *ngFor="let p of prioridades" [value]="p.value">{{ p.label }}</option>
-                </select>
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" [style.width.%]="progreso"></div>
             </div>
-            <div class="form-field form-field-action">
-                <label>&nbsp;</label>
-                <button class="btn-primary btn-add-action" id="btn-confirmar-agregar" (click)="agregarItem()">
-                    <i class="pi pi-plus"></i> Agregar
+        </div>
+
+        <!-- ── BARRA DE ACCIONES PRINCIPALES Y BÚSQUEDA ── -->
+        <div class="table-toolbar">
+            <div class="toolbar-left">
+                <button type="button" class="btn-create" (click)="toggleFormulario()">
+                    <i [class]="mostrarFormulario ? 'pi pi-times' : 'pi pi-plus'"></i>
+                    <span>{{ mostrarFormulario ? 'Cerrar Formulario' : 'Agregar Ítem' }}</span>
+                </button>
+
+                <button type="button" class="btn-tool-action btn-success-action" (click)="marcarSeleccionadosComprado()" [disabled]="totalPendientes === 0" title="Marcar todos los ítems visibles como comprados">
+                    <i class="pi pi-check-circle"></i>
+                    <span>Marcar Pendientes</span>
+                </button>
+
+                <button type="button" class="btn-tool-action btn-warning-action" (click)="limpiarComprados()" [disabled]="totalComprados === 0" title="Eliminar de la lista los que ya fueron comprados">
+                    <i class="pi pi-filter-slash"></i>
+                    <span>Limpiar Comprados</span>
+                </button>
+
+                <button type="button" class="btn-tool-action btn-danger-action" (click)="vaciarLista()" [disabled]="items.length === 0" title="Vaciar toda la lista">
+                    <i class="pi pi-trash"></i>
+                    <span>Vaciar Todo</span>
                 </button>
             </div>
-        </div>
-        <p class="form-hint">
-            <i class="pi pi-info-circle"></i>
-            Presiona <kbd>Enter</kbd> en "Producto" para saltar a "Cantidad", y <kbd>Enter</kbd> en "Cantidad" para agregar.
-        </p>
-    </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         FILTROS
-    ══════════════════════════════════════════════════════ -->
-    <div class="filters-bar">
-        <div class="search-box">
-            <i class="pi pi-search"></i>
-            <input
-                id="input-busqueda"
-                type="text"
-                [(ngModel)]="busqueda"
-                placeholder="Buscar producto..."
-                autocomplete="off"
-            />
+            <div class="toolbar-right">
+                <div class="search-box">
+                    <i class="pi pi-search search-icon"></i>
+                    <input type="text" [(ngModel)]="busqueda" placeholder="Buscar producto o categoría..." class="search-input" />
+                    <button *ngIf="busqueda" type="button" class="btn-clear-search" (click)="busqueda = ''">
+                        <i class="pi pi-times"></i>
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="filter-chips">
-            <span class="filter-label">Categoría:</span>
-            <button
-                *ngFor="let f of filtrosCategorias"
-                class="chip"
-                [class.chip-active]="filtroCategoria === f"
-                (click)="filtroCategoria = f"
-            >{{ f }}</button>
-        </div>
-        <div class="filter-chips">
-            <span class="filter-label">Estado:</span>
-            <button
-                *ngFor="let e of filtrosEstado"
-                class="chip"
-                [class.chip-active]="filtroEstado === e"
-                (click)="filtroEstado = e"
-            >{{ e }}</button>
-        </div>
-    </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         TABLA DE ITEMS
-    ══════════════════════════════════════════════════════ -->
-    <div class="table-wrapper">
-        <table class="compras-table" aria-label="Lista de compras">
-            <thead>
-                <tr>
-                    <th style="width:48px">✓</th>
-                    <th>Categoría</th>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Prioridad</th>
-                    <th>Estado</th>
-                    <th style="width:80px">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr
-                    *ngFor="let item of itemsFiltrados; trackBy: trackById"
-                    class="item-row"
-                    [class.row-comprado]="item.estado === 'comprado'"
-                    [class.row-alta]="item.prioridad === 'Alta' && item.estado === 'pendiente'"
-                >
-                    <td>
-                        <button
-                            class="check-btn"
-                            [class.checked]="item.estado === 'comprado'"
-                            (click)="toggleEstado(item)"
-                            [attr.aria-label]="item.estado === 'comprado' ? 'Marcar pendiente' : 'Marcar comprado'"
-                            [attr.title]="item.estado === 'comprado' ? 'Desmarcar' : 'Marcar como comprado'"
-                        >
-                            <i [class]="item.estado === 'comprado' ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+        <!-- ── CHIPS DE FILTRADO (ESTADOS Y CATEGORÍAS) ── -->
+        <div class="filter-chips-container">
+            <div class="chips-group">
+                <span class="chips-label">Estado:</span>
+                <div class="filter-chips">
+                    <button type="button" class="chip-item" [class.active]="filtroEstado === 'Todos'" (click)="filterByEstado('Todos')">
+                        Todos ({{ totalItems }})
+                    </button>
+                    <button type="button" class="chip-item" [class.active]="filtroEstado === 'Pendiente'" (click)="filterByEstado('Pendiente')">
+                        ⏳ Pendientes ({{ totalPendientes }})
+                    </button>
+                    <button type="button" class="chip-item" [class.active]="filtroEstado === 'Comprado'" (click)="filterByEstado('Comprado')">
+                        ✅ Comprados ({{ totalComprados }})
+                    </button>
+                </div>
+            </div>
+
+            <div class="chips-group">
+                <span class="chips-label">Categoría:</span>
+                <div class="filter-chips">
+                    <button *ngFor="let f of filtrosCategorias" type="button" class="chip-item"
+                        [class.active]="filtroCategoria === f"
+                        (click)="filterByCategoria(f)">
+                        {{ f === 'Todas' ? 'Todas' : getCategoriaEmoji($any(f)) + ' ' + f }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── FORMULARIO RÁPIDO DE ENTRADA (INLINE) ── -->
+        <div class="quick-form-card" *ngIf="mostrarFormulario">
+            <div class="quick-form-header">
+                <div class="qf-title">
+                    <i class="fa-solid fa-cart-plus"></i>
+                    <span>Registrar Nuevo Ítem para Compra</span>
+                </div>
+                <button type="button" class="btn-close-qf" (click)="mostrarFormulario = false">
+                    <i class="pi pi-times"></i>
+                </button>
+            </div>
+
+            <div class="quick-form-body">
+                <div class="form-grid">
+                    <div class="form-group field-prod">
+                        <label for="input-producto">Producto / Insumo <span class="required">*</span></label>
+                        <input
+                            #inputProducto
+                            id="input-producto"
+                            type="text"
+                            [(ngModel)]="nuevoProducto"
+                            placeholder="Ej. Cebolla Roja, Servilletas..."
+                            (keyup.enter)="onProductoEnter()"
+                            class="corp-input"
+                            autocomplete="off"
+                        />
+                    </div>
+
+                    <div class="form-group field-qty">
+                        <label for="input-cantidad">Cantidad / Unidad <span class="required">*</span></label>
+                        <input
+                            #inputCantidad
+                            id="input-cantidad"
+                            type="text"
+                            [(ngModel)]="nuevaCantidad"
+                            placeholder="Ej. 2 kg, 3 pqtes..."
+                            (keyup.enter)="onCantidadEnter()"
+                            class="corp-input"
+                            autocomplete="off"
+                        />
+                    </div>
+
+                    <div class="form-group field-cat">
+                        <label for="select-categoria">Categoría</label>
+                        <select id="select-categoria" [(ngModel)]="nuevaCategoria" class="corp-select">
+                            <option *ngFor="let cat of categorias" [value]="cat.value">{{ cat.label }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group field-prio">
+                        <label for="select-prioridad">Prioridad</label>
+                        <select id="select-prioridad" [(ngModel)]="nuevaPrioridad" class="corp-select">
+                            <option *ngFor="let p of prioridades" [value]="p.value">{{ p.label }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group field-btn">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn-add-item" id="btn-confirmar-agregar" (click)="agregarItem()">
+                            <i class="pi pi-plus"></i>
+                            <span>Agregar</span>
                         </button>
-                    </td>
-                    <td>
-                        <span class="categoria-badge">
-                            {{ getCategoriaEmoji(item.categoria) }} {{ item.categoria }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="producto-nombre" [class.tachado]="item.estado === 'comprado'">
-                            {{ item.producto }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="cantidad-pill">{{ item.cantidad }}</span>
-                    </td>
-                    <td>
-                        <span class="prioridad-badge" [ngClass]="getPrioridadClass(item.prioridad)">
-                            {{ getPrioridadEmoji(item.prioridad) }} {{ item.prioridad }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="estado-tag" [class.estado-comprado]="item.estado === 'comprado'">
-                            {{ item.estado === 'comprado' ? '✅ Comprado' : '⏳ Pendiente' }}
-                        </span>
-                    </td>
-                    <td>
-                        <button
-                            class="btn-delete-row"
-                            (click)="eliminarItem(item)"
-                            title="Eliminar ítem"
-                            [attr.aria-label]="'Eliminar ' + item.producto"
-                        >
-                            <i class="pi pi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
+                    </div>
+                </div>
 
-                <!-- Estado vacío -->
-                <tr *ngIf="itemsFiltrados.length === 0">
-                    <td colspan="7" class="empty-state">
-                        <div class="empty-inner">
-                            <span class="empty-icon">🛒</span>
-                            <p class="empty-title">Lista vacía</p>
-                            <p class="empty-sub">
-                                {{ items.length === 0 ? 'Agrega tu primer ítem pulsando "+ Agregar Ítem"' : 'Ningún ítem coincide con los filtros aplicados.' }}
-                            </p>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                <div class="form-hint">
+                    <i class="pi pi-info-circle"></i>
+                    <span>Presiona <kbd>Enter</kbd> en "Producto" para avanzar a "Cantidad", y <kbd>Enter</kbd> en "Cantidad" para registrar velozmente.</span>
+                </div>
+            </div>
+        </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         FOOTER RESUMEN
-    ══════════════════════════════════════════════════════ -->
-    <div class="compras-footer" *ngIf="items.length > 0">
-        <span>Total: <strong>{{ items.length }}</strong> ítem{{ items.length !== 1 ? 's' : '' }}</span>
-        <span class="footer-sep">·</span>
-        <span>Pendientes: <strong class="text-pendiente">{{ totalPendientes }}</strong></span>
-        <span class="footer-sep">·</span>
-        <span>Comprados: <strong class="text-comprado">{{ totalComprados }}</strong></span>
-        <span class="footer-sep">·</span>
-        <span class="footer-hint"><i class="pi pi-save"></i> Guardado automáticamente en este dispositivo</span>
+        <!-- ── TABLA CON ESTILOS CORPORATIVOS (CUSTOM-TABLE-SLATE) ── -->
+        <div class="table-container custom-table-slate">
+            <table class="compras-table" aria-label="Lista de compras">
+                <thead>
+                    <tr>
+                        <th class="col-center" style="width: 55px">Check</th>
+                        <th style="width: 170px">Categoría</th>
+                        <th>Producto / Insumo</th>
+                        <th style="width: 140px">Cantidad</th>
+                        <th style="width: 130px">Prioridad</th>
+                        <th style="width: 130px" class="col-center">Estado</th>
+                        <th style="width: 80px" class="col-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        *ngFor="let item of itemsFiltrados; trackBy: trackById"
+                        class="item-row"
+                        [class.row-comprado]="item.estado === 'comprado'"
+                        [class.row-alta]="item.prioridad === 'Alta' && item.estado === 'pendiente'"
+                    >
+                        <td class="col-center">
+                            <button
+                                type="button"
+                                class="check-toggle-btn"
+                                [class.is-comprado]="item.estado === 'comprado'"
+                                (click)="toggleEstado(item)"
+                                [title]="item.estado === 'comprado' ? 'Desmarcar y volver a pendiente' : 'Marcar como comprado'"
+                            >
+                                <i [class]="item.estado === 'comprado' ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
+                            </button>
+                        </td>
+
+                        <td>
+                            <span class="categoria-tag">
+                                {{ getCategoriaEmoji(item.categoria) }} {{ item.categoria }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="producto-cell">
+                                <span class="producto-name" [class.tachado]="item.estado === 'comprado'">
+                                    {{ item.producto }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="qty-pill">
+                                <i class="fa-solid fa-scale-balanced"></i>
+                                {{ item.cantidad }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="prio-tag" [ngClass]="getPrioridadClass(item.prioridad)">
+                                {{ getPrioridadEmoji(item.prioridad) }} {{ item.prioridad }}
+                            </span>
+                        </td>
+
+                        <td class="col-center">
+                            <span class="status-pill" [class.comprado]="item.estado === 'comprado'" [class.pendiente]="item.estado === 'pendiente'">
+                                <i [class]="item.estado === 'comprado' ? 'fa-solid fa-check' : 'fa-solid fa-hourglass-start'"></i>
+                                {{ item.estado === 'comprado' ? 'Comprado' : 'Pendiente' }}
+                            </span>
+                        </td>
+
+                        <td class="col-center">
+                            <button
+                                type="button"
+                                class="btn-action-icon btn-delete"
+                                (click)="eliminarItem(item)"
+                                title="Eliminar ítem"
+                            >
+                                <i class="pi pi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Estado vacío -->
+                    <tr *ngIf="itemsFiltrados.length === 0">
+                        <td colspan="7" class="empty-state-cell">
+                            <div class="empty-state-box">
+                                <div class="empty-state-icon">
+                                    <i class="fa-solid fa-basket-shopping"></i>
+                                </div>
+                                <h3 class="empty-state-title">No hay ítems para mostrar</h3>
+                                <p class="empty-state-desc">
+                                    {{ items.length === 0 ? 'La lista de compras está vacía. Haz clic en "Agregar Ítem" para comenzar.' : 'No se encontraron ítems con los filtros o búsqueda aplicados.' }}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ── FOOTER RESUMEN ── -->
+        <div class="compras-footer" *ngIf="items.length > 0">
+            <div class="footer-left">
+                <span>Total: <strong>{{ items.length }}</strong> ítem{{ items.length !== 1 ? 's' : '' }}</span>
+                <span class="footer-dot">•</span>
+                <span>Pendientes: <strong class="text-pend">{{ totalPendientes }}</strong></span>
+                <span class="footer-dot">•</span>
+                <span>Comprados: <strong class="text-comp">{{ totalComprados }}</strong></span>
+            </div>
+            <div class="footer-right">
+                <span class="footer-sync"><i class="fa-solid fa-floppy-disk"></i> Guardado automáticamente en almacenamiento local</span>
+            </div>
+        </div>
+
     </div>
 
 </div>

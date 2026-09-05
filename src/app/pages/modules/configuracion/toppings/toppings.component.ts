@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ImportsModule } from '../../../imports';
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -7,12 +7,13 @@ import { SupabaseService } from '../../../../services/supabase.service';
 
 @Component({
     selector: 'app-toppings',
+    standalone: true,
     imports: [CommonModule, FormsModule, ReactiveFormsModule, ImportsModule],
     templateUrl: './toppings.component.html',
     styleUrl: './toppings.component.scss',
     providers: [MessageService, ConfirmationService]
 })
-export class ToppingsComponent {
+export class ToppingsComponent implements OnInit {
     @Output() backToMain = new EventEmitter<void>();
 
     toppings: any[] = [];
@@ -23,6 +24,22 @@ export class ToppingsComponent {
     toppingForm: FormGroup;
     isEditing: boolean = false;
     searchTerm: string = '';
+    loading: boolean = false;
+    selectedCategoryFilter: string = 'TODOS';
+
+    // Sugerencias rápidas al registrar
+    sugerencias: string[] = [
+        'SIN AJI',
+        'SIN CEBOLLA',
+        'SIN CAMOTE',
+        'SIN YUCA',
+        'SIN ARROZ',
+        'CHICHARRON POTA',
+        'CEVICHE POTA',
+        'CHICHARRON PESCADO',
+        'ENSALADA APARTE',
+        'LECHE DE TIGRE APARTE'
+    ];
 
     constructor(
         private supabaseService: SupabaseService,
@@ -35,16 +52,22 @@ export class ToppingsComponent {
         });
     }
 
-    goBack() {
-        this.backToMain.emit();
-    }
     ngOnInit(): void {
         this.loadToppings();
     }
 
+    goBack() {
+        this.backToMain.emit();
+    }
+
     async loadToppings() {
+        this.loading = true;
         try {
-            const { data, error } = await this.supabaseService.client.from('toppings').select('*').is('deleted', null).order('nombre');
+            const { data, error } = await this.supabaseService.client
+                .from('toppings')
+                .select('*')
+                .is('deleted', null)
+                .order('nombre');
 
             if (error) throw error;
             this.toppings = data || [];
@@ -54,9 +77,74 @@ export class ToppingsComponent {
             this.messageService.add({
                 severity: 'error',
                 summary: 'Error',
-                detail: 'Error al cargar toppings'
+                detail: 'Error al cargar toppings de la base de datos'
             });
+        } finally {
+            this.loading = false;
         }
+    }
+
+    // Clasificación visual del modificador
+    getToppingType(nombre: string): { label: string; tagClass: string; icon: string; category: string } {
+        if (!nombre) return { label: 'Modificador', tagClass: 'badge-modificador', icon: 'pi pi-sliders-h', category: 'MODIFICADORES' };
+        const n = nombre.trim().toUpperCase();
+        if (n.startsWith('SIN ') || n.startsWith('NO ')) {
+            return { label: 'Exclusión', tagClass: 'badge-exclusion', icon: 'pi pi-ban', category: 'EXCLUSIONES' };
+        }
+        if (n.includes('CHICHARRON') || n.includes('CEVICHE') || n.includes('EXTRA') || n.includes('DOBLE') || n.includes('PORCION') || n.includes('PESCADO') || n.includes('POTA') || n.includes('ARROZ') || n.includes('CHAUFA') || n.includes('YUCA') || n.includes('LECHE') || n.startsWith('CON ')) {
+            return { label: 'Adicional', tagClass: 'badge-adicional', icon: 'pi pi-plus-circle', category: 'ADICIONALES' };
+        }
+        return { label: 'Modificador', tagClass: 'badge-modificador', icon: 'pi pi-sliders-h', category: 'MODIFICADORES' };
+    }
+
+    // Métricas / Resumen superior
+    get totalToppings(): number {
+        return this.toppings.length;
+    }
+
+    get totalExclusiones(): number {
+        return this.toppings.filter(t => this.getToppingType(t.nombre).category === 'EXCLUSIONES').length;
+    }
+
+    get totalAdicionales(): number {
+        return this.toppings.filter(t => this.getToppingType(t.nombre).category === 'ADICIONALES').length;
+    }
+
+    get totalModificadores(): number {
+        return this.toppings.filter(t => this.getToppingType(t.nombre).category === 'MODIFICADORES').length;
+    }
+
+    filterByCategory(category: string) {
+        this.selectedCategoryFilter = category;
+        this.applyFilter();
+    }
+
+    filterToppings(event: Event) {
+        this.searchTerm = (event.target as HTMLInputElement).value;
+        this.applyFilter();
+    }
+
+    onGlobalFilter(table: any, event: Event) {
+        table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
+    }
+
+    applyFilter() {
+        let list = [...this.toppings];
+
+        if (this.selectedCategoryFilter === 'EXCLUSIONES') {
+            list = list.filter(t => this.getToppingType(t.nombre).category === 'EXCLUSIONES');
+        } else if (this.selectedCategoryFilter === 'ADICIONALES') {
+            list = list.filter(t => this.getToppingType(t.nombre).category === 'ADICIONALES');
+        } else if (this.selectedCategoryFilter === 'MODIFICADORES') {
+            list = list.filter(t => this.getToppingType(t.nombre).category === 'MODIFICADORES');
+        }
+
+        if (this.searchTerm) {
+            const term = this.searchTerm.toLowerCase().trim();
+            list = list.filter((t) => (t.nombre || '').toLowerCase().includes(term) || String(t.idtoppings).includes(term));
+        }
+
+        this.filteredToppings = list;
     }
 
     openNew() {
@@ -76,26 +164,32 @@ export class ToppingsComponent {
         this.toppingDialog = true;
     }
 
-    deleteTopping(topping: any) {
-        const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
+    setSugerencia(nombre: string) {
+        this.toppingForm.patchValue({ nombre });
+    }
 
+    deleteTopping(topping: any) {
         this.confirmationService.confirm({
-            message: `¿Está seguro de eliminar el topping ${topping.nombre}?`,
-            header: 'Confirmar',
+            message: `¿Está seguro de eliminar el modificador "${topping.nombre}"?`,
+            header: 'Confirmar Eliminación',
             icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Sí, Eliminar',
+            rejectLabel: 'Cancelar',
+            acceptButtonStyleClass: 'p-button-danger',
+            rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
             accept: async () => {
                 try {
-                    const { error } = await this.supabaseService.client.from('toppings').update({ deleted: fechaPeru }).eq('idtoppings', topping.idtoppings);
+                    const { error } = await this.supabaseService.client
+                        .from('toppings')
+                        .update({ deleted: 1 })
+                        .eq('idtoppings', topping.idtoppings);
 
                     if (error) throw error;
 
                     this.messageService.add({
                         severity: 'success',
-                        summary: 'Exitoso',
-                        detail: 'Topping eliminado',
+                        summary: 'Eliminado',
+                        detail: `Topping "${topping.nombre}" eliminado correctamente`,
                         life: 3000
                     });
                     this.loadToppings();
@@ -104,7 +198,7 @@ export class ToppingsComponent {
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error',
-                        detail: 'Error al eliminar topping'
+                        detail: 'No se pudo eliminar el topping'
                     });
                 }
             }
@@ -116,13 +210,14 @@ export class ToppingsComponent {
 
         if (this.toppingForm.valid) {
             const formData = this.toppingForm.value;
+            const nombreNormalizado = formData.nombre.trim().toUpperCase();
 
             try {
                 if (this.isEditing) {
                     const { error } = await this.supabaseService.client
                         .from('toppings')
                         .update({
-                            nombre: formData.nombre
+                            nombre: nombreNormalizado
                         })
                         .eq('idtoppings', this.topping.idtoppings);
 
@@ -130,21 +225,21 @@ export class ToppingsComponent {
 
                     this.messageService.add({
                         severity: 'success',
-                        summary: 'Exitoso',
-                        detail: 'Topping actualizado',
+                        summary: 'Actualizado',
+                        detail: 'Topping actualizado con éxito',
                         life: 3000
                     });
                 } else {
                     const { error } = await this.supabaseService.client.from('toppings').insert({
-                        nombre: formData.nombre
+                        nombre: nombreNormalizado
                     });
 
                     if (error) throw error;
 
                     this.messageService.add({
                         severity: 'success',
-                        summary: 'Exitoso',
-                        detail: 'Topping creado',
+                        summary: 'Registrado',
+                        detail: 'Nuevo topping creado con éxito',
                         life: 3000
                     });
                 }
@@ -156,7 +251,7 @@ export class ToppingsComponent {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
-                    detail: 'Error al guardar topping'
+                    detail: 'Error al guardar el topping'
                 });
             }
         }
@@ -165,19 +260,5 @@ export class ToppingsComponent {
     hideDialog() {
         this.toppingDialog = false;
         this.submitted = false;
-    }
-
-    filterToppings(event: Event) {
-        this.searchTerm = (event.target as HTMLInputElement).value;
-        this.applyFilter();
-    }
-
-    applyFilter() {
-        if (!this.searchTerm) {
-            this.filteredToppings = [...this.toppings];
-        } else {
-            const term = this.searchTerm.toLowerCase();
-            this.filteredToppings = this.toppings.filter((t) => t.nombre?.toLowerCase().includes(term));
-        }
     }
 }
