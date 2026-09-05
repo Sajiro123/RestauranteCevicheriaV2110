@@ -3,14 +3,25 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { SupabaseService } from './supabase.service';
 import { Router } from '@angular/router';
 import { MenuService } from '../pages/service/menu.service';
+import { SaasMasterService } from './saas-master.service';
 
 export interface User {
-    idusuario: number;
+    idusuario: number | string;
     username: string;
     nombre: string;
     email?: string;
     rol?: string;
     idperfil?: number;
+    tenantId?: string;
+    subdominio?: string;
+    verticalId?: string;
+    planId?: string;
+    rolCodigo?: string;
+    rolNombre?: string;
+    token?: string;
+    pinSeguridad?: string;
+    esSuperadmin?: boolean;
+    esPropietario?: boolean;
 }
 
 @Injectable({
@@ -32,6 +43,7 @@ export class AuthService {
 
     constructor(
         private supabaseService: SupabaseService,
+        private saasMasterService: SaasMasterService,
         @Inject(MenuService) private menuService: MenuService,
         private router: Router
     ) {
@@ -86,6 +98,10 @@ export class AuthService {
     private clearLocalSession() {
         localStorage.removeItem('currentUser');
         localStorage.removeItem('userMenuData');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('saas_master_token');
+        localStorage.removeItem('tenant_id');
+        localStorage.removeItem('subdominio');
         this.unsubscribeRealtime();
     }
 
@@ -93,8 +109,12 @@ export class AuthService {
     // Realtime: vigilar session_token
     // ─────────────────────────────────────────────────────────────
 
-    private watchSessionToken(idusuario: number, myToken: string) {
+    private watchSessionToken(idusuario: number | string, myToken: string) {
         this.unsubscribeRealtime();
+
+        if (typeof idusuario !== 'number' || isNaN(idusuario)) {
+            return;
+        }
 
         console.log(`[Auth] Iniciando vigilancia Realtime para usuario ${idusuario}. Mi token: ${myToken.substring(0, 8)}...`);
 
@@ -133,63 +153,90 @@ export class AuthService {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Login
+    // Login con SaaS Master
     // ─────────────────────────────────────────────────────────────
 
-    async login(username: string, password: string): Promise<{ success: boolean; message?: string; user?: User }> {
+    async login(usernameOrEmail: string, password: string): Promise<{ success: boolean; message?: string; user?: User }> {
         try {
-            const { data, error } = await this.supabaseService.client.from('usuario').select('*').eq('username', username).eq('password', password).is('deleted', null).eq('estado', 1).single();
+            const res = await this.saasMasterService.login(usernameOrEmail, password);
 
-            if (error || !data) {
-                return { success: false, message: 'Usuario o contraseña incorrectos' };
+            if (!res.success || !res.data) {
+                return { success: false, message: res.message || 'Usuario o contraseña incorrectos en SaaS Master' };
             }
 
-            // Generar token único para esta sesión
-            const sessionToken = this.generateSessionToken();
-            console.log(`[Auth] Login: generando session_token para usuario ${data.idusuario}: ${sessionToken.substring(0, 8)}...`);
+            const authData = res.data;
 
-            // Actualizar session_token en la BD → invalida otras sesiones activas
-            const { error: updateError } = await this.supabaseService.client.from('usuario').update({ session_token: sessionToken }).eq('idusuario', data.idusuario);
-
-            if (updateError) {
-                console.error('[Auth] ❌ Error actualizando session_token en BD:', updateError);
-                console.error('[Auth] Detalle:', JSON.stringify(updateError));
-            } else {
-                console.log('[Auth] ✅ session_token actualizado en BD correctamente.');
+            // Validar que pertenezca a la vertical gastronómica
+            if (authData.verticalId && authData.verticalId !== 'RESTAURANTE') {
+                return { 
+                    success: false, 
+                    message: `Este usuario pertenece a la vertical ${authData.verticalId}, no a RESTAURANTE.` 
+                };
             }
+
+            // Mapeo inteligente de roles a idperfil para compatibilidad con la app existente
+            let idperfil = 1;
+            const rolCode = (authData.rolCodigo || '').toUpperCase();
+            if (rolCode.includes('ADMIN') || authData.esSuperadmin || authData.esPropietario) {
+                idperfil = 1;
+            } else if (rolCode.includes('MOZO') || rolCode.includes('MESERO')) {
+                idperfil = 2;
+            } else if (rolCode.includes('COCIN') || rolCode.includes('CHEF')) {
+                idperfil = 3;
+            } else if (rolCode.includes('CAJER')) {
+                idperfil = 4;
+            }
+
+            const cleanUsername = usernameOrEmail.includes('@') ? usernameOrEmail.split('@')[0] : usernameOrEmail;
 
             const user: User = {
-                idusuario: data.idusuario,
-                username: data.username,
-                nombre: data.nombre,
-                email: data.email,
-                rol: data.rol,
-                idperfil: data.idperfil
+                idusuario: authData.usuarioId,
+                username: cleanUsername,
+                nombre: authData.nombreCompleto || cleanUsername,
+                email: authData.email,
+                rol: authData.rolNombre || 'Colaborador',
+                idperfil: idperfil,
+                tenantId: authData.tenantId,
+                subdominio: authData.subdominio,
+                verticalId: authData.verticalId,
+                planId: authData.planId,
+                rolCodigo: authData.rolCodigo,
+                rolNombre: authData.rolNombre,
+                token: authData.token,
+                pinSeguridad: authData.pinSeguridad,
+                esSuperadmin: authData.esSuperadmin,
+                esPropietario: authData.esPropietario
             };
 
-            // Fetch menu data
-            const menuData = await this.fetchAndStoreMenuData(data.idperfil);
+            // Fetch menu data correspondiente al perfil
+            const menuData = await this.fetchAndStoreMenuData(idperfil);
 
-            // Guardar sesión en localStorage con token y timestamp
+            // Generar sessionToken
+            const sessionToken = this.generateSessionToken();
+
+            // Guardar sesión en localStorage
             const userData = {
                 ...user,
                 menuData,
                 loginAt: Date.now(),
                 sessionToken
             };
+
             localStorage.setItem('currentUser', JSON.stringify(userData));
+            localStorage.setItem('auth_token', authData.token);
+            localStorage.setItem('saas_master_token', authData.token);
+            localStorage.setItem('tenant_id', authData.tenantId);
+            localStorage.setItem('subdominio', authData.subdominio);
 
             // Actualizar observables
             this.currentUserSubject.next(user);
             this.isAuthenticatedSubject.next(true);
 
-            // Iniciar vigilancia Realtime para detectar desplazamiento
-            this.watchSessionToken(data.idusuario, sessionToken);
-
             return { success: true, user };
-        } catch (error) {
-            console.error('Error en login:', error);
-            return { success: false, message: 'Error de conexión. Intente nuevamente.' };
+        } catch (error: any) {
+            console.error('[AuthService] Error en autenticación SaaS Master:', error);
+            const msg = error?.message || 'Error de conexión con SaaS Master. Intente nuevamente.';
+            return { success: false, message: msg };
         }
     }
 

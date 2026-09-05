@@ -18,6 +18,7 @@ export class ClientesComponent {
     @Output() backToMain = new EventEmitter<void>();
 
     clientes: any[] = [];
+    filteredClientes: any[] = [];
     estados: any[] = [];
     tiposdoc: any[] = [];
     clienteDialog: boolean = false;
@@ -26,6 +27,10 @@ export class ClientesComponent {
     selectedClientes: any[] = [];
     clienteForm: FormGroup;
     isEditing: boolean = false;
+    loading: boolean = false;
+
+    selectedTipoDocFilter: any = 'TODOS';
+    searchTerm: string = '';
 
     // Search by numerodoc
     searchDoc: string = '';
@@ -71,7 +76,69 @@ export class ClientesComponent {
         this.loadClientes();
     }
 
+    // ── GETTERS PARA KPIS ──────────────────────────────────────────
+    get totalClientes(): number {
+        return this.clientes.length;
+    }
+
+    get totalDni(): number {
+        return this.clientes.filter(c => c.tipodoc === 1 || c.tipodoc === '1').length;
+    }
+
+    get totalRuc(): number {
+        return this.clientes.filter(c => c.tipodoc === 2 || c.tipodoc === '2').length;
+    }
+
+    get totalConCelular(): number {
+        return this.clientes.filter(c => !!c.celular && c.celular.trim() !== '').length;
+    }
+
+    // ── MÉTODOS DE FILTRADO ────────────────────────────────────────
+    filterByTipoDoc(tipo: any) {
+        this.selectedTipoDocFilter = tipo;
+        this.applyFilter();
+    }
+
+    onSearch(event: Event) {
+        this.searchTerm = (event.target as HTMLInputElement).value;
+        this.applyFilter();
+    }
+
+    applyFilter() {
+        let list = [...this.clientes];
+
+        if (this.selectedTipoDocFilter !== 'TODOS') {
+            if (this.selectedTipoDocFilter === 'OTROS') {
+                list = list.filter(c => c.tipodoc !== 1 && c.tipodoc !== '1' && c.tipodoc !== 2 && c.tipodoc !== '2');
+            } else {
+                list = list.filter(c => c.tipodoc === this.selectedTipoDocFilter || c.tipodoc === String(this.selectedTipoDocFilter));
+            }
+        }
+
+        if (this.searchTerm) {
+            const term = this.searchTerm.toLowerCase().trim();
+            list = list.filter(c =>
+                (c.nombres || '').toLowerCase().includes(term) ||
+                (c.apellidopat || '').toLowerCase().includes(term) ||
+                (c.apellidomat || '').toLowerCase().includes(term) ||
+                (c.numerodoc || '').toLowerCase().includes(term) ||
+                (c.correo || '').toLowerCase().includes(term) ||
+                (c.celular || '').toLowerCase().includes(term) ||
+                (c.direccion || '').toLowerCase().includes(term)
+            );
+        }
+
+        this.filteredClientes = list;
+    }
+
+    getInitials(nombres: string, apellidopat: string): string {
+        const n = (nombres || '').trim().charAt(0).toUpperCase();
+        const a = (apellidopat || '').trim().charAt(0).toUpperCase();
+        return `${n}${a}` || 'C';
+    }
+
     async loadClientes() {
+        this.loading = true;
         try {
             const { data, error } = await this.supabaseService.client
                 .from('persona')
@@ -82,6 +149,7 @@ export class ClientesComponent {
 
             if (error) throw error;
             this.clientes = data || [];
+            this.applyFilter();
         } catch (error) {
             console.error('Error loading clientes:', error);
             this.messageService.add({
@@ -89,6 +157,8 @@ export class ClientesComponent {
                 summary: 'Error',
                 detail: 'Error al cargar clientes'
             });
+        } finally {
+            this.loading = false;
         }
     }
 

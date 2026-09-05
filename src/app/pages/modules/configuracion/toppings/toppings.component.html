@@ -1,81 +1,266 @@
-<p-toast />
+<p-toast position="top-right" />
 <p-confirmDialog [style]="{ width: '450px' }" />
 
-<div class="card">
-    <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
-        class="mr-4" pTooltip="Volver a Configuración" />
+<div class="toppings-wrapper animate-fadein">
 
-    <div class="flex justify-content-between align-items-center mb-4 mt-6">
-        <h2 class="text-900 font-bold text-2xl">Gestión de Toppings</h2>
-    </div>
+    <!-- ── CABECERA DEL MÓDULO CON PALETA CORPORATIVA (#2b3d52 / #354b65 / #445d7d) ── -->
+    <header class="module-header">
+        <div class="header-main-row">
+            <button type="button" class="btn-back" (click)="goBack()" pTooltip="Volver a Configuración" tooltipPosition="bottom">
+                <i class="pi pi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
 
-    <p-toolbar styleClass="mb-4">
-        <ng-template #start>
-            <p-button label="Nuevo Topping" icon="pi pi-plus" severity="success" class="mr-2" (onClick)="openNew()" />
-        </ng-template>
-        <ng-template #end>
-            <span class="p-input-icon-left">
-                <i class="pi pi-search"></i>
-                <input pInputText type="text" placeholder="Buscar..." (input)="filterToppings($event)" />
-            </span>
-        </ng-template>
-    </p-toolbar>
-
-    <!-- Toppings List Card -->
-    <div class="card mt-4" *ngIf="filteredToppings.length > 0">
-        <div class="flex justify-content-between align-items-center mb-4">
-            <h3 class="text-900 font-bold text-xl">Lista de Toppings</h3>
-            <span class="text-500">{{ filteredToppings.length }} toppings registrados</span>
-        </div>
-
-        <div class="list-scroll">
-            <div class="topping-row" *ngFor="let topping of filteredToppings; let i = index">
-                <div class="topping-info">
-                    <span class="topping-index">{{ i + 1 }}</span>
-                    <span class="topping-name font-medium">{{ topping.nombre }}</span>
+            <div class="header-identity">
+                <div class="header-icon-circle">
+                    <i class="fa-solid fa-mortar-pestle"></i>
                 </div>
-                <div class="topping-actions">
-                    <p-button icon="pi pi-pencil" [rounded]="true" [outlined]="true" class="mr-2"
-                        (click)="editTopping(topping)" pTooltip="Editar" />
-                    <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
-                        (click)="deleteTopping(topping)" pTooltip="Eliminar" />
+                <div class="header-title-box">
+                    <h1>Gestión de Toppings y Modificadores</h1>
+                    <p class="subtitle">Administre adicionales, guarniciones y exclusiones de ingredientes para los platos del menú</p>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Empty State -->
-    <div class="card mt-4" *ngIf="filteredToppings.length === 0">
-        <div class="flex justify-content-center align-items-center py-8">
-            <div class="text-center">
-                <i class="pi pi-inbox text-600 text-5xl mb-3"></i>
-                <h3 class="text-900 font-bold text-xl mb-2">No se encontraron toppings</h3>
-                <p class="text-600">Agrega un nuevo topping con el botón superior.</p>
+        <!-- ── MÉTRICAS / KPIS DE RESUMEN ── -->
+        <div class="header-kpis">
+            <div class="kpi-card kpi-total" (click)="filterByCategory('TODOS')" [class.active]="selectedCategoryFilter === 'TODOS'">
+                <div class="kpi-icon icon-total">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalToppings }}</span>
+                    <span class="kpi-lbl">Total Registrados</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-categoria" (click)="filterByCategory('MODIFICADORES')" [class.active]="selectedCategoryFilter === 'MODIFICADORES'">
+                <div class="kpi-icon icon-categoria">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalModificadores }}</span>
+                    <span class="kpi-lbl">Modificadores / Tipos</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-exclusion" (click)="filterByCategory('EXCLUSIONES')" [class.active]="selectedCategoryFilter === 'EXCLUSIONES'">
+                <div class="kpi-icon icon-exclusion">
+                    <i class="pi pi-ban"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalExclusiones }}</span>
+                    <span class="kpi-lbl">Exclusiones ("Sin...")</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-adicional" (click)="filterByCategory('ADICIONALES')" [class.active]="selectedCategoryFilter === 'ADICIONALES'">
+                <div class="kpi-icon icon-adicional">
+                    <i class="pi pi-plus-circle"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalAdicionales }}</span>
+                    <span class="kpi-lbl">Porciones Extras</span>
+                </div>
             </div>
         </div>
+    </header>
+
+    <!-- ── CARD PRINCIPAL Y TABLA DE TOPPINGS ── -->
+    <div class="content-card">
+
+        <!-- ── BARRA DE ACCIONES Y FILTROS ── -->
+        <div class="table-toolbar">
+            <div class="toolbar-left">
+                <button pButton label="Nuevo Topping" icon="pi pi-plus" class="btn-create" (click)="openNew()"></button>
+
+                <!-- Chips de filtro por tipo -->
+                <div class="filter-chips">
+                    <button type="button" class="chip-item" [class.active]="selectedCategoryFilter === 'TODOS'" (click)="filterByCategory('TODOS')">
+                        Todos ({{ totalToppings }})
+                    </button>
+                    <button type="button" class="chip-item" [class.active]="selectedCategoryFilter === 'MODIFICADORES'" (click)="filterByCategory('MODIFICADORES')">
+                        ⚡ Modificadores ({{ totalModificadores }})
+                    </button>
+                    <button type="button" class="chip-item" [class.active]="selectedCategoryFilter === 'EXCLUSIONES'" (click)="filterByCategory('EXCLUSIONES')">
+                        🚫 Exclusiones ({{ totalExclusiones }})
+                    </button>
+                    <button type="button" class="chip-item" [class.active]="selectedCategoryFilter === 'ADICIONALES'" (click)="filterByCategory('ADICIONALES')">
+                        ✨ Adicionales ({{ totalAdicionales }})
+                    </button>
+                </div>
+            </div>
+
+            <div class="toolbar-right">
+                <div class="search-box">
+                    <i class="pi pi-search search-icon"></i>
+                    <input pInputText type="text" [value]="searchTerm" (input)="filterToppings($event)" placeholder="Buscar por nombre o #ID..." class="search-input" />
+                    <button *ngIf="searchTerm" type="button" class="btn-clear-search" (click)="searchTerm = ''; applyFilter()">
+                        <i class="pi pi-times"></i>
+                    </button>
+                </div>
+                <button pButton icon="pi pi-refresh" class="p-button-outlined p-button-secondary btn-refresh" (click)="loadToppings()" pTooltip="Recargar datos" tooltipPosition="top"></button>
+            </div>
+        </div>
+
+        <!-- ── TABLA CON ESTILOS GLOBALES (.custom-table-slate) ── -->
+        <div class="custom-table-slate">
+            <p-table #dt [value]="filteredToppings" [rows]="10" [paginator]="true"
+                [rowsPerPageOptions]="[10, 20, 50]" [loading]="loading"
+                [rowHover]="true" dataKey="idtoppings" stripedRows
+                currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} toppings"
+                [showCurrentPageReport]="true">
+
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="idtoppings" style="width: 110px; text-align: center;">
+                            # ID <p-sortIcon field="idtoppings" />
+                        </th>
+                        <th pSortableColumn="nombre">
+                            Nombre del Modificador / Topping <p-sortIcon field="nombre" />
+                        </th>
+                        <th style="width: 220px;">
+                            Tipo / Clasificación
+                        </th>
+                        <th style="width: 150px; text-align: center;">
+                            Estado
+                        </th>
+                        <th style="width: 130px; text-align: center;">
+                            Acciones
+                        </th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-topping let-rowIndex="rowIndex">
+                    <tr>
+                        <!-- 1. ID / Código -->
+                        <td style="text-align: center;">
+                            <span class="id-badge">
+                                #{{ topping.idtoppings < 10 ? '0' + topping.idtoppings : topping.idtoppings }}
+                            </span>
+                        </td>
+
+                        <!-- 2. Nombre del Topping con Ícono Circular -->
+                        <td>
+                            <div class="topping-cell">
+                                <div class="topping-icon-circle">
+                                    <i class="fa-solid fa-utensils"></i>
+                                </div>
+                                <div class="topping-meta">
+                                    <span class="topping-title">{{ topping.nombre }}</span>
+                                    <span class="topping-hint">Modificador para comanda del mozo</span>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- 3. Tipo / Clasificación Inteligente -->
+                        <td>
+                            <span class="classification-badge" [ngClass]="getToppingType(topping.nombre).tagClass">
+                                <i [class]="getToppingType(topping.nombre).icon"></i>
+                                <span>{{ getToppingType(topping.nombre).label }}</span>
+                            </span>
+                        </td>
+
+                        <!-- 4. Estado -->
+                        <td style="text-align: center;">
+                            <span class="status-pill active">
+                                <span class="status-dot"></span>
+                                Activo
+                            </span>
+                        </td>
+
+                        <!-- 5. Acciones -->
+                        <td style="text-align: center;">
+                            <div class="actions-group">
+                                <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm btn-edit"
+                                    (click)="editTopping(topping)" pTooltip="Editar Topping" tooltipPosition="top"></button>
+                                <button pButton icon="pi pi-trash" class="p-button-rounded p-button-text p-button-danger p-button-sm btn-delete"
+                                    (click)="deleteTopping(topping)" pTooltip="Eliminar Topping" tooltipPosition="top"></button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <!-- Estado Vacío -->
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state-box">
+                                <div class="empty-icon-circle">
+                                    <i class="fa-solid fa-mortar-pestle"></i>
+                                </div>
+                                <h3>No se encontraron toppings</h3>
+                                <p *ngIf="searchTerm">No hay ningún modificador que coincida con "{{ searchTerm }}".</p>
+                                <p *ngIf="!searchTerm">Aún no hay modificadores registrados en esta categoría.</p>
+                                <button pButton label="Crear Nuevo Topping" icon="pi pi-plus" class="btn-create mt-2" (click)="openNew()"></button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+
     </div>
 </div>
 
-<!-- Dialog Crear/Editar Topping -->
-<p-dialog [(visible)]="toppingDialog" [style]="{ width: '450px' }"
-    [header]="isEditing ? 'Editar Topping' : 'Nuevo Topping'" [modal]="true">
-    <ng-template #content>
-        <div class="flex flex-col gap-6" [formGroup]="toppingForm">
+<!-- ── MODAL CREAR / EDITAR TOPPING ── -->
+<p-dialog [(visible)]="toppingDialog" [style]="{ width: '480px' }" [modal]="true" [draggable]="false" [resizable]="false" styleClass="toppings-dialog">
+    <ng-template pTemplate="header">
+        <div class="dialog-header-custom">
+            <div class="dialog-header-icon">
+                <i [class]="isEditing ? 'fa-solid fa-pen-to-square' : 'fa-solid fa-plus'"></i>
+            </div>
             <div>
-                <label for="nombre" class="block font-bold mb-3">Nombre *</label>
-                <input type="text" pInputText id="nombre" formControlName="nombre" required autofocus fluid
-                    [class.ng-invalid]="toppingForm.get('nombre')?.invalid && submitted" />
-                <small class="text-red-500" *ngIf="submitted && toppingForm.get('nombre')?.errors?.['required']">
-                    El nombre es requerido.
-                </small>
-                <small class="text-red-500" *ngIf="submitted && toppingForm.get('nombre')?.errors?.['minlength']">
-                    El nombre debe tener al menos 2 caracteres.
-                </small>
+                <h3 class="dialog-title">{{ isEditing ? 'Editar Topping' : 'Nuevo Topping' }}</h3>
+                <span class="dialog-subtitle">Defina el modificador o indicación de plato</span>
             </div>
         </div>
     </ng-template>
-    <ng-template #footer>
-        <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" />
-        <p-button label="Guardar" icon="pi pi-check" (click)="saveTopping()" />
+
+    <ng-template pTemplate="content">
+        <form [formGroup]="toppingForm" class="dialog-form-body">
+            <div class="form-field">
+                <label for="nombre" class="field-label">Nombre del Topping / Indicación <span class="required-star">*</span></label>
+                <div class="input-container">
+                    <i class="fa-solid fa-tag input-left-icon"></i>
+                    <input type="text" pInputText id="nombre" formControlName="nombre" placeholder="Ej. SIN AJI, CHICHARRON POTA..."
+                        class="w-full text-input" autofocus [class.ng-invalid]="toppingForm.get('nombre')?.invalid && submitted" />
+                </div>
+                <small class="field-error" *ngIf="submitted && toppingForm.get('nombre')?.errors?.['required']">
+                    El nombre es obligatorio.
+                </small>
+                <small class="field-error" *ngIf="submitted && toppingForm.get('nombre')?.errors?.['minlength']">
+                    Debe contener al menos 2 caracteres.
+                </small>
+            </div>
+
+            <!-- Vista previa en tiempo real -->
+            <div class="preview-card" *ngIf="toppingForm.get('nombre')?.value">
+                <span class="preview-title">Visualización en la comanda:</span>
+                <div class="preview-badge-row">
+                    <span class="classification-badge" [ngClass]="getToppingType(toppingForm.get('nombre')?.value).tagClass">
+                        <i [class]="getToppingType(toppingForm.get('nombre')?.value).icon"></i>
+                        <span>{{ toppingForm.get('nombre')?.value | uppercase }}</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Sugerencias frecuentes (solo creación) -->
+            <div class="suggestions-container" *ngIf="!isEditing">
+                <span class="suggestions-label"><i class="pi pi-bolt"></i> Sugerencias frecuentes:</span>
+                <div class="suggestions-wrap">
+                    <button type="button" *ngFor="let s of sugerencias" class="chip-suggestion" (click)="setSugerencia(s)">
+                        + {{ s }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <div class="dialog-footer-actions">
+            <button pButton label="Cancelar" icon="pi pi-times" class="p-button-outlined p-button-secondary btn-dialog-cancel" (click)="hideDialog()"></button>
+            <button pButton [label]="isEditing ? 'Actualizar' : 'Guardar Topping'" icon="pi pi-check" class="btn-dialog-save" (click)="saveTopping()"></button>
+        </div>
     </ng-template>
 </p-dialog>

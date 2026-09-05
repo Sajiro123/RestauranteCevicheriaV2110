@@ -1,178 +1,324 @@
-<p-toast />
+<p-toast position="top-right" />
 <p-confirmDialog [style]="{ width: '450px' }" />
 
-<div class="card">
-    <p-button icon="pi pi-arrow-left" [rounded]="true" [outlined]="true" severity="secondary" (onClick)="goBack()"
-        class="mr-4" pTooltip="Volver a Configuración" />
+<div class="productos-wrapper animate-fadein">
 
-    <div class="flex justify-content-between align-items-center mb-4 mt-6">
-        <h2 class="text-900 font-bold text-2xl">Gestión de Productos</h2>
-    </div>
+    <!-- ── CABECERA DEL MÓDULO CON PALETA CORPORATIVA (#2b3d52 / #354b65 / #445d7d) ── -->
+    <header class="module-header">
+        <div class="header-main-row">
+            <button type="button" class="btn-back" (click)="goBack()" pTooltip="Volver a Configuración" tooltipPosition="bottom">
+                <i class="pi pi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
 
-    <p-toolbar styleClass="mb-4">
-        <ng-template #start>
-            <p-button label="Nuevo Producto" icon="pi pi-plus" severity="success" class="mr-2" (onClick)="openNew()" />
-        </ng-template>
-        <ng-template #end>
-            <div class="flex items-center gap-2">
-                <p-select [(ngModel)]="selectedCategory" [options]="categorias" optionLabel="nombre"
-                    placeholder="Filtrar por categoría" [showClear]="true" (onChange)="onCategoryChange()"
-                    (onClear)="clearCategoryFilter()" [style]="{ width: '220px' }" />
+            <div class="header-identity">
+                <div class="header-icon-circle">
+                    <i class="fa-solid fa-bowl-food"></i>
+                </div>
+                <div class="header-title-box">
+                    <h1>Gestión de Productos y Menú</h1>
+                    <p class="subtitle">Catálogo oficial de platos, precios unitarios, números de carta y categorías del restaurante</p>
+                </div>
             </div>
-        </ng-template>
-    </p-toolbar>
+        </div>
 
-    <!-- Productos Table Card -->
-    <div class="card">
-        <div class="overflow-auto">
+        <!-- ── MÉTRICAS / KPIS DE RESUMEN (COMBINACIÓN CON PLOMO) ── -->
+        <div class="header-kpis">
+            <div class="kpi-card kpi-total" (click)="clearCategoryFilter()" [class.active]="!selectedCategory">
+                <div class="kpi-icon icon-total">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalProductos }}</span>
+                    <span class="kpi-lbl">Todos los Platos</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-categoria" (click)="toggleCategoryFilter()" [class.active]="!!selectedCategory">
+                <div class="kpi-icon icon-categoria">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalCategorias }}</span>
+                    <span class="kpi-lbl">Categorías Activas</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-precio">
+                <div class="kpi-icon icon-precio">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">S/ {{ precioPromedio | number:'1.2-2' }}</span>
+                    <span class="kpi-lbl">Precio Promedio</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── CARD PRINCIPAL Y TABLA DE PRODUCTOS ── -->
+    <div class="content-card">
+
+        <!-- ── BARRA DE ACCIONES Y FILTROS ── -->
+        <div class="table-toolbar">
+            <div class="toolbar-left">
+                <button pButton label="Nuevo Producto" icon="pi pi-plus" class="btn-create" (click)="openNew()"></button>
+
+                <!-- Chips de filtro rápido por categoría (incluyendo 'Todos') -->
+                <div class="filter-chips">
+                    <button type="button" class="chip-item" [class.active]="!selectedCategory" (click)="clearCategoryFilter()">
+                        Todos ({{ totalProductos }})
+                    </button>
+                    <button *ngFor="let cat of categorias" type="button" class="chip-item"
+                        [class.active]="selectedCategory?.idcategoria === cat.idcategoria"
+                        (click)="selectCategoryChip(cat)">
+                        {{ cat.nombre }} ({{ getCategoryCount(cat.idcategoria) }})
+                    </button>
+                </div>
+
+                <!-- Filtro de Categoría Dropdown -->
+                <div class="category-select-wrap">
+                    <p-select [(ngModel)]="selectedCategory" [options]="categorias" optionLabel="nombre"
+                        placeholder="Filtrar por categoría" [showClear]="true" (onChange)="onCategoryChange()"
+                        (onClear)="clearCategoryFilter()" class="custom-category-select" />
+                </div>
+            </div>
+
+            <div class="toolbar-right">
+                <div class="search-box">
+                    <i class="pi pi-search search-icon"></i>
+                    <input pInputText type="text" [value]="searchTerm" (input)="onSearch($event)" placeholder="Buscar por plato, acrónimo, # carta..." class="search-input" />
+                    <button *ngIf="searchTerm" type="button" class="btn-clear-search" (click)="searchTerm = ''; filterProductos()">
+                        <i class="pi pi-times"></i>
+                    </button>
+                </div>
+                <button pButton icon="pi pi-refresh" class="p-button-outlined p-button-secondary btn-refresh" (click)="loadProductos(); loadCategorias()" pTooltip="Recargar datos" tooltipPosition="top"></button>
+            </div>
+        </div>
+
+        <!-- ── TABLA CON ESTILOS GLOBALES (.custom-table-slate) ── -->
+        <div class="custom-table-slate">
             <p-table #dt [value]="filteredProductos" [rows]="10" [paginator]="true"
-                [globalFilterFields]="['nombre', 'acronimo', 'categoria.nombre', 'numero_carta', 'preciounitario']"
-                [tableStyle]="{ 'min-width': '60rem' }" [(selection)]="selectedProductos" [rowHover]="true"
-                dataKey="idproducto" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} productos"
-                [showCurrentPageReport]="true" [rowsPerPageOptions]="[10, 20, 30]"
-                styleClass="p-datatable-striped p-datatable-sm">
+                [rowsPerPageOptions]="[10, 20, 50]" [loading]="loading"
+                [rowHover]="true" dataKey="idproducto" stripedRows
+                currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} productos"
+                [showCurrentPageReport]="true">
 
-                <ng-template #caption>
-                    <div class="flex items-center justify-end">
-                        <p-iconfield>
-                            <p-inputicon styleClass="pi pi-search" />
-                            <input pInputText type="text" (input)="onGlobalFilter(dt, $event)"
-                                placeholder="Buscar..." />
-                        </p-iconfield>
-                    </div>
-                </ng-template>
-
-                <ng-template #header>
+                <ng-template pTemplate="header">
                     <tr>
-                        <th pSortableColumn="numero_carta" style="width: 80px">
-                            N°
-                            <p-sortIcon field="numero_carta" />
+                        <th pSortableColumn="numero_carta" style="width: 100px; text-align: center;">
+                            # Carta <p-sortIcon field="numero_carta" />
                         </th>
                         <th pSortableColumn="nombre">
-                            Nombre
-                            <p-sortIcon field="nombre" />
+                            Plato / Producto <p-sortIcon field="nombre" />
                         </th>
-                        <th pSortableColumn="acronimo" style="width: 120px">
-                            Acrónimo
-                            <p-sortIcon field="acronimo" />
+                        <th pSortableColumn="categoria.nombre" style="width: 180px;">
+                            Categoría <p-sortIcon field="categoria.nombre" />
                         </th>
-                        <th pSortableColumn="preciounitario" style="width: 120px">
-                            Precio
-                            <p-sortIcon field="preciounitario" />
+                        <th pSortableColumn="acronimo" style="width: 130px; text-align: center;">
+                            Acrónimo <p-sortIcon field="acronimo" />
                         </th>
-                        <th pSortableColumn="categoria.nombre" style="width: 160px">
-                            Categoría
-                            <p-sortIcon field="categoria.nombre" />
+                        <th pSortableColumn="preciounitario" style="width: 150px; text-align: right;">
+                            Precio Unitario <p-sortIcon field="preciounitario" />
                         </th>
-                        <th style="width: 120px" class="text-center">Acciones</th>
+                        <th style="width: 130px; text-align: center;">
+                            Estado
+                        </th>
+                        <th style="width: 130px; text-align: center;">
+                            Acciones
+                        </th>
                     </tr>
                 </ng-template>
 
-                <ng-template #body let-producto>
+                <ng-template pTemplate="body" let-producto let-rowIndex="rowIndex">
                     <tr>
-                        <td>
-                            <span class="numero-badge">{{ producto.numero_carta }}</span>
+                        <!-- 1. # Carta -->
+                        <td style="text-align: center;">
+                            <span class="carta-badge">
+                                {{ producto.numero_carta !== null && producto.numero_carta !== undefined ? '#' + producto.numero_carta : '—' }}
+                            </span>
                         </td>
+
+                        <!-- 2. Nombre del Plato con Avatar Circular -->
                         <td>
-                            <span class="font-semibold">{{ producto.nombre }}</span>
+                            <div class="product-cell">
+                                <div class="product-avatar-circle">
+                                    <i class="fa-solid fa-bowl-food"></i>
+                                </div>
+                                <div class="product-meta">
+                                    <span class="product-title">{{ producto.nombre }}</span>
+                                    <span class="product-code" *ngIf="producto.codigo">Cód: {{ producto.codigo }}</span>
+                                    <span class="product-code" *ngIf="!producto.codigo">ID: #{{ producto.idproducto }}</span>
+                                </div>
+                            </div>
                         </td>
+
+                        <!-- 3. Categoría -->
                         <td>
-                            <span class="acronimo-tag">{{ producto.acronimo }}</span>
+                            <span class="category-pill">
+                                <i class="fa-solid fa-tag"></i>
+                                {{ producto.categoria?.nombre || 'Sin categoría' }}
+                            </span>
                         </td>
-                        <td>
-                            <span class="precio-text">{{ producto.preciounitario | currency:'S/ ' }}</span>
+
+                        <!-- 4. Acrónimo -->
+                        <td style="text-align: center;">
+                            <span class="acronym-tag">
+                                {{ producto.acronimo || '—' }}
+                            </span>
                         </td>
-                        <td>
-                            <span class="categoria-badge">{{ producto.categoria?.nombre || 'Sin categoría' }}</span>
+
+                        <!-- 5. Precio Unitario -->
+                        <td style="text-align: right;">
+                            <span class="price-badge">
+                                {{ producto.preciounitario | currency:'S/ ' }}
+                            </span>
                         </td>
-                        <td class="text-center">
-                            <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" size="small"
-                                (onClick)="editProducto(producto)" pTooltip="Editar" />
-                            <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
-                                size="small" (onClick)="deleteProducto(producto)" pTooltip="Eliminar" />
+
+                        <!-- 6. Estado -->
+                        <td style="text-align: center;">
+                            <span class="status-pill active">
+                                <span class="status-dot"></span>
+                                Activo
+                            </span>
+                        </td>
+
+                        <!-- 7. Acciones -->
+                        <td style="text-align: center;">
+                            <div class="actions-group">
+                                <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm btn-edit"
+                                    (click)="editProducto(producto)" pTooltip="Editar Producto" tooltipPosition="top"></button>
+                                <button pButton icon="pi pi-trash" class="p-button-rounded p-button-text p-button-danger p-button-sm btn-delete"
+                                    (click)="deleteProducto(producto)" pTooltip="Eliminar Producto" tooltipPosition="top"></button>
+                            </div>
                         </td>
                     </tr>
                 </ng-template>
 
-                <ng-template #emptymessage>
+                <!-- Estado Vacío -->
+                <ng-template pTemplate="emptymessage">
                     <tr>
-                        <td colspan="6" class="text-center py-8">
-                            <i class="pi pi-inbox text-600 text-4xl mb-3" style="display:block"></i>
-                            <span class="text-600 font-medium">No se encontraron productos</span>
+                        <td colspan="7">
+                            <div class="empty-state-box">
+                                <div class="empty-icon-circle">
+                                    <i class="fa-solid fa-bowl-food"></i>
+                                </div>
+                                <h3>No se encontraron productos</h3>
+                                <p *ngIf="searchTerm">No hay ningún plato que coincida con "{{ searchTerm }}".</p>
+                                <p *ngIf="!searchTerm && selectedCategory">No hay platos registrados en la categoría seleccionada.</p>
+                                <p *ngIf="!searchTerm && !selectedCategory">Aún no hay productos registrados en el menú.</p>
+                                <button pButton label="Crear Nuevo Producto" icon="pi pi-plus" class="btn-create mt-2" (click)="openNew()"></button>
+                            </div>
                         </td>
                     </tr>
                 </ng-template>
             </p-table>
         </div>
+
     </div>
 </div>
 
-<!-- Modal Crear/Editar Producto -->
-<p-dialog [(visible)]="productoDialog" [style]="{ width: '550px' }"
-    [header]="isEditing ? 'Editar Producto' : 'Nuevo Producto'" [modal]="true" [draggable]="false"
-    [position]="'center'">
-
-    <ng-template #content>
-        <div class="dialog-form" [formGroup]="productoForm">
-            <div class="field-group">
-                <label for="nombre" class="field-label">Nombre del Plato *</label>
-                <input type="text" pInputText id="nombre" formControlName="nombre" placeholder="Ej: Ceviche Mixto"
-                    autofocus fluid [class.ng-invalid]="productoForm.get('nombre')?.invalid && submitted" />
-                <small class="text-red-500" *ngIf="submitted && productoForm.get('nombre')?.errors?.['required']">
-                    El nombre es requerido.
-                </small>
-                <small class="text-red-500" *ngIf="submitted && productoForm.get('nombre')?.errors?.['minlength']">
-                    Mínimo 2 caracteres.
-                </small>
+<!-- ── MODAL CREAR / EDITAR PRODUCTO ── -->
+<p-dialog [(visible)]="productoDialog" [style]="{ width: '560px' }" [modal]="true" [draggable]="false" [resizable]="false" styleClass="productos-dialog">
+    <ng-template pTemplate="header">
+        <div class="dialog-header-custom">
+            <div class="dialog-header-icon">
+                <i [class]="isEditing ? 'fa-solid fa-pen-to-square' : 'fa-solid fa-plus'"></i>
             </div>
-
-            <div class="field-group">
-                <label for="idcategoria" class="field-label">Categoría *</label>
-                <p-select formControlName="idcategoria" inputId="idcategoria" [options]="categorias"
-                    optionLabel="nombre" optionValue="idcategoria" placeholder="Seleccione categoría" fluid
-                    [class.ng-invalid]="productoForm.get('idcategoria')?.invalid && submitted" />
-                <small class="text-red-500" *ngIf="submitted && productoForm.get('idcategoria')?.errors?.['required']">
-                    La categoría es requerida.
-                </small>
-            </div>
-
-            <div class="field-row">
-                <div class="field-group">
-                    <label for="acronimo" class="field-label">Acrónimo *</label>
-                    <input type="text" pInputText id="acronimo" formControlName="acronimo" placeholder="Ej: CVM" fluid
-                        [class.ng-invalid]="productoForm.get('acronimo')?.invalid && submitted" />
-                    <small class="text-red-500" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['required']">
-                        Requerido.
-                    </small>
-                    <small class="text-red-500"
-                        *ngIf="submitted && productoForm.get('acronimo')?.errors?.['maxlength']">
-                        Máximo 20 caracteres.
-                    </small>
-                </div>
-                <div class="field-group">
-                    <label for="preciounitario" class="field-label">Precio *</label>
-                    <p-inputnumber id="preciounitario" formControlName="preciounitario" mode="currency" currency="PEN"
-                        locale="es-PE" fluid
-                        [class.ng-invalid]="productoForm.get('preciounitario')?.invalid && submitted" />
-                    <small class="text-red-500"
-                        *ngIf="submitted && productoForm.get('preciounitario')?.errors?.['required']">
-                        Requerido.
-                    </small>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div class="field-group">
-                    <label for="numero_carta" class="field-label">N° Carta</label>
-                    <p-inputnumber id="numero_carta" formControlName="numero_carta" fluid />
-                </div>
-                <div class="field-group"></div>
+            <div>
+                <h3 class="dialog-title">{{ isEditing ? 'Editar Plato / Producto' : 'Nuevo Plato / Producto' }}</h3>
+                <span class="dialog-subtitle">Configure el plato en el catálogo y carta del restaurante</span>
             </div>
         </div>
     </ng-template>
 
-    <ng-template #footer>
-        <p-button label="Cancelar" icon="pi pi-times" text (onClick)="hideDialog()" />
-        <p-button label="Guardar" icon="pi pi-check" (onClick)="saveProducto()" />
+    <ng-template pTemplate="content">
+        <form [formGroup]="productoForm" class="dialog-form-body">
+            <!-- Nombre del Plato -->
+            <div class="form-field">
+                <label for="nombre" class="field-label">Nombre del Plato *</label>
+                <div class="input-container">
+                    <i class="fa-solid fa-utensils input-left-icon"></i>
+                    <input type="text" pInputText id="nombre" formControlName="nombre" placeholder="Ej: Ceviche Mixto Especial"
+                        class="w-full text-input" autofocus [class.ng-invalid]="productoForm.get('nombre')?.invalid && submitted" />
+                </div>
+                <small class="field-error" *ngIf="submitted && productoForm.get('nombre')?.errors?.['required']">
+                    El nombre del plato es obligatorio.
+                </small>
+                <small class="field-error" *ngIf="submitted && productoForm.get('nombre')?.errors?.['minlength']">
+                    Mínimo 2 caracteres.
+                </small>
+            </div>
+
+            <!-- Categoría -->
+            <div class="form-field">
+                <label for="idcategoria" class="field-label">Categoría del Menú *</label>
+                <p-select formControlName="idcategoria" inputId="idcategoria" [options]="categorias"
+                    optionLabel="nombre" optionValue="idcategoria" placeholder="Seleccione la categoría correspondiente"
+                    class="w-full custom-dialog-select" [class.ng-invalid]="productoForm.get('idcategoria')?.invalid && submitted" />
+                <small class="field-error" *ngIf="submitted && productoForm.get('idcategoria')?.errors?.['required']">
+                    Debe seleccionar una categoría.
+                </small>
+            </div>
+
+            <!-- Fila: Acrónimo y Precio -->
+            <div class="form-row">
+                <div class="form-field flex-1">
+                    <label for="acronimo" class="field-label">Acrónimo para Comanda *</label>
+                    <div class="input-container">
+                        <i class="fa-solid fa-font input-left-icon"></i>
+                        <input type="text" pInputText id="acronimo" formControlName="acronimo" placeholder="Ej: CVM"
+                            class="w-full text-input" [class.ng-invalid]="productoForm.get('acronimo')?.invalid && submitted" />
+                    </div>
+                    <small class="field-error" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['required']">
+                        Acrónimo obligatorio.
+                    </small>
+                    <small class="field-error" *ngIf="submitted && productoForm.get('acronimo')?.errors?.['maxlength']">
+                        Máximo 20 caracteres.
+                    </small>
+                </div>
+
+                <div class="form-field flex-1">
+                    <label for="preciounitario" class="field-label">Precio Unitario (S/) *</label>
+                    <p-inputnumber id="preciounitario" formControlName="preciounitario" mode="currency" currency="PEN"
+                        locale="es-PE" class="w-full custom-input-number"
+                        [class.ng-invalid]="productoForm.get('preciounitario')?.invalid && submitted" />
+                    <small class="field-error" *ngIf="submitted && productoForm.get('preciounitario')?.errors?.['required']">
+                        Precio obligatorio.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Fila: N° Carta -->
+            <div class="form-row">
+                <div class="form-field flex-1">
+                    <label for="numero_carta" class="field-label">N° de Posición en Carta</label>
+                    <p-inputnumber id="numero_carta" formControlName="numero_carta" placeholder="Ej: 1, 2, 3..." class="w-full" />
+                    <small class="field-hint">Orden en el que se listará en la carta impresa o digital.</small>
+                </div>
+            </div>
+
+            <!-- Live Preview -->
+            <div class="preview-card" *ngIf="productoForm.get('nombre')?.value">
+                <div class="preview-header">
+                    <i class="fa-solid fa-eye"></i>
+                    <span>Vista previa en comanda y carta:</span>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-left">
+                        <span class="preview-acronym" *ngIf="productoForm.get('acronimo')?.value">{{ productoForm.get('acronimo')?.value }}</span>
+                        <span class="preview-name">{{ productoForm.get('nombre')?.value }}</span>
+                    </div>
+                    <span class="preview-price">{{ (productoForm.get('preciounitario')?.value || 0) | currency:'S/ ' }}</span>
+                </div>
+            </div>
+        </form>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <div class="dialog-footer-actions">
+            <button pButton label="Cancelar" icon="pi pi-times" class="p-button-outlined p-button-secondary btn-dialog-cancel" (click)="hideDialog()"></button>
+            <button pButton [label]="isEditing ? 'Actualizar Producto' : 'Guardar Producto'" icon="pi pi-check" class="btn-dialog-save" (click)="saveProducto()"></button>
+        </div>
     </ng-template>
 </p-dialog>
