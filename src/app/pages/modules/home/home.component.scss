@@ -184,67 +184,71 @@
 /* --- PrimeNG Overrides --- */
 
 /* ===================================================
-   MESA GRID - WARM WOOD RESTAURANT STYLE (BEM)
+   MESA GRID - REALISTIC TOP-DOWN ARCHITECTURAL RESTAURANT
    =================================================== */
 
-// --- VARIABLES (Paleta Suave, Neutra y Moderna) ---
-$color-madera-clara: #d8b48f;
-$color-madera-oscura: #ad7c53;
-$color-turquesa: #10b981; // Verde esmeralda suave (libre)
-$color-rojo: #f43f5e;     // Coral carmesí suave (ocupada)
-$sombra-flotante: 0 8px 18px rgba(0, 0, 0, 0.06);
-$sombra-hover: 0 14px 26px rgba(0, 0, 0, 0.11);
+// --- VARIABLES (Arquitectura Cálida Realista) ---
+$madera-roble-luz: #c48b48;
+$madera-roble-base: #a26b31;
+$madera-roble-sombra: #7d4d1d;
+$madera-roble-borde: #5e3710;
+$madera-nogal-silla: #4a2c14;
+$madera-nogal-oscura: #2a1608;
 
-// --- Container (Mayólica tile pattern suave) ---
+$piso-piedra-base: #24201e;
+$piso-piedra-oscuro: #1a1715;
+$luz-calida-ambar: #f59e0b;
+
+$color-libre: #10b981;
+$color-ocupada: #ef4444;
+$color-reservada: #94a3b8;
+
+$color-madera-clara: #c48b48;
+$color-madera-oscura: #a26b31;
+$sombra-flotante: 0 16px 30px rgba(0, 0, 0, 0.65);
+$sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
+
 :root {
-    --mesa-card-radius: 20px;
-    --mesa-grid-gap-row: 1.3rem;
-    --mesa-grid-gap-col: 1.1rem;
-    --mesa-tile-size: 80px;
-    --mesa-card-max: 137px;
-    --mesa-card-size: 137px;
+    --mesa-card-radius: 12px;
+    --mesa-grid-gap-row: 1.5rem;
+    --mesa-grid-gap-col: 1.3rem;
+    --mesa-card-max: 162px;
 }
 
+// ============================================================
+// PLANO ARQUITECTÓNICO DEL SALÓN (Fondo Piedra Realista con Iluminación)
+// ============================================================
 .mesa-holo-grid {
     position: relative;
     border-radius: 0 0 1rem 1rem;
-    padding: 1.75rem 1.25rem 2.25rem;
-    min-height: 520px;
+    padding: 2.2rem 1.6rem 2.6rem;
+    min-height: 580px;
     display: grid;
-    grid-template-columns: repeat(5, minmax(115px, 137px));
+    grid-template-columns: repeat(5, minmax(130px, 162px));
     grid-template-rows: repeat(3, auto);
-    gap: 1.4rem 1.2rem;
+    gap: 1.6rem 1.3rem;
     justify-items: center;
     justify-content: center;
     align-items: center;
     overflow: hidden;
     transition: all 0.28s ease;
 
-    // ============================================================
-    // FONDO MAYOLICA MODERNO — Suave, relajante para la vista
-    // ============================================================
-    background-color: #f8fafc;
+    // Piso de baldosas arquitectónicas grandes con luz rasante cálida
+    background-color: $piso-piedra-base;
     background-image:
+        linear-gradient(to bottom, rgba($luz-calida-ambar, 0.16) 0%, transparent 75px),
+        linear-gradient(to top, rgba($luz-calida-ambar, 0.12) 0%, transparent 75px),
         repeating-linear-gradient(0deg,
             transparent,
-            transparent 89px,
-            rgba(148, 163, 184, 0.18) 89px,
-            rgba(148, 163, 184, 0.18) 90px),
+            transparent 119px,
+            rgba(255, 255, 255, 0.045) 119px,
+            rgba(255, 255, 255, 0.045) 120px),
         repeating-linear-gradient(90deg,
             transparent,
-            transparent 89px,
-            rgba(148, 163, 184, 0.18) 89px,
-            rgba(148, 163, 184, 0.18) 90px);
-
-    &::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.03);
-        pointer-events: none;
-        z-index: 0;
-    }
+            transparent 119px,
+            rgba(255, 255, 255, 0.045) 119px,
+            rgba(255, 255, 255, 0.045) 120px);
+    box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.75);
 
     >* {
         position: relative;
@@ -253,273 +257,600 @@ $sombra-hover: 0 14px 26px rgba(0, 0, 0, 0.11);
 }
 
 .mesa-holo-grid--piso2 {
-    grid-template-columns: repeat(4, minmax(115px, 137px));
+    grid-template-columns: repeat(4, minmax(130px, 162px));
 }
 
-// Hidden — kept for DOM compatibility
-.holo-scanlines {
-    display: none;
+// Luces ambientales perimetrales (Cove lighting)
+.mesa-ambient-light-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to bottom, rgba($luz-calida-ambar, 0.18), transparent);
+    pointer-events: none;
+    z-index: 0;
 }
 
-.holo-grid-bg {
-    display: none;
+.mesa-ambient-light-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to top, rgba($luz-calida-ambar, 0.14), transparent);
+    pointer-events: none;
+    z-index: 0;
 }
 
-// --- BAR static card ---
+// Jardineras decorativas en las esquinas superiores/inferiores
+.mesa-planter {
+    position: absolute;
+    width: 65px;
+    height: 65px;
+    pointer-events: none;
+    z-index: 1;
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #22c55e 0%, #15803d 50%, #064e3b 85%, #022c22 100%);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7), 0 0 25px rgba($luz-calida-ambar, 0.25);
+        border: 2px solid #241c14;
+    }
+
+    &--top-left {
+        top: 10px;
+        left: 12px;
+    }
+
+    &--top-right {
+        top: 10px;
+        right: 12px;
+    }
+
+    &--bottom-left {
+        bottom: 10px;
+        left: 12px;
+    }
+
+    &--bottom-right {
+        bottom: 10px;
+        right: 12px;
+    }
+}
+
+// Leyenda flotante en la esquina superior derecha
+.mesa-legend-card {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    z-index: 10;
+    background: rgba(12, 10, 8, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    padding: 7px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+    pointer-events: none;
+}
+
+.mesa-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.mesa-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    &--libre {
+        background-color: $color-libre;
+        box-shadow: 0 0 6px $color-libre;
+    }
+
+    &--ocupada {
+        background-color: $color-ocupada;
+        box-shadow: 0 0 6px $color-ocupada;
+    }
+
+    &--reservada {
+        background-color: $color-reservada;
+        box-shadow: 0 0 5px $color-reservada;
+    }
+}
+
+// Marcador de ENTRADA en la fila 3, columna 3
+.mesa-entrance-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 18px 7px;
+    background: linear-gradient(180deg, #23272c, #131518);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 6px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.65);
+    color: #f1f5f9;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    align-self: end;
+    margin-bottom: 2px;
+    pointer-events: none;
+
+    i {
+        font-size: 0.78rem;
+        color: #38bdf8;
+    }
+}
+
+// ============================================================
+// BAR REALISTA CON TABURETES Y LUZ AMBAR
+// ============================================================
 .mesa-bar-card {
     width: 100% !important;
-    max-width: 137px;
+    max-width: 180px;
     display: flex;
     flex-direction: column;
     align-items: center;
     pointer-events: none;
     z-index: 1;
     transition: all 0.28s ease;
+    padding: 6px 0;
 }
 
 .mesa-bar-surface {
     width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: var(--mesa-card-radius);
+    aspect-ratio: 1.85 / 1;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    overflow: hidden;
-    background:
-        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0px, rgba(255, 255, 255, 0.02) 2px, transparent 2px, transparent 6px),
-        linear-gradient(135deg, #785236, #5c3c24);
-    box-shadow: $sombra-flotante, inset 0 2px 4px rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    transition: border-radius 0.28s ease;
+    overflow: visible;
+    background: radial-gradient(ellipse at center, #2b3036 0%, #151719 100%);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow:
+        0 18px 34px rgba(0, 0, 0, 0.72),
+        0 6px 14px rgba(0, 0, 0, 0.55),
+        inset 0 1px 2px rgba(255, 255, 255, 0.35);
+
+    // Vetas sutiles de mármol negro
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background-image:
+            linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.04) 45%, transparent 50%),
+            linear-gradient(-35deg, transparent 60%, rgba(255, 255, 255, 0.03) 65%, transparent 70%);
+        pointer-events: none;
+    }
+}
+
+.mesa-bar-plant {
+    position: absolute;
+    top: 7px;
+    right: 9px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #4ade80 0%, #16a34a 60%, #14532d 100%);
+    border: 1.5px solid #241a11;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
+}
+
+.mesa-bar-title {
+    color: #f8fafc;
+    font-size: clamp(1rem, 1.8vw, 1.28rem);
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 12px rgba(255, 255, 255, 0.45);
+    z-index: 2;
+    position: relative;
+}
+
+.mesa-bar-glow {
+    position: absolute;
+    bottom: -4px;
+    left: 8%;
+    right: 8%;
+    height: 5px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, transparent, $luz-calida-ambar, transparent);
+    box-shadow: 0 6px 20px rgba($luz-calida-ambar, 0.65);
+}
+
+.mesa-bar-stools {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 10px;
+}
+
+.bar-stool {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #3a322c, #16120e);
+    border: 2px solid #5a3d24;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.7);
+    position: relative;
 
     &::after {
         content: '';
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 38%;
-        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), transparent);
-        border-radius: var(--mesa-card-radius) var(--mesa-card-radius) 0 0;
-        pointer-events: none;
-    }
-
-    .mesa__titulo {
-        color: rgba(255, 245, 225, 0.95);
-        font-size: clamp(0.8rem, 1.8vw, 1.1rem);
-        font-weight: 800;
-        letter-spacing: 1.2px;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-        z-index: 1;
+        inset: 2px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.18), transparent 60%);
     }
 }
 
-// --- Card wrapper (positioned in the grid) ---
+// ============================================================
+// CONTENEDOR DE CADA MESA Y SUS SILLAS
+// ============================================================
 .mesa-card-holo {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     cursor: pointer;
     z-index: 1;
     width: 100%;
-    max-width: 137px;
+    max-width: 162px;
+    padding: 13px 14px;
+    box-sizing: border-box;
     transition: all 0.28s ease;
 }
 
-// --- ESTILOS DEL COMPONENTE (.mesa BEM) ---
+// Sillas arquitectónicas con respaldos redondeados de madera y asiento acolchado
+.mesa-chair {
+    position: absolute;
+    z-index: 1;
+    background: linear-gradient(135deg, $madera-nogal-silla, $madera-nogal-oscura);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.22s ease;
+
+    &__cushion {
+        border-radius: inherit;
+        background: radial-gradient(ellipse at center, #2e2620, #17120e);
+        box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15);
+    }
+
+    &--top {
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 54px;
+        height: 14px;
+        border-radius: 8px 8px 3px 3px;
+
+        .mesa-chair__cushion {
+            width: 44px;
+            height: 9px;
+            margin-top: 1px;
+        }
+    }
+
+    &--bottom {
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 54px;
+        height: 14px;
+        border-radius: 3px 3px 8px 8px;
+
+        .mesa-chair__cushion {
+            width: 44px;
+            height: 9px;
+            margin-bottom: 1px;
+        }
+    }
+
+    &--left {
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 14px;
+        height: 54px;
+        border-radius: 8px 3px 3px 8px;
+
+        .mesa-chair__cushion {
+            width: 9px;
+            height: 44px;
+            margin-left: 1px;
+        }
+    }
+
+    &--right {
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 14px;
+        height: 54px;
+        border-radius: 3px 8px 8px 3px;
+
+        .mesa-chair__cushion {
+            width: 9px;
+            height: 44px;
+            margin-right: 1px;
+        }
+    }
+}
+
+// ============================================================
+// TABLERO DE MESA DE ROBLE MACIZO REALISTA
+// ============================================================
 .mesa {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 1.08 / 1;
     height: auto;
     border-radius: var(--mesa-card-radius);
+    z-index: 2;
 
-    // Textura de madera suave, refinada y acogedora
-    background:
-        repeating-linear-gradient(45deg,
-            rgba(255, 255, 255, 0.02) 0px,
-            rgba(255, 255, 255, 0.02) 2px,
-            transparent 2px,
-            transparent 6px),
-        linear-gradient(135deg, $color-madera-clara, $color-madera-oscura);
+    // Textura de madera maciza de roble con iluminación cálida
+    background: radial-gradient(ellipse at 42% 38%,
+            $madera-roble-luz 0%,
+            $madera-roble-base 48%,
+            $madera-roble-sombra 85%,
+            $madera-roble-borde 100%);
 
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    box-shadow: $sombra-flotante, inset 0 2px 4px rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow:
+        0 16px 30px rgba(0, 0, 0, 0.65),
+        0 5px 12px rgba(0, 0, 0, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.42),
+        inset 0 -2px 3px rgba(0, 0, 0, 0.55);
 
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    justify-content: flex-start;
+    padding-top: 5px;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
     cursor: pointer;
     overflow: hidden;
-    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-        box-shadow 0.25s ease;
+    transition: transform 0.24s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        box-shadow 0.24s ease;
 
     &:hover {
-        transform: translateY(-4px) scale(1.02);
-        box-shadow: $sombra-hover, inset 0 2px 4px rgba(255, 255, 255, 0.35);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow:
+            0 22px 38px rgba(0, 0, 0, 0.75),
+            0 8px 16px rgba(0, 0, 0, 0.55),
+            inset 0 1px 2px rgba(255, 255, 255, 0.5);
+
+        .mesa__titulo {
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 1), 0 0 18px rgba(255, 255, 255, 0.85);
+        }
     }
 
-    &__brillo {
+    // Vetas sutiles de la madera
+    &__wood-grain {
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 38%;
-        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent);
-        border-radius: var(--mesa-card-radius) var(--mesa-card-radius) 0 0;
+        inset: 0;
+        border-radius: inherit;
+        background-image:
+            repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 5px),
+            repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.035) 0px, rgba(0, 0, 0, 0.035) 1px, transparent 1px, transparent 9px);
         pointer-events: none;
+        z-index: 1;
     }
 
+    // ============================================================
+    // INSIGNIA FLOTANTE DE VIDRIO: TEXTO DE LA MESA SUPER LLAMATIVO
+    // ============================================================
+    &__badge {
+        position: relative;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 5px 10px 4px;
+        border-radius: 9px;
+        background: rgba(10, 8, 6, 0.78);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+        width: 86%;
+        max-width: 124px;
+        margin-top: 3px;
+    }
+
+    // --- TITULO DE LA MESA: EL MÁS LLAMATIVO DEL SISTEMA ---
     &__titulo {
         color: #ffffff;
-        font-size: clamp(0.7rem, 1.8vw, 1.05rem);
-        font-weight: 800;
-        letter-spacing: 0.8px;
-        margin: 0 0 6px 0;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-        z-index: 1;
+        font-size: clamp(0.96rem, 1.8vw, 1.25rem);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        line-height: 1.15;
+        margin: 0;
+        text-shadow:
+            0 2px 5px rgba(0, 0, 0, 0.95),
+            0 0 14px rgba(255, 255, 255, 0.6);
+        filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.85));
+        transition: all 0.2s ease;
     }
 
+    // --- PASTILLA DE ESTADO DENTRO DE LA INSIGNIA ---
     &__estado {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        padding: 3px 9px;
-        border-radius: 20px;
-        display: flex;
+        display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 5px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        z-index: 1;
+        padding: 2px 8px;
+        border-radius: 14px;
+        transition: all 0.2s ease;
+
+        .mesa--libre & {
+            background: rgba(4, 120, 87, 0.85);
+            border: 1px solid rgba(52, 211, 153, 0.55);
+            box-shadow: 0 2px 6px rgba(4, 120, 87, 0.35);
+
+            .mesa__punto {
+                background-color: #34d399;
+                box-shadow: 0 0 8px #34d399;
+            }
+
+            .mesa__texto {
+                color: #ffffff;
+            }
+        }
+
+        .mesa--ocupada & {
+            background: rgba(185, 28, 28, 0.9);
+            border: 1px solid rgba(248, 113, 113, 0.65);
+            box-shadow: 0 2px 6px rgba(185, 28, 28, 0.4);
+
+            .mesa__punto {
+                background-color: #f87171;
+                box-shadow: 0 0 8px #f87171;
+                animation: pulso-suave 2s infinite ease-in-out;
+            }
+
+            .mesa__texto {
+                color: #ffffff;
+            }
+        }
     }
 
     &__punto {
-        width: 7px;
-        height: 7px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
+        flex-shrink: 0;
     }
 
     &__texto {
-        font-size: clamp(0.52rem, 1.3vw, 0.72rem);
+        font-size: clamp(0.58rem, 1.1vw, 0.68rem);
         font-weight: 700;
         white-space: nowrap;
+        letter-spacing: 0.02em;
     }
 
-    // --- MODIFICADORES DE ESTADO SUAVES ---
-    &--libre {
-        .mesa__punto {
-            background-color: #10b981;
-            box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
-        }
+    // ============================================================
+    // DECORACIÓN CENTRAL: MACETA SUCULENTA + CONDIMENTERO
+    // ============================================================
+    &__decor {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin: 5px 0 3px;
+        pointer-events: none;
+    }
 
-        .mesa__texto {
-            color: #047857;
+    &__plant {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 38% 35%, #4ade80 0%, #16a34a 55%, #14532d 100%);
+        border: 2px solid #291c12;
+        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.6);
+        position: relative;
+
+        &::after {
+            content: '';
+            position: absolute;
+            inset: 2px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.25), transparent 60%);
         }
     }
 
-    &--ocupada {
-        .mesa__punto {
-            background-color: #f43f5e;
-            box-shadow: 0 0 6px rgba(244, 63, 94, 0.4);
-            animation: pulso-suave 2s infinite ease-in-out;
-        }
-
-        .mesa__texto {
-            color: #be123c;
-        }
+    &__cruet {
+        width: 7px;
+        height: 11px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
     }
 
+    // Selección activa de mesa
     &--seleccionada {
-        outline: 3px solid #3b82f6;
+        outline: 3px solid #38bdf8;
         outline-offset: 3px;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25), $sombra-hover;
+        box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.35), 0 20px 38px rgba(0, 0, 0, 0.8) !important;
     }
 }
 
-// --- Legacy class compat (hide unused elements) ---
-.mesa-glow-ring {
-    display: none;
-}
-
-.mesa-icon-wrap {
-    display: none;
-}
-
-.mesa-float-shadow {
-    display: none;
-}
-
-.orbit-ring {
-    display: none;
-}
-
-.orbit-label {
-    display: none;
-}
-
-// --- Info bar (tiempo + total) DENTRO de la mesa — estilo sutil ---
+// ============================================================
+// CÁPSULA FLOTANTE DE TIEMPO + TOTAL (SOLO OCUPADA)
+// ============================================================
 .mesa-info-bar {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 88%;
+    background: rgba(12, 10, 8, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 7px;
+    padding: 3px 6px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 5px 10px;
-    // Overlay semitransparente suave — no tapa la textura de madera
-    background: rgba(0, 0, 0, 0.28);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    // El border-radius inferior coincide con la mesa
-    border-radius: 0 0 var(--mesa-card-radius) var(--mesa-card-radius);
-    z-index: 2;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.65);
+    z-index: 3;
     gap: 4px;
-    min-width: 0;
 }
 
 .mesa-info-time {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: clamp(0.55rem, 1.1vw, 0.65rem);
+    gap: 3px;
+    font-size: clamp(0.55rem, 1.1vw, 0.64rem);
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.72);
-    min-width: 0;
+    color: rgba(255, 255, 255, 0.9);
     white-space: nowrap;
-    overflow: hidden;
 
     i {
         font-size: 0.58rem;
-        color: rgba(255, 255, 255, 0.5);
-        flex-shrink: 0;
+        color: $luz-calida-ambar;
     }
+}
 
-    span {
-        color: rgba(255, 255, 255, 0.85);
-    }
+.mesa-info-sep {
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 0.62rem;
+    font-weight: 300;
 }
 
 .mesa-info-total {
-    font-size: clamp(0.58rem, 1.2vw, 0.68rem);
+    font-size: clamp(0.58rem, 1.1vw, 0.68rem);
     font-weight: 800;
-    color: rgba(255, 255, 255, 0.95);
+    color: #ffffff;
     white-space: nowrap;
-    flex-shrink: 0;
     letter-spacing: 0.02em;
 }
 
-/* ===================================================
-   KEYFRAMES (Suaves y no invasivos)
-   =================================================== */
-
-// Animación de respiración suave para mesas ocupadas
+// --- Keyframes ---
 @keyframes pulso-suave {
     0%, 100% {
         box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
@@ -532,7 +863,6 @@ $sombra-hover: 0 14px 26px rgba(0, 0, 0, 0.11);
     }
 }
 
-// Compatibilidad
 @keyframes pulso-rojo {
     0%, 100% {
         box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
@@ -542,14 +872,14 @@ $sombra-hover: 0 14px 26px rgba(0, 0, 0, 0.11);
     }
 }
 
-// --- PrimeNG Tab Overrides — Estilo Moderno y Limpio ---
+// --- PrimeNG Tab Overrides — Estilo Arquitectónico Realista ---
 :host ::ng-deep {
 
     /* Tab text colors */
     .p-tab,
     .p-tablist-tab-link {
-        color: #64748b !important;
-        --p-tabs-tab-color: #64748b !important;
+        color: #a8a29e !important;
+        --p-tabs-tab-color: #a8a29e !important;
     }
 
     /* Active tab */
@@ -560,15 +890,15 @@ $sombra-hover: 0 14px 26px rgba(0, 0, 0, 0.11);
     .p-tab-active .p-tab,
     [data-p-active="true"] .p-tab,
     [data-p-active="true"] .p-tablist-tab-link {
-        color: #2563eb !important;
-        --p-tabs-tab-color: #2563eb !important;
-        --p-tabs-tab-active-color: #2563eb !important;
+        color: #f59e0b !important;
+        --p-tabs-tab-color: #f59e0b !important;
+        --p-tabs-tab-active-color: #f59e0b !important;
     }
 
     .p-tabview .p-tabview-nav,
     .p-tablist-tab-list {
-        background: #ffffff !important;
-        border-bottom: 1px solid #e2e8f0 !important;
+        background: #1c1917 !important;
+        border-bottom: 1px solid #292524 !important;
         border-radius: 1rem 1rem 0 0 !important;
         padding: 0 1rem !important;
         margin: 0 !important;
@@ -588,9 +918,9 @@ $sombra-hover: 0 14px 26px rgba(0, 0, 0, 0.11);
                 background: transparent !important;
                 border: none !important;
                 border-bottom: 2.5px solid transparent !important;
-                color: #64748b !important;
-                font-weight: 600 !important;
-                font-size: 0.95rem !important;
+                color: #a8a29e !important;
+                font-weight: 700 !important;
+                font-size: 0.92rem !important;
                 padding: 0.85rem 1.4rem !important;
                 margin-bottom: -1px !important;
                 transition: all 0.2s !important;
@@ -602,27 +932,27 @@ $sombra-hover: 0 14px 26px rgba(0, 0, 0, 0.11);
 
             &:not(.p-highlight):not([data-p-active="true"]):not(.p-disabled):hover .p-tabview-nav-link,
             &:not(.p-highlight):not([data-p-active="true"]):not(.p-disabled):hover .p-tablist-tab-link {
-                color: #0f172a !important;
-                background: #f8fafc !important;
-                border-color: #cbd5e1 !important;
+                color: #f5f5f4 !important;
+                background: rgba(255, 255, 255, 0.04) !important;
+                border-color: #57534e !important;
             }
 
             &.p-highlight .p-tabview-nav-link,
             &[data-p-active="true"] .p-tabview-nav-link,
             &[data-p-active="true"] .p-tablist-tab-link,
             &.p-tablist-tab-active .p-tabview-nav-link {
-                color: #2563eb !important;
-                border-color: #2563eb !important;
+                color: #f59e0b !important;
+                border-color: #f59e0b !important;
                 background: transparent !important;
-                --p-tabs-tab-color: #2563eb !important;
-                --p-tabs-tab-active-color: #2563eb !important;
+                --p-tabs-tab-color: #f59e0b !important;
+                --p-tabs-tab-active-color: #f59e0b !important;
             }
 
             &[data-p-active="true"] .p-tab,
             &.p-tab-active .p-tab,
             &.p-highlight .p-tab {
-                color: #2563eb !important;
-                --p-tabs-tab-color: #2563eb !important;
+                color: #f59e0b !important;
+                --p-tabs-tab-color: #f59e0b !important;
             }
         }
     }
@@ -1479,49 +1809,120 @@ $sombra-hover: 0 14px 26px rgba(0, 0, 0, 0.11);
     // ── Estado dinámico: SOLO cuando hay mesa seleccionada (Editar / Cuenta abierta) ──
     &--selected {
         .mesa-holo-grid {
-            grid-template-columns: repeat(5, minmax(65px, 108px));
-            gap: 0.75rem 0.5rem;
-            padding: 1rem 0.5rem 1.25rem;
+            grid-template-columns: repeat(5, minmax(70px, 115px));
+            gap: 0.8rem 0.55rem;
+            padding: 1.2rem 0.6rem 1.4rem;
 
             .mesa-card-holo,
             .mesa-bar-card {
                 width: 100% !important;
-                max-width: 108px;
-                min-width: 65px;
+                max-width: 115px;
+                min-width: 70px;
+                padding: 9px 10px;
+            }
+
+            .mesa-chair--top,
+            .mesa-chair--bottom {
+                width: 38px;
+                height: 10px;
+
+                .mesa-chair__cushion {
+                    width: 30px;
+                    height: 7px;
+                }
+            }
+
+            .mesa-chair--left,
+            .mesa-chair--right {
+                width: 10px;
+                height: 38px;
+
+                .mesa-chair__cushion {
+                    width: 7px;
+                    height: 30px;
+                }
             }
 
             .mesa,
             .mesa-bar-surface {
-                border-radius: 16px;
+                border-radius: 9px;
 
+                .mesa__badge {
+                    padding: 3px 6px;
+                    width: 90%;
+                    margin-top: 2px;
+                }
+
+                // El título de mesa SIGUE SIENDO el más llamativo incluso con panel abierto
                 .mesa__titulo {
-                    font-size: clamp(0.7rem, 1.4vw, 0.88rem);
-                    margin: 0 0 4px 0;
+                    font-size: clamp(0.78rem, 1.4vw, 0.98rem);
+                    font-weight: 900;
+                    margin: 0;
                 }
 
                 .mesa__estado {
-                    padding: 2px 6px;
+                    padding: 1px 5px;
                     gap: 3px;
                 }
 
                 .mesa__punto {
-                    width: 6px;
-                    height: 6px;
+                    width: 5px;
+                    height: 5px;
                 }
 
                 .mesa__texto {
-                    font-size: clamp(0.5rem, 1vw, 0.68rem);
+                    font-size: clamp(0.48rem, 1vw, 0.6rem);
+                }
+
+                .mesa__decor {
+                    margin: 2px 0;
+                    gap: 4px;
+                }
+
+                .mesa__plant {
+                    width: 14px;
+                    height: 14px;
+                }
+
+                .mesa__cruet {
+                    width: 5px;
+                    height: 8px;
                 }
 
                 .mesa-info-bar {
-                    font-size: 0.7rem;
-                    padding: 1px 4px;
+                    font-size: 0.62rem;
+                    padding: 2px 4px;
+                }
+            }
+
+            .mesa-bar-title {
+                font-size: 0.95rem;
+                letter-spacing: 2.5px;
+            }
+
+            .bar-stool {
+                width: 16px;
+                height: 16px;
+            }
+
+            .mesa-entrance-marker {
+                padding: 4px 10px;
+                font-size: 0.52rem;
+                letter-spacing: 2px;
+            }
+
+            .mesa-legend-card {
+                padding: 4px 8px;
+                gap: 3px;
+
+                .mesa-legend-item {
+                    font-size: 0.58rem;
                 }
             }
         }
 
         .mesa-holo-grid--piso2 {
-            grid-template-columns: repeat(4, minmax(65px, 108px));
+            grid-template-columns: repeat(4, minmax(70px, 115px));
         }
     }
 }

@@ -145,7 +145,7 @@
     <!-- CENTER/LEFT: Main Content Area -->
     <div class="order-1 lg:order-1 flex-1 flex h-full overflow-hidden relative">
 
-        <main class="flex-1 h-full overflow-y-auto px-2 lg:px-3 pt-2 pb-6 bg-slate-50/80 custom-scrollbar">
+        <main class="flex-1 h-full overflow-y-auto px-2 lg:px-3 pt-2 pb-6 bg-[#181513] custom-scrollbar">
             <div class="w-full">
 
 
@@ -300,11 +300,45 @@
                             <p-tabPanel header="Primer Piso">
                                 <div class="mesa-holo-grid">
 
-                                    <!-- BAR decorativo -->
+                                    <!-- Luz arquitectónica superior y jardineras -->
+                                    <div class="mesa-ambient-light-top"></div>
+                                    <div class="mesa-planter mesa-planter--top-left"></div>
+                                    <div class="mesa-planter mesa-planter--top-right"></div>
+
+                                    <!-- Leyenda flotante estilo render -->
+                                    <div class="mesa-legend-card">
+                                        <div class="mesa-legend-item">
+                                            <span class="mesa-legend-dot mesa-legend-dot--libre"></span>
+                                            <span>Libre</span>
+                                        </div>
+                                        <div class="mesa-legend-item">
+                                            <span class="mesa-legend-dot mesa-legend-dot--ocupada"></span>
+                                            <span>Ocupada</span>
+                                        </div>
+                                        <div class="mesa-legend-item">
+                                            <span class="mesa-legend-dot mesa-legend-dot--reservada"></span>
+                                            <span>Reservada</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- BAR arquitectónico realista con taburetes -->
                                     <div class="mesa-bar-card" style="grid-column: 3; grid-row: 2;">
                                         <div class="mesa-bar-surface">
-                                            <div class="mesa__titulo">BAR</div>
+                                            <div class="mesa-bar-plant"></div>
+                                            <div class="mesa-bar-title">BAR</div>
+                                            <div class="mesa-bar-glow"></div>
                                         </div>
+                                        <div class="mesa-bar-stools">
+                                            <div class="bar-stool"></div>
+                                            <div class="bar-stool"></div>
+                                            <div class="bar-stool"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ENTRADA arquitectónica en fila 3, col 3 -->
+                                    <div class="mesa-entrance-marker" style="grid-column: 3; grid-row: 3;">
+                                        <i class="pi pi-arrow-up"></i>
+                                        <span>ENTRADA</span>
                                     </div>
 
                                     <ng-container *ngFor="let mesa of mesas">
@@ -313,24 +347,49 @@
                                             [style.grid-column]="getMesaGridCol(mesa.numero, '1')"
                                             [style.grid-row]="getMesaGridRow(mesa.numero, '1')">
 
+                                            <!-- 4 Sillas arquitectónicas realistas alrededor de la mesa -->
+                                            <div class="mesa-chair mesa-chair--top">
+                                                <div class="mesa-chair__cushion"></div>
+                                            </div>
+                                            <div class="mesa-chair mesa-chair--bottom">
+                                                <div class="mesa-chair__cushion"></div>
+                                            </div>
+                                            <div class="mesa-chair mesa-chair--left">
+                                                <div class="mesa-chair__cushion"></div>
+                                            </div>
+                                            <div class="mesa-chair mesa-chair--right">
+                                                <div class="mesa-chair__cushion"></div>
+                                            </div>
+
                                             <div class="mesa" [class.mesa--libre]="estadomesa[mesa.numero]?.value === 0"
                                                 [class.mesa--ocupada]="estadomesa[mesa.numero]?.value === 1"
                                                 [class.mesa--seleccionada]="mesaSeleccionada?.numero == mesa.numero">
-                                                <div class="mesa__brillo"></div>
-                                                <div class="mesa__titulo">MESA {{ mesa.numero }}</div>
-                                                <div class="mesa__estado">
-                                                    <span class="mesa__punto"></span>
-                                                    <span class="mesa__texto">
-                                                        {{ estadomesa[mesa.numero]?.value === 1 ? 'Ocupada' : 'Libre' }}
-                                                    </span>
+                                                <div class="mesa__wood-grain"></div>
+
+                                                <!-- Insignia flotante: TEXTO DE MESA SUPER LLAMATIVO + ESTADO -->
+                                                <div class="mesa__badge">
+                                                    <div class="mesa__titulo">MESA {{ mesa.numero }}</div>
+                                                    <div class="mesa__estado">
+                                                        <span class="mesa__punto"></span>
+                                                        <span class="mesa__texto">
+                                                            {{ estadomesa[mesa.numero]?.value === 1 ? 'Ocupada' : 'Libre' }}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
-                                                <!-- Tiempo + total DENTRO de la mesa (solo ocupada) -->
+                                                <!-- Decoración central de la mesa (Planta suculenta + servilletero/condimento) -->
+                                                <div class="mesa__decor">
+                                                    <div class="mesa__plant"></div>
+                                                    <div class="mesa__cruet"></div>
+                                                </div>
+
+                                                <!-- Tiempo + total DENTRO de la mesa (solo ocupada) estilo cápsula realista -->
                                                 <div class="mesa-info-bar" *ngIf="estadomesa[mesa.numero]?.value === 1">
                                                     <span class="mesa-info-time">
                                                         <i class="pi pi-clock"></i>
                                                         <span>{{ getTiempoTranscurrido(mesa.numero) }}</span>
                                                     </span>
+                                                    <span class="mesa-info-sep">|</span>
                                                     <span class="mesa-info-total">
                                                         S/ {{ getTotalMesa(mesa.numero) }}
                                                     </span>
@@ -338,36 +397,86 @@
                                             </div>
                                         </div>
                                     </ng-container>
+
+                                    <!-- Luz arquitectónica inferior y jardineras -->
+                                    <div class="mesa-ambient-light-bottom"></div>
+                                    <div class="mesa-planter mesa-planter--bottom-left"></div>
+                                    <div class="mesa-planter mesa-planter--bottom-right"></div>
                                 </div>
                             </p-tabPanel>
 
                             <!-- SEGUNDO PISO -->
                             <p-tabPanel header="Segundo Piso">
                                 <div class="mesa-holo-grid mesa-holo-grid--piso2">
+                                    <div class="mesa-ambient-light-top"></div>
+                                    <div class="mesa-planter mesa-planter--top-left"></div>
+                                    <div class="mesa-planter mesa-planter--top-right"></div>
+
+                                    <!-- Leyenda flotante estilo render -->
+                                    <div class="mesa-legend-card">
+                                        <div class="mesa-legend-item">
+                                            <span class="mesa-legend-dot mesa-legend-dot--libre"></span>
+                                            <span>Libre</span>
+                                        </div>
+                                        <div class="mesa-legend-item">
+                                            <span class="mesa-legend-dot mesa-legend-dot--ocupada"></span>
+                                            <span>Ocupada</span>
+                                        </div>
+                                        <div class="mesa-legend-item">
+                                            <span class="mesa-legend-dot mesa-legend-dot--reservada"></span>
+                                            <span>Reservada</span>
+                                        </div>
+                                    </div>
+
                                     <ng-container *ngFor="let mesa of mesas">
                                         <div class="mesa-card-holo" (click)="seleccionarMesa(mesa)"
                                             *ngIf="mesa.numero != '0' && mesa.piso == '2'"
                                             [style.grid-column]="getMesaGridCol(mesa.numero, '2')"
                                             [style.grid-row]="getMesaGridRow(mesa.numero, '2')">
 
+                                            <!-- 4 Sillas arquitectónicas realistas alrededor de la mesa -->
+                                            <div class="mesa-chair mesa-chair--top">
+                                                <div class="mesa-chair__cushion"></div>
+                                            </div>
+                                            <div class="mesa-chair mesa-chair--bottom">
+                                                <div class="mesa-chair__cushion"></div>
+                                            </div>
+                                            <div class="mesa-chair mesa-chair--left">
+                                                <div class="mesa-chair__cushion"></div>
+                                            </div>
+                                            <div class="mesa-chair mesa-chair--right">
+                                                <div class="mesa-chair__cushion"></div>
+                                            </div>
+
                                             <div class="mesa" [class.mesa--libre]="estadomesa[mesa.numero]?.value === 0"
                                                 [class.mesa--ocupada]="estadomesa[mesa.numero]?.value === 1"
                                                 [class.mesa--seleccionada]="mesaSeleccionada?.numero == mesa.numero">
-                                                <div class="mesa__brillo"></div>
-                                                <div class="mesa__titulo">MESA {{ mesa.numero }}</div>
-                                                <div class="mesa__estado">
-                                                    <span class="mesa__punto"></span>
-                                                    <span class="mesa__texto">
-                                                        {{ estadomesa[mesa.numero]?.value === 1 ? 'Ocupada' : 'Libre' }}
-                                                    </span>
+                                                <div class="mesa__wood-grain"></div>
+
+                                                <!-- Insignia flotante: TEXTO DE MESA SUPER LLAMATIVO + ESTADO -->
+                                                <div class="mesa__badge">
+                                                    <div class="mesa__titulo">MESA {{ mesa.numero }}</div>
+                                                    <div class="mesa__estado">
+                                                        <span class="mesa__punto"></span>
+                                                        <span class="mesa__texto">
+                                                            {{ estadomesa[mesa.numero]?.value === 1 ? 'Ocupada' : 'Libre' }}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
-                                                <!-- Tiempo + total DENTRO de la mesa (solo ocupada) -->
+                                                <!-- Decoración central de la mesa (Planta suculenta + servilletero/condimento) -->
+                                                <div class="mesa__decor">
+                                                    <div class="mesa__plant"></div>
+                                                    <div class="mesa__cruet"></div>
+                                                </div>
+
+                                                <!-- Tiempo + total DENTRO de la mesa (solo ocupada) estilo cápsula realista -->
                                                 <div class="mesa-info-bar" *ngIf="estadomesa[mesa.numero]?.value === 1">
                                                     <span class="mesa-info-time">
                                                         <i class="pi pi-clock"></i>
                                                         <span>{{ getTiempoTranscurrido(mesa.numero) }}</span>
                                                     </span>
+                                                    <span class="mesa-info-sep">|</span>
                                                     <span class="mesa-info-total">
                                                         S/ {{ getTotalMesa(mesa.numero) }}
                                                     </span>
@@ -375,6 +484,10 @@
                                             </div>
                                         </div>
                                     </ng-container>
+
+                                    <div class="mesa-ambient-light-bottom"></div>
+                                    <div class="mesa-planter mesa-planter--bottom-left"></div>
+                                    <div class="mesa-planter mesa-planter--bottom-right"></div>
                                 </div>
                             </p-tabPanel>
                         </p-tabView>
