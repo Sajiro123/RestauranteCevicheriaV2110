@@ -333,32 +333,6 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
     }
 }
 
-// Marcador de ENTRADA en la fila 3, columna 3
-.mesa-entrance-marker {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    padding: 6px 18px 7px;
-    background: linear-gradient(180deg, #23272c, #131518);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 6px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.65);
-    color: #f1f5f9;
-    font-size: 0.64rem;
-    font-weight: 800;
-    letter-spacing: 3px;
-    align-self: end;
-    margin-bottom: 2px;
-    pointer-events: none;
-
-    i {
-        font-size: 0.78rem;
-        color: #38bdf8;
-    }
-}
-
 // ============================================================
 // BAR REALISTA CON TABURETES Y LUZ AMBAR
 // ============================================================
@@ -742,15 +716,6 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
             border-radius: 50%;
             background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.25), transparent 60%);
         }
-    }
-
-    &__cruet {
-        width: 7px;
-        height: 11px;
-        border-radius: 2px;
-        background: rgba(255, 255, 255, 0.45);
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
     }
 
     // Selección activa de mesa
@@ -1845,11 +1810,6 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
                     height: 14px;
                 }
 
-                .mesa__cruet {
-                    width: 5px;
-                    height: 8px;
-                }
-
                 .mesa-info-bar {
                     font-size: 0.62rem;
                     padding: 2px 4px;
@@ -1864,12 +1824,6 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
             .bar-stool {
                 width: 16px;
                 height: 16px;
-            }
-
-            .mesa-entrance-marker {
-                padding: 4px 10px;
-                font-size: 0.52rem;
-                letter-spacing: 2px;
             }
 
             .mesa-legend-card {
@@ -2520,9 +2474,10 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
     }
 }
 
-// Ocultar BAR en responsive / tablets
+// Ocultar BAR y leyenda de estados (Libre, Ocupada, Reservada) en responsive / tablets
 @media (max-width: 991px) {
-    .mesa-bar-card {
+    .mesa-bar-card,
+    .mesa-legend-card {
         display: none !important;
     }
 }
@@ -2545,8 +2500,9 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
         min-height: auto !important;
         background-image: none !important;
         
-        // Ocultar el bar en móvil para maximizar espacio de mesas
-        .mesa-bar-card {
+        // Ocultar el bar y la leyenda de estados en móvil para maximizar espacio de mesas
+        .mesa-bar-card,
+        .mesa-legend-card {
             display: none !important;
         }
 

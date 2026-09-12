@@ -333,11 +333,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- ENTRADA arquitectónica en fila 3, col 3 -->
-                                    <div class="mesa-entrance-marker" style="grid-column: 3; grid-row: 3;">
-                                        <i class="pi pi-arrow-up"></i>
-                                        <span>ENTRADA</span>
-                                    </div>
 
                                     <ng-container *ngFor="let mesa of mesas">
                                         <div class="mesa-card-holo" (click)="seleccionarMesa(mesa)"
@@ -375,10 +370,9 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- Decoración central de la mesa (Planta suculenta + servilletero/condimento) -->
+                                                <!-- Decoración central de la mesa (Planta suculenta) -->
                                                 <div class="mesa__decor">
                                                     <div class="mesa__plant"></div>
-                                                    <div class="mesa__cruet"></div>
                                                 </div>
 
                                                 <!-- Tiempo + total DENTRO de la mesa (solo ocupada) estilo cápsula realista -->
@@ -458,10 +452,9 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- Decoración central de la mesa (Planta suculenta + servilletero/condimento) -->
+                                                <!-- Decoración central de la mesa (Planta suculenta) -->
                                                 <div class="mesa__decor">
                                                     <div class="mesa__plant"></div>
-                                                    <div class="mesa__cruet"></div>
                                                 </div>
 
                                                 <!-- Tiempo + total DENTRO de la mesa (solo ocupada) estilo cápsula realista -->
