@@ -2605,10 +2605,27 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
             border-radius: 14px !important;
             border: 1px solid rgba(201, 140, 90, 0.18) !important;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+            scroll-margin-top: 15px;
+
+            &--highlight {
+                border-color: #f59e0b !important;
+                box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.35), 0 8px 30px rgba(0, 0, 0, 0.25) !important;
+                animation: panel-pulse-responsive 1.4s ease-in-out 2 !important;
+            }
+
             &__header { 
                 border-radius: 14px 14px 0 0 !important; 
             }
         }
+    }
+}
+
+@keyframes panel-pulse-responsive {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5), 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(245, 158, 11, 0), 0 10px 32px rgba(245, 158, 11, 0.35);
     }
 }
 

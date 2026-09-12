@@ -479,9 +479,9 @@
                     </div>
 
                     <!-- â”€â”€ COLUMNA DERECHA: Panel de información de la mesa â”€â”€ -->
-                    <div class="mesa-info-col" *ngIf="mesaSeleccionada && pedido_mesa_status">
+                    <div class="mesa-info-col" *ngIf="mesaSeleccionada && pedido_mesa_status" id="mesa-cuenta-panel">
 
-                        <div class="panel-mesa ml-1.5" [class.panel-mesa--highlight]="highlightToolbar">
+                        <div class="panel-mesa ml-1.5" id="panel-mesa-cuenta" [class.panel-mesa--highlight]="highlightToolbar">
 
                             <!-- Cabecera del panel info -->
                             <div class="panel-mesa__header">

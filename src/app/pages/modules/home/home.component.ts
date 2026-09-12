@@ -1380,15 +1380,26 @@ export class HomeComponent {
                 this.highlightToolbar = true;
                 this.cd.detectChanges(); // ensure view updates before scrolling
 
-                const toolbarEl = document.getElementById('action-buttons-toolbar');
-                if (toolbarEl) {
-                    toolbarEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const isResponsive = typeof window !== 'undefined' && window.innerWidth <= 991;
+
+                if (isResponsive) {
+                    setTimeout(() => {
+                        const cuentaEl = document.getElementById('mesa-cuenta-panel') || document.getElementById('panel-mesa-cuenta');
+                        if (cuentaEl) {
+                            cuentaEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 50);
+                } else {
+                    const toolbarEl = document.getElementById('action-buttons-toolbar');
+                    if (toolbarEl) {
+                        toolbarEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
                 }
 
                 setTimeout(() => {
                     this.highlightToolbar = false;
                     this.cd.detectChanges();
-                }, 1500);
+                }, 1800);
             }
         }, 300);
     }
