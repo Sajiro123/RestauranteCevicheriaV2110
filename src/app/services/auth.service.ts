@@ -4,6 +4,7 @@ import { SupabaseService } from './supabase.service';
 import { Router } from '@angular/router';
 import { MenuService } from '../pages/service/menu.service';
 import { SaasMasterService } from './saas-master.service';
+import { environment } from '../../environments/environment';
 
 export interface User {
     idusuario: number | string;
@@ -85,13 +86,53 @@ export class AuthService {
             this.currentUserSubject.next(user);
             this.isAuthenticatedSubject.next(true);
 
-            // Reanudar vigilancia Realtime
+            // Reanudar vigilancia Realtime de sesión y estado
             if (parsed.sessionToken && parsed.idusuario) {
                 this.watchSessionToken(parsed.idusuario, parsed.sessionToken);
+            }
+
+            // Verificar inmediatamente en segundo plano si el usuario o negocio siguen activos
+            if (parsed.idusuario) {
+                this.verifyUserAndTenantActive(parsed.idusuario);
             }
         } catch (err) {
             console.error('Error parsing stored user:', err);
             this.clearLocalSession();
+        }
+    }
+
+    /**
+     * Kill-Switch: Verifica si el usuario o la membresía del restaurante han sido suspendidos
+     */
+    private async verifyUserAndTenantActive(idusuario: number | string) {
+        try {
+            // 1. Verificar estado del usuario en la BD de Supabase
+            const { data: dbUser, error } = await this.supabaseService.client
+                .from('usuario')
+                .select('estado')
+                .eq('idusuario', idusuario)
+                .maybeSingle();
+
+            if (!error && dbUser && (dbUser.estado === '0' || dbUser.estado === 0)) {
+                console.warn('[Auth] Kill-Switch: Usuario detectado como inactivo/suspendido.');
+                this.sessionClosedReason = 'Tu cuenta o membresía ha sido suspendida por administración.';
+                this.logout(true);
+                return;
+            }
+
+            // 2. Verificar estado del Negocio (Tenant) en SaaS Master
+            const subdominio = localStorage.getItem('subdominio') || environment.defaultSubdomain;
+            if (subdominio) {
+                const tenant = await this.saasMasterService.getTenantBySubdomain(subdominio);
+                if (tenant && tenant.estado && tenant.estado !== 'ACTIVO') {
+                    console.warn(`[Auth] Kill-Switch: Negocio ${subdominio} en estado ${tenant.estado}`);
+                    this.sessionClosedReason = `La membresía del restaurante se encuentra ${tenant.estado.toLowerCase()}. Comunícate con soporte para reactivar el servicio.`;
+                    this.logout(true);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.warn('[Auth] Verificación periódica de estado en background completada:', err);
         }
     }
 
@@ -106,7 +147,7 @@ export class AuthService {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Realtime: vigilar session_token
+    // Realtime: vigilar session_token y estado activo
     // ─────────────────────────────────────────────────────────────
 
     private watchSessionToken(idusuario: number | string, myToken: string) {
@@ -130,7 +171,18 @@ export class AuthService {
                 },
                 (payload: any) => {
                     const newToken = payload.new?.session_token;
-                    console.log(`[Auth] Cambio detectado en usuario. Nuevo token: ${newToken?.substring(0, 8)}... | Mi token: ${myToken.substring(0, 8)}...`);
+                    const nuevoEstado = payload.new?.estado;
+                    console.log(`[Auth] Cambio detectado en usuario. Nuevo token: ${newToken?.substring(0, 8)}... | Estado: ${nuevoEstado}`);
+
+                    // Si el estado pasó a inactivo ('0'), expulsar al instante
+                    if (nuevoEstado === '0' || nuevoEstado === 0) {
+                        console.warn('[Auth] ⛔ Kill-Switch activado en tiempo real: Usuario suspendido.');
+                        this.sessionClosedReason = 'Tu cuenta o el acceso al sistema ha sido suspendido por administración.';
+                        this.logout(true);
+                        return;
+                    }
+
+                    // Si se inició sesión desde otro dispositivo
                     if (newToken && newToken !== myToken) {
                         console.warn('[Auth] ⚠️ Sesión desplazada. Cerrando esta sesión...');
                         this.sessionClosedReason = 'Tu sesión fue cerrada porque iniciaste sesión desde otro dispositivo.';

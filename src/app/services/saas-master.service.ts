@@ -224,4 +224,19 @@ export class SaasMasterService {
             throw new Error(msg);
         }
     }
+
+    /**
+     * Consultar estado y plan del negocio (Tenant)
+     */
+    async getTenantBySubdomain(subdominio: string): Promise<any | null> {
+        try {
+            const res = await firstValueFrom(
+                this.http.get<SaasApiResponse<any>>(`${this.apiUrl}/tenants/subdomain/${subdominio}`)
+            );
+            return res.data || null;
+        } catch (error) {
+            console.warn('[SaasMasterService] No se pudo verificar estado del tenant en SaaS Master:', error);
+            return null;
+        }
+    }
 }
