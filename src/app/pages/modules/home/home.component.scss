@@ -283,45 +283,6 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
     z-index: 0;
 }
 
-// Jardineras decorativas en las esquinas superiores/inferiores
-.mesa-planter {
-    position: absolute;
-    width: 65px;
-    height: 65px;
-    pointer-events: none;
-    z-index: 1;
-
-    &::after {
-        content: '';
-        position: absolute;
-        inset: 4px;
-        border-radius: 50%;
-        background: radial-gradient(circle at 35% 35%, #22c55e 0%, #15803d 50%, #064e3b 85%, #022c22 100%);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7), 0 0 25px rgba($luz-calida-ambar, 0.25);
-        border: 2px solid #241c14;
-    }
-
-    &--top-left {
-        top: 10px;
-        left: 12px;
-    }
-
-    &--top-right {
-        top: 10px;
-        right: 12px;
-    }
-
-    &--bottom-left {
-        bottom: 10px;
-        left: 12px;
-    }
-
-    &--bottom-right {
-        bottom: 10px;
-        right: 12px;
-    }
-}
-
 // Leyenda flotante en la esquina superior derecha
 .mesa-legend-card {
     position: absolute;
@@ -2559,6 +2520,13 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
     }
 }
 
+// Ocultar BAR en responsive / tablets
+@media (max-width: 991px) {
+    .mesa-bar-card {
+        display: none !important;
+    }
+}
+
 // ============================================================
 // RESPONSIVE MÓVIL (Solo se aplica en pantallas <= 900px)
 // En PC/Desktop el diseño original permanece 100% intacto.
@@ -2577,14 +2545,19 @@ $sombra-hover: 0 22px 38px rgba(0, 0, 0, 0.75);
         min-height: auto !important;
         background-image: none !important;
         
-        .mesa-card-holo, .mesa-bar-card {
+        // Ocultar el bar en móvil para maximizar espacio de mesas
+        .mesa-bar-card {
+            display: none !important;
+        }
+
+        .mesa-card-holo {
             grid-column: auto !important;
             grid-row: auto !important;
             width: 100% !important;
             max-width: 100% !important;
         }
 
-        .mesa, .mesa-bar-surface {
+        .mesa {
             border-radius: 12px !important;
             aspect-ratio: auto !important;
             min-height: 80px !important;
