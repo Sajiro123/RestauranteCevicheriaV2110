@@ -148,6 +148,7 @@ export class HomeComponent {
     Cobrar_Dialog: boolean = false;
     showComprobanteMenu: boolean = false;
     PDF_Dialog: boolean = false;
+    pdfModalHeader: string = 'Imprimir Comprobante';
     pdfUrl: SafeResourceUrl | null = null;
     CocinaPdf_Dialog: boolean = false;
     eliminarPedidoDialog: boolean = false;
@@ -1371,9 +1372,7 @@ export class HomeComponent {
 
             const pdfBlob = doc.output('blob');
             const pdfBlobUrl = URL.createObjectURL(pdfBlob);
-            // Ajustar el visor del navegador con #view=FitH para que el PDF ocupe el ancho completo y no se vea pequeño
-            this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(`${pdfBlobUrl}#view=FitH&zoom=120`);
-            this.PDF_Dialog = true;
+            this.PDFdescargar(pdfBlobUrl, 'Imprimir Comanda Cocina');
             this.isLoading = false;
         };
 
@@ -1845,7 +1844,7 @@ export class HomeComponent {
 
             const pdfBlob = doc.output('blob');
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            this.PDFdescargar(pdfUrl);
+            this.PDFdescargar(pdfUrl, 'Imprimir Ticket');
             this.isLoading = false;
         };
 
@@ -2413,7 +2412,7 @@ export class HomeComponent {
         }
 
         calcHeight += 18; // Total de platos, fin y margen de corte
-        const finalHeight = Math.max(65, Math.ceil(calcHeight));
+        const finalHeight = Math.max(125, Math.ceil(calcHeight));
 
         const doc = new jsPDF({
             orientation: 'portrait',
@@ -2626,7 +2625,7 @@ export class HomeComponent {
             });
             const pdfBlob = doc.output('blob');
             const pdfUrl = URL.createObjectURL(pdfBlob);
-            this.PDFdescargar(pdfUrl);
+            this.PDFdescargar(pdfUrl, 'Imprimir Comanda Cocina');
             this.isLoading = false;
         };
 
@@ -2686,7 +2685,10 @@ export class HomeComponent {
             }
         });
     }
-    PDFdescargar(pdf: string) {
+    PDFdescargar(pdf: string, header?: string) {
+        if (header) {
+            this.pdfModalHeader = header;
+        }
         this.PDF_Dialog = true;
         this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(pdf);
     }
@@ -2874,7 +2876,7 @@ export class HomeComponent {
 
         const pdfBlob = doc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
-        this.PDFdescargar(pdfUrl);
+        this.PDFdescargar(pdfUrl, 'Imprimir Comanda Cocina');
         this.imprimirPedidoDialog = false; // Cerrar el diálogo después de imprimir
     }
     AddKeyPress(e: Event | undefined, buscarPlato: string) {

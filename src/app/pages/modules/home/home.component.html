@@ -1508,7 +1508,7 @@
 
 <!-- Modal PDF CLIENTE-->
 <p-dialog [position]="'top'" [(visible)]="PDF_Dialog" [style]="{ width: '500px', height: '880px' }"
-    (onHide)="PDF_Dialog = false" [closeOnEscape]="true" header="Imprimir Cliente" [modal]="true" [draggable]="false"
+    (onHide)="PDF_Dialog = false" [closeOnEscape]="true" [header]="pdfModalHeader || 'Imprimir Comprobante'" [modal]="true" [draggable]="false"
     [resizable]="false" styleClass="p-fluid">
     <div class="pdf-container">
         <iframe *ngIf="pdfUrl" [src]="pdfUrl" width="100%" height="650px" frameborder="0"></iframe>
