@@ -24,4 +24,6 @@ export interface Pedido {
     pedidodetalle?: any;
     persona?: any;
     created_at?: any;
+    cliente?: string;
+    estado_cocina?: number;
 }

@@ -24,17 +24,19 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../../services/supabase.service';
+import { EmpresaService, Empresa } from '../../service/empresa.service';
 
 @Component({
     selector: 'app-home',
     // Remove duplicate imports that are already in ImportsModule
-    imports: [CommonModule, ImportsModule, UniquePipe, OrderByPipe],
+    imports: [CommonModule, ImportsModule, UniquePipe, OrderByPipe, FormsModule],
     providers: [MessageService, ConfirmationService],
     templateUrl: './home.component.html',
     styleUrl: './home.component.scss'
 })
 export class HomeComponent {
     [x: string]: any;
+    empresaData: Empresa | null = null;
     products: Products[] = [];
     @ViewChild('motivoTextarea') motivoTextarea!: ElementRef;
     @ViewChild('multiselect', { static: true }) multiselect!: ElementRef;
@@ -50,6 +52,12 @@ export class HomeComponent {
     selectedMozo: any = null;
     private authSubscription: Subscription | undefined;
     private timeUpdateSubscription: Subscription | undefined;
+
+    // Active orders (pedidos activos) state
+    entregandoPedidos: Set<number> = new Set();
+    pedidosExpandidos: Set<number> = new Set();
+    filtroPedidosActivos: 'todos' | 'mesas' | 'delivery' = 'todos';
+    busquedaPedidosActivos: string = '';
 
     @ViewChild('responsableTextarea') responsableTextarea!: ElementRef;
     multiselectToppings: any[] = [];
@@ -211,7 +219,8 @@ export class HomeComponent {
         public router: Router,
         private aperturaService: AperturaService,
         private http: HttpClient,
-        private supabaseService: SupabaseService
+        private supabaseService: SupabaseService,
+        private empresaService: EmpresaService
     ) {
         this.voucherForm = this.fb.group({
             descripcion: ['Vale de delivery'],
@@ -219,7 +228,41 @@ export class HomeComponent {
         });
     }
 
+    async cargarDatosEmpresa(): Promise<Empresa | null> {
+        if (this.empresaData && this.empresaData.ruc) {
+            return this.empresaData;
+        }
+        try {
+            const res = await this.empresaService.getAll();
+            if (res.data && res.data.length > 0) {
+                this.empresaData = res.data[0];
+                if (this.empresaData) {
+                    if (this.empresaData.nombre_empresa) {
+                        localStorage.setItem('nombre_empresa', this.empresaData.nombre_empresa);
+                    }
+                    if (this.empresaData.ruc) {
+                        localStorage.setItem('empresa_ruc', this.empresaData.ruc);
+                    }
+                    if (this.empresaData.direccion) {
+                        localStorage.setItem('empresa_direccion', this.empresaData.direccion);
+                    }
+                    if (this.empresaData.celular) {
+                        localStorage.setItem('empresa_celular', this.empresaData.celular);
+                    }
+                    if (this.empresaData.imagen) {
+                        localStorage.setItem('logo', this.empresaData.imagen);
+                    }
+                }
+                return this.empresaData;
+            }
+        } catch (err) {
+            console.error('Error al cargar datos de la empresa:', err);
+        }
+        return null;
+    }
+
     async ngOnInit(): Promise<void> {
+        this.cargarDatosEmpresa();
         // 👇 inicializamos en el constructor
         // LoaderComponent.isLoading = true; // Set loading state to true
 
@@ -799,29 +842,6 @@ export class HomeComponent {
         });
     }
 
-    entregarPedido(pedido: any) {
-        this.PedidoService.updateEstadoCocina(pedido.idpedido, 1).subscribe({
-            next: (response) => {
-                this.cargarMesas();
-                this.cd.detectChanges();
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Éxito',
-                    detail: 'Pedido marcado como entregado',
-                    life: 3000
-                });
-            },
-            error: (err) => {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'No se pudo actualizar el estado',
-                    life: 3000
-                });
-            }
-        });
-    }
-
     FunctionButtonPedido(pedido: NuevoPedido) {
         if (this.tipomodal === 'Registrar') {
             this.RegistrarPedido();
@@ -1140,17 +1160,25 @@ export class HomeComponent {
             this.PedidoService.ListarPedidosMesa().subscribe({
                 next: (response) => {
                     if (response.success) {
-                        this.Pedidos = response.data;
-                        if (response.data && response.data.length > 0) {
+                        this.Pedidos = response.data || [];
+                        if (this.Pedidos.length > 0) {
                             Object.values(this.estadomesa).forEach((element: any) => {
                                 if (element.mesa != 0) {
-                                    const hayPedido = this.Pedidos.some((pedido: any) => pedido.mesa == element.mesa);
+                                    const hayPedido = this.Pedidos.some((pedido: any) => 
+                                        String(pedido.mesa).trim() === String(element.mesa).trim() &&
+                                        (pedido.estado === '1' || pedido.estado === 1)
+                                    );
                                     element.value = hayPedido ? 1 : 0;
                                 }
                             });
                         } else {
+                            Object.values(this.estadomesa).forEach((element: any) => {
+                                element.value = 0;
+                            });
                             this.LimpiarNuevoPedido();
                         }
+                        this.estadomesa = { ...this.estadomesa };
+                        this.cd.detectChanges();
                     } else {
                         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al consultar los pedidos de las mesas', life: 3000 });
                     }
@@ -1184,20 +1212,69 @@ export class HomeComponent {
         return pedidos[0].pedidodetalle.reduce((sum: number, element: any) => sum + element.cantidad, 0);
     }
 
+    isEntregando(idpedido: number): boolean {
+        return this.entregandoPedidos.has(idpedido);
+    }
+
+    setFiltroPedidosActivos(filtro: 'todos' | 'mesas' | 'delivery'): void {
+        this.filtroPedidosActivos = filtro;
+    }
+
+    getTotalActiveOrdersCount(): number {
+        if (!this.Pedidos || this.Pedidos.length === 0) return 0;
+        const unique = _.uniqBy(this.Pedidos, 'idpedido');
+        return unique.filter((p: any) => p.estado_cocina != 1).length;
+    }
+
+    getMesasActiveOrdersCount(): number {
+        if (!this.Pedidos || this.Pedidos.length === 0) return 0;
+        const unique = _.uniqBy(this.Pedidos, 'idpedido');
+        return unique.filter((p: any) => p.estado_cocina != 1 && p.mesa != '0').length;
+    }
+
+    getDeliveryActiveOrdersCount(): number {
+        if (!this.Pedidos || this.Pedidos.length === 0) return 0;
+        const unique = _.uniqBy(this.Pedidos, 'idpedido');
+        return unique.filter((p: any) => p.estado_cocina != 1 && p.mesa == '0').length;
+    }
+
     /**
-     * Get unique active orders for the new active orders section.
-     * Groups by idpedido, sorts by created_at (oldest first).
+     * Get unique active orders for the active orders section.
+     * Groups by idpedido, filters out delivered orders (estado_cocina = 1),
+     * applies tab filter and search filter, sorts by created_at (oldest first).
      */
     getActiveUniqueOrders(): Pedido[] {
         if (!this.Pedidos || this.Pedidos.length === 0) return [];
 
-        // Use lodash to get unique by idpedido
         let uniqueOrders = _.uniqBy(this.Pedidos, 'idpedido');
-
-        // Filter out delivered orders (estado_cocina = 1)
         uniqueOrders = uniqueOrders.filter((pedido: any) => pedido.estado_cocina != 1);
 
-        // Sort by created_at ascending (oldest to newest)
+        if (this.filtroPedidosActivos === 'mesas') {
+            uniqueOrders = uniqueOrders.filter((p: any) => p.mesa != '0');
+        } else if (this.filtroPedidosActivos === 'delivery') {
+            uniqueOrders = uniqueOrders.filter((p: any) => p.mesa == '0');
+        }
+
+        if (this.busquedaPedidosActivos && this.busquedaPedidosActivos.trim() !== '') {
+            const query = this.busquedaPedidosActivos.trim().toLowerCase();
+            uniqueOrders = uniqueOrders.filter((p: any) => {
+                const mesa = String(p.mesa || '').toLowerCase();
+                const mozo = String(p.persona?.nombres || '').toLowerCase();
+                const cliente = String(p.cliente || '').toLowerCase();
+                const idpedido = String(p.idpedido || '').toLowerCase();
+                const tienePlato = p.pedidodetalle?.some((d: any) =>
+                    String(d.producto?.nombre || d.nombre || '').toLowerCase().includes(query)
+                );
+                return (
+                    mesa.includes(query) ||
+                    mozo.includes(query) ||
+                    cliente.includes(query) ||
+                    idpedido.includes(query) ||
+                    tienePlato
+                );
+            });
+        }
+
         uniqueOrders.sort((a: any, b: any) => {
             const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
             const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
@@ -1212,16 +1289,173 @@ export class HomeComponent {
      */
     getTiempoTranscurridoPedido(createdAt: string): number {
         if (!createdAt) return 0;
-
-        // Parse the created_at string (which is in UTC or a specific timezone from the database)
-        // Ensure accurate browser-based conversion. The raw format is likely "YYYY-MM-DD HH:mm:ss"
-        const createdTime = new Date(createdAt);
+        const parseable = createdAt.includes('T') ? createdAt : createdAt.replace(' ', 'T');
+        const createdTime = new Date(parseable);
         const currentTime = new Date();
-
         const diffMs = currentTime.getTime() - createdTime.getTime();
         const diffMinutes = Math.floor(diffMs / 60000);
-
         return diffMinutes >= 0 ? diffMinutes : 0;
+    }
+
+    getTiempoBadgeClass(createdAt: string): string {
+        const min = this.getTiempoTranscurridoPedido(createdAt);
+        if (min >= 30) {
+            return 'bg-red-600 text-white animate-pulse border border-red-300 shadow-sm';
+        } else if (min >= 15) {
+            return 'bg-amber-500 text-white border border-amber-300 shadow-sm';
+        } else {
+            return 'bg-emerald-600 text-white border border-emerald-400 shadow-sm';
+        }
+    }
+
+    getTiempoEstadoLabel(createdAt: string): string {
+        const min = this.getTiempoTranscurridoPedido(createdAt);
+        if (min >= 30) {
+            return '¡Demorado!';
+        } else if (min >= 15) {
+            return 'En espera';
+        } else {
+            return 'A tiempo';
+        }
+    }
+
+    getToppingsList(toppings: any): string[] {
+        if (!toppings) return [];
+        if (Array.isArray(toppings)) {
+            return toppings.map((t: any) => (typeof t === 'object' ? t.nombre || '' : String(t))).filter(Boolean);
+        }
+        const tStr = String(toppings).trim();
+        if (!tStr || tStr === '0') return [];
+        const ids = tStr.split(',').map((id: string) => id.trim()).filter((id: string) => id !== '' && id !== '0');
+        return ids.map((id: string) => {
+            const found = this.multiselectToppings.find((t: any) => String(t.idtoppings) === id);
+            return found ? found.nombre : '';
+        }).filter(Boolean);
+    }
+
+    irAMesaDePedido(pedido: any): void {
+        if (!pedido) return;
+        if (pedido.mesa == '0') {
+            this.seleccionarMesa({ numero: '0', estado: '0', pedidos: [], idpedido: pedido.idpedido } as any);
+        } else {
+            const mesaEncontrada = this.mesas.find((m: any) => String(m.numero).trim() === String(pedido.mesa).trim());
+            if (mesaEncontrada) {
+                this.seleccionarMesa(mesaEncontrada);
+            }
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    imprimirComandaDesdeCard(pedido: any): void {
+        if (!pedido) return;
+        this.generateCocinaPDFCard(pedido);
+    }
+
+    generateCocinaPDFCard(pedido: any): void {
+        this.isLoading = true;
+        const targetId = pedido?.idpedido;
+
+        const renderDoc = (dataCocina: any) => {
+            const mesaValue = (dataCocina?.mesa !== undefined && dataCocina?.mesa !== null && dataCocina?.mesa !== '') 
+                ? dataCocina.mesa 
+                : pedido?.mesa;
+
+            const doc = this.generarComandaCocinaPdf({
+                idpedido: dataCocina?.idpedido || targetId,
+                mesa: mesaValue,
+                cliente: dataCocina?.cliente || pedido?.cliente,
+                created_at: dataCocina?.created_at || pedido?.created_at,
+                comentario: dataCocina?.comentario || pedido?.comentario,
+                pedidodetalle: (dataCocina?.pedidodetalle && dataCocina.pedidodetalle.length > 0) ? dataCocina.pedidodetalle : (pedido?.pedidodetalle || [])
+            });
+
+            const pdfBlob = doc.output('blob');
+            const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+            // Ajustar el visor del navegador con #view=FitH para que el PDF ocupe el ancho completo y no se vea pequeño
+            this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(`${pdfBlobUrl}#view=FitH&zoom=120`);
+            this.PDF_Dialog = true;
+            this.isLoading = false;
+        };
+
+        if (!targetId) {
+            renderDoc(pedido);
+            return;
+        }
+
+        this.PedidoService.ShowProductosPdf(targetId, 'cocina').subscribe({
+            next: (response: any) => {
+                let dataCocina = response?.data;
+                if (!dataCocina || !dataCocina.pedidodetalle || dataCocina.pedidodetalle.length === 0) {
+                    dataCocina = pedido;
+                }
+                renderDoc(dataCocina);
+            },
+            error: () => {
+                renderDoc(pedido);
+            }
+        });
+    }
+
+    imprimirTicketDesdeCard(pedido: any): void {
+        if (!pedido) return;
+        this.generatePDF(pedido);
+    }
+
+    toggleExpandirPedido(idpedido: number): void {
+        if (!idpedido) return;
+        if (this.pedidosExpandidos.has(idpedido)) {
+            this.pedidosExpandidos.delete(idpedido);
+        } else {
+            this.pedidosExpandidos.add(idpedido);
+        }
+    }
+
+    isPedidoExpandido(idpedido: number): boolean {
+        return !!idpedido && this.pedidosExpandidos.has(idpedido);
+    }
+
+    entregarPedido(pedido: any): void {
+        if (!pedido || !pedido.idpedido) return;
+        if (this.entregandoPedidos.has(pedido.idpedido)) return;
+
+        this.entregandoPedidos.add(pedido.idpedido);
+
+        this.PedidoService.updateEstadoCocina(pedido.idpedido, 1).subscribe({
+            next: async (response) => {
+                pedido.estado_cocina = 1;
+                if (this.Pedidos && this.Pedidos.length > 0) {
+                    this.Pedidos.forEach((p: any) => {
+                        if (p.idpedido === pedido.idpedido) {
+                            p.estado_cocina = 1;
+                        }
+                    });
+                }
+                this.entregandoPedidos.delete(pedido.idpedido);
+                this.cd.detectChanges();
+
+                const mesaLabel = pedido.mesa == '0' ? 'Delivery' : `Mesa ${pedido.mesa}`;
+                this.messageService.add({
+                    severity: 'success',
+                    summary: '¡Pedido Entregado!',
+                    detail: `Pedido #${pedido.idpedido} (${mesaLabel}) marcado como entregado`,
+                    life: 3000
+                });
+
+                await this.cargarMesas();
+                this.cd.detectChanges();
+            },
+            error: (err) => {
+                this.entregandoPedidos.delete(pedido.idpedido);
+                this.cd.detectChanges();
+                console.error('Error al marcar pedido como entregado:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'No se pudo marcar como entregado',
+                    life: 3000
+                });
+            }
+        });
     }
 
     /**
@@ -1348,11 +1582,12 @@ export class HomeComponent {
         } else {
             this.NuevoPedido.delivery = 0;
             if (this.Pedidos) {
-                var status_array = this.Pedidos.filter((p) => p.mesa == mesa.numero);
+                var status_array = this.Pedidos.filter((p) => String(p.mesa).trim() === String(mesa.numero).trim());
                 if (status_array.length > 0) {
                     this.pedido_mesa_status = true;
                     this.tipomodal = 'Editar';
                 } else {
+                    this.pedido_mesa_status = false;
                     this.tipomodal = 'Registrar';
                     if (this.mozosSeleccionadosApertura && this.mozosSeleccionadosApertura.length === 1) {
                         this.selectMozo(this.mozosSeleccionadosApertura[0]);
@@ -1360,6 +1595,8 @@ export class HomeComponent {
                         this.mozoDialog = true;
                     }
                 }
+            } else {
+                this.pedido_mesa_status = false;
             }
         }
 
@@ -1422,137 +1659,250 @@ export class HomeComponent {
         });
     }
 
-    generatePDF(pedido: NuevoPedido) {
+    async generatePDF(pedido: NuevoPedido) {
         this.isLoading = true;
-        this.loadImageBase64('assets/img/logo.png').then((base64Logo) => {
-            this.PedidoService.ShowProductosPdf(pedido.idpedido, 'ticket').subscribe((response) => {
-                var inicial = 125;
-                var items = response.data?.pedidodetalle?.length || 0;
+        await this.cargarDatosEmpresa();
 
-                const increments = [
-                    { threshold: 4, value: 3 },
-                    { threshold: 5, value: 2 },
-                    { threshold: 6, value: 2 },
-                    { threshold: 7, value: 5 },
-                    { threshold: 8, value: 6 },
-                    { threshold: 9, value: 8 },
-                    { threshold: 10, value: 5 },
-                    { threshold: 11, value: 5 },
-                    { threshold: 12, value: 5 },
-                    { threshold: 13, value: 5 },
-                    { threshold: 14, value: 5 },
-                    { threshold: 15, value: 5 },
-                    { threshold: 16, value: 5 },
-                    { threshold: 17, value: 5 },
-                    { threshold: 18, value: 5 },
-                    { threshold: 19, value: 5 },
-                    { threshold: 20, value: 5 }
-                ];
+        // Determinar logo de la empresa (custom de Datos de la Empresa o fallback a assets)
+        let base64Logo: string | null = null;
+        if (this.empresaData?.imagen && this.empresaData.imagen.startsWith('data:image')) {
+            base64Logo = this.empresaData.imagen;
+        } else {
+            const savedLogo = localStorage.getItem('logo');
+            if (savedLogo && savedLogo.startsWith('data:image')) {
+                base64Logo = savedLogo;
+            } else {
+                base64Logo = await this.loadImageBase64('assets/img/logo.png').catch(() => null);
+            }
+        }
 
-                for (const increment of increments) {
-                    if (items >= increment.threshold) {
-                        inicial += increment.value;
-                    }
-                }
+        let targetId = pedido?.idpedido || this.NuevoPedido?.idpedido;
+        if (!targetId && this.mesaSeleccionada) {
+            const found = this.Pedidos.find((p) => String(p.mesa).trim() === String(this.mesaSeleccionada?.numero).trim());
+            if (found) targetId = found.idpedido;
+        }
 
-                const doc = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: [80, inicial] // Ticket en tamaño pequeño
-                });
+        const renderTicketDoc = (ticketData: any) => {
+            const items = ticketData.pedidodetalle || [];
+            const nombreEmpresa = this.empresaData?.nombre_empresa || localStorage.getItem('nombre_empresa') || 'El Puerto Cevichero de Willy';
+            const rucEmpresa = this.empresaData?.ruc || localStorage.getItem('empresa_ruc') || '20431738806';
+            const direccionEmpresa = this.empresaData?.direccion || localStorage.getItem('empresa_direccion') || '';
+            const celularEmpresa = this.empresaData?.celular || localStorage.getItem('empresa_celular') || '';
 
-                let y = 10;
-                const centerX = 40; // Mitad del ticket (80 mm de ancho)
+            // Estimación dinámica de altura
+            let calcHeight = 8;
+            if (base64Logo) calcHeight += 26;
+            calcHeight += 6;
+            if (rucEmpresa) calcHeight += 3.5;
+            if (direccionEmpresa) calcHeight += (Math.ceil(direccionEmpresa.length / 38) || 1) * 3.5;
+            if (celularEmpresa) calcHeight += 3.5;
+            calcHeight += 6; // Título pre-cuenta
+            calcHeight += 12; // Fecha, Mesa, Cliente
+            calcHeight += 7; // Encabezados columnas
 
-                // Encabezado
-                doc.setFontSize(12);
-                const nombreEmpresa = localStorage.getItem('nombre_empresa') || 'LA EMPRESA';
-                const nombreLines = doc.splitTextToSize(nombreEmpresa, 74);
-                nombreLines.forEach((line: any) => {
-                    doc.text(line, centerX, y, { align: 'center' });
-                    y += 4.5;
-                });
-                y -= 1; // Ajuste de espacio
-                doc.setFontSize(8);
+            items.forEach((elem: any) => {
+                const pNom = (elem.producto?.nombre || elem.nombre || 'PLATO').toUpperCase();
+                const lines = Math.ceil(pNom.length / 22) || 1;
+                calcHeight += Math.max(lines * 3.8, 4.5) + 1.5;
+            });
 
-                doc.text('Nota de Venta: 000-95', centerX, y, { align: 'center' });
+            calcHeight += 18; // Total y separadores
+            calcHeight += 14; // Pie y margen inferior
+
+            const finalHeight = Math.max(75, Math.ceil(calcHeight));
+
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: [80, finalHeight]
+            });
+
+            let y = 6;
+            const centerX = 40;
+
+            // Logo centrado si existe
+            if (base64Logo) {
+                doc.addImage(base64Logo, 'PNG', 28, y, 24, 24);
+                y += 26;
+            }
+
+            // Encabezado empresa
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            const nombreLines = doc.splitTextToSize(nombreEmpresa, 70);
+            nombreLines.forEach((line: string) => {
+                doc.text(line, centerX, y, { align: 'center' });
+                y += 4.5;
+            });
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            if (rucEmpresa) {
+                doc.text('RUC: ' + rucEmpresa, centerX, y, { align: 'center' });
                 y += 3.5;
-                const rucEmpresa = localStorage.getItem('empresa_ruc') || '';
-                doc.text('RUC.: ' + rucEmpresa, centerX, y, { align: 'center' });
-                y += 3.5;
-                const direccionEmpresa = localStorage.getItem('empresa_direccion') || '';
-                const direccionLines = doc.splitTextToSize(direccionEmpresa, 74);
-                direccionLines.forEach((line: any) => {
+            }
+            if (direccionEmpresa) {
+                const dirLines = doc.splitTextToSize(direccionEmpresa, 70);
+                dirLines.forEach((line: string) => {
                     doc.text(line, centerX, y, { align: 'center' });
                     y += 3.5;
                 });
-                const celularEmpresa = localStorage.getItem('empresa_celular') || '';
+            }
+            if (celularEmpresa) {
                 doc.text('TEL: ' + celularEmpresa, centerX, y, { align: 'center' });
                 y += 3.5;
-                doc.addImage(base64Logo, 'PNG', 27, 25, 29, 28);
-                y += 28;
+            }
+
+            y += 1;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.text('PRE-CUENTA / TICKET', centerX, y, { align: 'center' });
+            y += 2;
+            doc.setLineWidth(0.3);
+            doc.line(5, y, 75, y);
+            y += 3.5;
+
+            // Datos del pedido
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            const fechaStr = this.formatFechaPeruTicket(new Date());
+            doc.text('Fecha: ' + fechaStr, 5, y);
+            y += 3.5;
+
+            doc.setFont('helvetica', 'bold');
+            const numMesaVal = ticketData.mesa != null ? ticketData.mesa : (this.mesaSeleccionada?.numero || '0');
+            if (numMesaVal == '0') {
+                doc.text('Cliente: ' + (ticketData.cliente || this.NuevoPedido?.cliente || 'Delivery / Llevar'), 5, y);
+            } else {
+                doc.text('Mesa: ' + numMesaVal + (ticketData.cliente ? ` - ${ticketData.cliente}` : ''), 5, y);
+            }
+            y += 2;
+            doc.setLineWidth(0.3);
+            doc.line(5, y, 75, y);
+            y += 3.5;
+
+            // Cabecera de columnas
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.text('CANT', 5, y);
+            doc.text('DESCRIPCIÓN', 16, y);
+            doc.text('TOTAL', 75, y, { align: 'right' });
+            y += 1.5;
+            doc.setLineWidth(0.2);
+            doc.line(5, y, 75, y);
+            y += 3.5;
+
+            // Platos
+            let totalCalculado = 0;
+            items.forEach((element: any) => {
+                const cant = Number(element.cantidad) || 1;
+                const prodNombre = (element.producto?.nombre || element.nombre || 'PLATO').toUpperCase();
+                const pUnit = element.precioU != null ? Number(element.precioU) : (Number(element.preciounitario) || 0);
+                const subtotal = element.total != null ? Number(element.total) : (cant * pUnit);
+                totalCalculado += subtotal;
+
+                // Cantidad
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10);
-                var date = new Date(response.data.created_at);
-                const datePart = date.toLocaleDateString('en-US');
-                const timePart = date.toLocaleTimeString('en-US');
-                // Datos
-                doc.text('Fecha: ' + datePart + ' ' + timePart, 6, y);
-                y += 5;
-                if (response.data.mesa == '0') {
-                    doc.text('Cliente: ' + (response.data.cliente || ''), 6, y);
-                } else {
-                    doc.text('Mesa: ' + response.data.mesa, 6, y);
+                doc.setFontSize(9.5);
+                doc.text(`${cant}`, 5, y);
+
+                // Nombre envuelto (nunca choca con cantidad ni con importe)
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                const nameLines = doc.splitTextToSize(prodNombre, 43);
+                nameLines.forEach((line: string, idx: number) => {
+                    doc.text(line, 16, y + (idx * 3.8));
+                });
+
+                // Importe
+                doc.text(`S/${subtotal.toFixed(2)}`, 75, y, { align: 'right' });
+
+                y += Math.max(nameLines.length * 3.8, 4) + 1.5;
+            });
+
+            // Total
+            doc.setLineWidth(0.3);
+            doc.line(5, y, 75, y);
+            y += 4.5;
+
+            const finalTotal = ticketData.total != null ? Number(ticketData.total) : totalCalculado;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12.5);
+            doc.text('TOTAL: S/' + finalTotal.toFixed(2), 75, y, { align: 'right' });
+            y += 5.5;
+
+            doc.setLineWidth(0.3);
+            doc.line(5, y, 75, y);
+            y += 4;
+
+            // Pie
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.text('¡Gracias por su visita!', centerX, y, { align: 'center' });
+            y += 3.5;
+            doc.setFontSize(7);
+            doc.text('Documento de control interno', centerX, y, { align: 'center' });
+
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            this.PDFdescargar(pdfUrl);
+            this.isLoading = false;
+        };
+
+        if (!targetId) {
+            const fallback = this.NuevoPedido?.pedidodetalle?.length ? this.NuevoPedido : null;
+            if (fallback) {
+                renderTicketDoc(fallback);
+                return;
+            }
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Atención',
+                detail: 'No se encontró un pedido activo para generar el ticket.',
+                life: 3000
+            });
+            this.isLoading = false;
+            return;
+        }
+
+        this.PedidoService.ShowProductosPdf(targetId, 'ticket').subscribe({
+            next: (response) => {
+                let pedidoData = response?.data;
+                if (!pedidoData || !pedidoData.pedidodetalle || pedidoData.pedidodetalle.length === 0) {
+                    const fallback = this.Pedidos.find((p) => p.idpedido == targetId) || this.NuevoPedido;
+                    if (fallback && fallback.pedidodetalle && fallback.pedidodetalle.length > 0) {
+                        pedidoData = fallback;
+                    }
                 }
 
-                y += 4;
-                doc.setFontSize(9);
+                if (!pedidoData) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'No se encontraron datos del pedido para generar el ticket.',
+                        life: 3000
+                    });
+                    this.isLoading = false;
+                    return;
+                }
 
-                // Detalle
-                doc.text('=====================================', centerX, y, { align: 'center' });
-                doc.setFont('helvetica', 'normal');
-
-                y += 5;
-                // doc.text('1 Chicharron Pota Duo        23,00', 5, y);
-                doc.setFontSize(10);
-
-                const data: any = [];
-                response.data.pedidodetalle.forEach((element: any) => {
-                    data.push([element.cantidad, element.producto.nombre, element.precioU * element.cantidad]);
-                });
-
-                data.forEach((element: any) => {
-                    const col1X = 7; // Posición X para la cantidad
-                    const col2X = 12; // Posición X para el nombre del producto
-                    const col3X = 69; // Posición X para el precio (ajusta según necesites)
-
-                    doc.text(element[0].toString(), col1X, y);
-                    doc.text(element[1], col2X, y);
-                    doc.text('S/' + element[2].toString(), col3X, y);
-                    y += 5;
-                });
-
-                y += 4;
-                // Total
-                doc.setFontSize(12);
-                doc.setFont('helvetica', 'bold');
-                doc.text('Sirvase pagar esta cantidad', centerX, y, { align: 'center' });
-                y += 5;
-                doc.text('******************************', centerX, y, { align: 'center' });
-                y += 6;
-                doc.setFontSize(14);
-                doc.text('TOTAL: S/.' + response.data.total, centerX, y, { align: 'center' });
-                y += 6;
-                doc.setFontSize(10);
-                doc.text('******************************', centerX, y, { align: 'center' });
-                y += 10;
-
-                // Cuando la imagen se cargue, agregarla al PDF
-                const pdfBlob = doc.output('blob');
-                const pdfUrl = URL.createObjectURL(pdfBlob);
-                this.PDFdescargar(pdfUrl);
-                this.isLoading = false;
-            });
+                renderTicketDoc(pedidoData);
+            },
+            error: (err) => {
+                console.error('Error al generar ticket, usando fallback:', err);
+                const fallback = this.Pedidos.find((p) => p.idpedido == targetId) || this.NuevoPedido;
+                if (fallback && fallback.pedidodetalle && fallback.pedidodetalle.length > 0) {
+                    renderTicketDoc(fallback);
+                } else {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Error al generar ticket.',
+                        life: 3000
+                    });
+                    this.isLoading = false;
+                }
+            }
         });
     }
 
@@ -1989,223 +2339,351 @@ export class HomeComponent {
         });
     }
 
-    generateCocinaPDF(pedido: any) {
-        this.isLoading = true; // Activar el loader
+    formatFechaPeruTicket(dateInput: any): string {
+        if (!dateInput) return '';
+        const d = new Date(dateInput);
+        if (isNaN(d.getTime())) return '';
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        const dd = pad(d.getDate());
+        const mm = pad(d.getMonth() + 1);
+        const yyyy = d.getFullYear();
+        let hours = d.getHours();
+        const minutes = pad(d.getMinutes());
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        return `${dd}/${mm}/${yyyy}  ${pad(hours)}:${minutes} ${ampm}`;
+    }
 
-        this.PedidoService.ShowProductosPdf(pedido.idpedido, 'cocina').subscribe((response: any) => {
-            this.estadopedido = 0;
-            var inicial = 100;
-            var items = response.data?.pedidodetalle?.length || 0;
+    generarComandaCocinaPdf(input: {
+        idpedido?: any;
+        mesa: any;
+        cliente?: string | null;
+        created_at?: string;
+        comentario?: string | null;
+        pedidodetalle: any[];
+    }): jsPDF {
+        const items = input.pedidodetalle || [];
+        const itemsMesa: any[] = [];
+        const itemsLlevar: any[] = [];
 
-            const increments = [
-                { threshold: 4, value: 3 },
-                { threshold: 5, value: 2 },
-                { threshold: 6, value: 2 },
-                { threshold: 7, value: 5 },
-                { threshold: 8, value: 6 },
-                { threshold: 9, value: 8 },
-                { threshold: 10, value: 5 },
-                { threshold: 11, value: 5 },
-                { threshold: 12, value: 5 },
-                { threshold: 13, value: 5 },
-                { threshold: 14, value: 5 },
-                { threshold: 15, value: 5 },
-                { threshold: 16, value: 5 },
-                { threshold: 17, value: 5 },
-                { threshold: 18, value: 5 },
-                { threshold: 19, value: 5 },
-                { threshold: 20, value: 5 }
-            ];
-
-            for (const increment of increments) {
-                if (items >= increment.threshold) {
-                    inicial += increment.value;
-                }
-            }
-
-            response.data.pedidodetalle.forEach((element: any) => {
-                var toppings = element.toppings;
-                if (toppings && toppings != 0) {
-                    var topings_ = toppings.split(',');
-                    topings_.forEach((elementopping: any) => {
-                        const topping = this.multiselectToppings.find((t: any) => t.idtoppings == elementopping);
-                        if (topping) {
-                            inicial += 3.5; // Sumar 3.5mm por CADA topping que se imprime en nueva línea
-                        }
-                    });
-                }
-                inicial += 4; // Sumar 4mm por la línea separadora que va debajo de cada plato
-            });
-
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: [80, inicial] // Ticket en tamaño pequeño
-            });
-
-            let y = 15;
-            const centerX = 40; // Mitad del ticket (80 mm de ancho)
-            doc.setFont('helvetica', 'bold');
-
-            // Encabezado
-            y += 5;
-
-            doc.setFontSize(14);
-            var date = new Date(response.data.created_at);
-            var datePart = date.toLocaleDateString('en-US');
-            var timePart = date.toLocaleTimeString('en-US');
-            // Datos
-            doc.text('Fecha: ' + datePart + ' ' + timePart, 42, y, { align: 'center' }); // Datos
-            y += 7;
-            if (response.data.mesa == '0') {
-                doc.text('Cliente : ' + response.data.cliente, centerX, y, { align: 'center' });
-                y += 9;
+        items.forEach((item: any) => {
+            if (item.lugarpedido === '1' || item.lugarpedido === 1) {
+                itemsLlevar.push(item);
             } else {
-                doc.text('Mesa: ' + response.data.mesa, 42, y, { align: 'center' });
-                y += 7;
+                itemsMesa.push(item);
             }
+        });
 
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(12);
+        const esDelivery = !input.mesa || input.mesa === '0' || input.mesa === 0;
 
-            const data: any = [];
-
-            response.data.pedidodetalle.forEach((element: any) => {
-                if (element.lugarpedido == '1') {
-                    this.estadopedido = 1; // Para llevar
+        // Función auxiliar para calcular altura de lista de ítems
+        const calcItemsH = (list: any[]) => {
+            let h = 0;
+            list.forEach((elem: any) => {
+                const prodNom = (elem.producto?.nombre || elem.nombre || 'PLATO').toUpperCase();
+                const lines = Math.ceil(prodNom.length / 20) || 1;
+                h += Math.max(lines * 4.2, 4.5);
+                if (elem.toppings && elem.toppings != '0') {
+                    const tIds = elem.toppings.toString().split(',').map((id: string) => id.trim()).filter((id: string) => id !== '' && id !== '0');
+                    h += tIds.length * 3.5;
                 }
-                if (element.lugarpedido == null || element.lugarpedido == '0') data.push([element.cantidad, element.producto.nombre, element.precioU * element.cantidad, element.idpedidodetalle]);
+                h += 4.5;
             });
-            if (data.length > 0) {
-                doc.setFont('helvetica', 'bold');
-                if (response.data.mesa == 0) {
-                    doc.text('PEDIDOS PARA LLEVAR DELIVERY', centerX, y, { align: 'center' });
-                } else {
-                    doc.text('PEDIDOS PARA MESA', centerX, y, { align: 'center' });
-                }
+            return h;
+        };
 
-                y += 5;
-                doc.text('=============================', centerX, y, { align: 'center' });
-                y += 5;
+        // Estimación dinámica de altura total para formato 80mm
+        let calcHeight = 8;
+        calcHeight += 4; // Título comanda
+        calcHeight += esDelivery ? 15 : 13; // Badge mesa / delivery
+        calcHeight += 8; // Fecha y número de pedido
+        calcHeight += 8; // Cabecera de columnas
+
+        if (!esDelivery && itemsMesa.length > 0 && itemsLlevar.length > 0) {
+            calcHeight += 5 + calcItemsH(itemsMesa);
+            calcHeight += 5 + calcItemsH(itemsLlevar);
+        } else {
+            calcHeight += calcItemsH(items);
+        }
+
+        if (input.comentario && input.comentario.trim()) {
+            const comLinesCount = Math.ceil(input.comentario.trim().length / 38) || 1;
+            calcHeight += 6 + (comLinesCount * 3.8) + 4;
+        }
+
+        calcHeight += 18; // Total de platos, fin y margen de corte
+        const finalHeight = Math.max(65, Math.ceil(calcHeight));
+
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: [80, finalHeight]
+        });
+
+        const centerX = 40;
+        let y = 6;
+
+        // Título superior
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('*** COMANDA DE COCINA ***', centerX, y, { align: 'center' });
+        y += 4;
+
+        // Badge destacado de Mesa o Para Llevar
+        const badgeH = esDelivery ? 14 : 12;
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(0, 0, 0);
+        doc.roundedRect(5, y, 70, badgeH, 2, 2, 'S');
+
+        if (!esDelivery) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(17);
+            doc.text(`MESA  ${input.mesa}`, centerX, y + 8, { align: 'center' });
+        } else {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12.5);
+            doc.text('PARA LLEVAR / DELIVERY', centerX, y + 5.5, { align: 'center' });
+            if (input.cliente && input.cliente.trim()) {
                 doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.text(`Cliente: ${input.cliente.trim()}`, centerX, y + 10.5, { align: 'center' });
             }
+        }
+        y += badgeH + 3.5;
 
-            data.forEach((element: any) => {
-                const col1X = 5; // Posición X para la cantidad
-                const col2X = 9; // Posición X para el nombre del producto
-                const col3X = 69; // Posición X para el precio (ajusta según necesites)
+        // Fecha y hora: hora a la que entra a cocina (momento exacto de emision o actualizacion)
+        const fechaStr = this.formatFechaPeruTicket(new Date());
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.text(fechaStr, centerX, y, { align: 'center' });
+        y += 3.5;
 
-                doc.text(element[0].toString(), col1X, y);
-                doc.text(element[1], col2X, y);
-                doc.text('S/' + element[2].toString(), col3X, y);
-                y += 4.5;
+        if (input.idpedido) {
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Pedido N°: #${input.idpedido}`, centerX, y, { align: 'center' });
+            y += 3.5;
+        }
 
-                debugger;
-                // Toppings del plato (debajo del producto)
-                const detalle = response.data.pedidodetalle.find((p: any) => p.idpedidodetalle === element[3] && p.producto.nombre === element[1] && (p.lugarpedido == null || p.lugarpedido == '0'));
-                if (detalle && detalle.toppings && detalle.toppings != 0) {
-                    const toppingIds = detalle.toppings.split(',');
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(8);
-                    toppingIds.forEach((tid: any) => {
+        // Línea divisoria principal
+        doc.setLineWidth(0.4);
+        doc.line(5, y, 75, y);
+        y += 3.5;
+
+        // Cabecera de columnas
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text('CANT', 5, y);
+        doc.text('DESCRIPCIÓN / PLATO', 16, y);
+        doc.text('P.UNIT', 75, y, { align: 'right' });
+        y += 1.5;
+        doc.setLineWidth(0.2);
+        doc.line(5, y, 75, y);
+        y += 3.5;
+
+        // Función para renderizar filas de platos
+        const renderItemList = (list: any[]) => {
+            list.forEach((elem: any) => {
+                const cant = elem.cantidad || 1;
+                const prodNom = (elem.producto?.nombre || elem.nombre || 'PLATO').toUpperCase();
+                const precioU = elem.precioU != null ? Number(elem.precioU).toFixed(2) : '0.00';
+
+                // Cantidad en negrita destacada con espacio seguro
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11.5);
+                doc.text(`${cant}x`, 5, y);
+
+                // Nombre del plato con ajuste de línea (nunca choca con la cantidad ni con el precio)
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                const nameLines = doc.splitTextToSize(prodNom, 43);
+                nameLines.forEach((nLine: string, idx: number) => {
+                    doc.text(nLine, 16, y + (idx * 4.2));
+                });
+
+                // Precio unitario alineado a la derecha
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.text(`S/${precioU}`, 75, y, { align: 'right' });
+
+                y += Math.max(nameLines.length * 4.2, 4.5);
+
+                // Toppings / Modificadores
+                if (elem.toppings && elem.toppings != '0') {
+                    const tIds = elem.toppings.toString().split(',').map((id: string) => id.trim()).filter((id: string) => id !== '' && id !== '0');
+                    tIds.forEach((tid: string) => {
                         const topping = this.multiselectToppings.find((t: any) => t.idtoppings == tid);
                         if (topping) {
-                            const esSin = topping.nombre.toUpperCase().startsWith('SIN');
-                            const prefijo = esSin ? '  >> - ' : '  >> + ';
-                            doc.text(prefijo + topping.nombre, col2X, y);
+                            const nom = topping.nombre.trim().toUpperCase();
+                            const esSin = nom.startsWith('SIN ') || nom.startsWith('NO ');
+                            const esExtra = nom.startsWith('CON ') || nom.includes('EXTRA') || nom.includes('DOBLE');
+                            let prefix = '  [*] ';
+                            if (esSin) prefix = '  [-] ';
+                            else if (esExtra) prefix = '  [+] ';
+
+                            doc.setFont('helvetica', esSin ? 'bold' : 'normal');
+                            doc.setFontSize(8.5);
+                            doc.text(`${prefix}${nom}`, 16, y);
                             y += 3.5;
                         }
                     });
-                    doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(12);
                 }
 
-                // Línea separadora entre platos
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
-                doc.text('-----------------------------------------------------------------------', centerX, y, { align: 'center' });
-                doc.setFontSize(12);
-                y += 4;
+                // Línea divisoria suave punteada entre platos
+                y += 1;
+                doc.setLineWidth(0.15);
+                doc.setLineDashPattern([1, 1], 0);
+                doc.line(5, y, 75, y);
+                doc.setLineDashPattern([], 0);
+                y += 3.5;
             });
+        };
+
+        // Renderizado por sección
+        if (!esDelivery && itemsMesa.length > 0 && itemsLlevar.length > 0) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.text('>> SALÓN / MESA', 5, y);
+            y += 3.5;
+            renderItemList(itemsMesa);
 
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            y += 5;
-            if (this.estadopedido == 1) {
-                doc.text('PEDIDOS PARA LLEVAR', centerX, y, { align: 'center' });
-                y += 5;
-                doc.text('=============================', centerX, y, { align: 'center' });
-
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(12);
-                y += 5;
-                response.data.pedidodetalle.forEach((element: any) => {
-                    if (element.lugarpedido == '1') {
-                        const col1X = 5; // Posición X para la cantidad
-                        const col2X = 9; // Posición X para el nombre del producto
-                        const col3X = 69; // Posición X para el precio (ajusta según necesites)
-                        doc.text(element.cantidad.toString(), col1X, y);
-                        doc.text(element.producto.nombre, col2X, y);
-                        doc.text('S/' + element.precioU.toString(), col3X, y);
-                        y += 4;
-
-                        // Toppings debajo del plato (para llevar)
-                        if (element.toppings && element.toppings != 0) {
-                            const toppingIds = element.toppings.split(',');
-                            doc.setFont('helvetica', 'bold');
-                            doc.setFontSize(8);
-                            toppingIds.forEach((tid: any) => {
-                                const topping = this.multiselectToppings.find((t: any) => t.idtoppings == tid);
-                                if (topping) {
-                                    const esSin = topping.nombre.toUpperCase().startsWith('SIN');
-                                    const prefijo = esSin ? '  >> - ' : '  >> + ';
-                                    doc.text(prefijo + topping.nombre, col2X, y);
-                                    y += 3.5;
-                                }
-                            });
-                            doc.setFont('helvetica', 'normal');
-                            doc.setFontSize(12);
-                        }
-
-                        // Línea separadora entre platos
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(8);
-                        doc.text('-----------------------------------------------------------------------', centerX, y, { align: 'center' });
-                        doc.setFontSize(12);
-                        y += 4;
-                    }
-                });
-            }
-
-            doc.setFontSize(12);
+            doc.setFontSize(9);
+            doc.text('>> PARA LLEVAR', 5, y);
+            y += 3.5;
+            renderItemList(itemsLlevar);
+        } else if (!esDelivery && itemsLlevar.length > 0) {
             doc.setFont('helvetica', 'bold');
-            y += 4;
+            doc.setFontSize(9);
+            doc.text('>> PARA LLEVAR', 5, y);
+            y += 3.5;
+            renderItemList(itemsLlevar);
+        } else {
+            renderItemList(items);
+        }
 
-            doc.text('Comentario :', centerX, y, { align: 'center' });
-            y += 4;
+        // Observaciones / Comentario de cocina
+        if (input.comentario && input.comentario.trim()) {
+            const com = input.comentario.trim();
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
+            const comLines = doc.splitTextToSize(com, 64);
+            const boxH = 6 + (comLines.length * 3.8);
 
-            const maxWidth = 73; // Ancho máximo en unidades del PDF (ajústalo según tu diseño)
-            const comentario = response.data.comentario || ''; // Texto del comentario (o string vacío si es null/undefined)
-            const lines = doc.splitTextToSize(comentario, maxWidth);
-            // Posición inicial (x, y)
-            let x = 5;
-            let currentY = y; // 'y' es la posición vertical inicial que ya tienes definida
+            doc.setLineWidth(0.35);
+            doc.setLineDashPattern([], 0);
+            doc.roundedRect(5, y, 70, boxH, 1.5, 1.5, 'S');
 
-            // Imprimir cada línea
-            lines.forEach((line: string | string[]) => {
-                doc.text(line, x, currentY);
-                currentY += 4; // Espacio entre líneas (ajusta según necesidad)
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.text('OBSERVACIONES / NOTA COCINA:', 7, y + 4);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            let comY = y + 7.8;
+            comLines.forEach((cl: string) => {
+                doc.text(cl, 7, comY);
+                comY += 3.8;
             });
-            y += 5;
-            // (Toppings renderizados ahora debajo de cada plato, se elimina el bloque anterior)
+            y += boxH + 3.5;
+        }
 
-            // Cuando la imagen se cargue, agregarla al PDF
+        // Conteo total y pie
+        const totalPlatos = items.reduce((acc: number, item: any) => acc + (Number(item.cantidad) || 0), 0);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text(`TOTAL PLATOS: ${totalPlatos}`, 5, y);
+        y += 4;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.text('*** FIN COMANDA ***', centerX, y, { align: 'center' });
+
+        return doc;
+
+    }
+
+    generateCocinaPDF(pedido: any) {
+        this.isLoading = true;
+        let targetId = pedido?.idpedido || this.NuevoPedido?.idpedido;
+        if (!targetId && this.mesaSeleccionada) {
+            const found = this.Pedidos.find((p) => String(p.mesa).trim() === String(this.mesaSeleccionada?.numero).trim());
+            if (found) targetId = found.idpedido;
+        }
+
+        const renderCocinaDoc = (dataCocina: any) => {
+            const mesaValue = (dataCocina?.mesa !== undefined && dataCocina?.mesa !== null && dataCocina?.mesa !== '') 
+                ? dataCocina.mesa 
+                : (pedido?.mesa !== undefined && pedido?.mesa !== null ? pedido.mesa : this.mesaSeleccionada?.numero);
+
+            const doc = this.generarComandaCocinaPdf({
+                idpedido: dataCocina?.idpedido || targetId,
+                mesa: mesaValue,
+                cliente: dataCocina?.cliente || pedido?.cliente || this.NuevoPedido?.cliente,
+                created_at: dataCocina?.created_at || pedido?.created_at,
+                comentario: dataCocina?.comentario || pedido?.comentario || this.NuevoPedido?.comentario,
+                pedidodetalle: (dataCocina?.pedidodetalle && dataCocina.pedidodetalle.length > 0) ? dataCocina.pedidodetalle : (pedido?.pedidodetalle || [])
+            });
             const pdfBlob = doc.output('blob');
             const pdfUrl = URL.createObjectURL(pdfBlob);
             this.PDFdescargar(pdfUrl);
-            this.isLoading = false; // Desactivar el loader
+            this.isLoading = false;
+        };
+
+        if (!targetId) {
+            const fallback = this.NuevoPedido?.pedidodetalle?.length ? this.NuevoPedido : null;
+            if (fallback) {
+                renderCocinaDoc(fallback);
+                return;
+            }
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Atención',
+                detail: 'No se encontró un pedido activo para enviar a cocina.',
+                life: 3000
+            });
+            this.isLoading = false;
+            return;
+        }
+
+        this.PedidoService.ShowProductosPdf(targetId, 'cocina').subscribe({
+            next: (response: any) => {
+                let dataCocina = response?.data;
+                if (!dataCocina || !dataCocina.pedidodetalle || dataCocina.pedidodetalle.length === 0) {
+                    const fallback = this.Pedidos.find((p) => p.idpedido == targetId) || this.NuevoPedido;
+                    if (fallback && fallback.pedidodetalle && fallback.pedidodetalle.length > 0) {
+                        dataCocina = fallback;
+                    }
+                }
+
+                if (!dataCocina) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'No se encontraron datos de platos para cocina.',
+                        life: 3000
+                    });
+                    this.isLoading = false;
+                    return;
+                }
+
+                renderCocinaDoc(dataCocina);
+            },
+            error: (err: any) => {
+                console.error('Error al generar comanda de cocina, usando fallback:', err);
+                const fallback = this.Pedidos.find((p) => p.idpedido == targetId) || this.NuevoPedido;
+                if (fallback && fallback.pedidodetalle && fallback.pedidodetalle.length > 0) {
+                    renderCocinaDoc(fallback);
+                } else {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Error al generar comanda de cocina.',
+                        life: 3000
+                    });
+                    this.isLoading = false;
+                }
+            }
         });
     }
     PDFdescargar(pdf: string) {
@@ -2223,78 +2701,54 @@ export class HomeComponent {
 
         let status_array: Pedido[] = [];
         if (numMesa == '0') {
-            status_array = this.Pedidos.filter((p) => p.idpedido == mesaSeleccionada.idpedido).sort((a, b) => {
-                if (a.categoria !== b.categoria) {
-                    return Number(b.categoria) - Number(a.categoria);
-                }
-                return Number(a.categoria) - Number(b.categoria);
-            });
+            status_array = this.Pedidos.filter((p) => p.idpedido == mesaSeleccionada.idpedido);
         } else {
-            status_array = this.Pedidos.filter((p) => p.mesa == numMesa).sort((a, b) => {
-                if (a.categoria !== b.categoria) {
-                    return Number(b.categoria) - Number(a.categoria);
-                }
-                return Number(a.categoria) - Number(b.categoria);
-            });
+            status_array = this.Pedidos.filter((p) => String(p.mesa).trim() === String(numMesa).trim());
         }
 
-        var idtoppingsArray: { idtoppings: number; nombre: string }[] = [];
         if (status_array.length != 0) {
+            const pedidoActual = status_array[0];
+            const detalles = pedidoActual.pedidodetalle || [];
+
             this.NuevoPedido = {
-                idpedido: status_array[0]?.idpedido || 0,
+                idpedido: pedidoActual.idpedido || 0,
                 lugarpedido: undefined,
                 pedido_estado: undefined,
                 nombre: undefined,
-                cantidad: 0,
+                cantidad: detalles.length,
                 descripcion: '',
                 estado: false,
                 lugar: '',
                 preciounitario: 0,
-                total: this.NuevoPedido.pedidodetalle.reduce((sum: number, product: { preciounitario: number; cantidad: number }) => sum + product.preciounitario * product.cantidad, 0),
-                descuento: 0,
-                comentario: '',
-                pedidodetalle: [],
-                visa: 0,
-                yape: 0,
-                plin: 0,
-                efectivo: 0,
-                idmozo: status_array[0]?.persona == null ? null : status_array[0]?.persona.idpersona
+                total: Number(pedidoActual.total) || 0,
+                descuento: Number(pedidoActual.descuento) || 0,
+                comentario: pedidoActual.comentario || '',
+                pedidodetalle: detalles.map((det: any) => ({
+                    idpedidodetalle: det.idpedidodetalle || 0,
+                    idpedido: det.idpedido || pedidoActual.idpedido || 0,
+                    nombre: det.producto?.nombre || det.nombre || 'PLATO',
+                    idproducto: det.idproducto || 0,
+                    preciounitario: det.precioU != null ? Number(det.precioU) : (Number(det.preciounitario) || 0),
+                    cantidad: Number(det.cantidad) || 1,
+                    descripcion: det.descripcion || '',
+                    total: det.total != null ? Number(det.total) : ((Number(det.cantidad) || 1) * (Number(det.precioU) || 0)),
+                    estado: det.estado || false,
+                    lugarpedido: det.lugarpedido || '',
+                    comentario: det.comentario || '',
+                    idtoppings: det.toppings ? det.toppings.toString().split(',').filter((t: string) => t && t !== '0') : [],
+                    id_created_at: undefined,
+                    pedido_estado: undefined,
+                    producto: det.producto
+                })),
+                visa: Number(pedidoActual.visa) || 0,
+                yape: Number(pedidoActual.yape) || 0,
+                plin: Number(pedidoActual.plin) || 0,
+                efectivo: Number(pedidoActual.efectivo) || 0,
+                cliente: (pedidoActual as any).cliente || '',
+                idmozo: pedidoActual.persona == null ? ((pedidoActual as any).idmozo || null) : pedidoActual.persona.idpersona
             };
 
-            this.NuevoPedido.pedidodetalle = status_array.map((pedido) => ({
-                idpedido: pedido.idpedido || 0,
-                nombre: pedido.nombre || '',
-                idproducto: pedido.idproducto || 0,
-                preciounitario: pedido.precioU || 0,
-                cantidad: pedido.cantidad || 0,
-                descripcion: pedido.descripcion || '',
-                total: pedido.total || 0,
-                estado: pedido.estado || false,
-                lugarpedido: pedido.lugarpedido || '',
-                comentario: pedido.comentario || '',
-                idtoppings: idtoppingsArray || [],
-                id_created_at: undefined,
-                idpedidodetalle: 0,
-                pedido_estado: undefined
-            }));
-
-            status_array.forEach((element: any) => {
-                var toppings = element.toppings;
-                if (toppings) {
-                    var topings_ = toppings.split(',');
-                    idtoppingsArray = [];
-                    topings_.forEach((elementopping: any) => {
-                        const topping = this.multiselectToppings.find((t: any) => t.idtoppings == elementopping);
-                        if (topping) idtoppingsArray.push({ idtoppings: topping.idtoppings, nombre: topping.nombre });
-                        const lastDetalle = this.NuevoPedido.pedidodetalle.find((detalle) => detalle.idproducto == element.idproducto);
-                        if (lastDetalle) {
-                            lastDetalle.idtoppings = [...idtoppingsArray];
-                        }
-                    });
-                }
-            });
-
-            this.comentarios = status_array[0].comentario || '';
+            this.comentarios = pedidoActual.comentario || '';
         }
     }
 
@@ -2310,7 +2764,7 @@ export class HomeComponent {
                 if (idpedido > 0) {
                     return this.Pedidos.filter((p) => p.idpedido == mesaSeleccionada.idpedido);
                 } else if (numMesa != '0') {
-                    return this.Pedidos.filter((p) => p.mesa == numMesa);
+                    return this.Pedidos.filter((p) => String(p.mesa).trim() === String(numMesa).trim());
                 }
             } else if (this.mesaSeleccionada) {
                 return [];
@@ -2391,7 +2845,8 @@ export class HomeComponent {
                         ...sel,
                         created_at: pedido.created_at,
                         mesa: pedido.mesa,
-                        comentario: pedido.comentario
+                        comentario: pedido.comentario,
+                        idpedido: pedido.idpedido
                     });
                 });
             }
@@ -2407,183 +2862,15 @@ export class HomeComponent {
             return;
         }
 
-        this.estadopedido = 0;
-        var inicial = 100;
-        var items = this.pedidosSeleccionados.length;
-
-        // Calcular altura adicional por toppings
-        let toppingCount = 0;
-        this.pedidosSeleccionados.forEach((element: any) => {
-            if (element.toppings && element.toppings != '0') {
-                const ids = element.toppings.split(',').filter((id: any) => id.trim() !== '');
-                toppingCount += ids.length;
-            }
+        const first = this.pedidosSeleccionados[0];
+        const doc = this.generarComandaCocinaPdf({
+            idpedido: first?.idpedido || this.NuevoPedido?.idpedido,
+            mesa: first?.mesa || this.mesaSeleccionada?.numero,
+            cliente: this.NuevoPedido?.cliente,
+            created_at: first?.created_at,
+            comentario: first?.comentario || this.NuevoPedido?.comentario,
+            pedidodetalle: this.pedidosSeleccionados
         });
-        inicial += toppingCount * 3.5;
-
-        const increments = [
-            { threshold: 4, value: 3 },
-            { threshold: 5, value: 2 },
-            { threshold: 6, value: 2 },
-            { threshold: 7, value: 5 },
-            { threshold: 8, value: 6 },
-            { threshold: 9, value: 8 },
-            { threshold: 10, value: 5 },
-            { threshold: 11, value: 5 },
-            { threshold: 12, value: 5 },
-            { threshold: 13, value: 5 },
-            { threshold: 14, value: 5 },
-            { threshold: 15, value: 5 },
-            { threshold: 16, value: 5 },
-            { threshold: 17, value: 5 },
-            { threshold: 18, value: 5 },
-            { threshold: 19, value: 5 },
-            { threshold: 20, value: 5 }
-        ];
-
-        for (const increment of increments) {
-            if (items >= increment.threshold) {
-                inicial += increment.value;
-            }
-        }
-
-        const doc = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: [80, inicial] // Ticket en tamaño pequeño
-        });
-
-        let y = 15;
-        const centerX = 40; // Mitad del ticket (80 mm de ancho)
-        doc.setFont('helvetica', 'bold');
-
-        // Encabezado
-        y += 5;
-        doc.setFontSize(14);
-        var date = new Date(this.pedidosSeleccionados[0].created_at);
-        var datePart = date.toLocaleDateString('en-US');
-        var timePart = date.toLocaleTimeString('en-US');
-        // Datos
-        doc.text('Fecha: ' + datePart + ' ' + timePart, 42, y, { align: 'center' });
-        y += 5;
-
-        doc.text('Mesa:' + this.pedidosSeleccionados[0].mesa, 42, y, { align: 'center' });
-        y += 7;
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(12);
-
-        const data: any = [];
-
-        this.pedidosSeleccionados.forEach((element: any) => {
-            if (element.lugarpedido == '1') {
-                this.estadopedido = 1; // Para llevar
-            }
-            if (element.lugarpedido == null || element.lugarpedido == '0') data.push([element.cantidad, element.producto.nombre, element.precioU * element.cantidad, element.idpedidodetalle]);
-        });
-        if (data.length > 0) {
-            doc.setFont('helvetica', 'bold');
-
-            doc.text('PEDIDOS PARA MESA', centerX, y, { align: 'center' });
-            y += 5;
-            doc.text('=============================', centerX, y, { align: 'center' });
-            y += 5;
-            doc.setFont('helvetica', 'normal');
-        }
-        data.forEach((element: any) => {
-            const col1X = 5;
-            const col2X = 9;
-            const col3X = 69;
-
-            doc.text(element[0].toString(), col1X, y);
-            doc.text(element[1], col2X, y);
-            doc.text('S/' + element[2].toString(), col3X, y);
-            y += 4.5;
-
-            // Toppings del plato (debajo del producto)
-            const detalle = this.pedidosSeleccionados.find((p: any) => p.idpedidodetalle === element[3] && p.producto.nombre === element[1] && (p.lugarpedido == null || p.lugarpedido == '0'));
-            if (detalle && detalle.toppings && detalle.toppings != 0) {
-                const toppingIds = detalle.toppings.split(',');
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8);
-                toppingIds.forEach((tid: any) => {
-                    const topping = this.multiselectToppings.find((t: any) => t.idtoppings == tid);
-                    if (topping) {
-                        const esSin = topping.nombre.toUpperCase().startsWith('SIN');
-                        const prefijo = esSin ? '  >> - ' : '  >> + ';
-                        doc.text(prefijo + topping.nombre, col2X, y);
-                        y += 3.5;
-                    }
-                });
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(12);
-            }
-        });
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(12);
-        y += 5;
-        if (this.estadopedido == 1) {
-            doc.text('PEDIDOS PARA LLEVAR', centerX, y, { align: 'center' });
-            y += 5;
-            doc.text('=============================', centerX, y, { align: 'center' });
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(12);
-            y += 5;
-            this.pedidosSeleccionados.forEach((element: any) => {
-                if (element.lugarpedido == '1') {
-                    const col1X = 5;
-                    const col2X = 9;
-                    const col3X = 69;
-                    doc.text(element.cantidad.toString(), col1X, y);
-                    doc.text(element.producto.nombre, col2X, y);
-                    doc.text('S/' + element.precioU.toString(), col3X, y);
-                    y += 4;
-
-                    // Toppings debajo del plato (para llevar)
-                    if (element.toppings && element.toppings != 0) {
-                        const toppingIds = element.toppings.split(',');
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(8);
-                        toppingIds.forEach((tid: any) => {
-                            const topping = this.multiselectToppings.find((t: any) => t.idtoppings == tid);
-                            if (topping) {
-                                const esSin = topping.nombre.toUpperCase().startsWith('SIN');
-                                const prefijo = esSin ? '  >> - ' : '  >> + ';
-                                doc.text(prefijo + topping.nombre, col2X, y);
-                                y += 3.5;
-                            }
-                        });
-                        doc.setFont('helvetica', 'normal');
-                        doc.setFontSize(12);
-                    }
-                }
-            });
-        }
-
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        y += 4;
-
-        doc.text('Comentario :', centerX, y, { align: 'center' });
-        y += 4;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-
-        const maxWidth = 73;
-        const comentario = this.pedidosSeleccionados[0].comentario || '';
-        const lines = doc.splitTextToSize(comentario, maxWidth);
-        let x = 5;
-        let currentY = y;
-
-        lines.forEach((line: string | string[]) => {
-            doc.text(line, x, currentY);
-            currentY += 4;
-        });
-        y += 5;
-
-        // Cuando la imagen se cargue, agregarla al PDF
 
         const pdfBlob = doc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);
