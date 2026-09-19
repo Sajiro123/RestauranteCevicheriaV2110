@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, DebugElement } from '@angular/core';
+import { Router } from '@angular/router';
 import { AperturaService } from '../../service/apertura.service';
 import { PedidoService } from '../../service/pedido.service';
 import { ImportsModule } from '../../imports';
@@ -29,6 +30,9 @@ export class AperturaComponent {
     Resumenventahoy: any = [];
     isSubmitting = false;
     isCerrando = false;
+    isCheckingPedidos = false;
+    pedidosPendientes: any[] = [];
+    pedidosPendientesDialog = false;
     trabajadoresList: any[] = [];
     editDialogVisible = false;
     arqueoDialogVisible = false;
@@ -43,7 +47,8 @@ export class AperturaComponent {
         private fb: FormBuilder,
         private messageService: MessageService,
         private confirmationService: ConfirmationService,
-        private cd: ChangeDetectorRef
+        private cd: ChangeDetectorRef,
+        private router: Router
     ) {
         this.cajaForm = this.fb.group({
             estado: [1],
@@ -134,8 +139,44 @@ export class AperturaComponent {
                 }
             });
         } else if (this.estado_caja == 1) {
-            // ── ESTADO 1 (Abierta): Abrir modal de arqueo ciego ──
-            this.abrirModalArqueo();
+            // ── ESTADO 1 (Abierta): Validar pedidos sin cobrar antes de abrir arqueo ──
+            if (this.isCheckingPedidos) return;
+            this.isCheckingPedidos = true;
+
+            this.pedidoService_.ListarPedidosMesa().subscribe({
+                next: (res: any) => {
+                    this.isCheckingPedidos = false;
+                    const pedidosActivos = (res?.data || []).filter(
+                        (p: any) => (p.estado === '1' || p.estado === 1) && !p.deleted
+                    );
+
+                    if (pedidosActivos.length > 0) {
+                        this.pedidosPendientes = pedidosActivos;
+                        this.pedidosPendientesDialog = true;
+                        this.messageService.add({
+                            severity: 'warn',
+                            summary: 'Cierre bloqueado',
+                            detail: `Existen ${pedidosActivos.length} pedido(s) sin cobrar del día de hoy. Debe cobrarlos o anularlos antes de cerrar caja.`,
+                            life: 6000
+                        });
+                        this.cd.detectChanges();
+                        return;
+                    }
+
+                    this.abrirModalArqueo();
+                    this.cd.detectChanges();
+                },
+                error: (err: any) => {
+                    this.isCheckingPedidos = false;
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error al verificar pedidos',
+                        detail: 'No se pudo comprobar los pedidos pendientes. Intente nuevamente.',
+                        life: 4000
+                    });
+                    this.cd.detectChanges();
+                }
+            });
         }
     }
 
@@ -157,6 +198,45 @@ export class AperturaComponent {
         }
 
         this.isCerrando = true;
+
+        // Doble verificación: comprobar que ningún mozo haya registrado un pedido mientras el arqueo estaba abierto
+        this.pedidoService_.ListarPedidosMesa().subscribe({
+            next: (checkRes: any) => {
+                const pedidosActivos = (checkRes?.data || []).filter(
+                    (p: any) => (p.estado === '1' || p.estado === 1) && !p.deleted
+                );
+
+                if (pedidosActivos.length > 0) {
+                    this.isCerrando = false;
+                    this.arqueoDialogVisible = false;
+                    this.pedidosPendientes = pedidosActivos;
+                    this.pedidosPendientesDialog = true;
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'No se puede cerrar la caja',
+                        detail: `Se detectaron ${pedidosActivos.length} pedido(s) sin cobrar del día de hoy.`,
+                        life: 6000
+                    });
+                    this.cd.detectChanges();
+                    return;
+                }
+
+                this.ejecutarCierreCaja();
+            },
+            error: (err: any) => {
+                this.isCerrando = false;
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al verificar pedidos',
+                    detail: 'No se pudo verificar el estado de los pedidos antes de cerrar.',
+                    life: 4000
+                });
+                this.cd.detectChanges();
+            }
+        });
+    }
+
+    private ejecutarCierreCaja() {
         const fecha = getFechaPeru();
         const payload = {
             fecha: fecha,
@@ -192,6 +272,7 @@ export class AperturaComponent {
                         life: 4000
                     });
                 }
+                this.cd.detectChanges();
             },
             error: (err: any) => {
                 this.isCerrando = false;
@@ -201,8 +282,18 @@ export class AperturaComponent {
                     detail: 'No se pudo procesar el cierre de caja',
                     life: 4000
                 });
+                this.cd.detectChanges();
             }
         });
+    }
+
+    totalPedidosPendientes(): number {
+        return (this.pedidosPendientes || []).reduce((acc: number, p: any) => acc + (Number(p.total) || 0), 0);
+    }
+
+    irAMesas() {
+        this.pedidosPendientesDialog = false;
+        this.router.navigate(['/uikit/mesas']);
     }
 
     verDetalleCierreActual() {

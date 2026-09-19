@@ -110,24 +110,16 @@ export class PedidoService {
                 )
             `
                 )
-                .eq('estado', '1')
                 .eq('idpedido', idpedido)
                 .is('deleted', null)
                 .is('pedidodetalle.deleted', null)
                 .order('mesa')
                 .then(({ data, error }: { data: any; error: any }) => {
-                    if (data && data.length > 0 && funcion == 'cocina') {
-                        const pedido = data[0];
-                        if (pedido.pedidodetalle) {
-                            // Excluir los productos que son de la categoría 5 (Toppings)
-                            // y excluir los taper (numero_carta == 0) para que no salgan en cocina
-                            pedido.pedidodetalle = pedido.pedidodetalle.filter((d: any) => d.idproducto != 85 && d.producto?.idcategoria !== 5);
-                            // MODIFICAR
-                        }
-                        return { success: !error, data: pedido, error };
-                    } else {
-                        return { success: !error, data: data[0], error };
+                    const pedido = data && data.length > 0 ? data[0] : null;
+                    if (pedido && funcion == 'cocina' && pedido.pedidodetalle) {
+                        pedido.pedidodetalle = pedido.pedidodetalle.filter((d: any) => d.idproducto != 85 && d.producto?.idcategoria !== 5);
                     }
+                    return { success: !error && !!pedido, data: pedido, error };
                 })
         );
     }
