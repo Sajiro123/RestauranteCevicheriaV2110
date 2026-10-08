@@ -147,7 +147,8 @@ export class AperturasComponent implements OnInit {
         this.guardando = true;
         const val = this.editForm.value;
 
-        let trabajadoresStr = (val.trabajadores as number[]).join(',');
+        const trabajadoresArr = Array.isArray(val.trabajadores) ? val.trabajadores : [];
+        let trabajadoresStr = trabajadoresArr.join(',');
 
         const { error } = await this.supabase.client
             .from('apertura_caja')

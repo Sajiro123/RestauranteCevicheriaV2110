@@ -107,17 +107,39 @@ export class AuthService {
     private async verifyUserAndTenantActive(idusuario: number | string) {
         try {
             // 1. Verificar estado del usuario en la BD de Supabase
-            const { data: dbUser, error } = await this.supabaseService.client
-                .from('usuario')
-                .select('estado')
-                .eq('idusuario', idusuario)
-                .maybeSingle();
+            // Si idusuario es numérico, consultar por idusuario; si es UUID de SaaS Master, consultar por username
+            const isNumeric = typeof idusuario === 'number' || (!isNaN(Number(idusuario)) && !String(idusuario).includes('-'));
+            if (isNumeric) {
+                const numericId = Number(idusuario);
+                const { data: dbUser, error } = await this.supabaseService.client
+                    .from('usuario')
+                    .select('estado')
+                    .eq('idusuario', numericId)
+                    .maybeSingle();
 
-            if (!error && dbUser && (dbUser.estado === '0' || dbUser.estado === 0)) {
-                console.warn('[Auth] Kill-Switch: Usuario detectado como inactivo/suspendido.');
-                this.sessionClosedReason = 'Tu cuenta o membresía ha sido suspendida por administración.';
-                this.logout(true);
-                return;
+                if (!error && dbUser && (dbUser.estado === '0' || dbUser.estado === 0)) {
+                    console.warn('[Auth] Kill-Switch: Usuario detectado como inactivo/suspendido.');
+                    this.sessionClosedReason = 'Tu cuenta o membresía ha sido suspendida por administración.';
+                    this.logout(true);
+                    return;
+                }
+            } else {
+                const currentU = this.getCurrentUser();
+                if (currentU?.username) {
+                    // Para usuarios autenticados vía SaaS Master con UUID
+                    const { data: dbUser, error } = await this.supabaseService.client
+                        .from('usuario')
+                        .select('estado')
+                        .eq('username', currentU.username)
+                        .maybeSingle();
+
+                    if (!error && dbUser && (dbUser.estado === '0' || dbUser.estado === 0)) {
+                        console.warn('[Auth] Kill-Switch: Usuario detectado como inactivo/suspendido.');
+                        this.sessionClosedReason = 'Tu cuenta o membresía ha sido suspendida por administración.';
+                        this.logout(true);
+                        return;
+                    }
+                }
             }
 
             // 2. Verificar estado del Negocio (Tenant) en SaaS Master

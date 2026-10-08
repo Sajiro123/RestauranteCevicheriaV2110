@@ -1,10 +1,21 @@
 <p-toast position="top-right" />
-<p-confirmDialog [style]="{ width: '450px' }" />
+<p-confirmDialog [style]="{ width: '460px' }" />
 
 <div class="compras-wrapper animate-fadein">
 
-    <!-- ── CABECERA DEL MÓDULO CON PALETA CORPORATIVA (#2b3d52 / #354b65 / #445d7d) ── -->
+    <!-- ── CABECERA PRINCIPAL (ESTILO MAR & MAREA / CEVICHERÍA) ── -->
     <header class="module-header">
+        <div class="header-top-nav">
+            <div class="breadcrumb-tag">
+                <i class="fa-solid fa-anchor"></i>
+                <span>Muelle & Abastecimiento Diario</span>
+            </div>
+            <div class="header-live-badge">
+                <span class="live-dot"></span>
+                <span>Última actualización: Hoy, 06:45 AM (Turno Apertura)</span>
+            </div>
+        </div>
+
         <div class="header-main-row">
             <button type="button" class="btn-back" (click)="goBack()" pTooltip="Volver a Configuración" tooltipPosition="bottom">
                 <i class="pi pi-arrow-left"></i>
@@ -16,324 +27,1033 @@
                     <i class="fa-solid fa-cart-flatbed"></i>
                 </div>
                 <div class="header-title-box">
-                    <h1>Gestor de Compras & Suministros</h1>
-                    <p class="subtitle">Lista y abastecimiento dinámico de insumos, descartables y compras del restaurante</p>
+                    <h1>Lista de Compras del Día — Mercado y Terminal Pesquero</h1>
+                    <p class="subtitle">Registro en tiempo real de insumos faltantes, cálculo dinámico de mermas y kilogramos sugeridos para la partida fría y caliente de cevichería.</p>
                 </div>
+            </div>
+
+            <!-- Botones de Acción de Cabecera -->
+            <div class="header-actions">
+                <button type="button" class="btn-header-wtsp" (click)="abrirModalWhatsappTodosFiltrados()" title="Enviar resumen a WhatsApp">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>Enviar Reporte a WhatsApp</span>
+                </button>
+
+                <button type="button" class="btn-header-add-list" (click)="abrirModalNuevaLista()">
+                    <i class="pi pi-plus"></i>
+                    <span>+ Nueva Lista</span>
+                </button>
+
+                <button type="button" class="btn-header-add-item" (click)="toggleFormRapido()">
+                    <i class="fa-solid fa-plus-circle"></i>
+                    <span>+ Registrar Insumo</span>
+                </button>
             </div>
         </div>
 
-        <!-- ── MÉTRICAS / KPIS DE RESUMEN (PLOMO CORPORATIVO + BORDE NEGRO) ── -->
+        <!-- ── MÉTRICAS / KPIS DE RESUMEN (ESPACIADO MEJORADO) ── -->
         <div class="header-kpis">
-            <div class="kpi-card kpi-total" (click)="filterByEstado('Todos'); filterByCategoria('Todas')" [class.active]="filtroEstado === 'Todos' && filtroCategoria === 'Todas'">
+            <div class="kpi-card kpi-total" (click)="vistaActiva = 'insumos'; filtroCategoria = 'Todas'; filtroListaId = 'todas'">
                 <div class="kpi-icon icon-total">
                     <i class="fa-solid fa-boxes-stacked"></i>
                 </div>
                 <div class="kpi-info">
-                    <span class="kpi-val">{{ totalItems }}</span>
-                    <span class="kpi-lbl">Total Ítems</span>
+                    <div class="kpi-val-row">
+                        <span class="kpi-val">{{ totalItemsFaltantes }}</span>
+                        <span class="kpi-sub-badge urgent-badge" *ngIf="totalItemsUrgentes > 0">{{ totalItemsUrgentes }} Urgentes</span>
+                    </div>
+                    <span class="kpi-lbl">Total Ítems Faltantes</span>
+                    <span class="kpi-subtext">Pedidos con stock crítico para servicio</span>
                 </div>
             </div>
 
-            <div class="kpi-card kpi-pendiente" (click)="filterByEstado('Pendiente')" [class.active]="filtroEstado === 'Pendiente'">
-                <div class="kpi-icon icon-pendiente">
-                    <i class="fa-solid fa-clock"></i>
+            <div class="kpi-card kpi-pescados" (click)="vistaActiva = 'insumos'; filtroCategoria = 'Pescados y Mariscos'">
+                <div class="kpi-icon icon-pescados">
+                    <i class="fa-solid fa-fish"></i>
                 </div>
                 <div class="kpi-info">
-                    <span class="kpi-val">{{ totalPendientes }}</span>
-                    <span class="kpi-lbl">Pendientes</span>
+                    <div class="kpi-val-row">
+                        <span class="kpi-val">{{ totalKgPescados.toFixed(1) }} <small>kg</small></span>
+                        <span class="kpi-sub-badge badge-sugerido">Sugerido</span>
+                    </div>
+                    <span class="kpi-lbl">Pescados & Mariscos Frescos</span>
+                    <span class="kpi-subtext">Corvina, Lenguado, Pulpo • Temp &lt; 2.5°C</span>
                 </div>
             </div>
 
-            <div class="kpi-card kpi-comprado" (click)="filterByEstado('Comprado')" [class.active]="filtroEstado === 'Comprado'">
-                <div class="kpi-icon icon-comprado">
-                    <i class="fa-solid fa-circle-check"></i>
+            <div class="kpi-card kpi-verduras" (click)="vistaActiva = 'insumos'; filtroCategoria = 'Verduras y Tubérculos'">
+                <div class="kpi-icon icon-verduras">
+                    <i class="fa-solid fa-carrot"></i>
                 </div>
                 <div class="kpi-info">
-                    <span class="kpi-val">{{ totalComprados }}</span>
-                    <span class="kpi-lbl">Ya Comprados</span>
+                    <div class="kpi-val-row">
+                        <span class="kpi-val">{{ totalKgVerduras.toFixed(1) }} <small>kg</small></span>
+                    </div>
+                    <span class="kpi-lbl">Verduras y Guarniciones</span>
+                    <span class="kpi-subtext">Cebolla roja, Camote, Choclo, Culantro</span>
                 </div>
             </div>
 
-            <div class="kpi-card kpi-progreso">
-                <div class="kpi-icon icon-progreso">
-                    <i class="fa-solid fa-chart-pie"></i>
+            <div class="kpi-card kpi-listas" (click)="vistaActiva = 'listas'">
+                <div class="kpi-icon icon-listas">
+                    <i class="fa-solid fa-clipboard-list"></i>
                 </div>
                 <div class="kpi-info">
-                    <span class="kpi-val">{{ progreso }}%</span>
-                    <span class="kpi-lbl">Progreso Abastecido</span>
+                    <div class="kpi-val-row">
+                        <span class="kpi-val">{{ listas.length }}</span>
+                        <span class="kpi-sub-badge badge-active">Activas</span>
+                    </div>
+                    <span class="kpi-lbl">Listas Creadas</span>
+                    <span class="kpi-subtext">Listas registradas listas para enviar por WhatsApp</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- ── CARD PRINCIPAL ── -->
+    <!-- ── CARD PRINCIPAL CON ESPACIOS AMPLIOS ── -->
     <div class="content-card">
 
-        <!-- ── BARRA DE PROGRESO CORPORATIVA ── -->
-        <div class="progress-section" *ngIf="items.length > 0">
-            <div class="progress-info-row">
-                <div class="progress-title">
-                    <i class="fa-solid fa-bars-progress"></i>
-                    <span>Estado del Abastecimiento</span>
-                </div>
-                <div class="progress-stats">
-                    <span class="prog-pill pill-pendientes"><strong>{{ totalPendientes }}</strong> pendientes</span>
-                    <span class="prog-pill pill-comprados"><strong>{{ totalComprados }}</strong> comprados</span>
-                    <span class="prog-percentage">{{ progreso }}%</span>
-                </div>
+        <!-- ── TABS SUPERIORES DE MODO (GRILLA DE LISTAS vs INSUMOS OPERATIVOS) ── -->
+        <div class="view-mode-bar">
+            <div class="mode-tabs">
+                <button type="button" class="mode-tab-btn" [class.active]="vistaActiva === 'listas'" (click)="vistaActiva = 'listas'">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Grilla de Listas Ingresadas ({{ listas.length }})</span>
+                    <span class="tab-chip-wtsp"><i class="fa-brands fa-whatsapp"></i> WhatsApp</span>
+                </button>
+
+                <button type="button" class="mode-tab-btn" [class.active]="vistaActiva === 'insumos'" (click)="vistaActiva = 'insumos'">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>Vista Detallada de Insumos ({{ todosLosInsumos.length }})</span>
+                </button>
             </div>
-            <div class="progress-bar-track">
-                <div class="progress-bar-fill" [style.width.%]="progreso"></div>
+
+            <div class="mode-actions">
+                <button type="button" class="btn-cat-top-bar" (click)="abrirModalCatalogo()" title="Ver tabla de insumos registrados para recetas y compras">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Catálogo Insumos ({{ catalogoInsumos.length }})</span>
+                </button>
+                <button type="button" class="btn-create-list-small" (click)="abrirModalNuevaLista()">
+                    <i class="pi pi-plus"></i>
+                    <span>+ Crear Lista de Productos</span>
+                </button>
             </div>
         </div>
 
-        <!-- ── BARRA DE ACCIONES PRINCIPALES Y BÚSQUEDA ── -->
-        <div class="table-toolbar">
-            <div class="toolbar-left">
-                <button type="button" class="btn-create" (click)="toggleFormulario()">
-                    <i [class]="mostrarFormulario ? 'pi pi-times' : 'pi pi-plus'"></i>
-                    <span>{{ mostrarFormulario ? 'Cerrar Formulario' : 'Agregar Ítem' }}</span>
-                </button>
+        <!-- ================================================================= -->
+        <!-- VISTA 1: GRILLA DE LISTAS INGRESADAS (CON FECHA, PRODUCTOS Y WTSP) -->
+        <!-- ================================================================= -->
+        <div class="section-listas-grid animate-fadein" *ngIf="vistaActiva === 'listas'">
 
-                <button type="button" class="btn-tool-action btn-success-action" (click)="marcarSeleccionadosComprado()" [disabled]="totalPendientes === 0" title="Marcar todos los ítems visibles como comprados">
-                    <i class="pi pi-check-circle"></i>
-                    <span>Marcar Pendientes</span>
-                </button>
-
-                <button type="button" class="btn-tool-action btn-warning-action" (click)="limpiarComprados()" [disabled]="totalComprados === 0" title="Eliminar de la lista los que ya fueron comprados">
-                    <i class="pi pi-filter-slash"></i>
-                    <span>Limpiar Comprados</span>
-                </button>
-
-                <button type="button" class="btn-tool-action btn-danger-action" (click)="vaciarLista()" [disabled]="items.length === 0" title="Vaciar toda la lista">
-                    <i class="pi pi-trash"></i>
-                    <span>Vaciar Todo</span>
+            <div class="section-header-banner">
+                <div class="banner-text">
+                    <h2><i class="fa-solid fa-clipboard-list"></i> Grilla de Listas de Compras Ingresadas</h2>
+                    <p>Visualice cuándo fue ingresada cada lista, el conjunto de productos que contiene y envíela al instante por WhatsApp al comprador o proveedor.</p>
+                </div>
+                <button type="button" class="btn-add-list-green" (click)="abrirModalNuevaLista()">
+                    <i class="pi pi-plus-circle"></i>
+                    <span>+ Ingresar Nueva Lista</span>
                 </button>
             </div>
 
-            <div class="toolbar-right">
-                <div class="search-box">
-                    <i class="pi pi-search search-icon"></i>
-                    <input type="text" [(ngModel)]="busqueda" placeholder="Buscar producto o categoría..." class="search-input" />
-                    <button *ngIf="busqueda" type="button" class="btn-clear-search" (click)="busqueda = ''">
+            <!-- Tabla de Listas Creadas con espacios ordenados -->
+            <div class="table-container custom-table-slate">
+                <table class="compras-table" aria-label="Grilla de Listas de Compras">
+                    <thead>
+                        <tr>
+                            <th style="width: 220px">Nombre de la Lista & Destino</th>
+                            <th style="width: 170px">Fecha / Cuándo Ingresó</th>
+                            <th style="width: 170px">Responsable (Empleado)</th>
+                            <th>Conjunto de Productos que Contiene</th>
+                            <th style="width: 100px" class="col-center">Total Ítems</th>
+                            <th style="width: 130px" class="col-center">Estado</th>
+                            <th style="width: 190px" class="col-center">Enviar WhatsApp</th>
+                            <th style="width: 100px" class="col-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let l of listas" class="item-row list-row" [class.row-completado]="l.estado === 'Completado'">
+                            <!-- 1. Nombre & Destino -->
+                            <td>
+                                <div class="list-identity-cell">
+                                    <div class="list-icon-badge">
+                                        <i [class]="getDestinoIcono(l.destino)"></i>
+                                    </div>
+                                    <div class="list-names">
+                                        <strong class="list-title">{{ l.nombre }}</strong>
+                                        <span class="list-dest-tag">{{ l.destino }}</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- 2. Cuándo ingresaron la lista -->
+                            <td>
+                                <div class="fecha-ingreso-cell">
+                                    <div class="fecha-main">
+                                        <i class="fa-regular fa-clock"></i>
+                                        <span>{{ l.fechaDisplay }}</span>
+                                    </div>
+                                    <span class="fecha-iso-hint">{{ l.fechaIngreso | date:'dd/MM/yyyy HH:mm' }}</span>
+                                </div>
+                            </td>
+
+                            <!-- 3. Responsable / Empleado -->
+                            <td>
+                                <div class="responsable-cell">
+                                    <i class="fa-solid fa-user-check"></i>
+                                    <span>{{ l.responsable }}</span>
+                                </div>
+                            </td>
+
+                            <!-- 4. Productos que contiene -->
+                            <td>
+                                <div class="prods-chips-container" *ngIf="l.productos.length > 0">
+                                    <div class="prods-chip" *ngFor="let p of l.productos.slice(0, 3)">
+                                        <span class="chip-emoji">{{ getCategoriaEmoji(p.categoria) }}</span>
+                                        <span class="chip-name">{{ p.nombre }}</span>
+                                        <strong class="chip-qty">({{ p.cantidad }} {{ p.unidad }})</strong>
+                                    </div>
+
+                                    <button *ngIf="l.productos.length > 3" type="button" class="btn-more-prods" (click)="verDetalleLista(l)">
+                                        +{{ l.productos.length - 3 }} más...
+                                    </button>
+                                </div>
+
+                                <!-- Si la lista no tiene productos -->
+                                <div *ngIf="l.productos.length === 0" class="badge-alerta-sin-prods">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <span>Falta ingresar productos</span>
+                                </div>
+                            </td>
+
+                            <!-- 5. Total Ítems -->
+                            <td class="col-center">
+                                <span class="qty-pill" [class.qty-zero]="l.productos.length === 0">
+                                    <i class="fa-solid fa-boxes-stacked"></i>
+                                    {{ l.productos.length }}
+                                </span>
+                            </td>
+
+                            <!-- 6. Estado -->
+                            <td class="col-center">
+                                <span class="status-pill" [class.comprado]="l.estado === 'Completado'" [class.pendiente]="l.estado === 'Pendiente'" [class.en-proceso]="l.estado === 'En Proceso'">
+                                    <i [class]="l.estado === 'Completado' ? 'fa-solid fa-check-double' : (l.estado === 'En Proceso' ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-clock')"></i>
+                                    {{ l.estado }}
+                                </span>
+                            </td>
+
+                            <!-- 7. BOTÓN DE WHATSAPP (WTSP) -->
+                            <td class="col-center">
+                                <button type="button" class="btn-wtsp-row" (click)="abrirModalWhatsappParaLista(l, $event)" title="Enviar esta lista por WhatsApp">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                    <span>Enviar WhatsApp</span>
+                                </button>
+                            </td>
+
+                            <!-- 8. Acciones -->
+                            <td class="col-center">
+                                <div class="row-actions-group">
+                                    <button type="button" class="btn-action-icon btn-view" (click)="verDetalleLista(l)" title="Ver productos de la lista">
+                                        <i class="pi pi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn-action-icon btn-delete" (click)="eliminarLista(l, $event)" title="Eliminar lista">
+                                        <i class="pi pi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Estado vacío -->
+                        <tr *ngIf="listas.length === 0">
+                            <td colspan="8" class="empty-state-cell">
+                                <div class="empty-state-box">
+                                    <div class="empty-state-icon">
+                                        <i class="fa-solid fa-basket-shopping"></i>
+                                    </div>
+                                    <h3 class="empty-state-title">No hay listas de compras registradas</h3>
+                                    <p class="empty-state-desc">Haz clic en <strong>"+ Nueva Lista"</strong> para registrar una lista con su conjunto de productos y poder enviarla por WhatsApp.</p>
+                                    <button type="button" class="btn-add-list-green" (click)="abrirModalNuevaLista()">
+                                        <i class="pi pi-plus"></i> Crear Primera Lista
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- VISTA 2: VISTA DETALLADA DE INSUMOS (ESTILO COMPLETO MAR & MAREA)  -->
+        <!-- ================================================================= -->
+        <div class="section-insumos-detalle animate-fadein" *ngIf="vistaActiva === 'insumos'">
+
+            <!-- ── BARRA RÁPIDA: REGISTRAR INSUMO A LA LISTA MATUTINA (CON ESPACIADO LIMPIO) ── -->
+            <div class="quick-entry-card" *ngIf="mostrarFormRapido">
+                <div class="quick-entry-header">
+                    <div class="qe-title">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>Registrar Insumo a la Lista Matutina</span>
+                    </div>
+                    <span class="qe-hint">Presiona Enter o haz clic en "Agregar" para registrar inmediatamente</span>
+                    <button type="button" class="btn-close-qe" (click)="mostrarFormRapido = false">
                         <i class="pi pi-times"></i>
                     </button>
                 </div>
-            </div>
-        </div>
 
-        <!-- ── CHIPS DE FILTRADO (ESTADOS Y CATEGORÍAS) ── -->
-        <div class="filter-chips-container">
-            <div class="chips-group">
-                <span class="chips-label">Estado:</span>
-                <div class="filter-chips">
-                    <button type="button" class="chip-item" [class.active]="filtroEstado === 'Todos'" (click)="filterByEstado('Todos')">
-                        Todos ({{ totalItems }})
-                    </button>
-                    <button type="button" class="chip-item" [class.active]="filtroEstado === 'Pendiente'" (click)="filterByEstado('Pendiente')">
-                        ⏳ Pendientes ({{ totalPendientes }})
-                    </button>
-                    <button type="button" class="chip-item" [class.active]="filtroEstado === 'Comprado'" (click)="filterByEstado('Comprado')">
-                        ✅ Comprados ({{ totalComprados }})
-                    </button>
+                <div class="quick-entry-body">
+                    <div class="entry-row">
+                        <div class="entry-col col-name">
+                            <label>Insumo & Variedad <span class="req">*</span></label>
+                            <input #inputInsumoNombre type="text" [(ngModel)]="nuevoInsumoNombre" placeholder="ej. Pescado Corvina Fresca..." class="entry-input" (keyup.enter)="agregarInsumoRapido()" />
+                        </div>
+
+                        <div class="entry-col col-list">
+                            <label>Lista Destino</label>
+                            <select [(ngModel)]="nuevoInsumoListaId" class="entry-select">
+                                <option *ngFor="let l of listas" [value]="l.id">📌 {{ l.nombre }}</option>
+                            </select>
+                        </div>
+
+                        <div class="entry-col col-cat">
+                            <label>Categoría</label>
+                            <select [(ngModel)]="nuevoInsumoCategoria" class="entry-select">
+                                <option *ngFor="let c of categoriasDisponibles.slice(1)" [value]="c">{{ c }}</option>
+                            </select>
+                        </div>
+
+                        <div class="entry-col col-stock">
+                            <label>Stock Cámara</label>
+                            <input type="text" [(ngModel)]="nuevoInsumoStockCamara" placeholder="0.0 kg" class="entry-input" />
+                        </div>
+
+                        <div class="entry-col col-qty">
+                            <label>Requerido / Pedido <span class="req">*</span></label>
+                            <div class="qty-unit-group">
+                                <input type="text" [(ngModel)]="nuevoInsumoCantidad" placeholder="10.0" class="entry-input input-qty-num" (keyup.enter)="agregarInsumoRapido()" />
+                                <select [(ngModel)]="nuevoInsumoUnidad" (change)="onUnidadRapidaChange()" class="entry-select select-unit" title="Al cambiar unidad se limpia la cantidad">
+                                    <option *ngFor="let u of unidadesDisponibles" [value]="u">{{ u }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="entry-col col-prio">
+                            <label>Prioridad</label>
+                            <select [(ngModel)]="nuevoInsumoPrioridad" class="entry-select">
+                                <option value="Normal">Normal</option>
+                                <option value="Urgente">🔴 Urgente</option>
+                            </select>
+                        </div>
+
+                        <div class="entry-col col-btn">
+                            <label>&nbsp;</label>
+                            <button type="button" class="btn-entry-add" (click)="agregarInsumoRapido()">
+                                <span>Agregar</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="chips-group">
-                <span class="chips-label">Categoría:</span>
-                <div class="filter-chips">
-                    <button *ngFor="let f of filtrosCategorias" type="button" class="chip-item"
-                        [class.active]="filtroCategoria === f"
-                        (click)="filterByCategoria(f)">
-                        {{ f === 'Todas' ? 'Todas' : getCategoriaEmoji($any(f)) + ' ' + f }}
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── FORMULARIO RÁPIDO DE ENTRADA (INLINE) ── -->
-        <div class="quick-form-card" *ngIf="mostrarFormulario">
-            <div class="quick-form-header">
-                <div class="qf-title">
-                    <i class="fa-solid fa-cart-plus"></i>
-                    <span>Registrar Nuevo Ítem para Compra</span>
-                </div>
-                <button type="button" class="btn-close-qf" (click)="mostrarFormulario = false">
-                    <i class="pi pi-times"></i>
-                </button>
-            </div>
-
-            <div class="quick-form-body">
-                <div class="form-grid">
-                    <div class="form-group field-prod">
-                        <label for="input-producto">Producto / Insumo <span class="required">*</span></label>
-                        <input
-                            #inputProducto
-                            id="input-producto"
-                            type="text"
-                            [(ngModel)]="nuevoProducto"
-                            placeholder="Ej. Cebolla Roja, Servilletas..."
-                            (keyup.enter)="onProductoEnter()"
-                            class="corp-input"
-                            autocomplete="off"
-                        />
+            <!-- ── BARRA DE BÚSQUEDA Y FILTROS ── -->
+            <div class="table-toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <i class="pi pi-search search-icon"></i>
+                        <input type="text" [(ngModel)]="busqueda" placeholder="Buscar por pescado, verdura o insumo..." class="search-input" />
+                        <button *ngIf="busqueda" type="button" class="btn-clear-search" (click)="busqueda = ''">
+                            <i class="pi pi-times"></i>
+                        </button>
                     </div>
 
-                    <div class="form-group field-qty">
-                        <label for="input-cantidad">Cantidad / Unidad <span class="required">*</span></label>
-                        <input
-                            #inputCantidad
-                            id="input-cantidad"
-                            type="text"
-                            [(ngModel)]="nuevaCantidad"
-                            placeholder="Ej. 2 kg, 3 pqtes..."
-                            (keyup.enter)="onCantidadEnter()"
-                            class="corp-input"
-                            autocomplete="off"
-                        />
-                    </div>
-
-                    <div class="form-group field-cat">
-                        <label for="select-categoria">Categoría</label>
-                        <select id="select-categoria" [(ngModel)]="nuevaCategoria" class="corp-select">
-                            <option *ngFor="let cat of categorias" [value]="cat.value">{{ cat.label }}</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group field-prio">
-                        <label for="select-prioridad">Prioridad</label>
-                        <select id="select-prioridad" [(ngModel)]="nuevaPrioridad" class="corp-select">
-                            <option *ngFor="let p of prioridades" [value]="p.value">{{ p.label }}</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group field-btn">
-                        <label>&nbsp;</label>
-                        <button type="button" class="btn-add-item" id="btn-confirmar-agregar" (click)="agregarItem()">
-                            <i class="pi pi-plus"></i>
-                            <span>Agregar</span>
+                    <!-- Botones de filtro de categoría para todas las categorías registradas -->
+                    <div class="filter-pills-row">
+                        <button type="button" class="pill-btn" [class.active]="filtroCategoria === 'Todas'" (click)="setFiltroCategoria('Todas')">
+                            Todas ({{ todosLosInsumos.length }})
+                        </button>
+                        <button *ngFor="let c of categoriasDisponibles.slice(1)" type="button" class="pill-btn" [class.active]="normalizarTexto(filtroCategoria) === normalizarTexto(c)" (click)="setFiltroCategoria(c)">
+                            {{ getCategoriaEmoji(c) }} {{ c }}
                         </button>
                     </div>
                 </div>
 
-                <div class="form-hint">
-                    <i class="pi pi-info-circle"></i>
-                    <span>Presiona <kbd>Enter</kbd> en "Producto" para avanzar a "Cantidad", y <kbd>Enter</kbd> en "Cantidad" para registrar velozmente.</span>
+                <div class="toolbar-right">
+                    <div class="prio-filter-group">
+                        <label>Prioridad:</label>
+                        <select [(ngModel)]="filtroPrioridad" class="corp-select-mini">
+                            <option value="Todas">Cualquiera</option>
+                            <option value="Urgente">🔴 Urgentes</option>
+                            <option value="Normal">Normal</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── TABS DE LISTAS ACTIVAS ── -->
+            <div class="listas-tabs-bar">
+                <div class="listas-tabs-left">
+                    <span class="tabs-label"><i class="fa-solid fa-list-check"></i> Listas Activas:</span>
+
+                    <button type="button" class="tab-list-item" [class.active]="filtroListaId === 'todas'" (click)="filtroListaId = 'todas'">
+                        <span>Todas las Listas ({{ todosLosInsumos.length }})</span>
+                    </button>
+
+                    <button *ngFor="let l of listas" type="button" class="tab-list-item" [class.active]="filtroListaId === l.id" (click)="filtroListaId = l.id">
+                        <span class="tab-dot"></span>
+                        <span class="tab-name">{{ l.nombre }}</span>
+                        <span class="tab-count">{{ l.productos.length }} ítems</span>
+                    </button>
+
+                    <button type="button" class="btn-add-tab-list" (click)="abrirModalNuevaLista()">
+                        <i class="pi pi-plus"></i>
+                        <span>+ Crear Lista</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── TABLA DE PRODUCTOS / INSUMOS DETALLADA ── -->
+            <div class="table-container custom-table-slate">
+                <table class="compras-table" aria-label="Tabla de Insumos">
+                    <thead>
+                        <tr>
+                            <th class="col-center" style="width: 50px">
+                                <input type="checkbox" [checked]="isTodoSeleccionado()" (change)="toggleSeleccionarTodos()" class="custom-checkbox" title="Seleccionar todos" />
+                            </th>
+                            <th style="width: 280px">Insumo & Variedad</th>
+                            <th style="width: 160px">Lista Asignada</th>
+                            <th style="width: 170px">Categoría</th>
+                            <th style="width: 170px">Registro en Cocina</th>
+                            <th style="width: 130px" class="col-right">Stock Cámara</th>
+                            <th style="width: 130px" class="col-right">Faltante Est.</th>
+                            <th>Proyección / Sugerencia</th>
+                            <th style="width: 70px" class="col-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of insumosFiltrados" class="item-row" [class.row-comprado]="item.estado === 'comprado'" [class.row-selected]="isSeleccionado(item)">
+                            <!-- 1. Checkbox -->
+                            <td class="col-center">
+                                <input type="checkbox" [checked]="isSeleccionado(item)" (change)="toggleSeleccion(item)" class="custom-checkbox" />
+                            </td>
+
+                            <!-- 2. Insumo & Variedad -->
+                            <td>
+                                <div class="insumo-info-cell">
+                                    <div class="insumo-icon-box" [class.icon-fish]="item.categoria.includes('Pescado')" [class.icon-veg]="item.categoria.includes('Verdura')" [class.icon-citric]="item.categoria.includes('Cítric')">
+                                        <i [class]="item.categoria.includes('Pescado') ? 'fa-solid fa-fish' : (item.categoria.includes('Verdura') ? 'fa-solid fa-carrot' : 'fa-solid fa-lemon')"></i>
+                                    </div>
+                                    <div class="insumo-text-box">
+                                        <div class="insumo-title-row">
+                                            <strong class="insumo-title" [class.tachado]="item.estado === 'comprado'">{{ item.nombre }}</strong>
+                                            <span class="badge-urgent-tag" *ngIf="item.prioridad === 'Urgente'">URGENTE</span>
+                                        </div>
+                                        <span class="insumo-sub" *ngIf="item.subtitulo">{{ item.subtitulo }}</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- 3. Lista Asignada -->
+                            <td>
+                                <span class="dest-badge">
+                                    <i class="fa-solid fa-store"></i>
+                                    {{ item.listaNombre }}
+                                </span>
+                            </td>
+
+                            <!-- 4. Categoría -->
+                            <td>
+                                <span class="categoria-tag">
+                                    {{ getCategoriaEmoji(item.categoria) }} {{ item.categoria }}
+                                </span>
+                            </td>
+
+                            <!-- 5. Registro en Cocina -->
+                            <td>
+                                <span class="registro-time">
+                                    <i class="fa-regular fa-clock"></i>
+                                    {{ item.registroCocina }}
+                                </span>
+                            </td>
+
+                            <!-- 6. Stock Cámara -->
+                            <td class="col-right">
+                                <span class="stock-badge" [class.stock-cero]="item.stockCamara?.includes('0.0') || item.stockCamara?.includes('Agotado')">
+                                    {{ item.stockCamara || '0.0 kg' }}
+                                </span>
+                            </td>
+
+                            <!-- 7. Faltante Est. -->
+                            <td class="col-right">
+                                <strong class="faltante-val">{{ item.cantidad }} <small>{{ item.unidad }}</small></strong>
+                            </td>
+
+                            <!-- 8. Proyección / Sugerencia -->
+                            <td>
+                                <div class="proyeccion-box" *ngIf="item.proyeccion">
+                                    <i class="fa-solid fa-arrow-trend-up"></i>
+                                    <span>{{ item.proyeccion }}</span>
+                                </div>
+                            </td>
+
+                            <!-- 9. Eliminar -->
+                            <td class="col-center">
+                                <button type="button" class="btn-action-icon btn-delete" (click)="eliminarInsumo(item)" title="Eliminar insumo">
+                                    <i class="pi pi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Estado vacío -->
+                        <tr *ngIf="insumosFiltrados.length === 0">
+                            <td colspan="9" class="empty-state-cell">
+                                <div class="empty-state-box">
+                                    <div class="empty-state-icon">
+                                        <i class="fa-solid fa-basket-shopping"></i>
+                                    </div>
+                                    <h3 class="empty-state-title">No hay productos en esta vista</h3>
+                                    <p class="empty-state-desc">Prueba cambiando de lista o buscando otro término.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ── BARRA FLOTANTE INFERIOR DE SELECCIÓN & WHATSAPP ── -->
+            <div class="selection-footer-bar animate-fadein" *ngIf="todosLosInsumos.length > 0">
+                <div class="sel-info-left">
+                    <span class="sel-count"><strong>{{ seleccionadosIds.size }}</strong> de {{ todosLosInsumos.length }} ítems marcados</span>
+                    <button type="button" class="btn-text-link" (click)="toggleSeleccionarTodos()">
+                        {{ isTodoSeleccionado() ? 'Deseleccionar' : 'Seleccionar todo' }}
+                    </button>
+                    <span class="sel-sep">•</span>
+                    <span class="sel-totals">
+                        Suma seleccionada: <strong>{{ sumaKgPescadosSeleccionados.toFixed(1) }} kg Pescados</strong> / <strong>{{ sumaKgVerdurasSeleccionadas.toFixed(1) }} kg Verduras</strong>
+                    </span>
+                </div>
+
+                <div class="sel-actions-right">
+                    <button type="button" class="btn-send-selected-wtsp" (click)="abrirModalWhatsappSeleccionados()" [disabled]="seleccionadosIds.size === 0">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        <span>Enviar Lista Seleccionada a WhatsApp ({{ seleccionadosIds.size }})</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================================================================= -->
+<!-- MODAL: CREAR NUEVA LISTA CON CONJUNTO DE PRODUCTOS                -->
+<!-- (ESPACIOS MEJORADOS, RESPONSABLE = EMPLEADOS, GRILLA "FALTA INGRESAR") -->
+<!-- ================================================================= -->
+<!-- ================================================================= -->
+<!-- MODAL: CREAR NUEVA LISTA CON CONJUNTO DE PRODUCTOS                -->
+<!-- (MODAL MÁS ANCHO, GRILLA A LA DERECHA, CELULAR AUTO, AUTOCOMPLETE) -->
+<!-- ================================================================= -->
+<p-dialog [(visible)]="dialogNuevaLista" [modal]="true" [style]="{ width: '1360px', maxWidth: '98vw' }" header="Crear Nueva Lista de Compras" [draggable]="false" [resizable]="false">
+    <div class="modal-nueva-lista-content">
+        <div class="modal-split-layout">
+
+            <!-- ── COLUMNA IZQUIERDA: FORMULARIOS (PASO 1 + PASO 2) ── -->
+            <div class="split-col-left">
+
+                <!-- PASO 1: DATOS GENERALES DE LA LISTA -->
+                <div class="step-card-box compact">
+                    <div class="step-card-header">
+                        <span class="step-number-badge">1</span>
+                        <div>
+                            <h3 class="step-title">Información de la Lista</h3>
+                            <p class="step-desc">Define el nombre, destino y asigna el empleado responsable.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid-form-clean">
+                        <div class="form-field full-width">
+                            <label>Nombre de la Lista <span class="req">*</span></label>
+                            <input type="text" [(ngModel)]="nuevaListaNombre" placeholder="ej. Terminal Pesquero - Mañana, Verdulería Central..." class="corp-input" />
+                        </div>
+
+                        <div class="form-field">
+                            <label>Destino / Proveedor</label>
+                            <select [(ngModel)]="nuevaListaDestino" class="corp-select">
+                                <option *ngFor="let d of destinosDisponibles" [value]="d">{{ d }}</option>
+                            </select>
+                        </div>
+
+                        <!-- SELECT CON LA LISTA DE EMPLEADOS: AUTOLLENA CELULAR SOLO SI TIENE VALOR EN ESA COLUMNA -->
+                        <div class="form-field">
+                            <label><i class="fa-solid fa-users"></i> Responsable (Empleado Asignado) <span class="req">*</span></label>
+                            <select [(ngModel)]="nuevaListaResponsableId" (change)="onEmpleadoSelect(nuevaListaResponsableId)" (ngModelChange)="onEmpleadoSelect($event)" class="corp-select select-empleado">
+                                <option [ngValue]="null" [value]="null" disabled>-- Selecciona un colaborador --</option>
+                                <option *ngFor="let emp of empleados" [ngValue]="emp.idpersona" [value]="emp.idpersona">
+                                    👤 {{ emp.nombreCompleto }} {{ emp.celular ? ' (📱 ' + emp.celular + ')' : '' }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label><i class="fa-brands fa-whatsapp"></i> Celular WhatsApp</label>
+                            <input type="text" [(ngModel)]="nuevaListaTelefono" placeholder="ej. 987654321 (se llena si el empleado tiene celular)" class="corp-input" />
+                        </div>
+
+                        <div class="form-field full-width">
+                            <label>Observaciones de la Lista (opcional)</label>
+                            <input type="text" [(ngModel)]="nuevaListaObservaciones" placeholder="ej. Exigir pescado fresco con agallas rojas, revisar peso en balanza..." class="corp-input" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 2: CONJUNTO DE PRODUCTOS A INGRESAR -->
+                <div class="step-card-box highlight-step compact">
+                    <div class="step-card-header">
+                        <span class="step-number-badge badge-green">2</span>
+                        <div class="header-with-counter">
+                            <div>
+                                <h3 class="step-title">Ingresar Insumo / Producto</h3>
+                                <p class="step-desc">Autocompleta del catálogo o crea uno nuevo para recetas</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de entrada de producto con Autocomplete -->
+                    <div class="add-prod-form-panel compact-panel">
+                        <div class="grid-inputs-prod-split">
+                            <!-- CAMPO AUTOCOMPLETE -->
+                            <div class="form-field col-prod-autocomplete">
+                                <label>
+                                    <span>Insumo / Producto <span class="req">*</span></span>
+                                    <small class="label-hint">Catálogo & Autocompletado</small>
+                                </label>
+                                <div class="autocomplete-input-wrap">
+                                    <i class="fa-solid fa-magnifying-glass autocomp-icon"></i>
+                                    <input #inputTempProdNombre type="text"
+                                        [(ngModel)]="tempProdNombre"
+                                        (input)="onInputTempProdNombre($event)"
+                                        (focus)="onFocusTempProdNombre()"
+                                        (blur)="onBlurTempProdNombre()"
+                                        placeholder="Escribe insumo (ej. Corvina, Cebolla, Servilleta)..."
+                                        class="corp-input input-with-icon"
+                                        (keyup.enter)="agregarProductoTemporalANuevaLista()"
+                                        autocomplete="off" />
+                                    <button *ngIf="tempProdNombre" type="button" class="btn-clear-autocomp" (click)="tempProdNombre = ''; onInputTempProdNombre()">
+                                        <i class="pi pi-times"></i>
+                                    </button>
+                                </div>
+
+                                <!-- DROPDOWN DE SUGERENCIAS Y OPCIÓN NUEVO INSUMO -->
+                                <div class="autocomplete-dropdown-panel animate-fadein" *ngIf="mostrarSugerenciasInsumos">
+                                    <div class="autocomplete-header-bar">
+                                        <span><i class="fa-solid fa-boxes-stacked"></i> Catálogo de Insumos</span>
+                                        <span class="count-hint">{{ sugerenciasInsumos.length }} sugerencia(s)</span>
+                                    </div>
+
+                                    <!-- SI NO EXISTE COINCIDENCIA EXACTA: REGISTRAR NUEVO -->
+                                    <div *ngIf="tempProdNombre.trim().length >= 2 && !existeCoincidenciaExacta()" class="item-create-new" (mousedown)="crearDesdeAutocompletado()">
+                                        <div class="create-new-icon">
+                                            <i class="pi pi-plus"></i>
+                                        </div>
+                                        <div class="create-new-text">
+                                            <strong>Registrar nuevo insumo: "{{ tempProdNombre.trim() }}"</strong>
+                                            <span>Se guardará en la tabla para esta compra y módulo de recetas</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- SUGERENCIAS DEL CATÁLOGO -->
+                                    <div class="suggestions-scroll">
+                                        <div *ngFor="let sug of sugerenciasInsumos" class="suggestion-item" (mousedown)="seleccionarInsumoCatalogo(sug)">
+                                            <div class="sug-left">
+                                                <span class="sug-emoji">{{ getCategoriaEmoji(sug.categoria) }}</span>
+                                                <div class="sug-info">
+                                                    <strong class="sug-name">{{ sug.nombre }}</strong>
+                                                    <span class="sug-cat">{{ sug.categoria }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="sug-right">
+                                                <span class="sug-unit-badge">{{ sug.unidadDefecto }}</span>
+                                                <span class="sug-tag-user" *ngIf="sug.esPersonalizado">✨ Creado</span>
+                                            </div>
+                                        </div>
+
+                                        <div *ngIf="sugerenciasInsumos.length === 0 && tempProdNombre.trim().length < 2" class="sug-empty">
+                                            Escribe para buscar entre los {{ catalogoInsumos.length }} insumos registrados...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-field col-prod-cat">
+                                <label>Categoría <span class="req">*</span></label>
+                                <select id="selectTempProdCat" [(ngModel)]="tempProdCategoria" (change)="onTempProdCategoriaChange()" class="corp-select" [class.field-empty]="!tempProdCategoria">
+                                    <option value="" disabled selected>-- Seleccione Categoría * --</option>
+                                    <option *ngFor="let c of categoriasDisponibles.slice(1)" [value]="c">
+                                        {{ getCategoriaEmoji(c) }} {{ c }}
+                                    </option>
+                                    <option value="__OTRA__">➕ + Escribir Nueva Categoría...</option>
+                                </select>
+                                <div *ngIf="mostrarInputOtraCategoria" class="otra-cat-wrapper animate-fadein" style="margin-top: 6px;">
+                                    <input id="inputOtraCat" type="text" [(ngModel)]="tempProdOtraCategoria" placeholder="Escribe la nueva categoría..." class="corp-input" (keyup.enter)="agregarProductoTemporalANuevaLista()" />
+                                </div>
+                            </div>
+
+                            <div class="form-field col-prod-qty">
+                                <label>Cantidad & Unidad <span class="req">*</span></label>
+                                <div class="qty-unit-combo">
+                                    <input #inputTempProdQty type="text" [(ngModel)]="tempProdCantidad" placeholder="10.0" class="corp-input input-qty" (keyup.enter)="agregarProductoTemporalANuevaLista()" />
+                                    <select [(ngModel)]="tempProdUnidad" (change)="onUnidadNuevaListaChange()" class="corp-select select-unit" title="Al cambiar de unidad se limpia la cantidad">
+                                        <option *ngFor="let u of unidadesDisponibles" [value]="u">{{ u }}</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-field col-prod-prio">
+                                <label>Prioridad</label>
+                                <select [(ngModel)]="tempProdPrioridad" class="corp-select">
+                                    <option value="Normal">Normal</option>
+                                    <option value="Urgente">🔴 Urgente</option>
+                                </select>
+                            </div>
+
+                            <div class="form-field full-width">
+                                <label>Nota / Detalle sugerido (opcional):</label>
+                                <input type="text" [(ngModel)]="tempProdNota" placeholder="ej. Piezas de 1.2kg a 1.4kg con piel limpia, cebolla pluma..." class="corp-input" (keyup.enter)="agregarProductoTemporalANuevaLista()" />
+                            </div>
+
+                            <div class="form-field full-width">
+                                <button type="button" class="btn-add-prod-action-full" (click)="agregarProductoTemporalANuevaLista()">
+                                    <i class="pi pi-plus-circle"></i>
+                                    <span>+ Añadir Producto a la Lista</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── COLUMNA DERECHA: GRILLA DE PRODUCTOS DE LA LISTA ── -->
+            <div class="split-col-right">
+                <div class="panel-grilla-derecha">
+                    <div class="grilla-derecha-header">
+                        <div class="header-left">
+                            <div class="header-icon-box">
+                                <i class="fa-solid fa-basket-shopping"></i>
+                            </div>
+                            <div>
+                                <h3 class="panel-title">Conjunto de Productos de la Lista</h3>
+                                <p class="panel-subtitle">
+                                    {{ productosNuevaLista.length === 0 ? 'Sin productos ingresados todavía' : productosNuevaLista.length + ' producto(s) en esta lista' }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="header-right">
+                            <span class="badge-status-counter" [class.badge-falta]="productosNuevaLista.length === 0">
+                                {{ productosNuevaLista.length === 0 ? '⚠️ Falta ingresar productos' : productosNuevaLista.length + ' producto(s)' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- CUERPO DE LA GRILLA -->
+                    <div class="grilla-derecha-body">
+
+                        <!-- CASO GRILLA VACÍA: MENSAJE DESTACADO "FALTA INGRESAR PRODUCTOS" -->
+                        <div *ngIf="productosNuevaLista.length === 0" class="empty-prods-alert-card">
+                            <div class="alert-icon-ring">
+                                <i class="fa-solid fa-cart-arrow-down"></i>
+                            </div>
+                            <div class="alert-text-content">
+                                <h4>⚠️ Falta ingresar productos a esta lista</h4>
+                                <p>Aún no has añadido ningún producto. Completa los campos en el panel izquierdo (Insumo, Cantidad, etc.) y haz clic en el botón <strong>"+ Añadir Producto a la Lista"</strong>.</p>
+                                <div class="alert-pills-row">
+                                    <span class="pill-hint"><i class="pi pi-check"></i> Autocompletado rápido</span>
+                                    <span class="pill-hint"><i class="pi pi-check"></i> Registra nuevos insumos para recetas</span>
+                                    <span class="pill-hint"><i class="pi pi-check"></i> Limpieza automática al cambiar de unidad</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CASO CON PRODUCTOS: TABLA COMPLETA CON SCROLL -->
+                        <div *ngIf="productosNuevaLista.length > 0" class="tabla-scroll-derecha">
+                            <table class="tabla-prods-derecha">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px" class="col-center">#</th>
+                                        <th>Insumo / Producto</th>
+                                        <th style="width: 130px">Categoría</th>
+                                        <th style="width: 125px" class="col-right">Cantidad</th>
+                                        <th style="width: 90px" class="col-center">Prioridad</th>
+                                        <th>Nota / Detalle</th>
+                                        <th style="width: 50px" class="col-center">Quitar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let p of productosNuevaLista; let i = index" class="prod-temp-row">
+                                        <td class="col-center font-bold text-slate">{{ i + 1 }}</td>
+                                        <td>
+                                            <div class="prod-item-flex">
+                                                <span class="prod-emoji">{{ getCategoriaEmoji(p.categoria || '') }}</span>
+                                                <strong class="prod-item-title">{{ p.nombre }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="categoria-tag-mini">{{ p.categoria }}</span>
+                                        </td>
+                                        <td class="col-right">
+                                            <strong class="qty-highlight">{{ p.cantidad }} {{ p.unidad }}</strong>
+                                        </td>
+                                        <td class="col-center">
+                                            <span class="prio-tag" [class.badge-alta]="p.prioridad === 'Urgente'">{{ p.prioridad }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="prod-nota-text">{{ p.proyeccion || '-' }}</span>
+                                        </td>
+                                        <td class="col-center">
+                                            <button type="button" class="btn-del-temp-item" (click)="quitarProductoTemporal(i)" title="Quitar este producto">
+                                                <i class="pi pi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                    <!-- RESUMEN INFERIOR DERECHO -->
+                    <div class="grilla-derecha-footer" *ngIf="productosNuevaLista.length > 0">
+                        <div class="footer-left">
+                            <span>Total en lista: <strong>{{ productosNuevaLista.length }} productos</strong></span>
+                        </div>
+                        <div class="footer-right">
+                            <span class="ready-indicator"><i class="pi pi-check-circle"></i> Listo para guardar la lista</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="modal-footer-btns">
+            <button type="button" class="btn-modal-cancel" (click)="dialogNuevaLista = false">Cancelar</button>
+            <button type="button" class="btn-modal-save" (click)="guardarNuevaLista()">
+                <i class="pi pi-check-circle"></i>
+                <span>{{ productosNuevaLista.length === 0 ? 'Guardar Lista de Compras' : 'Guardar Lista con ' + productosNuevaLista.length + ' Producto(s)' }}</span>
+            </button>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<!-- ================================================================= -->
+<!-- MODAL: CATÁLOGO DE INSUMOS & MATERIAS PRIMAS (PARA RECETAS)       -->
+<!-- ================================================================= -->
+<p-dialog [(visible)]="dialogCatalogoInsumos" [modal]="true" [style]="{ width: '980px', maxWidth: '96vw' }" header="Catálogo de Insumos & Materias Primas (Módulo Recetas & Compras)" [draggable]="false" [resizable]="false">
+    <div class="modal-catalogo-content">
+        <!-- BUSCADOR Y FILTROS -->
+        <div class="cat-top-bar">
+            <div class="cat-search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" [(ngModel)]="filtroBusquedaCatalogo" placeholder="Buscar por nombre o categoría en la tabla de insumos..." class="corp-input" />
+            </div>
+
+            <div class="cat-filter-cat">
+                <select [(ngModel)]="filtroCategoriaCatalogo" (ngModelChange)="filtroCategoriaCatalogo = $event" class="corp-select">
+                    <option *ngFor="let c of categoriasDisponibles" [value]="c">{{ c === 'Todas' ? 'Todas las Categorías' : (getCategoriaEmoji(c) + ' ' + c) }}</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- FORMULARIO DIRECTO PARA REGISTRAR NUEVO INSUMO -->
+        <div class="cat-add-inline-box">
+            <div class="cat-add-title">
+                <i class="fa-solid fa-circle-plus"></i>
+                <span>Registrar Nuevo Insumo en la Tabla (para Compras & Módulo Recetas):</span>
+            </div>
+            <div class="cat-add-grid">
+                <div class="form-field">
+                    <label>Nombre del Insumo</label>
+                    <input type="text" [(ngModel)]="nuevoInsumoCatNombre" placeholder="ej. Servilletas, Aceite de Oliva, Cebolla Morada..." class="corp-input" (keyup.enter)="guardarNuevoInsumoDirecto()" />
+                </div>
+                <div class="form-field">
+                    <label>Categoría</label>
+                    <select [(ngModel)]="nuevoInsumoCatCategoria" class="corp-select">
+                        <option *ngFor="let c of categoriasDisponibles.slice(1)" [value]="c">{{ c }}</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Unidad Habitual</label>
+                    <select [(ngModel)]="nuevoInsumoCatUnidad" class="corp-select">
+                        <option *ngFor="let u of unidadesDisponibles" [value]="u">{{ u }}</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn-cat-save-item" (click)="guardarNuevoInsumoDirecto()">
+                        <i class="pi pi-plus"></i>
+                        <span>Registrar Insumo</span>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- ── TABLA CON ESTILOS CORPORATIVOS (CUSTOM-TABLE-SLATE) ── -->
-        <div class="table-container custom-table-slate">
-            <table class="compras-table" aria-label="Lista de compras">
+        <!-- TABLA COMPLETA DE INSUMOS -->
+        <div class="cat-table-wrapper">
+            <table class="cat-insumos-table">
                 <thead>
                     <tr>
-                        <th class="col-center" style="width: 55px">Check</th>
-                        <th style="width: 170px">Categoría</th>
-                        <th>Producto / Insumo</th>
-                        <th style="width: 140px">Cantidad</th>
-                        <th style="width: 130px">Prioridad</th>
-                        <th style="width: 130px" class="col-center">Estado</th>
-                        <th style="width: 80px" class="col-center">Acciones</th>
+                        <th style="width: 45px" class="col-center">#</th>
+                        <th>Insumo / Materia Prima</th>
+                        <th style="width: 190px">Categoría</th>
+                        <th style="width: 120px" class="col-center">Unidad Habitual</th>
+                        <th style="width: 150px" class="col-center">Tipo / Origen</th>
+                        <th style="width: 70px" class="col-center">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr
-                        *ngFor="let item of itemsFiltrados; trackBy: trackById"
-                        class="item-row"
-                        [class.row-comprado]="item.estado === 'comprado'"
-                        [class.row-alta]="item.prioridad === 'Alta' && item.estado === 'pendiente'"
-                    >
-                        <td class="col-center">
-                            <button
-                                type="button"
-                                class="check-toggle-btn"
-                                [class.is-comprado]="item.estado === 'comprado'"
-                                (click)="toggleEstado(item)"
-                                [title]="item.estado === 'comprado' ? 'Desmarcar y volver a pendiente' : 'Marcar como comprado'"
-                            >
-                                <i [class]="item.estado === 'comprado' ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
-                            </button>
-                        </td>
-
+                    <tr *ngFor="let ins of catalogoInsumosFiltrados; let idx = index">
+                        <td class="col-center text-slate font-bold">{{ idx + 1 }}</td>
                         <td>
-                            <span class="categoria-tag">
-                                {{ getCategoriaEmoji(item.categoria) }} {{ item.categoria }}
-                            </span>
-                        </td>
-
-                        <td>
-                            <div class="producto-cell">
-                                <span class="producto-name" [class.tachado]="item.estado === 'comprado'">
-                                    {{ item.producto }}
-                                </span>
+                            <div class="cat-item-name-cell">
+                                <span class="cat-emoji">{{ getCategoriaEmoji(ins.categoria) }}</span>
+                                <strong class="cat-item-nombre">{{ ins.nombre }}</strong>
                             </div>
                         </td>
-
                         <td>
-                            <span class="qty-pill">
-                                <i class="fa-solid fa-scale-balanced"></i>
-                                {{ item.cantidad }}
-                            </span>
+                            <span class="categoria-tag-mini">{{ ins.categoria }}</span>
                         </td>
-
-                        <td>
-                            <span class="prio-tag" [ngClass]="getPrioridadClass(item.prioridad)">
-                                {{ getPrioridadEmoji(item.prioridad) }} {{ item.prioridad }}
-                            </span>
-                        </td>
-
                         <td class="col-center">
-                            <span class="status-pill" [class.comprado]="item.estado === 'comprado'" [class.pendiente]="item.estado === 'pendiente'">
-                                <i [class]="item.estado === 'comprado' ? 'fa-solid fa-check' : 'fa-solid fa-hourglass-start'"></i>
-                                {{ item.estado === 'comprado' ? 'Comprado' : 'Pendiente' }}
+                            <span class="badge-unit-cat">{{ ins.unidadDefecto }}</span>
+                        </td>
+                        <td class="col-center">
+                            <span class="badge-origen" [class.origen-user]="ins.esPersonalizado">
+                                {{ ins.esPersonalizado ? '✨ Creado por Usuario' : 'Catálogo Base' }}
                             </span>
                         </td>
-
                         <td class="col-center">
-                            <button
-                                type="button"
-                                class="btn-action-icon btn-delete"
-                                (click)="eliminarItem(item)"
-                                title="Eliminar ítem"
-                            >
+                            <button *ngIf="ins.esPersonalizado" type="button" class="btn-del-cat" (click)="eliminarInsumoCatalogo(ins)" title="Eliminar del catálogo">
                                 <i class="pi pi-trash"></i>
                             </button>
+                            <span *ngIf="!ins.esPersonalizado" class="text-muted-dash">-</span>
                         </td>
                     </tr>
-
-                    <!-- Estado vacío -->
-                    <tr *ngIf="itemsFiltrados.length === 0">
-                        <td colspan="7" class="empty-state-cell">
-                            <div class="empty-state-box">
-                                <div class="empty-state-icon">
-                                    <i class="fa-solid fa-basket-shopping"></i>
-                                </div>
-                                <h3 class="empty-state-title">No hay ítems para mostrar</h3>
-                                <p class="empty-state-desc">
-                                    {{ items.length === 0 ? 'La lista de compras está vacía. Haz clic en "Agregar Ítem" para comenzar.' : 'No se encontraron ítems con los filtros o búsqueda aplicados.' }}
-                                </p>
-                            </div>
+                    <tr *ngIf="catalogoInsumosFiltrados.length === 0">
+                        <td colspan="6" class="text-center" style="padding: 2rem; color: #64748b;">
+                            No se encontraron insumos que coincidan con la búsqueda.
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- ── FOOTER RESUMEN ── -->
-        <div class="compras-footer" *ngIf="items.length > 0">
-            <div class="footer-left">
-                <span>Total: <strong>{{ items.length }}</strong> ítem{{ items.length !== 1 ? 's' : '' }}</span>
-                <span class="footer-dot">•</span>
-                <span>Pendientes: <strong class="text-pend">{{ totalPendientes }}</strong></span>
-                <span class="footer-dot">•</span>
-                <span>Comprados: <strong class="text-comp">{{ totalComprados }}</strong></span>
+        <div class="cat-footer-info">
+            <span>Total en catálogo: <strong>{{ catalogoInsumos.length }} insumos registrados</strong> (Disponibles para compras y módulo recetas)</span>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="modal-footer-btns">
+            <button type="button" class="btn-modal-cancel" (click)="dialogCatalogoInsumos = false">Cerrar</button>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<!-- ================================================================= -->
+<!-- MODAL: DETALLE COMPLETO DE UNA LISTA                             -->
+<!-- ================================================================= -->
+<p-dialog [(visible)]="dialogDetalleLista" [modal]="true" [style]="{ width: '750px', maxWidth: '95vw' }" [header]="'Detalle: ' + (listaEnDetalle?.nombre || 'Lista')" [draggable]="false">
+    <div class="modal-detalle-content" *ngIf="listaEnDetalle">
+        <div class="detalle-header-row">
+            <div class="detalle-meta">
+                <span><strong>Destino:</strong> {{ listaEnDetalle.destino }}</span>
+                <span><strong>Ingresado:</strong> {{ listaEnDetalle.fechaDisplay }}</span>
+                <span><strong>Responsable:</strong> {{ listaEnDetalle.responsable }}</span>
             </div>
-            <div class="footer-right">
-                <span class="footer-sync"><i class="fa-solid fa-floppy-disk"></i> Guardado automáticamente en almacenamiento local</span>
+            <button type="button" class="btn-wtsp-modal" (click)="abrirModalWhatsappParaLista(listaEnDetalle)">
+                <i class="fa-brands fa-whatsapp"></i> Enviar por WhatsApp
+            </button>
+        </div>
+
+        <table class="detalle-table">
+            <thead>
+                <tr>
+                    <th style="width: 50px" class="col-center">Check</th>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th class="col-right">Pedido</th>
+                    <th class="col-right">Stock Cámara</th>
+                    <th class="col-center">Prioridad</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let p of listaEnDetalle.productos">
+                    <td class="col-center">
+                        <button type="button" class="check-toggle-btn" [class.is-comprado]="p.estado === 'comprado'" (click)="toggleEstadoInsumo(p)">
+                            <i [class]="p.estado === 'comprado' ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
+                        </button>
+                    </td>
+                    <td><strong>{{ p.nombre }}</strong></td>
+                    <td><span class="categoria-tag">{{ getCategoriaEmoji(p.categoria) }} {{ p.categoria }}</span></td>
+                    <td class="col-right"><strong>{{ p.cantidad }} {{ p.unidad }}</strong></td>
+                    <td class="col-right">{{ p.stockCamara || '-' }}</td>
+                    <td class="col-center"><span class="prio-tag" [class.badge-alta]="p.prioridad === 'Urgente'">{{ p.prioridad }}</span></td>
+                </tr>
+
+                <tr *ngIf="listaEnDetalle.productos.length === 0">
+                    <td colspan="6" class="text-center py-4 text-slate-500">
+                        ⚠️ Esta lista no tiene productos registrados.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</p-dialog>
+
+<!-- ================================================================= -->
+<!-- MODAL: ENVIAR MENSAJE A WHATSAPP (WTSP)                           -->
+<!-- ================================================================= -->
+<p-dialog [(visible)]="dialogWhatsapp" [modal]="true" [style]="{ width: '600px', maxWidth: '95vw' }" [header]="'Enviar Lista por WhatsApp'" [draggable]="false">
+    <div class="modal-whatsapp-content">
+        <div class="wtsp-modal-banner">
+            <div class="wtsp-icon-large">
+                <i class="fa-brands fa-whatsapp"></i>
+            </div>
+            <div class="wtsp-banner-info">
+                <h3>{{ whatsappTituloLista }}</h3>
+                <p>El mensaje ha sido estructurado con negritas, viñetas, emojis y el detalle completo para el comprador o proveedor.</p>
             </div>
         </div>
 
+        <div class="form-field" style="margin-top: 1.25rem">
+            <label>Número de WhatsApp (Opcional - escribe el celular con o sin código 51):</label>
+            <div class="input-phone-group">
+                <span class="phone-prefix">+51</span>
+                <input type="text" [(ngModel)]="whatsappTelefono" placeholder="987654321 (Dejar vacío para seleccionar el contacto en WhatsApp)" class="corp-input" />
+            </div>
+        </div>
+
+        <div class="form-field" style="margin-top: 1rem">
+            <div class="preview-header">
+                <label>Vista Previa del Mensaje que se Enviará:</label>
+                <button type="button" class="btn-copy-preview" (click)="copiarTextoWhatsapp()">
+                    <i class="pi pi-copy"></i> Copiar Mensaje
+                </button>
+            </div>
+            <textarea class="wtsp-preview-box" rows="11" readonly>{{ whatsappTextoPreview }}</textarea>
+        </div>
     </div>
 
-</div>
+    <ng-template pTemplate="footer">
+        <div class="modal-footer-btns">
+            <button type="button" class="btn-modal-cancel" (click)="dialogWhatsapp = false">Cerrar</button>
+            <button type="button" class="btn-modal-wtsp" (click)="enviarWhatsapp()">
+                <i class="fa-brands fa-whatsapp"></i>
+                <span>Abrir WhatsApp Ahora</span>
+            </button>
+        </div>
+    </ng-template>
+</p-dialog>

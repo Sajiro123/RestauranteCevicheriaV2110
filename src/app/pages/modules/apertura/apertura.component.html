@@ -91,7 +91,8 @@
                             optionValue="idpersona" placeholder="Seleccione trabajadores" [showToggleAll]="true"
                             [filter]="true" filterPlaceholder="Buscar..." display="chip" id="trabajadores"
                             [style]="{ width: '100%' }" [maxSelectedLabels]="trabajadoresList.length"
-                            selectedItemsLabel="{0} trabajadores seleccionados">
+                            selectedItemsLabel="{0} trabajadores seleccionados"
+                            appendTo="body" scrollHeight="320px">
                             <ng-template let-worker pTemplate="item">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <img [src]="'https://ui-avatars.com/api/?name=' + worker.nombres + '&background=random&color=fff&bold=true'" 
@@ -209,7 +210,8 @@
                                 [showToggleAll]="true" [filter]="true" filterPlaceholder="Buscar..." display="chip"
                                 id="trabajadores-edit" [style]="{ width: '100%' }"
                                 [maxSelectedLabels]="trabajadoresList.length"
-                                selectedItemsLabel="{0} trabajadores seleccionados">
+                                selectedItemsLabel="{0} trabajadores seleccionados"
+                                appendTo="body" scrollHeight="320px">
                                 <ng-template let-worker pTemplate="item">
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <img [src]="'https://ui-avatars.com/api/?name=' + worker.nombres + '&background=random&color=fff&bold=true'" 

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
+import { DatePickerModule } from 'primeng/datepicker';
 import { AsistenciaService } from '../../../services/asistencia.service';
 import { SupabaseService } from '../../../services/supabase.service';
 import { EmpresaService } from '../../service/empresa.service';
@@ -44,7 +45,7 @@ export interface AdelantoSalario {
 @Component({
     selector: 'app-planilla',
     standalone: true,
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, DialogModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, DialogModule, DatePickerModule],
     templateUrl: './planilla.component.html',
     styleUrl: './planilla.component.scss'
 })
@@ -56,11 +57,13 @@ export class PlanillaComponent implements OnInit {
     // Filtros principales
     fechaInicioFiltro: string = '';
     fechaFinFiltro: string = '';
+    rangoFechasFiltro: Date[] | null = null;
 
     // Variables para el Modal de Cálculo
     displayCalculoModal: boolean = false;
     fechaInicioCalc: string = '';
     fechaFinCalc: string = '';
+    rangoFechasCalc: Date[] | null = null;
     frecuenciaPagoGlobal: string = 'Mensual';
     calculoGenerado: boolean = false;
     planillasGeneradas: RegistroPlanilla[] = [];
@@ -240,6 +243,47 @@ export class PlanillaComponent implements OnInit {
         }
     }
 
+    formatDateToYMD(date: Date): string {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    onRangoFechasSelect() {
+        if (this.rangoFechasFiltro && Array.isArray(this.rangoFechasFiltro)) {
+            const [desde, hasta] = this.rangoFechasFiltro;
+            this.fechaInicioFiltro = desde ? this.formatDateToYMD(desde) : '';
+            this.fechaFinFiltro = hasta ? this.formatDateToYMD(hasta) : '';
+        } else {
+            this.fechaInicioFiltro = '';
+            this.fechaFinFiltro = '';
+        }
+    }
+
+    onClearRangoFechas() {
+        this.rangoFechasFiltro = null;
+        this.fechaInicioFiltro = '';
+        this.fechaFinFiltro = '';
+    }
+
+    onRangoFechasCalcSelect() {
+        if (this.rangoFechasCalc && Array.isArray(this.rangoFechasCalc)) {
+            const [desde, hasta] = this.rangoFechasCalc;
+            this.fechaInicioCalc = desde ? this.formatDateToYMD(desde) : '';
+            this.fechaFinCalc = hasta ? this.formatDateToYMD(hasta) : '';
+        } else {
+            this.fechaInicioCalc = '';
+            this.fechaFinCalc = '';
+        }
+    }
+
+    onClearRangoFechasCalc() {
+        this.rangoFechasCalc = null;
+        this.fechaInicioCalc = '';
+        this.fechaFinCalc = '';
+    }
+
     abrirModalCalculo() {
         this.displayCalculoModal = true;
         this.calculoGenerado = false;
@@ -247,6 +291,13 @@ export class PlanillaComponent implements OnInit {
         this.planillasGeneradas = [];
         this.fechaInicioCalc = this.fechaInicioFiltro;
         this.fechaFinCalc = this.fechaFinFiltro;
+        if (this.rangoFechasFiltro && this.rangoFechasFiltro.length > 0 && this.rangoFechasFiltro[0]) {
+            this.rangoFechasCalc = [this.rangoFechasFiltro[0], this.rangoFechasFiltro[1] || this.rangoFechasFiltro[0]];
+        } else if (this.fechaInicioCalc && this.fechaFinCalc) {
+            this.rangoFechasCalc = [new Date(this.fechaInicioCalc + 'T00:00:00'), new Date(this.fechaFinCalc + 'T00:00:00')];
+        } else {
+            this.rangoFechasCalc = null;
+        }
         this.frecuenciaPagoGlobal = 'Mensual';
     }
 
@@ -257,6 +308,13 @@ export class PlanillaComponent implements OnInit {
     }
 
     async calcularPlanilla() {
+        if (this.rangoFechasCalc && Array.isArray(this.rangoFechasCalc)) {
+            const [desde, hasta] = this.rangoFechasCalc;
+            if (desde && !hasta) {
+                this.fechaFinCalc = this.fechaInicioCalc;
+            }
+        }
+
         if (!this.fechaInicioCalc || !this.fechaFinCalc) {
             alert('Por favor ingrese la fecha de inicio y fin');
             return;
@@ -859,6 +917,13 @@ export class PlanillaComponent implements OnInit {
     }
 
     async listarPlanillas() {
+        if (this.rangoFechasFiltro && Array.isArray(this.rangoFechasFiltro)) {
+            const [desde, hasta] = this.rangoFechasFiltro;
+            if (desde && !hasta) {
+                this.fechaFinFiltro = this.fechaInicioFiltro;
+            }
+        }
+
         if (!this.fechaInicioFiltro || !this.fechaFinFiltro) {
             // Puede que no hayan seleccionado fechas, retornar
             return;
@@ -872,8 +937,8 @@ export class PlanillaComponent implements OnInit {
         persona:idpersona (nombres, idperfil)
       `
             )
-            .gte('laborinicio', this.fechaInicioFiltro)
-            .lte('laborfin', this.fechaFinFiltro)
+            .lte('laborinicio', this.fechaFinFiltro)
+            .gte('laborfin', this.fechaInicioFiltro)
             .or('deleted.eq.0,deleted.is.null');
 
         if (this.empleadoSeleccionado) {

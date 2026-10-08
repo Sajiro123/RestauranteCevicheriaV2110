@@ -1174,91 +1174,139 @@
 
             <!-- ===== DIALOG GLOBAL DE TOPPINGS (único, fuera del ngFor) ===== -->
             <p-dialog [(visible)]="toppingDialogVisible" [modal]="true" [closable]="true"
-                [style]="{ width: '92vw', maxWidth: '420px' }" [contentStyle]="{ padding: '0' }" [showHeader]="false">
+                [style]="{ width: '94vw', maxWidth: '480px' }" [contentStyle]="{ padding: '0' }" [showHeader]="false"
+                [dismissableMask]="true" [closeOnEscape]="true">
 
-                <div style="border-radius: 16px; overflow: hidden; font-family: 'Inter', sans-serif;">
+                <div class="topping-dialog-wrapper">
 
                     <!-- Header del dialog -->
-                    <div
-                        style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 1.1rem 1.25rem; display: flex; align-items: center; justify-content: space-between;">
-                        <div>
-                            <div
-                                style="font-size: 0.65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 0.2rem;">
-                                Personalizando plato</div>
-                            <div style="font-size: 1rem; font-weight: 800; color: #ffffff;">{{ itemActivoTopping?.nombre
-                                }}</div>
+                    <div class="topping-dialog-header">
+                        <div class="topping-dialog-title-box">
+                            <div class="topping-dialog-tag">
+                                <i class="pi pi-sliders-h"></i> Personalizando plato
+                            </div>
+                            <div class="topping-dialog-title">{{ itemActivoTopping?.nombre || 'Personalizar plato' }}</div>
                         </div>
-                        <button (click)="toppingDialogVisible = false"
-                            style="background: rgba(255,255,255,0.1); border: none; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff;">
-                            <i class="pi pi-times" style="font-size: 0.85rem;"></i>
+                        <button type="button" (click)="toppingDialogVisible = false" class="btn-topping-close" title="Cerrar">
+                            <i class="pi pi-times"></i>
                         </button>
                     </div>
 
-                    <!-- Body: lista de toppings como chips toggleables -->
-                    <div style="padding: 1.1rem 1.25rem; background: #f8fafc; max-height: 55vh; overflow-y: auto;">
-                        <div
-                            style="font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.75rem;">
-                            Selecciona las opciones
-                        </div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                            <button *ngFor="let t of multiselectToppings" type="button" (click)="toggleTopping(t)"
-                                [style.background]="isToppingSelected(t) ? '#1e293b' : '#ffffff'"
-                                [style.color]="isToppingSelected(t) ? '#ffffff' : '#475569'"
-                                [style.border]="isToppingSelected(t) ? '1.5px solid #1e293b' : '1.5px solid #e2e8f0'"
-                                style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.85rem; border-radius: 99px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                                <i class="pi" [class.pi-check-circle]="isToppingSelected(t)"
-                                    [class.pi-circle]="!isToppingSelected(t)" style="font-size: 0.75rem;"></i>
-                                {{ t.nombre }}
-                            </button>
+                    <!-- Body -->
+                    <div class="topping-dialog-body">
+
+                        <!-- CAMPO SELECTOR CON AUTOCOMPLETADO (SI NO EXISTE SE AGREGA) -->
+                        <div class="topping-autocomplete-section">
+                            <label class="topping-label">
+                                <span><i class="pi pi-search"></i> Buscar o Agregar Personalización</span>
+                                <small class="topping-label-hint">Autocompleta o crea una nueva</small>
+                            </label>
+
+                            <div class="topping-search-wrap">
+                                <i class="pi pi-search search-icon"></i>
+                                <input #inputBusquedaTopping type="text"
+                                    [(ngModel)]="busquedaTopping"
+                                    (input)="onInputBusquedaTopping()"
+                                    (focus)="onFocusBusquedaTopping()"
+                                    (blur)="onBlurBusquedaTopping()"
+                                    (keydown.enter)="procesarEnterEnBusquedaTopping()"
+                                    placeholder="Escribe opción (ej. Sin cebolla, Poco picante)..."
+                                    class="topping-search-input"
+                                    autocomplete="off" />
+                                <button *ngIf="busquedaTopping" type="button" class="btn-clear-topping-search" (click)="busquedaTopping = ''; onInputBusquedaTopping()">
+                                    <i class="pi pi-times"></i>
+                                </button>
+                            </div>
+
+                            <!-- DROPDOWN DE AUTOCOMPLETADO -->
+                            <div class="topping-suggestions-dropdown" *ngIf="mostrarSugerenciasTopping">
+
+                                <!-- OPCIÓN SI NO EXISTE: CREAR Y AGREGAR NUEVO -->
+                                <div *ngIf="busquedaTopping.trim().length >= 1 && !existeCoincidenciaExactaTopping()"
+                                    class="suggestion-item suggestion-item--create"
+                                    (mousedown)="crearYAgregarTopping()">
+                                    <div class="create-icon-badge">
+                                        <i class="pi pi-plus"></i>
+                                    </div>
+                                    <div class="create-content">
+                                        <div class="create-title">Agregar nueva opción: <strong>"{{ busquedaTopping.trim() }}"</strong></div>
+                                        <div class="create-subtitle">Guardar en base de datos y asignar al plato</div>
+                                    </div>
+                                    <span class="btn-enter-hint">Enter ↵</span>
+                                </div>
+
+                                <!-- LISTA DE SUGERENCIAS COINCIDENTES -->
+                                <div class="suggestions-header" *ngIf="toppingsSugeridos.length > 0">
+                                    <span>Opciones disponibles</span>
+                                    <span>{{ toppingsSugeridos.length }} resultado(s)</span>
+                                </div>
+
+                                <div class="suggestions-list-scroll">
+                                    <div *ngFor="let s of toppingsSugeridos"
+                                        class="suggestion-item"
+                                        [class.is-selected]="isToppingSelected(s)"
+                                        (mousedown)="seleccionarToppingSugerido(s)">
+                                        <i class="pi" [class.pi-check-circle]="isToppingSelected(s)" [class.pi-circle]="!isToppingSelected(s)"></i>
+                                        <span class="suggestion-name">{{ s.nombre }}</span>
+                                        <span class="status-badge" *ngIf="isToppingSelected(s)">Seleccionado</span>
+                                    </div>
+                                </div>
+
+                                <!-- SI NO HAY NADA Y LA BÚSQUEDA ESTÁ VACÍA -->
+                                <div *ngIf="toppingsSugeridos.length === 0 && (!busquedaTopping || busquedaTopping.trim().length === 0)" class="empty-suggestions">
+                                    <span>Escribe una personalización para buscar o agregar</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Agregar nuevo topping -->
-                        <div
-                            style="margin-top: 1rem; display: flex; gap: 0.5rem; align-items: center; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 0.55rem 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                            <i class="pi pi-plus-circle"
-                                style="color: #64748b; font-size: 0.85rem; flex-shrink: 0;"></i>
-                            <input type="text" [(ngModel)]="nuevoToppingNombre"
-                                placeholder="Nombre del nuevo topping..." (keydown.enter)="agregarNuevoTopping()"
-                                [disabled]="guardandoTopping"
-                                style="flex: 1; border: none; outline: none; font-size: 0.82rem; font-weight: 600; color: #334155; background: transparent; min-width: 0;" />
-                            <button type="button" (click)="agregarNuevoTopping()"
-                                [disabled]="!nuevoToppingNombre.trim() || guardandoTopping"
-                                style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.38rem 0.85rem; border-radius: 8px; border: none; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.15s;"
-                                [style.background]="!nuevoToppingNombre.trim() || guardandoTopping ? '#f1f5f9' : '#0f172a'"
-                                [style.color]="!nuevoToppingNombre.trim() || guardandoTopping ? '#94a3b8' : '#ffffff'">
-                                <i [class]="guardandoTopping ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
-                                    style="font-size: 0.72rem;"></i>
-                                {{ guardandoTopping ? 'Guardando...' : 'Agregar' }}
-                            </button>
-                        </div>
-
-                        <!-- Resumen seleccionados -->
-                        <div *ngIf="selectedToppings.length > 0"
-                            style="margin-top: 1rem; padding: 0.65rem 0.85rem; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px;">
-                            <div
-                                style="font-size: 0.7rem; font-weight: 700; color: #0369a1; margin-bottom: 0.35rem; text-transform: uppercase;">
-                                Seleccionados</div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;">
-                                <span *ngFor="let sel of selectedToppings"
-                                    style="background: #0284c7; color: #fff; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.65rem; border-radius: 99px;">
-                                    {{ sel.nombre }}
+                        <!-- RESUMEN DE PERSONALIZACIONES SELECCIONADAS -->
+                        <div class="selected-toppings-section" *ngIf="selectedToppings.length > 0">
+                            <div class="selected-header">
+                                <span class="selected-title">
+                                    <i class="pi pi-check-circle"></i> Seleccionados ({{ selectedToppings.length }})
+                                </span>
+                                <button type="button" class="btn-clear-all" (click)="selectedToppings = []">
+                                    Quitar todas
+                                </button>
+                            </div>
+                            <div class="selected-chips-grid">
+                                <span *ngFor="let sel of selectedToppings" class="selected-chip">
+                                    <span>{{ sel.nombre }}</span>
+                                    <button type="button" (click)="removerToppingSeleccionado(sel)" class="chip-remove-btn" title="Quitar opción">
+                                        <i class="pi pi-times"></i>
+                                    </button>
                                 </span>
                             </div>
                         </div>
+
+                        <!-- TODAS LAS OPCIONES DISPONIBLES (SELECCIÓN RÁPIDA POR TOQUE) -->
+                        <div class="quick-options-section">
+                            <div class="quick-options-header">
+                                <span><i class="pi pi-th-large"></i> Opciones del Catálogo</span>
+                                <small>Toca para activar o desactivar</small>
+                            </div>
+                            <div class="quick-chips-wrap">
+                                <button *ngFor="let t of multiselectToppings" type="button" (click)="toggleTopping(t)"
+                                    class="quick-topping-chip"
+                                    [class.active]="isToppingSelected(t)">
+                                    <i class="pi" [class.pi-check]="isToppingSelected(t)" [class.pi-plus]="!isToppingSelected(t)"></i>
+                                    <span>{{ t.nombre }}</span>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
 
                     <!-- Footer -->
-                    <div
-                        style="padding: 0.9rem 1.25rem; background: #ffffff; border-top: 1px solid #f1f5f9; display: flex; gap: 0.65rem; justify-content: flex-end;">
-                        <button type="button" (click)="selectedToppings = []"
-                            style="padding: 0.6rem 1.1rem; border: 1.5px solid #e2e8f0; border-radius: 9px; background: #fff; color: #64748b; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
-                            <i class="pi pi-eraser" style="margin-right: 0.3rem;"></i> Limpiar
+                    <div class="topping-dialog-footer">
+                        <button type="button" (click)="selectedToppings = []" class="btn-footer-secondary">
+                            <i class="pi pi-eraser"></i> Limpiar
                         </button>
-                        <button type="button" (click)="guardarToppingDesdeDialog()"
-                            style="padding: 0.6rem 1.25rem; border: none; border-radius: 9px; background: #1e293b; color: #ffffff; font-size: 0.85rem; font-weight: 700; cursor: pointer;">
-                            <i class="pi pi-check" style="margin-right: 0.3rem;"></i> Guardar
+                        <button type="button" (click)="guardarToppingDesdeDialog()" class="btn-footer-primary">
+                            <i class="pi pi-check"></i> Aplicar al Plato
                         </button>
                     </div>
+
                 </div>
             </p-dialog>
 

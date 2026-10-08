@@ -159,13 +159,20 @@
 
 <!-- ── MODAL EDITAR ────────────────────────────────────────── -->
 <p-dialog header="Editar Apertura" [(visible)]="editVisible" [modal]="true"
-    [style]="{ width: '560px', maxWidth: '96vw' }" [draggable]="false" [resizable]="false">
+    [style]="{ width: '740px', maxWidth: '96vw' }" [draggable]="false" [resizable]="false">
 
     <div class="edit-form" [formGroup]="editForm" *ngIf="aperturaEditando">
 
-        <div class="edit-date-label">
-            <i class="pi pi-calendar"></i>
-            Apertura del <strong>{{ aperturaEditando.fecha | date:'dd/MM/yyyy' }}</strong>
+        <div class="edit-date-banner">
+            <div class="banner-left">
+                <i class="pi pi-calendar"></i>
+                <span>Apertura del <strong>{{ aperturaEditando.fecha | date:'dd/MM/yyyy' }}</strong></span>
+            </div>
+            <span class="banner-turno-badge" [class.badge-manana]="editForm.get('turno')?.value === 'Mañana'"
+                [class.badge-tarde]="editForm.get('turno')?.value === 'Tarde'"
+                [class.badge-noche]="editForm.get('turno')?.value === 'Noche'">
+                Turno {{ editForm.get('turno')?.value || 'Sin Turno' }}
+            </span>
         </div>
 
         <div class="form-grid-2">
@@ -212,20 +219,48 @@
             </div>
         </div>
 
-        <div class="form-field">
-            <label>Personal en Campo <span class="req">*</span></label>
-            <p-multiSelect formControlName="trabajadores" [options]="trabajadoresList" optionLabel="nombres"
-                optionValue="idpersona" placeholder="Seleccione trabajadores" [showToggleAll]="true" [filter]="true"
-                filterPlaceholder="Buscar..." display="chip" [style]="{ width: '100%' }"
-                [maxSelectedLabels]="trabajadoresList.length" selectedItemsLabel="{0} trabajadores seleccionados">
+        <!-- Personal en Campo con tamaño más grande, espacioso y appendTo body para evitar cierres -->
+        <div class="form-field form-field-personal">
+            <div class="field-header-row">
+                <label class="personal-label">
+                    <i class="pi pi-users"></i> Personal en Campo <span class="req">*</span>
+                </label>
+                <span class="personal-count-badge" *ngIf="editForm.get('trabajadores')?.value?.length">
+                    <i class="pi pi-check-circle"></i> {{ editForm.get('trabajadores')?.value?.length }} seleccionado(s)
+                </span>
+            </div>
+            <p-multiSelect formControlName="trabajadores"
+                [options]="trabajadoresList"
+                optionLabel="nombres"
+                optionValue="idpersona"
+                placeholder="Seleccione los trabajadores asignados a esta jornada..."
+                [showToggleAll]="true"
+                [filter]="true"
+                filterPlaceholder="Buscar trabajador por nombre..."
+                display="chip"
+                appendTo="body"
+                scrollHeight="320px"
+                [panelStyle]="{ 'min-width': '420px', 'max-width': '96vw' }"
+                [style]="{ width: '100%' }"
+                styleClass="personal-multiselect-lg"
+                [maxSelectedLabels]="trabajadoresList.length"
+                selectedItemsLabel="{0} trabajadores seleccionados">
                 <ng-template let-worker pTemplate="item">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <img [src]="'https://ui-avatars.com/api/?name=' + worker.nombres + '&background=random&color=fff&bold=true'" 
-                             alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;" />
-                        <span>{{ worker.nombres }}</span>
+                    <div class="worker-option-item">
+                        <img [src]="'https://ui-avatars.com/api/?name=' + worker.nombres + '+' + (worker.apellidopat || '') + '&background=0284c7&color=fff&bold=true'" 
+                             alt="Avatar" class="worker-item-avatar" />
+                        <div class="worker-item-info">
+                            <span class="worker-item-name">{{ worker.nombres }} {{ worker.apellidopat || '' }}</span>
+                            <span class="worker-item-sub" *ngIf="worker.celular">
+                                <i class="pi pi-phone"></i> {{ worker.celular }}
+                            </span>
+                        </div>
                     </div>
                 </ng-template>
             </p-multiSelect>
+            <span class="field-hint-personal">
+                <i class="pi pi-info-circle"></i> Selecciona los colaboradores del turno. No se cerrará al marcar o desmarcar.
+            </span>
         </div>
     </div>
 

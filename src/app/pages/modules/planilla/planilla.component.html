@@ -15,12 +15,12 @@
     <div class="page-header" style="justify-content: flex-start;">
 
         <div class="filter-group">
-            <span class="filter-label">Desde</span>
-            <input type="date" class="date-input" [(ngModel)]="fechaInicioFiltro">
-        </div>
-        <div class="filter-group">
-            <span class="filter-label">Hasta</span>
-            <input type="date" class="date-input" [(ngModel)]="fechaFinFiltro">
+            <span class="filter-label">Rango de Fechas (Desde - Hasta)</span>
+            <p-datepicker [(ngModel)]="rangoFechasFiltro" selectionMode="range" [readonlyInput]="false"
+                dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Desde - Hasta"
+                (onSelect)="onRangoFechasSelect()" (ngModelChange)="onRangoFechasSelect()"
+                (onClearClick)="onClearRangoFechas()" [showButtonBar]="true" [style]="{ 'min-width': '260px' }">
+            </p-datepicker>
         </div>
         <div class="filter-group">
             <span class="filter-label">Buscar Empleado</span>
@@ -30,20 +30,22 @@
                 </option>
             </select>
         </div>
-        <button class="btn btn-ghost" style="margin-bottom: 2px; border: 1px solid #d1d5db;"
-            (click)="listarPlanillas()">
-            <i class="pi pi-search"></i> Buscar
-        </button>
-        <button class="btn btn-primary" style="margin-bottom: 2px;" (click)="abrirModalCalculo()">
-            <i class="pi pi-calculator"></i> Generar Cálculo
-        </button>
-        <button class="btn btn-adelanto" style="margin-bottom: 2px;" (click)="abrirModalAdelantos()">
-            <i class="pi pi-wallet"></i> Adelantos
-            <span *ngIf="adelantos.length > 0" class="adelanto-badge">{{ adelantos.length }}</span>
-        </button>
+        <div class="filter-actions-group">
+            <button class="btn btn-ghost" style="border: 1px solid #d1d5db;" (click)="listarPlanillas()">
+                <i class="pi pi-search"></i> Buscar
+            </button>
+            <button class="btn btn-primary" (click)="abrirModalCalculo()">
+                <i class="pi pi-calculator"></i> Generar Cálculo
+            </button>
+            <button class="btn btn-adelanto" (click)="abrirModalAdelantos()">
+                <i class="pi pi-wallet"></i> Adelantos
+                <span *ngIf="adelantos.length > 0" class="adelanto-badge">{{ adelantos.length }}</span>
+            </button>
+        </div>
     </div>
     <div class="table-card">
-        <div class="table-responsive">
+        <!-- VISTA DE TABLA PARA ESCRITORIO / TABLET -->
+        <div class="table-responsive desktop-table-view">
             <table>
                 <thead>
                     <tr>
@@ -55,7 +57,7 @@
                         <th style="text-align: right;">Descuentos</th>
                         <th style="text-align: right;">Extras</th>
                         <th class="th-total" style="text-align: right;">Monto Neto</th>
-                        <th style="width: 90px; text-align: center;">Acciones</th>
+                        <th style="width: 105px; text-align: center;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -143,12 +145,107 @@
                 </tfoot>
             </table>
         </div>
+
+        <!-- VISTA DE TARJETAS RESPONSIVE PARA CELULARES (MÓVIL) -->
+        <div class="mobile-cards-view">
+            <div *ngIf="planillas.length === 0" class="mobile-empty-state">
+                <i class="pi pi-inbox"></i>
+                <span>No hay registros de planilla para mostrar.</span>
+            </div>
+
+            <div *ngFor="let p of planillas" class="planilla-card-mobile">
+                <div class="card-mobile-header">
+                    <div class="card-mobile-user">
+                        <img alt="Avatar"
+                            [src]="'https://ui-avatars.com/api/?name=' + p.nombre_persona + '&background=random'"
+                            class="card-mobile-avatar">
+                        <div class="card-mobile-user-info">
+                            <span class="card-mobile-name">{{ p.nombre_persona }}</span>
+                            <span class="card-mobile-cargo">{{ p.cargo_persona }}</span>
+                        </div>
+                    </div>
+                    <div class="card-mobile-neto">
+                        <span class="neto-label">Neto a pagar</span>
+                        <span class="neto-value">S/ {{ p.monto_neto | number:'1.2-2' }}</span>
+                    </div>
+                </div>
+
+                <div class="card-mobile-periodo">
+                    <i class="pi pi-calendar"></i>
+                    <span>{{ p.laborinicio | date:'dd/MM/yyyy' }} - {{ p.laborfin | date:'dd/MM/yyyy' }}</span>
+                </div>
+
+                <div class="card-mobile-details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Salario Base</span>
+                        <span class="detail-val">S/ {{ p.salario | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Días Contab.</span>
+                        <span class="detail-val">{{ p.dias_trabajados }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Faltas / Tard.</span>
+                        <span class="detail-val">
+                            <span *ngIf="p.tardanzas_cantidad_dias > 0" class="badge-tardanzas-mobile">
+                                <i class="pi pi-exclamation-triangle"></i> {{ p.tardanzas_cantidad_dias }}
+                            </span>
+                            <span *ngIf="p.tardanzas_cantidad_dias === 0" class="badge-normal-mobile">—</span>
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Descuentos</span>
+                        <span class="detail-val text-danger">S/ {{ p.descuento | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="detail-item" style="grid-column: span 2;">
+                        <span class="detail-label">Extras</span>
+                        <span class="detail-val text-success">S/ {{ (p.extra || 0) | number:'1.2-2' }}</span>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción Móvil visibles y con fácil click táctil -->
+                <div class="card-mobile-actions">
+                    <button type="button" class="btn-mobile-action btn-m-edit" (click)="editarPlanilla(p)">
+                        <i class="pi pi-pencil"></i> Editar
+                    </button>
+                    <button type="button" class="btn-mobile-action btn-m-pdf" (click)="descargarPDF(p)">
+                        <i class="pi pi-file-pdf"></i> PDF
+                    </button>
+                    <button type="button" class="btn-mobile-action btn-m-delete" (click)="eliminarPlanilla(p)">
+                        <i class="pi pi-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Resumen Total en Móvil -->
+            <div *ngIf="planillas.length > 0" class="mobile-total-summary">
+                <div class="summary-title">
+                    <i class="pi pi-chart-bar"></i> Total General ({{ planillas.length }} {{ planillas.length === 1 ? 'registro' : 'registros' }})
+                </div>
+                <div class="summary-row">
+                    <span>Salario Base:</span>
+                    <strong>S/ {{ totalSalarioBase | number:'1.2-2' }}</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Descuentos:</span>
+                    <strong class="text-danger">S/ {{ totalDescuentos | number:'1.2-2' }}</strong>
+                </div>
+                <div class="summary-row">
+                    <span>Extras:</span>
+                    <strong class="text-success">S/ {{ totalExtras | number:'1.2-2' }}</strong>
+                </div>
+                <div class="summary-row summary-neto">
+                    <span>Monto Neto Total:</span>
+                    <strong class="text-gold">S/ {{ totalMontoNeto | number:'1.2-2' }}</strong>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Modal para Generar Cálculo -->
 <p-dialog header="Generar Cálculo de Planilla" [(visible)]="displayCalculoModal" [modal]="true"
-    [style]="{width: '850px'}" [draggable]="false" [resizable]="false">
+    [style]="{width: '850px', maxWidth: '96vw'}" [draggable]="false" [resizable]="false">
     <div class="dialog-form" style="padding-top: 1rem;">
 
         <div *ngIf="!calculoGenerado">
@@ -173,16 +270,14 @@
                 </div>
             </div>
 
-            <div class="form-grid-2">
-                <div class="form-field">
-                    <label>Fecha Inicio</label>
-                    <input type="date" class="field-input" [(ngModel)]="fechaInicioCalc">
-                </div>
-
-                <div class="form-field">
-                    <label>Fecha Fin</label>
-                    <input type="date" class="field-input" [(ngModel)]="fechaFinCalc">
-                </div>
+            <div class="form-field" style="margin-bottom: 1rem;">
+                <label>Período (Desde - Hasta)</label>
+                <p-datepicker [(ngModel)]="rangoFechasCalc" selectionMode="range" [readonlyInput]="false"
+                    dateFormat="dd/mm/yy" [showIcon]="true" placeholder="Seleccionar período (Desde - Hasta)..."
+                    (onSelect)="onRangoFechasCalcSelect()" (ngModelChange)="onRangoFechasCalcSelect()"
+                    (onClearClick)="onClearRangoFechasCalc()" [showButtonBar]="true" [appendTo]="'body'"
+                    [style]="{ 'width': '100%' }">
+                </p-datepicker>
             </div>
 
             <div class="dialog-actions" style="margin-top: 1.5rem;">

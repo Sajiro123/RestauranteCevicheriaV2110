@@ -63,6 +63,10 @@ export class HomeComponent {
     multiselectToppings: any[] = [];
     nuevoToppingNombre: string = '';
     guardandoTopping: boolean = false;
+    busquedaTopping: string = '';
+    mostrarSugerenciasTopping: boolean = false;
+    toppingsSugeridos: any[] = [];
+    private sugerenciasToppingTimeout: any = null;
     discount: number = 0;
     switchValue: boolean = false;
     pedidosSeleccionados: any[] = [];
@@ -507,12 +511,14 @@ export class HomeComponent {
             this.selectedToppings = [];
         }
 
+        this.busquedaTopping = '';
+        this.mostrarSugerenciasTopping = false;
+        this.toppingsSugeridos = this.multiselectToppings.slice(0, 15);
         this.toppingDialogVisible = true;
     }
 
     /** Toggle individual de un topping en el panel */
     toggleTopping(topping: { idtoppings: number; nombre: string }) {
-        debugger;
         // Guard: ignorar toppings sin id válido
         if (!topping || !topping.idtoppings || topping.idtoppings <= 0) return;
 
@@ -530,6 +536,108 @@ export class HomeComponent {
         return this.selectedToppings.some((t) => t.idtoppings === topping.idtoppings);
     }
 
+    /** Métodos para el selector con autocompletado de personalización / toppings */
+    onInputBusquedaTopping(): void {
+        const query = (this.busquedaTopping || '').trim().toLowerCase();
+        if (this.sugerenciasToppingTimeout) clearTimeout(this.sugerenciasToppingTimeout);
+
+        if (!query) {
+            this.toppingsSugeridos = this.multiselectToppings.slice(0, 15);
+        } else {
+            this.toppingsSugeridos = this.multiselectToppings.filter((t: any) =>
+                t.nombre && t.nombre.toLowerCase().includes(query)
+            ).slice(0, 15);
+        }
+        this.mostrarSugerenciasTopping = true;
+    }
+
+    onFocusBusquedaTopping(): void {
+        this.onInputBusquedaTopping();
+    }
+
+    onBlurBusquedaTopping(): void {
+        this.sugerenciasToppingTimeout = setTimeout(() => {
+            this.mostrarSugerenciasTopping = false;
+        }, 220);
+    }
+
+    existeCoincidenciaExactaTopping(): boolean {
+        const query = (this.busquedaTopping || '').trim().toLowerCase();
+        if (!query) return false;
+        return this.multiselectToppings.some((t: any) =>
+            t.nombre && t.nombre.trim().toLowerCase() === query
+        );
+    }
+
+    seleccionarToppingSugerido(t: any): void {
+        this.toggleTopping(t);
+        this.busquedaTopping = '';
+        this.mostrarSugerenciasTopping = false;
+    }
+
+    procesarEnterEnBusquedaTopping(): void {
+        const query = (this.busquedaTopping || '').trim();
+        if (!query) return;
+
+        const matchExacto = this.multiselectToppings.find((t: any) =>
+            t.nombre && t.nombre.trim().toLowerCase() === query.toLowerCase()
+        );
+
+        if (matchExacto) {
+            if (!this.isToppingSelected(matchExacto)) {
+                this.toggleTopping(matchExacto);
+            }
+            this.busquedaTopping = '';
+            this.mostrarSugerenciasTopping = false;
+            return;
+        }
+
+        // Si no existe, crear y agregar directamente
+        this.crearYAgregarTopping(query);
+    }
+
+    crearYAgregarTopping(nombreTopping?: string): void {
+        const nombre = (nombreTopping || this.busquedaTopping || '').trim();
+        if (!nombre) return;
+
+        const match = this.multiselectToppings.find((t: any) =>
+            t.nombre && t.nombre.trim().toLowerCase() === nombre.toLowerCase()
+        );
+
+        if (match) {
+            if (!this.isToppingSelected(match)) {
+                this.toggleTopping(match);
+            }
+            this.busquedaTopping = '';
+            this.mostrarSugerenciasTopping = false;
+            return;
+        }
+
+        this.guardandoTopping = true;
+        this.PedidoService.InsertarTopping(nombre).subscribe({
+            next: (response) => {
+                this.guardandoTopping = false;
+                if (response.success && response.data) {
+                    this.multiselectToppings = [...this.multiselectToppings, response.data].sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
+                    this.selectedToppings = [...this.selectedToppings, { idtoppings: response.data.idtoppings, nombre: response.data.nombre }];
+                    this.busquedaTopping = '';
+                    this.mostrarSugerenciasTopping = false;
+                    this.messageService.add({ severity: 'success', summary: 'Personalización creada', detail: `"${nombre}" fue agregada y seleccionada.`, life: 2500 });
+                } else {
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo agregar la personalización.', life: 3000 });
+                }
+            },
+            error: () => {
+                this.guardandoTopping = false;
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al conectar con la base de datos.', life: 3000 });
+            }
+        });
+    }
+
+    removerToppingSeleccionado(t: any): void {
+        this.selectedToppings = this.selectedToppings.filter((item) => item.idtoppings !== t.idtoppings);
+    }
+
     /** Guarda los toppings del item activo y cierra el dialog */
     guardarToppingDesdeDialog() {
         const idx = this.itemActivoToppingIndex;
@@ -540,39 +648,14 @@ export class HomeComponent {
         this.itemActivoTopping = null;
         this.itemActivoToppingIndex = -1;
         this.selectedToppings = [];
+        this.busquedaTopping = '';
+        this.mostrarSugerenciasTopping = false;
     }
 
-    /** Crea un nuevo topping en la BD, lo agrega a la lista y lo selecciona */
+    /** Crea un nuevo topping en la BD, lo agrega a la lista y lo selecciona (compatible hacia atrás) */
     agregarNuevoTopping() {
-        const nombre = this.nuevoToppingNombre.trim();
-        if (!nombre) return;
-
-        // Evitar duplicados
-        const existe = this.multiselectToppings.some((t: any) => t.nombre.toLowerCase() === nombre.toLowerCase());
-        if (existe) {
-            this.messageService.add({ severity: 'warn', summary: 'Duplicado', detail: 'Ese topping ya existe en la lista.', life: 2500 });
-            return;
-        }
-
-        this.guardandoTopping = true;
-        this.PedidoService.InsertarTopping(nombre).subscribe({
-            next: (response) => {
-                this.guardandoTopping = false;
-                if (response.success && response.data) {
-                    this.multiselectToppings = [...this.multiselectToppings, response.data].sort((a: any, b: any) => a.nombre.localeCompare(b.nombre));
-                    // Auto-seleccionar el nuevo topping
-                    this.selectedToppings = [...this.selectedToppings, { idtoppings: response.data.idtoppings, nombre: response.data.nombre }];
-                    this.nuevoToppingNombre = '';
-                    this.messageService.add({ severity: 'success', summary: 'Topping agregado', detail: '"' + nombre + '" fue creado y seleccionado.', life: 2500 });
-                } else {
-                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo agregar el topping.', life: 3000 });
-                }
-            },
-            error: () => {
-                this.guardandoTopping = false;
-                this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al conectar con la base de datos.', life: 3000 });
-            }
-        });
+        this.crearYAgregarTopping(this.nuevoToppingNombre);
+        this.nuevoToppingNombre = '';
     }
 
     agregarToppingsPedido(pedidosdetalle: NuevoPedidodetalle, op: Popover, index: number) {
@@ -2375,6 +2458,7 @@ export class HomeComponent {
         });
 
         const esDelivery = !input.mesa || input.mesa === '0' || input.mesa === 0;
+        const esMixto = !esDelivery && itemsMesa.length > 0 && itemsLlevar.length > 0;
 
         // Función auxiliar para calcular altura de lista de ítems
         const calcItemsH = (list: any[]) => {
@@ -2392,16 +2476,38 @@ export class HomeComponent {
             return h;
         };
 
+        // Estimación de altura del badge footer inferior (visible al colgar en riel)
+        let badgeH = 14;
+        if (esDelivery) {
+            badgeH = (input.cliente && input.cliente.trim()) ? 18 : 15;
+        } else if (esMixto) {
+            let itemLinesCount = 0;
+            itemsLlevar.forEach((elem: any) => {
+                const cant = elem.cantidad || 1;
+                const nom = (elem.producto?.nombre || elem.nombre || 'PLATO').toUpperCase();
+                const txt = `* ${cant}x ${nom}`;
+                const lines = Math.ceil(txt.length / 28) || 1;
+                itemLinesCount += lines;
+            });
+            badgeH = 15 + (itemLinesCount * 4.2);
+        } else if (itemsMesa.length === 0 && itemsLlevar.length > 0) {
+            badgeH = 16;
+        } else {
+            badgeH = 14;
+        }
+
         // Estimación dinámica de altura total para formato 80mm
         let calcHeight = 8;
         calcHeight += 4; // Título comanda
-        calcHeight += esDelivery ? 15 : 13; // Badge mesa / delivery
-        calcHeight += 8; // Fecha y número de pedido
+        calcHeight += 4; // Fecha y hora
+        calcHeight += 4; // Referencia superior
         calcHeight += 8; // Cabecera de columnas
 
-        if (!esDelivery && itemsMesa.length > 0 && itemsLlevar.length > 0) {
+        if (esMixto) {
             calcHeight += 5 + calcItemsH(itemsMesa);
-            calcHeight += 5 + calcItemsH(itemsLlevar);
+            calcHeight += 12 + calcItemsH(itemsLlevar);
+        } else if (!esDelivery && itemsLlevar.length > 0) {
+            calcHeight += 12 + calcItemsH(itemsLlevar);
         } else {
             calcHeight += calcItemsH(items);
         }
@@ -2411,7 +2517,9 @@ export class HomeComponent {
             calcHeight += 6 + (comLinesCount * 3.8) + 4;
         }
 
-        calcHeight += 18; // Total de platos, fin y margen de corte
+        calcHeight += 6; // Total de platos
+        calcHeight += badgeH; // Badge destacado MESA / LLEVAR AL FINALIZAR EL PAPEL
+        calcHeight += 12; // Fin de comanda y margen de corte
         const finalHeight = Math.max(125, Math.ceil(calcHeight));
 
         const doc = new jsPDF({
@@ -2421,7 +2529,7 @@ export class HomeComponent {
         });
 
         const centerX = 40;
-        let y = 6;
+        let y = 8; // Margen superior para pinza/riel de comanda
 
         // Título superior
         doc.setFont('helvetica', 'bold');
@@ -2429,40 +2537,20 @@ export class HomeComponent {
         doc.text('*** COMANDA DE COCINA ***', centerX, y, { align: 'center' });
         y += 4;
 
-        // Badge destacado de Mesa o Para Llevar
-        const badgeH = esDelivery ? 14 : 12;
-        doc.setLineWidth(0.5);
-        doc.setDrawColor(0, 0, 0);
-        doc.roundedRect(5, y, 70, badgeH, 2, 2, 'S');
-
-        if (!esDelivery) {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(17);
-            doc.text(`MESA  ${input.mesa}`, centerX, y + 8, { align: 'center' });
-        } else {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12.5);
-            doc.text('PARA LLEVAR / DELIVERY', centerX, y + 5.5, { align: 'center' });
-            if (input.cliente && input.cliente.trim()) {
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                doc.text(`Cliente: ${input.cliente.trim()}`, centerX, y + 10.5, { align: 'center' });
-            }
-        }
-        y += badgeH + 3.5;
-
-        // Fecha y hora: hora a la que entra a cocina (momento exacto de emision o actualizacion)
+        // Fecha y hora: hora a la que entra a cocina (momento exacto de emisión o actualización)
         const fechaStr = this.formatFechaPeruTicket(new Date());
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
         doc.text(fechaStr, centerX, y, { align: 'center' });
         y += 3.5;
 
-        if (input.idpedido) {
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Pedido N°: #${input.idpedido}`, centerX, y, { align: 'center' });
-            y += 3.5;
-        }
+        // Referencia compacta arriba (Pedido y Mesa/Llevar)
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        const refMesaTxt = !esDelivery ? `Mesa: ${input.mesa}` : 'PARA LLEVAR';
+        const pedidoTxt = input.idpedido ? `Pedido #${input.idpedido}  |  ${refMesaTxt}` : refMesaTxt;
+        doc.text(pedidoTxt, centerX, y, { align: 'center' });
+        y += 3.5;
 
         // Línea divisoria principal
         doc.setLineWidth(0.4);
@@ -2539,23 +2627,34 @@ export class HomeComponent {
         };
 
         // Renderizado por sección
-        if (!esDelivery && itemsMesa.length > 0 && itemsLlevar.length > 0) {
+        if (esMixto) {
+            // Sección Salón
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(9);
-            doc.text('>> SALÓN / MESA', 5, y);
-            y += 3.5;
+            doc.text('>> SALÓN / MESA (SERVIR EN LOZA)', 5, y);
+            y += 4;
             renderItemList(itemsMesa);
 
+            // Sección Llevar con barra destacada de fondo negro y margen seguro para no tapar el plato
+            y += 2;
+            doc.setFillColor(30, 30, 30);
+            doc.roundedRect(5, y, 70, 5.5, 1, 1, 'F');
+            doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.text('>> PARA LLEVAR', 5, y);
-            y += 3.5;
+            doc.setFontSize(8.5);
+            doc.text('>> PARA LLEVAR (EMPACAR EN TÁPER)', centerX, y + 3.8, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            y += 10.5;
             renderItemList(itemsLlevar);
         } else if (!esDelivery && itemsLlevar.length > 0) {
+            doc.setFillColor(30, 30, 30);
+            doc.roundedRect(5, y, 70, 5.5, 1, 1, 'F');
+            doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.text('>> PARA LLEVAR', 5, y);
-            y += 3.5;
+            doc.setFontSize(8.5);
+            doc.text('>> PARA LLEVAR (EMPACAR EN TÁPER)', centerX, y + 3.8, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+            y += 10.5;
             renderItemList(itemsLlevar);
         } else {
             renderItemList(items);
@@ -2587,19 +2686,85 @@ export class HomeComponent {
             y += boxH + 3.5;
         }
 
-        // Conteo total y pie
+        // Conteo total
         const totalPlatos = items.reduce((acc: number, item: any) => acc + (Number(item.cantidad) || 0), 0);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
+        doc.setFontSize(9);
         doc.text(`TOTAL PLATOS: ${totalPlatos}`, 5, y);
-        y += 4;
+        y += 4.5;
+
+        // Línea divisoria antes del badge final
+        doc.setLineWidth(0.4);
+        doc.line(5, y, 75, y);
+        y += 3;
+
+        // ═══════════════════════════════════════════════════════════════
+        // BADGE GIGANTE AL FINALIZAR EL PAPEL (VISIBLE AL COLGAR EN RIEL)
+        // ═══════════════════════════════════════════════════════════════
+        doc.setLineWidth(0.8);
+        doc.setDrawColor(0, 0, 0);
+        doc.roundedRect(5, y, 70, badgeH, 2.5, 2.5, 'S');
+
+        if (esDelivery) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(13);
+            doc.text('PARA LLEVAR / DELIVERY', centerX, y + 6, { align: 'center' });
+            if (input.cliente && input.cliente.trim()) {
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text(`Cliente: ${input.cliente.trim()}`, centerX, y + 11.5, { align: 'center' });
+            }
+        } else if (esMixto) {
+            // ── PEDIDO MIXTO: Mesa en grande + Platos a empacar en táper ──
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(15);
+            doc.text(`MESA  ${input.mesa}  (MIXTO)`, centerX, y + 6, { align: 'center' });
+
+            // Línea divisoria interna dentro del recuadro
+            doc.setLineWidth(0.35);
+            doc.line(8, y + 8, 72, y + 8);
+
+            // Título de alerta de táper
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.text('EMPACAR EN TÁPER (LLEVAR):', 8, y + 11.8);
+
+            // Detalle de cada plato para llevar
+            let currItemY = y + 15.6;
+            itemsLlevar.forEach((elem: any) => {
+                const cant = elem.cantidad || 1;
+                const prodNom = (elem.producto?.nombre || elem.nombre || 'PLATO').toUpperCase();
+                const itemTxt = `* ${cant}x ${prodNom}`;
+                const lines = doc.splitTextToSize(itemTxt, 64);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                lines.forEach((l: string) => {
+                    doc.text(l, 8, currItemY);
+                    currItemY += 4.2;
+                });
+            });
+        } else if (itemsMesa.length === 0 && itemsLlevar.length > 0) {
+            // Mesa pero todo el pedido es para llevar
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(15);
+            doc.text(`MESA  ${input.mesa}`, centerX, y + 6, { align: 'center' });
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.text('TODO PARA LLEVAR (TÁPER)', centerX, y + 12, { align: 'center' });
+        } else {
+            // 100% Salón
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.text(`MESA  ${input.mesa}`, centerX, y + 9.5, { align: 'center' });
+        }
+        y += badgeH + 4;
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
         doc.text('*** FIN COMANDA ***', centerX, y, { align: 'center' });
 
         return doc;
-
     }
 
     generateCocinaPDF(pedido: any) {

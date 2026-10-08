@@ -384,19 +384,39 @@ tbody td {
     gap: 1rem;
 }
 
-.edit-date-label {
-    font-size: 0.83rem;
-    color: $text-muted;
-    background: #f8fafc;
-    border: 1px solid $border;
-    border-radius: 8px;
-    padding: 0.6rem 0.9rem;
+.edit-date-banner {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 1px solid $border;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
 
-    strong { color: $navy; }
-    i { color: #3b82f6; }
+    .banner-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.88rem;
+        color: $text-muted;
+
+        strong { color: $navy; font-weight: 700; }
+        i { color: #3b82f6; font-size: 1rem; }
+    }
+
+    .banner-turno-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: #f1f5f9;
+        color: $navy;
+
+        &.badge-manana { background: #fef3c7; color: #92400e; }
+        &.badge-tarde  { background: #dbeafe; color: #1e40af; }
+        &.badge-noche  { background: #ede9fe; color: #5b21b6; }
+    }
 }
 
 .form-grid-2 {
@@ -549,6 +569,265 @@ tbody td {
 
     &:disabled { opacity: 0.55; cursor: not-allowed; }
     &:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(59,130,246,0.45); }
+}
+
+// ── PERSONAL EN CAMPO MULTISELECT (TAMAÑO MÁS GRANDE Y CÓMODO) ──
+.form-field-personal {
+    margin-top: 0.25rem;
+
+    .field-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.45rem;
+
+        .personal-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: $navy;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+
+            i {
+                color: #2563eb;
+                font-size: 0.95rem;
+            }
+        }
+
+        .personal-count-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #1e40af;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 3px 9px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+
+            i {
+                color: #16a34a;
+                font-size: 0.75rem;
+            }
+        }
+    }
+
+    .field-hint-personal {
+        font-size: 0.75rem;
+        color: $text-muted;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 0.4rem;
+
+        i {
+            color: #3b82f6;
+            font-size: 0.8rem;
+        }
+    }
+}
+
+// Estilos profundos para el componente p-multiSelect
+::ng-deep .personal-multiselect-lg {
+    width: 100% !important;
+    min-height: 50px !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    background: #ffffff !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+
+    &:hover {
+        border-color: #94a3b8 !important;
+    }
+
+    &.p-focus, &:focus-within {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+    }
+
+    .p-multiselect-label {
+        padding: 0.45rem 0.75rem !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 0.45rem !important;
+        min-height: 46px !important;
+        font-size: 0.88rem !important;
+        color: #1e293b !important;
+    }
+
+    .p-multiselect-label-container {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    // Chips de empleados seleccionados
+    .p-multiselect-token,
+    .p-multiselect-chip,
+    .p-chip {
+        background: #eff6ff !important;
+        border: 1px solid #bfdbfe !important;
+        color: #1e40af !important;
+        font-weight: 600 !important;
+        font-size: 0.84rem !important;
+        padding: 0.35rem 0.75rem !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.35rem !important;
+        margin: 2px !important;
+        transition: all 0.15s ease !important;
+
+        &:hover {
+            background: #dbeafe !important;
+            border-color: #93c5fd !important;
+        }
+
+        .p-multiselect-token-icon,
+        .p-chip-remove-icon {
+            color: #64748b !important;
+            font-size: 0.8rem !important;
+            margin-left: 0.4rem !important;
+            cursor: pointer !important;
+            transition: color 0.15s !important;
+
+            &:hover {
+                color: #ef4444 !important;
+            }
+        }
+    }
+
+    .p-multiselect-trigger {
+        width: 44px !important;
+        color: #64748b !important;
+    }
+}
+
+// Estilos para el Overlay Panel renderizado en el Body
+::ng-deep .p-multiselect-panel {
+    border-radius: 12px !important;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18) !important;
+    border: 1px solid #cbd5e1 !important;
+    overflow: hidden !important;
+    z-index: 12000 !important;
+
+    .p-multiselect-header {
+        background: #f8fafc !important;
+        padding: 0.75rem 1rem !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.6rem !important;
+
+        .p-checkbox {
+            margin-right: 0.3rem !important;
+        }
+
+        .p-multiselect-filter-container {
+            flex: 1 !important;
+
+            .p-inputtext {
+                height: 40px !important;
+                border-radius: 8px !important;
+                font-size: 0.88rem !important;
+                padding-left: 2.2rem !important;
+                border: 1px solid #cbd5e1 !important;
+
+                &:focus {
+                    border-color: #2563eb !important;
+                    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12) !important;
+                }
+            }
+
+            .p-multiselect-filter-icon {
+                font-size: 0.9rem !important;
+                color: #94a3b8 !important;
+            }
+        }
+
+        .p-multiselect-close {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 6px !important;
+            color: #64748b !important;
+
+            &:hover {
+                background: #e2e8f0 !important;
+                color: #1e293b !important;
+            }
+        }
+    }
+
+    .p-multiselect-items-wrapper {
+        padding: 0.4rem 0 !important;
+    }
+
+    .p-multiselect-item {
+        padding: 0.65rem 1rem !important;
+        transition: background 0.15s !important;
+        font-size: 0.9rem !important;
+
+        &:hover {
+            background: #f1f5f9 !important;
+        }
+
+        &.p-highlight {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+
+        .p-checkbox {
+            margin-right: 0.75rem !important;
+        }
+    }
+}
+
+// Item del trabajador en el dropdown
+.worker-option-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 2px 0;
+
+    .worker-item-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        flex-shrink: 0;
+    }
+
+    .worker-item-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+
+        .worker-item-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.88rem;
+        }
+
+        .worker-item-sub {
+            font-size: 0.75rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 2px;
+
+            i {
+                font-size: 0.7rem;
+                color: #10b981;
+            }
+        }
+    }
 }
 
 // ── RESPONSIVE ────────────────────────────────────────────────

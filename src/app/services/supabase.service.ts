@@ -385,17 +385,24 @@ export class SupabaseService {
                 Number(cierreData.plin_declarado || 0) +
                 Number(cierreData.tarjeta_declarado || 0);
 
+            // Si no se declararon montos en el arqueo (o están en 0), tomar las ventas reales del sistema
+            const efectivoFinal = totalDeclarado > 0 ? Number(cierreData.efectivo_declarado || 0) : Number(sys.ventasEfectivo || 0);
+            const yapeFinal = totalDeclarado > 0 ? Number(cierreData.yape_declarado || 0) : Number(sys.ventasYape || 0);
+            const plinFinal = totalDeclarado > 0 ? Number(cierreData.plin_declarado || 0) : Number(sys.ventasPlin || 0);
+            const tarjetaFinal = totalDeclarado > 0 ? Number(cierreData.tarjeta_declarado || 0) : Number(sys.ventasTarjeta || 0);
+            const totalFinal = efectivoFinal + yapeFinal + plinFinal + tarjetaFinal;
+
             const registroCaja = {
                 fecha: fecha,
                 semana: semana.toString(),
                 dia: dia.toString(),
                 trabajo: cierreData.turno || 'mañana',
-                efectivo: cierreData.efectivo_declarado,
-                yape: cierreData.yape_declarado,
-                plin: cierreData.plin_declarado,
-                tarjeta: cierreData.tarjeta_declarado,
+                efectivo: efectivoFinal,
+                yape: yapeFinal,
+                plin: plinFinal,
+                tarjeta: tarjetaFinal,
                 gastos: sys.totalGastos,
-                total: totalDeclarado,
+                total: totalFinal,
                 notas: cierreData.notas || ''
             };
 
