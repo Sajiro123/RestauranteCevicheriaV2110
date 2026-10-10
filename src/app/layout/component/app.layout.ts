@@ -5,13 +5,14 @@ import { filter, Subscription } from 'rxjs';
 import { AppTopbar } from './app.topbar';
 import { AppSidebar } from './app.sidebar';
 import { AppFooter } from './app.footer';
+import { AlertaWhatsappComponent } from './alerta-whatsapp.component';
 import { LayoutService } from '../service/layout.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-layout',
     standalone: true,
-    imports: [CommonModule, AppTopbar, RouterModule, AppFooter, AppSidebar],
+    imports: [CommonModule, AppTopbar, RouterModule, AppFooter, AppSidebar, AlertaWhatsappComponent],
     template: `<div class="layout-wrapper" [ngClass]="containerClass">
         <app-topbar></app-topbar>
         <app-sidebar></app-sidebar>
@@ -22,6 +23,7 @@ import { AuthService } from '../../services/auth.service';
             <app-footer></app-footer>
         </div>
         <div class="layout-mask animate-fadein"></div>
+        <app-alerta-whatsapp></app-alerta-whatsapp>
     </div>`
 })
 export class AppLayout {

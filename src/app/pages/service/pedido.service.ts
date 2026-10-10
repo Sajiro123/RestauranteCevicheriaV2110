@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { catchError, mergeMap, Observable, switchMap, throwError, from } from 'rxjs';
+import { catchError, mergeMap, Observable, switchMap, throwError, from, Subject } from 'rxjs';
 import { Mesa } from '../../model/Mesa';
 import { SupabaseService } from '../../services/supabase.service';
 import { Router } from '@angular/router';
@@ -9,6 +9,18 @@ import { Pedido } from '../../model/Pedido';
 
 @Injectable({ providedIn: 'root' })
 export class PedidoService {
+    // Triggers en tiempo real para WhatsApp Chatbot
+    public nuevoPedidoWhatsApp$ = new Subject<any>();
+    public seleccionarEImprimir$ = new Subject<any>();
+
+    notificarNuevoPedidoWhatsApp(pedido: any) {
+        this.nuevoPedidoWhatsApp$.next(pedido);
+    }
+
+    ejecutarSeleccionEImpresion(pedido: any) {
+        this.seleccionarEImprimir$.next(pedido);
+    }
+
     deletePedido(id: number, motivo: string, responsable: string): Observable<any> {
         return from(this.supabaseService.deletePedido(id, motivo, responsable));
     }

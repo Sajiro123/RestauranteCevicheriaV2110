@@ -765,7 +765,7 @@
                                     </div>
 
                                     <div class="flex items-center gap-1.5">
-                                        <!-- Ir a Mesa (si no es delivery) -->
+                                        <!-- Ir a Mesa o Delivery -->
                                         <button *ngIf="pedido.mesa != '0'"
                                             type="button"
                                             (click)="irAMesaDePedido(pedido)"
@@ -773,6 +773,15 @@
                                             title="Ver Mesa {{ pedido.mesa }}">
                                             <i class="pi pi-arrow-up-right text-[11px] text-slate-500"></i>
                                             <span>Mesa {{ pedido.mesa }}</span>
+                                        </button>
+
+                                        <button *ngIf="pedido.mesa == '0'"
+                                            type="button"
+                                            (click)="irAMesaDePedido(pedido)"
+                                            class="px-2.5 py-1.5 rounded-lg border border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                                            title="Ver Detalle Delivery">
+                                            <i class="pi pi-arrow-up-right text-[11px] text-red-600"></i>
+                                            <span>Ver Delivery</span>
                                         </button>
 
                                         <!-- Botón TICKET (Formal neutro) -->

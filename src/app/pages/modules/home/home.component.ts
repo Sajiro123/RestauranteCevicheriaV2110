@@ -52,6 +52,8 @@ export class HomeComponent {
     selectedMozo: any = null;
     private authSubscription: Subscription | undefined;
     private timeUpdateSubscription: Subscription | undefined;
+    private pedidoWhatsAppSub: Subscription | undefined;
+    private seleccionarEImprimirSub: Subscription | undefined;
 
     // Active orders (pedidos activos) state
     entregandoPedidos: Set<number> = new Set();
@@ -307,6 +309,33 @@ export class HomeComponent {
             // Force change detection every 30 seconds to update the active order timers
             this.cd.detectChanges();
         });
+
+        // Escuchar nuevo pedido de WhatsApp para actualizar la lista de pedidos en tiempo real
+        this.pedidoWhatsAppSub = this.PedidoService.nuevoPedidoWhatsApp$.subscribe(async (nuevoPedido) => {
+            console.log('Notificación de nuevo pedido WhatsApp recibida en Home:', nuevoPedido);
+            await this.ListarPedidos();
+            this.cd.detectChanges();
+        });
+
+        // Escuchar acción de atender pedido e imprimir comanda desde el modal de alerta WhatsApp
+        this.seleccionarEImprimirSub = this.PedidoService.seleccionarEImprimir$.subscribe(async (pedido) => {
+            if (!pedido) return;
+            console.log('Atendiendo pedido WhatsApp desde alerta:', pedido);
+            // 1. Refrescar lista de pedidos para asegurar que esté en memoria
+            await this.ListarPedidos();
+            // 2. Si es pedido de delivery (mesa 0), desplegar barra de delivery
+            if (String(pedido.mesa) === '0') {
+                this.isDeliveryCollapsed = false;
+            }
+            // 3. Autoseleccionar la mesa / pedido
+            this.irAMesaDePedido(pedido);
+            this.cd.detectChanges();
+            // 4. Disparar generación e impresión del ticket de cocina
+            setTimeout(() => {
+                this.generateCocinaPDFCard(pedido);
+                this.cd.detectChanges();
+            }, 350);
+        });
     }
 
     ngOnDestroy(): void {
@@ -315,6 +344,12 @@ export class HomeComponent {
         }
         if (this.timeUpdateSubscription) {
             this.timeUpdateSubscription.unsubscribe();
+        }
+        if (this.pedidoWhatsAppSub) {
+            this.pedidoWhatsAppSub.unsubscribe();
+        }
+        if (this.seleccionarEImprimirSub) {
+            this.seleccionarEImprimirSub.unsubscribe();
         }
     }
 
