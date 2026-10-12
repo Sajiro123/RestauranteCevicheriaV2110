@@ -9,7 +9,9 @@
         "format": "prettier --write \"**/*.{js,mjs,ts,mts,d.ts,html}\" --cache",
         "test": "ng test",
         "deploy-logo": "node scripts/deploy-logo.js",
-        "save-logo": "node scripts/save-logo.js"
+        "save-logo": "node scripts/save-logo.js",
+        "update-diagram": "node scripts/generate-chatbot-diagram.js",
+        "watch-diagram": "node scripts/watch-chatbot.js"
     },
     "private": true,
     "dependencies": {
