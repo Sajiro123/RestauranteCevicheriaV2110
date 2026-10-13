@@ -1,18 +1,18 @@
-# 🔄 Diagrama de Flujo del Chatbot de WhatsApp (Versión 2 Mejorada)
-> **Última sincronización automática:** 2026-10-13 00:52:08  
+# 🔄 Diagrama de Flujo del Chatbot de WhatsApp (Modelo Híbrido Cevichero)
+> **Última sincronización automática:** 2026-10-13 6:03:39 PM  
 > **Archivo origen:** `chatbot/index.ts` (analizado automáticamente)
 
 Este diagrama representa con exactitud la lógica activa en el código del chatbot. Se actualiza de forma automática cada vez que se realizan modificaciones en `chatbot/index.ts`.
 
 ---
 
-## 🗺️ Flujograma Activo
+## 🗺️ Flujograma Activo (Modelo Híbrido)
 
 ```mermaid
 flowchart TD
-    %% Flujo mejorado del chatbot de pedidos por WhatsApp (v2)
-    %% Incluye: Volver atrás global, selector de cantidades, asesor en cada paso,
-    %% fotos de platos, quitar plato del carrito y confirmación de cancelación.
+    %% Flujo del chatbot de pedidos por WhatsApp (Modelo Híbrido)
+    %% Incluye: Buscador inteligente en chat, Subcategorías culinarias de la carta,
+    %% Platos destacados, selector de porciones, carrito con edición y comanda en POS.
 
     Inicio(["👤 Cliente envía mensaje por WhatsApp"])
     ComandosCheck{"¿Es comando especial?<br/>hola / menu / volver / cancelar / asesor<br/>(o toca el botón ⬅️ Volver / 👨‍💼 Asesor)"}
@@ -29,7 +29,7 @@ flowchart TD
 
     %% Volver y Cancelar
     Volver["⬅️ Volver un paso<br/>Recupera estado del historial<br/>El carrito se conserva"]
-    Repintar["Re-envía la pantalla del paso anterior<br/>menú · categorías · platos · cantidad · carrito · pago"]
+    Repintar["Re-envía la pantalla del paso anterior<br/>menú · carta · platos · cantidad · carrito · pago"]
     ConfirmarCancelar{"⚠️ ¿Cancelar todo el pedido?<br/>Botones: 🗑️ Sí, cancelar · ↩️ No, seguir"}
     ResetSesion["🔄 Reinicia el carrito a cero<br/>Sesión: estado = 'menu', carrito = []"]
 
@@ -39,14 +39,27 @@ flowchart TD
     ClienteEnviaNombre["Cliente escribe su nombre<br/>Ej: 'Alex Gomez'"]
     GuardarNombre["💾 Guarda nombre en wa_sesiones<br/>Envía: '¡Mucho gusto, Alex! 🙌'"]
 
-    %% Menú Principal
-    MenuPrincipal["🍽️ Menú Principal Interactivo<br/>Estado: 'menu'<br/>Botones: ⭐ Más pedidos · 📖 Toda la carta · 👨‍💼 Asesor"]
-    OpcionesMenu{"¿Qué botón presiona?"}
-    Destacados["⭐ Lista: Platos Más Pedidos<br/>• Arroz con Mariscos Trio (S/ 35.00)<br/>• Chaufa Trio Ceviche (S/ 35.00)<br/>• Arroz Marisco Duo (S/ 25.00)<br/>• Chicharron Pescado Duo (S/ 25.00)<br/>• Ceviche Clasico (S/ 20.00)<br/>• Leche Tigre al Macho (S/ 18.00)<br/>• Chicha Morada Jarra (S/ 15.00)<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor"]
-    Categorias["📂 Lista de Categorías<br/>1. Duos<br/>2. Personal<br/>3. Trio<br/>4. Piqueos<br/>5. Bebidas<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor"]
-    SelCategoria["Cliente elige una categoría"]
-    PlatosCategoria["Consulta la tabla 'producto'<br/>Muestra platos (máx. 7 por página) + ➡️ Ver más + ⬅️ Volver + 👨‍💼 Asesor"]
-    ElegirPlato["Cliente selecciona un plato"]
+    %% Menú Principal y Modelo Híbrido
+    MenuPrincipal["🍽️ Menú Principal Interactivo<br/>Estado: 'menu'<br/>Botones: ⭐ Más pedidos · 📖 Toda la carta · 👨‍💼 Asesor<br/>💡 Tip: Escribe directamente el plato que buscas"]
+    OpcionesMenu{"¿Cómo desea pedir el cliente?"}
+    
+    %% Vía 1: Platos Más Pedidos
+    Destacados["⭐ Lista: Platos Más Pedidos (7 Top Ventas)<br/>• Arroz con Mariscos Trio (S/ 35.00)<br/>• Chaufa Trio Ceviche (S/ 35.00)<br/>• Arroz Marisco Duo (S/ 25.00)<br/>• Chicharron Pescado Duo (S/ 25.00)<br/>• Ceviche Clasico (S/ 20.00)<br/>• Leche Tigre al Macho (S/ 18.00)<br/>• Chicha Morada Jarra (S/ 15.00)<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor"]
+    
+    %% Vía 2: Carta por Subcategorías Culinarias
+    Subcategorias["📖 Lista: Carta Cevichera (8 Subcategorías)<br/>🐟 Ceviches y Tiraditos<br/>🍤 Chicharrones y Jaleas<br/>🍚 Arroces y Chaufas<br/>🍲 Sudados y Parihuelas<br/>🍽️ Dúos y Tríos<br/>🐟 Pescados y Segundos<br/>🍟 Piqueos y Entradas<br/>🥤 Bebidas y Cervezas<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor (Total exacto: 10 filas)"]
+    SelSubcat["Cliente elige una subcategoría"]
+    PlatosSubcat["Consulta tabla 'producto'<br/>Muestra platos ordenados (máx. 6 por tanda) + ➡️ Ver más + ⬅️ Volver + 👨‍💼 Asesor"]
+
+    %% Vía 3: Buscador Inteligente en Chat (Texto Libre)
+    BuscadorChat["🔍 Buscador Inteligente en Chat<br/>Cliente escribe: 'ceviche mixto', 'parihuela', 'chicha', etc."]
+    EvaluarBusqueda{"Coincidencias en base de datos"}
+    MatchUnico["🎯 1 Coincidencia Exacta<br/>Salta DIRECTO a pedir porciones"]
+    MatchVarios["📋 2 a 7 Coincidencias<br/>Muestra lista interactiva de resultados con precios"]
+    MatchMuchos["📑 Más de 7 Coincidencias<br/>Muestra los 6 más relevantes y sugiere afinar término"]
+    MatchCero["❌ 0 Coincidencias<br/>Muestra tip de búsqueda y despliega la carta por tipos"]
+
+    ElegirPlato["Cliente selecciona o confirma un plato"]
 
     %% Cantidad y Porciones
     PedirCantidad["🔢 Pregunta Cantidad (con foto si existe)<br/>Estado: 'seleccion_cantidad'<br/>Botones: 1 porción · 2 porciones · ➕ Más cantidades"]
@@ -113,11 +126,18 @@ flowchart TD
 
     MenuPrincipal --> OpcionesMenu
     OpcionesMenu -->|"⭐ Más pedidos"| Destacados
-    OpcionesMenu -->|"📖 Toda la carta"| Categorias
+    OpcionesMenu -->|"📖 Toda la carta"| Subcategorias
     OpcionesMenu -->|"👨‍💼 Asesor"| ModoHumano
-    Categorias --> SelCategoria --> PlatosCategoria
+    OpcionesMenu -->|"Escribe nombre de plato"| BuscadorChat
+
     Destacados --> ElegirPlato
-    PlatosCategoria --> ElegirPlato
+    Subcategorias --> SelSubcat --> PlatosSubcat --> ElegirPlato
+
+    BuscadorChat --> EvaluarBusqueda
+    EvaluarBusqueda -->|"1 coincidencia"| MatchUnico --> PedirCantidad
+    EvaluarBusqueda -->|"2 a 7 coincidencias"| MatchVarios --> ElegirPlato
+    EvaluarBusqueda -->|"Más de 7"| MatchMuchos --> ElegirPlato
+    EvaluarBusqueda -->|"0 coincidencias"| MatchCero --> Subcategorias
 
     ElegirPlato --> PedirCantidad --> ElegirCantidad
     ElegirCantidad -->|"1 o 2 porciones"| AgregarCarrito
@@ -133,6 +153,7 @@ flowchart TD
     AgregarCarrito --> OpcionesCarrito
     OpcionesCarrito -->|"🛍️ Finalizar pedido"| MetodoPago
     OpcionesCarrito -->|"➕ Seguir pidiendo"| MenuPrincipal
+    OpcionesCarrito -->|"Escribe otro plato"| BuscadorChat
     OpcionesCarrito -->|"✏️ Quitar un plato"| QuitarPlato
     OpcionesCarrito -->|"🗑️ Cancelar todo"| ConfirmarCancelar
     QuitarPlato --> OpcionesCarrito
@@ -161,9 +182,11 @@ flowchart TD
 
 | Parámetro | Valores Detectados en el Código |
 | :--- | :--- |
-| **Estados de Sesión** | `menu, en_carrito, seleccion_pago, esperando_ubicacion, pedir_nombre, confirmar_cancelar, inicio, seleccion_cantidad, seleccion_cantidad_mas, seleccion_cantidad_otra, quitar_plato, esperando_vuelto, 1` |
-| **Platos Destacados** | 7 platos registrados (`Arroz con Mariscos Trio, Chaufa Trio Ceviche, Arroz Marisco Duo, Chicharron Pescado Duo...`) |
-| **Categorías de Carta** | 5 categorías (`Duos, Personal, Trio, Piqueos, Bebidas`) |
+| **Arquitectura de Carta** | **Modelo Híbrido** (Subcategorías Culinarias + Buscador Inteligente en Chat + Top 7 Destacados) |
+| **Estados de Sesión** | `menu, en_carrito, seleccion_pago, esperando_ubicacion, pedir_nombre, confirmar_cancelar, inicio, seleccion_cantidad, seleccion_cantidad_mas, esperando_cantidad_escrita, quitar_plato, esperando_vuelto, 1` |
+| **Platos Destacados (Top Ventas)** | 7 platos registrados (`Arroz con Mariscos Trio, Chaufa Trio Ceviche, Arroz Marisco Duo, Chicharron Pescado Duo...`) |
+| **Subcategorías Culinarias** | 8 subcategorías (`🐟 Ceviches y Tiraditos, 🍤 Chicharrones y Jaleas, 🍚 Arroces y Chaufas, 🍲 Sudados y Parihuelas, 🍽️ Dúos y Tríos, 🐟 Pescados y Segundos, 🍟 Piqueos y Entradas, 🥤 Bebidas y Cervezas`) |
+| **Buscador Inteligente en Chat** | Activo (Coincidencia directa a cantidad, listas multi-resultado, tolerancia a tildes) |
 | **Métodos de Pago** | `Yape, Plin, Efectivo` |
 | **Regla de Mesa Delivery** | `mesa = 0` |
 | **Regla de Estado Pago** | `estado = '1'` (Pendiente / No Cobrado) |

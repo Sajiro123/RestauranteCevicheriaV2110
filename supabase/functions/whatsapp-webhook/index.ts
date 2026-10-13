@@ -22,13 +22,90 @@ const PLATOS_DESTACADOS = [
   { id: 74, nombre: 'Chicha Morada Jarra', precio: 15.00, cat: 'Bebidas' }
 ]
 
-const CATEGORIAS = [
-  { id: 1, nombre: 'Duos' },
-  { id: 2, nombre: 'Personal' },
-  { id: 3, nombre: 'Trio' },
-  { id: 4, nombre: 'Piqueos' },
-  { id: 5, nombre: 'Bebidas' }
+// Subcategorías culinarias marinas para presentación óptima en WhatsApp (Modelo Híbrido)
+const SUBCATEGORIAS = [
+  { id: 'ceviches', nombre: '🐟 Ceviches y Tiraditos', desc: 'Clásicos, mixtos y tiraditos' },
+  { id: 'chicharrones', nombre: '🍤 Chicharrones y Jaleas', desc: 'Pescado, pota, mariscos y jaleas' },
+  { id: 'arroces', nombre: '🍚 Arroces y Chaufas', desc: 'Arroz con mariscos y chaufas' },
+  { id: 'sudados', nombre: '🍲 Sudados y Parihuelas', desc: 'Sudados, parihuelas y chupes' },
+  { id: 'combos', nombre: '🍽️ Dúos y Tríos', desc: 'Combinaciones marinas populares' },
+  { id: 'pescados', nombre: '🐟 Pescados y Segundos', desc: 'Filetes, fritos y picantes' },
+  { id: 'piqueos', nombre: '🍟 Piqueos y Entradas', desc: 'Leches de tigre, causas y choritos' },
+  { id: 'bebidas', nombre: '🥤 Bebidas y Cervezas', desc: 'Chichas, jugos, gaseosas y cervezas' }
 ]
+
+const CATEGORIAS = SUBCATEGORIAS
+
+// ==========================================
+// HELPERS DE NORMALIZACIÓN Y BÚSQUEDA SMART
+// ==========================================
+
+function normalizeText(text: string): string {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
+function matchesSubcategory(nombre: string, idcategoria: number, subcatKey: string): boolean {
+  const n = normalizeText(nombre)
+  if (subcatKey === 'bebidas') {
+    return idcategoria === 5 || n.includes('gaseosa') || n.includes('pilsen') || n.includes('cusquena') || n.includes('agua') || n.includes('maracuya') || n.includes('limonada') || (n.includes('chicha') && !n.includes('chicharron'))
+  }
+  if (subcatKey === 'combos') {
+    return idcategoria === 1 || idcategoria === 3 || n.includes('duo') || n.includes('trio')
+  }
+  if (subcatKey === 'ceviches') {
+    return n.includes('ceviche') || n.includes('tiradito')
+  }
+  if (subcatKey === 'chicharrones') {
+    return n.includes('chicharron') || n.includes('jalea')
+  }
+  if (subcatKey === 'arroces') {
+    return n.includes('arroz') || n.includes('chaufa')
+  }
+  if (subcatKey === 'sudados') {
+    return n.includes('sudado') || n.includes('parihuela') || n.includes('chupe') || n.includes('dieta') || n.includes('chilcano')
+  }
+  if (subcatKey === 'piqueos') {
+    return idcategoria === 4 || n.includes('leche') || n.includes('chorito') || n.includes('causa') || n.includes('porcion') || n.includes('taper')
+  }
+  if (subcatKey === 'pescados') {
+    return n.includes('filete') || n.includes('frito') || n.includes('plancha') || n.includes('vapor') || n.includes('cabrilla') || n.includes('trucha') || n.includes('picante')
+  }
+  return false
+}
+
+function matchProduct(prodName: string, query: string): boolean {
+  const normName = normalizeText(prodName)
+  const cleanQuery = normalizeText(query)
+  const nameTokens = normName.split(/[\s,+/()_-]+/).filter(Boolean)
+  const queryWords = cleanQuery.split(/[\s,+/()_-]+/).filter(w => w.length >= 2)
+
+  if (queryWords.length === 0) return false
+
+  // 1. Coincidencia directa completa de frase
+  if (normName.includes(cleanQuery)) {
+    // Si busca "chicha" no debe coincidir con "chicharron"
+    if (cleanQuery.startsWith('chicha') && !cleanQuery.startsWith('chicharr')) {
+      return nameTokens.some(tok => tok === 'chicha' || tok === 'chichas')
+    }
+    return true
+  }
+
+  // 2. Coincidencia por todas las palabras clave
+  return queryWords.every(qw => {
+    return nameTokens.some(tok => {
+      if (tok === qw) return true
+      if (qw.length >= 4 && tok.startsWith(qw)) {
+        if (qw === 'chicha' && tok.startsWith('chicharr')) return false
+        return true
+      }
+      return false
+    })
+  })
+}
 
 // ==========================================
 // HELPERS PARA COMUNICACIÓN CON WHATSAPP API
@@ -150,13 +227,16 @@ async function repintarPantalla(phone: string, sesion: any, paso: string) {
   } else if (paso === 'destacados') {
     await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
     await mostrarPlatosDestacados(phone)
-  } else if (paso === 'categorias') {
+  } else if (paso === 'subcategorias' || paso === 'categorias') {
     await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
-    await mostrarCategorias(phone)
+    await mostrarSubcategorias(phone)
+  } else if (paso.startsWith('subcat_')) {
+    const subcatKey = paso.replace('subcat_', '')
+    await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
+    await mostrarPlatosPorSubcategoria(phone, subcatKey, 0)
   } else if (paso.startsWith('cat_')) {
-    const idCat = parseInt(paso.replace('cat_', ''))
     await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
-    await mostrarPlatosPorCategoria(phone, idCat, 0)
+    await mostrarSubcategorias(phone)
   } else if (paso === 'en_carrito') {
     await supabase.from('wa_sesiones').update({ estado: 'en_carrito' }).eq('telefono', phone)
     await mostrarResumenCarrito(phone, sesion)
@@ -224,7 +304,7 @@ Deno.serve(async (req: Request) => {
 })
 
 // ==========================================
-// LÓGICA DE CONVERSACIÓN MEJORADA (V2)
+// LÓGICA DE CONVERSACIÓN MEJORADA (V2 + MODELO HÍBRIDO)
 // ==========================================
 
 async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
@@ -391,7 +471,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     return
   }
 
-  // ESTADO 2: Menú Principal
+  // ESTADO 2: Menú Principal y Navegación de Carta
   if (sesion.estado === 'inicio' || sesion.estado === 'menu') {
     if (replyId === 'ver_destacados') {
       const hist = pushHistorial(sesion.datos, 'destacados')
@@ -399,28 +479,54 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
       await mostrarPlatosDestacados(phone)
       return
     }
-    if (replyId === 'ver_categorias') {
-      const hist = pushHistorial(sesion.datos, 'categorias')
+
+    if (replyId === 'ver_subcategorias' || replyId === 'ver_categorias') {
+      const hist = pushHistorial(sesion.datos, 'subcategorias')
       await supabase.from('wa_sesiones').update({ datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
-      await mostrarCategorias(phone)
+      await mostrarSubcategorias(phone)
       return
     }
+
+    if (replyId.startsWith('subcat_')) {
+      const subcatKey = replyId.replace('subcat_', '')
+      const hist = pushHistorial(sesion.datos, `subcat_${subcatKey}`)
+      await supabase.from('wa_sesiones').update({ datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
+      await mostrarPlatosPorSubcategoria(phone, subcatKey, 0)
+      return
+    }
+
+    if (replyId.startsWith('mas_subcat_')) {
+      const parts = replyId.split('_')
+      const subcatKey = parts[2]
+      const offset = parseInt(parts[3]) || 0
+      await mostrarPlatosPorSubcategoria(phone, subcatKey, offset)
+      return
+    }
+
+    // Retrocompatibilidad con cat_ previa
     if (replyId.startsWith('cat_')) {
-      const idCat = parseInt(replyId.replace('cat_', ''))
-      const hist = pushHistorial(sesion.datos, `cat_${idCat}`)
+      const hist = pushHistorial(sesion.datos, 'subcategorias')
       await supabase.from('wa_sesiones').update({ datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
-      await mostrarPlatosPorCategoria(phone, idCat, 0)
+      await mostrarSubcategorias(phone)
       return
     }
+
     if (replyId.startsWith('prod_')) {
       const idProd = parseInt(replyId.replace('prod_', ''))
       await iniciarSeleccionCantidad(phone, idProd, sesion)
       return
     }
+
     if (replyId === 'ver_carrito') {
       const hist = pushHistorial(sesion.datos, 'en_carrito')
       await supabase.from('wa_sesiones').update({ estado: 'en_carrito', datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
       await mostrarResumenCarrito(phone, sesion)
+      return
+    }
+
+    // Buscador Inteligente en Chat (Modelo Híbrido: escribe e.g. "ceviche mixto", "parihuela", "chicha")
+    if (userText && userText.length >= 2) {
+      await buscarPlatosPorTexto(phone, userText, sesion)
       return
     }
 
@@ -451,18 +557,28 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
       cantidad = parseInt(msg.text.body)
     }
 
-    if (cantidad > 20) {
+    if (cantidad >= 1 && cantidad <= 20) {
+      await agregarProductoAlCarrito(phone, sesion, idProducto, cantidad)
+      return
+    } else if (cantidad > 20) {
       await derivarPedidoGrande(phone, cantidad)
       return
     }
 
-    if (cantidad >= 1) {
-      await agregarProductoAlCarrito(phone, sesion, idProducto, cantidad)
+    // Si escribe texto con otro plato, derivar a búsqueda
+    if (userText && isNaN(parseInt(userText)) && userText.length >= 3) {
+      await buscarPlatosPorTexto(phone, userText, sesion)
       return
     }
 
-    // No entendió la cantidad
-    await registrarErrorEntrada(phone, sesion, 'Por favor elige una opción de porciones (1, 2 o Más):')
+    await sendButtons(
+      phone,
+      '⚠️ Por favor selecciona una opción o escribe la cantidad deseada (ejemplo: *2* o *4*):',
+      [
+        { id: 'volver', title: '⬅️ Volver' },
+        { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
+      ]
+    )
     return
   }
 
@@ -471,26 +587,31 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     const idProducto = sesion.datos?.producto_seleccionado
 
     if (replyId.startsWith('cant_') && replyId !== 'cant_otra') {
-      const cantidad = parseInt(replyId.replace('cant_', ''))
-      await agregarProductoAlCarrito(phone, sesion, idProducto, cantidad)
-      return
+      const cant = parseInt(replyId.replace('cant_', ''))
+      if (cant >= 1 && cant <= 20) {
+        await agregarProductoAlCarrito(phone, sesion, idProducto, cant)
+        return
+      }
     }
 
     if (replyId === 'cant_otra') {
-      await supabase.from('wa_sesiones').update({
-        estado: 'seleccion_cantidad_otra',
-        datos: { ...sesion.datos, historial: pushHistorial(sesion.datos, 'seleccion_cantidad_mas') }
-      }).eq('telefono', phone)
-      await sendText(phone, '✍️ Por favor escribe el *número de porciones* que deseas:')
+      await supabase.from('wa_sesiones').update({ estado: 'esperando_cantidad_escrita' }).eq('telefono', phone)
+      await sendButtons(
+        phone,
+        '✍️ *Escribe la cantidad de porciones que deseas:*\n\n_(Ejemplo: 4 o 10)_',
+        [
+          { id: 'volver', title: '⬅️ Volver' },
+          { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
+        ]
+      )
       return
     }
   }
 
-  // ESTADO 3.2: Cantidad Escrita Manualmente
-  if (sesion.estado === 'seleccion_cantidad_otra') {
+  // ESTADO 3.2: Esperando número escrito
+  if (sesion.estado === 'esperando_cantidad_escrita') {
     const idProducto = sesion.datos?.producto_seleccionado
-    const rawNum = msg.text?.body?.replace(/[^0-9]/g, '')
-    const cant = parseInt(rawNum || '0')
+    const cant = parseInt(msg.text?.body || '0')
 
     if (cant > 20) {
       await derivarPedidoGrande(phone, cant)
@@ -537,6 +658,12 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
         datos: { ...sesion.datos, historial: pushHistorial(sesion.datos, 'en_carrito') }
       }).eq('telefono', phone)
       await mostrarListaQuitarPlatos(phone, sesion)
+      return
+    }
+
+    // Si escribe el nombre de otro plato para seguir pidiendo directamente
+    if (userText && userText.length >= 2) {
+      await buscarPlatosPorTexto(phone, userText, sesion)
       return
     }
   }
@@ -666,16 +793,16 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
 }
 
 // ==========================================
-// VISTAS Y MENÚS INTERACTIVOS
+// VISTAS Y MENÚS INTERACTIVOS (MODELO HÍBRIDO)
 // ==========================================
 
 async function mostrarMenuPrincipal(phone: string, nombre: string) {
   await sendButtons(
     phone,
-    `🍽️ *El Puerto Cevichero de Willy*\nHola ${nombre || 'amigo'}, ¿cómo deseas armar tu pedido?`,
+    `🍽️ *El Puerto Cevichero de Willy*\n¡Hola ${nombre || 'amigo'}! ¿Cómo deseas armar tu pedido hoy?\n\n💡 *Buscador rápido:* También puedes escribir directamente el plato que buscas (ejemplo: _"ceviche mixto"_, _"arroz con marisco"_, _"parihuela"_, _"chicha"_).`,
     [
       { id: 'ver_destacados', title: '⭐ Más pedidos' },
-      { id: 'ver_categorias', title: '📖 Toda la carta' },
+      { id: 'ver_subcategorias', title: '📖 Toda la carta' },
       { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
     ],
     'El Puerto Cevichero de Willy'
@@ -710,14 +837,14 @@ async function mostrarPlatosDestacados(phone: string) {
   )
 }
 
-async function mostrarCategorias(phone: string) {
-  const rows = CATEGORIAS.map(c => ({
-    id: `cat_${c.id}`,
-    title: c.nombre.slice(0, 24),
-    description: `Ver todos los platos de ${c.nombre}`.slice(0, 72)
+async function mostrarSubcategorias(phone: string) {
+  const rows = SUBCATEGORIAS.map(s => ({
+    id: `subcat_${s.id}`,
+    title: s.nombre.slice(0, 24),
+    description: s.desc.slice(0, 72)
   }))
 
-  // Filas fijas
+  // Filas fijas (Total exactamente 10 filas = 8 subcategorías + 2 navegación)
   rows.push({
     id: 'volver',
     title: '⬅️ Volver',
@@ -731,26 +858,35 @@ async function mostrarCategorias(phone: string) {
 
   await sendList(
     phone,
-    '📖 Carta por Categorías',
-    'Elige una categoría de nuestra carta:',
+    '📖 Carta Cevichera',
+    'Selecciona una categoría para ver los platos disponibles:',
     'Ver Categorías',
-    [{ title: 'Categorías', rows }]
+    [{ title: 'Nuestra Carta', rows }]
   )
 }
 
-async function mostrarPlatosPorCategoria(phone: string, idCategoria: number, offset: number = 0) {
-  const { data: platos, count } = await supabase
-    .from('producto')
-    .select('idproducto, nombre, preciounitario', { count: 'exact' })
-    .eq('idcategoria', idCategoria)
-    .is('deleted', null)
-    .order('nombre')
-    .range(offset, offset + 6) // Máximo 7 platos por página
+async function mostrarCategorias(phone: string) {
+  await mostrarSubcategorias(phone)
+}
 
-  if (!platos || platos.length === 0) {
+async function mostrarPlatosPorSubcategoria(phone: string, subcatKey: string, offset: number = 0) {
+  const subcat = SUBCATEGORIAS.find(s => s.id === subcatKey) || {
+    id: subcatKey,
+    nombre: 'Platos Disponibles',
+    desc: ''
+  }
+
+  const { data: todos } = await supabase
+    .from('producto')
+    .select('idproducto, nombre, preciounitario, idcategoria')
+    .is('deleted', null)
+    .not('preciounitario', 'is', null)
+    .gt('preciounitario', 0)
+
+  if (!todos || todos.length === 0) {
     await sendButtons(
       phone,
-      'No hay platos disponibles en esta categoría por el momento.',
+      'No hay platos disponibles en este momento.',
       [
         { id: 'volver', title: '⬅️ Volver' },
         { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
@@ -759,26 +895,42 @@ async function mostrarPlatosPorCategoria(phone: string, idCategoria: number, off
     return
   }
 
-  const rows: any[] = platos.map(p => ({
+  const filtrados = todos
+    .filter(p => matchesSubcategory(p.nombre, p.idcategoria, subcatKey))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre))
+
+  if (filtrados.length === 0) {
+    await sendButtons(
+      phone,
+      `No se encontraron platos en ${subcat.nombre}.`,
+      [
+        { id: 'volver', title: '⬅️ Volver' },
+        { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
+      ]
+    )
+    return
+  }
+
+  // Paginación limpia: 6 platos por tanda para no saturar WhatsApp y cumplir tope de 10 filas de Meta
+  const pageItems = filtrados.slice(offset, offset + 6)
+  const rows: any[] = pageItems.map(p => ({
     id: `prod_${p.idproducto}`,
     title: p.nombre.slice(0, 24),
     description: `S/ ${Number(p.preciounitario).toFixed(2)}`
   }))
 
-  // Paginación si hay más platos
-  const totalCount = count || platos.length
-  if (offset + 7 < totalCount) {
+  if (offset + 6 < filtrados.length) {
     rows.push({
-      id: `mas_cat_${idCategoria}_${offset + 7}`,
+      id: `mas_subcat_${subcatKey}_${offset + 6}`,
       title: '➡️ Ver más platos',
-      description: 'Cargar siguientes platos'
+      description: `Ver siguientes (${filtrados.length - (offset + 6)} restantes)`
     })
   }
 
   rows.push({
     id: 'volver',
     title: '⬅️ Volver',
-    description: 'Regresar a categorías'
+    description: 'Regresar a la carta'
   })
   rows.push({
     id: 'pedir_asesor',
@@ -788,12 +940,114 @@ async function mostrarPlatosPorCategoria(phone: string, idCategoria: number, off
 
   await sendList(
     phone,
-    'Platos Disponibles',
-    'Selecciona el plato que deseas pedir:',
-    'Seleccionar Plato',
-    [{ title: 'Platos', rows: rows.slice(0, 10) }]
+    subcat.nombre.slice(0, 60),
+    'Selecciona un plato para agregarlo a tu orden:',
+    'Ver Platos',
+    [{ title: subcat.nombre.slice(0, 24), rows }]
   )
 }
+
+async function mostrarPlatosPorCategoria(phone: string, idCategoria: number, offset: number = 0) {
+  await mostrarPlatosPorSubcategoria(phone, 'ceviches', offset)
+}
+
+// ==========================================
+// BUSCADOR INTELIGENTE EN CHAT
+// ==========================================
+
+async function buscarPlatosPorTexto(phone: string, query: string, sesion: any) {
+  const { data: prods } = await supabase
+    .from('producto')
+    .select('idproducto, nombre, preciounitario, imagen')
+    .is('deleted', null)
+    .not('preciounitario', 'is', null)
+    .gt('preciounitario', 0)
+
+  if (!prods || prods.length === 0) {
+    await sendText(phone, 'No pudimos consultar la carta en este momento. Por favor elige una categoría:')
+    await mostrarSubcategorias(phone)
+    return
+  }
+
+  const matches = prods.filter(p => matchProduct(p.nombre, query))
+
+  // Caso 1: Coincidencia única exacta -> Lleva directo a seleccionar porciones
+  if (matches.length === 1) {
+    const plato = matches[0]
+    await sendText(phone, `🎯 ¡Excelente elección! Encontré *${plato.nombre}* (S/ ${Number(plato.preciounitario).toFixed(2)}).`)
+    await iniciarSeleccionCantidad(phone, plato.idproducto, sesion)
+    return
+  }
+
+  // Caso 2: Múltiples coincidencias (entre 2 y 7 platos) -> Muestra lista interactiva de resultados
+  if (matches.length >= 2 && matches.length <= 7) {
+    const rows: any[] = matches.map(p => ({
+      id: `prod_${p.idproducto}`,
+      title: p.nombre.slice(0, 24),
+      description: `S/ ${Number(p.preciounitario).toFixed(2)}`
+    }))
+
+    rows.push({
+      id: 'volver',
+      title: '⬅️ Volver',
+      description: 'Regresar al Menú Principal'
+    })
+    rows.push({
+      id: 'pedir_asesor',
+      title: '👨‍💼 Hablar con Asesor',
+      description: 'Atención personalizada'
+    })
+
+    await sendList(
+      phone,
+      '🔍 Resultados de Búsqueda',
+      `Encontré estos ${matches.length} platos que coinciden con "*${query}*":`,
+      'Ver Platos',
+      [{ title: 'Resultados Encontrados', rows }]
+    )
+    return
+  }
+
+  // Caso 3: Demasiadas coincidencias (> 7 platos) -> Muestra los primeros 6 y pide afinar búsqueda
+  if (matches.length > 7) {
+    const rows: any[] = matches.slice(0, 6).map(p => ({
+      id: `prod_${p.idproducto}`,
+      title: p.nombre.slice(0, 24),
+      description: `S/ ${Number(p.preciounitario).toFixed(2)}`
+    }))
+
+    rows.push({
+      id: 'volver',
+      title: '⬅️ Volver',
+      description: 'Regresar al Menú Principal'
+    })
+    rows.push({
+      id: 'pedir_asesor',
+      title: '👨‍💼 Hablar con Asesor',
+      description: 'Atención personalizada'
+    })
+
+    await sendList(
+      phone,
+      '🔍 Resultados de Búsqueda',
+      `Encontré ${matches.length} platos para "*${query}*". Aquí tienes los principales (o sé más específico):`,
+      'Ver Platos',
+      [{ title: 'Resultados Destacados', rows }]
+    )
+    return
+  }
+
+  // Caso 4: No se encontraron platos con esa palabra clave
+  await sendText(
+    phone,
+    `🔍 No encontré platos que coincidan con "*${query}*".\n\n💡 *Tip:* Prueba buscando por palabras como *ceviche*, *arroz*, *chicha*, *parihuela*, o explora nuestra carta organizada por categorías:`
+  )
+  await mostrarSubcategorias(phone)
+}
+
+// ==========================================
+// SELECCIÓN DE CANTIDAD Y PEDIDO
+// ==========================================
 
 async function iniciarSeleccionCantidad(phone: string, idProducto: number, sesion: any) {
   const { data: prod } = await supabase

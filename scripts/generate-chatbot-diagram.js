@@ -8,7 +8,7 @@ const diagramaFlujoPath = path.join(rootDir, 'chatbot', 'DIAGRAMA_FLUJO.md');
 const manualPath = path.join(rootDir, 'chatbot', 'DIAGRAMA_Y_MANUAL_FLUJO.md');
 
 function run() {
-  console.log('🔄 Analizando chatbot/index.ts para regenerar el diagrama de flujo v2...');
+  console.log('🔄 Analizando chatbot/index.ts para regenerar el diagrama de flujo (Modelo Híbrido)...');
 
   let srcPath = chatbotIndexPath;
   if (!fs.existsSync(srcPath)) {
@@ -42,14 +42,14 @@ function run() {
     }
   }
 
-  // 3. Extraer Categorías
-  const catMatch = code.match(/const\s+CATEGORIAS\s*=\s*\[([\s\S]*?)\]\s*(?:;|\n)/);
-  const categorias = [];
-  if (catMatch) {
-    const catItemRegex = /\{[^}]*id:\s*(\d+)[^}]*nombre:\s*['"]([^'"]+)['"][^}]*\}/g;
-    let cm;
-    while ((cm = catItemRegex.exec(catMatch[1])) !== null) {
-      categorias.push({ id: cm[1], nombre: cm[2] });
+  // 3. Extraer Subcategorías Culinarias (Modelo Híbrido)
+  const subcatMatch = code.match(/const\s+SUBCATEGORIAS\s*=\s*\[([\s\S]*?)\]\s*(?:;|\n)/);
+  const subcategorias = [];
+  if (subcatMatch) {
+    const scRegex = /\{[^}]*id:\s*['"]([^'"]+)['"][^}]*nombre:\s*['"]([^'"]+)['"][^}]*desc:\s*['"]([^'"]+)['"][^}]*\}/g;
+    let sc;
+    while ((sc = scRegex.exec(subcatMatch[1])) !== null) {
+      subcategorias.push({ id: sc[1], nombre: sc[2], desc: sc[3] });
     }
   }
 
@@ -73,16 +73,16 @@ function run() {
     ? platos.map(p => `• ${p.nombre} (S/ ${Number(p.precio).toFixed(2)})`).join('<br/>')
     : '• Platos y especialidades del día';
 
-  const listaCategoriasTxt = categorias.length > 0
-    ? categorias.map(c => `${c.id}. ${c.nombre}`).join('<br/>')
-    : '• Dúos, Tríos, Personales, Piqueos, Bebidas';
+  const listaSubcatTxt = subcategorias.length > 0
+    ? subcategorias.map(s => `${s.nombre}`).join('<br/>')
+    : '• 🐟 Ceviches · 🍤 Chicharrones · 🍚 Arroces · 🍲 Sudados · 🍽️ Combos · 🐟 Pescados · 🍟 Piqueos · 🥤 Bebidas';
 
-  // 6. Generar Código Mermaid Dinámico (v2 Mejorado)
+  // 6. Generar Código Mermaid Dinámico (Modelo Híbrido con Buscador en Chat)
   const timestamp = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
   const mermaidDiagram = `flowchart TD
-    %% Flujo mejorado del chatbot de pedidos por WhatsApp (v2)
-    %% Incluye: Volver atrás global, selector de cantidades, asesor en cada paso,
-    %% fotos de platos, quitar plato del carrito y confirmación de cancelación.
+    %% Flujo del chatbot de pedidos por WhatsApp (Modelo Híbrido)
+    %% Incluye: Buscador inteligente en chat, Subcategorías culinarias de la carta,
+    %% Platos destacados, selector de porciones, carrito con edición y comanda en POS.
 
     Inicio(["👤 Cliente envía mensaje por WhatsApp"])
     ComandosCheck{"¿Es comando especial?<br/>hola / menu / volver / cancelar / asesor<br/>(o toca el botón ⬅️ Volver / 👨‍💼 Asesor)"}
@@ -99,7 +99,7 @@ function run() {
 
     %% Volver y Cancelar
     Volver["⬅️ Volver un paso<br/>Recupera estado del historial<br/>El carrito se conserva"]
-    Repintar["Re-envía la pantalla del paso anterior<br/>menú · categorías · platos · cantidad · carrito · pago"]
+    Repintar["Re-envía la pantalla del paso anterior<br/>menú · carta · platos · cantidad · carrito · pago"]
     ConfirmarCancelar{"⚠️ ¿Cancelar todo el pedido?<br/>Botones: 🗑️ Sí, cancelar · ↩️ No, seguir"}
     ResetSesion["🔄 Reinicia el carrito a cero<br/>Sesión: estado = 'menu', carrito = []"]
 
@@ -109,14 +109,27 @@ function run() {
     ClienteEnviaNombre["Cliente escribe su nombre<br/>Ej: 'Alex Gomez'"]
     GuardarNombre["💾 Guarda nombre en wa_sesiones<br/>Envía: '¡Mucho gusto, Alex! 🙌'"]
 
-    %% Menú Principal
-    MenuPrincipal["🍽️ Menú Principal Interactivo<br/>Estado: 'menu'<br/>Botones: ⭐ Más pedidos · 📖 Toda la carta · 👨‍💼 Asesor"]
-    OpcionesMenu{"¿Qué botón presiona?"}
-    Destacados["⭐ Lista: Platos Más Pedidos<br/>${listaPlatosTxt}<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor"]
-    Categorias["📂 Lista de Categorías<br/>${listaCategoriasTxt}<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor"]
-    SelCategoria["Cliente elige una categoría"]
-    PlatosCategoria["Consulta la tabla 'producto'<br/>Muestra platos (máx. 7 por página) + ➡️ Ver más + ⬅️ Volver + 👨‍💼 Asesor"]
-    ElegirPlato["Cliente selecciona un plato"]
+    %% Menú Principal y Modelo Híbrido
+    MenuPrincipal["🍽️ Menú Principal Interactivo<br/>Estado: 'menu'<br/>Botones: ⭐ Más pedidos · 📖 Toda la carta · 👨‍💼 Asesor<br/>💡 Tip: Escribe directamente el plato que buscas"]
+    OpcionesMenu{"¿Cómo desea pedir el cliente?"}
+    
+    %% Vía 1: Platos Más Pedidos
+    Destacados["⭐ Lista: Platos Más Pedidos (7 Top Ventas)<br/>${listaPlatosTxt}<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor"]
+    
+    %% Vía 2: Carta por Subcategorías Culinarias
+    Subcategorias["📖 Lista: Carta Cevichera (8 Subcategorías)<br/>${listaSubcatTxt}<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor (Total exacto: 10 filas)"]
+    SelSubcat["Cliente elige una subcategoría"]
+    PlatosSubcat["Consulta tabla 'producto'<br/>Muestra platos ordenados (máx. 6 por tanda) + ➡️ Ver más + ⬅️ Volver + 👨‍💼 Asesor"]
+
+    %% Vía 3: Buscador Inteligente en Chat (Texto Libre)
+    BuscadorChat["🔍 Buscador Inteligente en Chat<br/>Cliente escribe: 'ceviche mixto', 'parihuela', 'chicha', etc."]
+    EvaluarBusqueda{"Coincidencias en base de datos"}
+    MatchUnico["🎯 1 Coincidencia Exacta<br/>Salta DIRECTO a pedir porciones"]
+    MatchVarios["📋 2 a 7 Coincidencias<br/>Muestra lista interactiva de resultados con precios"]
+    MatchMuchos["📑 Más de 7 Coincidencias<br/>Muestra los 6 más relevantes y sugiere afinar término"]
+    MatchCero["❌ 0 Coincidencias<br/>Muestra tip de búsqueda y despliega la carta por tipos"]
+
+    ElegirPlato["Cliente selecciona o confirma un plato"]
 
     %% Cantidad y Porciones
     PedirCantidad["🔢 Pregunta Cantidad (con foto si existe)<br/>Estado: 'seleccion_cantidad'<br/>Botones: 1 porción · 2 porciones · ➕ Más cantidades"]
@@ -183,11 +196,18 @@ function run() {
 
     MenuPrincipal --> OpcionesMenu
     OpcionesMenu -->|"⭐ Más pedidos"| Destacados
-    OpcionesMenu -->|"📖 Toda la carta"| Categorias
+    OpcionesMenu -->|"📖 Toda la carta"| Subcategorias
     OpcionesMenu -->|"👨‍💼 Asesor"| ModoHumano
-    Categorias --> SelCategoria --> PlatosCategoria
+    OpcionesMenu -->|"Escribe nombre de plato"| BuscadorChat
+
     Destacados --> ElegirPlato
-    PlatosCategoria --> ElegirPlato
+    Subcategorias --> SelSubcat --> PlatosSubcat --> ElegirPlato
+
+    BuscadorChat --> EvaluarBusqueda
+    EvaluarBusqueda -->|"1 coincidencia"| MatchUnico --> PedirCantidad
+    EvaluarBusqueda -->|"2 a 7 coincidencias"| MatchVarios --> ElegirPlato
+    EvaluarBusqueda -->|"Más de 7"| MatchMuchos --> ElegirPlato
+    EvaluarBusqueda -->|"0 coincidencias"| MatchCero --> Subcategorias
 
     ElegirPlato --> PedirCantidad --> ElegirCantidad
     ElegirCantidad -->|"1 o 2 porciones"| AgregarCarrito
@@ -203,6 +223,7 @@ function run() {
     AgregarCarrito --> OpcionesCarrito
     OpcionesCarrito -->|"🛍️ Finalizar pedido"| MetodoPago
     OpcionesCarrito -->|"➕ Seguir pidiendo"| MenuPrincipal
+    OpcionesCarrito -->|"Escribe otro plato"| BuscadorChat
     OpcionesCarrito -->|"✏️ Quitar un plato"| QuitarPlato
     OpcionesCarrito -->|"🗑️ Cancelar todo"| ConfirmarCancelar
     QuitarPlato --> OpcionesCarrito
@@ -225,7 +246,7 @@ function run() {
     InsertarBD -. Realtime postgres_changes .-> POSAngular`;
 
   // 7. Guardar en chatbot/DIAGRAMA_FLUJO.md
-  const contenidoDiagramaMd = `# 🔄 Diagrama de Flujo del Chatbot de WhatsApp (Versión 2 Mejorada)
+  const contenidoDiagramaMd = `# 🔄 Diagrama de Flujo del Chatbot de WhatsApp (Modelo Híbrido Cevichero)
 > **Última sincronización automática:** ${timestamp}  
 > **Archivo origen:** \`chatbot/index.ts\` (analizado automáticamente)
 
@@ -233,7 +254,7 @@ Este diagrama representa con exactitud la lógica activa en el código del chatb
 
 ---
 
-## 🗺️ Flujograma Activo
+## 🗺️ Flujograma Activo (Modelo Híbrido)
 
 \`\`\`mermaid
 ${mermaidDiagram}
@@ -245,9 +266,11 @@ ${mermaidDiagram}
 
 | Parámetro | Valores Detectados en el Código |
 | :--- | :--- |
+| **Arquitectura de Carta** | **Modelo Híbrido** (Subcategorías Culinarias + Buscador Inteligente en Chat + Top 7 Destacados) |
 | **Estados de Sesión** | \`${estados.join(', ')}\` |
-| **Platos Destacados** | ${platos.length} platos registrados (\`${platos.map(p => p.nombre).slice(0, 4).join(', ')}...\`) |
-| **Categorías de Carta** | ${categorias.length} categorías (\`${categorias.map(c => c.nombre).join(', ')}\`) |
+| **Platos Destacados (Top Ventas)** | ${platos.length} platos registrados (\`${platos.map(p => p.nombre).slice(0, 4).join(', ')}...\`) |
+| **Subcategorías Culinarias** | ${subcategorias.length} subcategorías (\`${subcategorias.map(s => s.nombre).join(', ')}\`) |
+| **Buscador Inteligente en Chat** | Activo (Coincidencia directa a cantidad, listas multi-resultado, tolerancia a tildes) |
 | **Métodos de Pago** | \`${pagos.join(', ')}\` |
 | **Regla de Mesa Delivery** | \`mesa = 0\` |
 | **Regla de Estado Pago** | \`estado = '1'\` (Pendiente / No Cobrado) |
