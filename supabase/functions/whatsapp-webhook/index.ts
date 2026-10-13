@@ -11,17 +11,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false }
 })
 
-// Platos destacados más pedidos de El Puerto Cevichero de Willy
+// Platos destacados más pedidos de El Puerto Cevichero de Willy (máx. 7 para dar cabida a Volver y Asesor)
 const PLATOS_DESTACADOS = [
   { id: 8, nombre: 'Arroz con Mariscos Trio', precio: 35.00, cat: 'Trio' },
-  { id: 104, nombre: 'Chaufa Trio Ceviche Chicharron', precio: 35.00, cat: 'Trio' },
-  { id: 3, nombre: 'Arroz con Marisco Duo', precio: 25.00, cat: 'Duos' },
-  { id: 2, nombre: 'Chicharron de Pescado Duo', precio: 25.00, cat: 'Duos' },
-  { id: 13, nombre: 'Ceviche Clasico Personal', precio: 20.00, cat: 'Personal' },
-  { id: 61, nombre: 'Leche de Tigre a lo Macho', precio: 18.00, cat: 'Piqueos' },
-  { id: 65, nombre: 'Chilcano de Pescado', precio: 12.00, cat: 'Piqueos' },
-  { id: 74, nombre: 'Chicha Morada Jarra', precio: 15.00, cat: 'Bebidas' },
-  { id: 78, nombre: 'Gaseosa 1/2 Litro', precio: 6.00, cat: 'Bebidas' }
+  { id: 104, nombre: 'Chaufa Trio Ceviche', precio: 35.00, cat: 'Trio' },
+  { id: 3, nombre: 'Arroz Marisco Duo', precio: 25.00, cat: 'Duos' },
+  { id: 2, nombre: 'Chicharron Pescado Duo', precio: 25.00, cat: 'Duos' },
+  { id: 13, nombre: 'Ceviche Clasico', precio: 20.00, cat: 'Personal' },
+  { id: 61, nombre: 'Leche Tigre al Macho', precio: 18.00, cat: 'Piqueos' },
+  { id: 74, nombre: 'Chicha Morada Jarra', precio: 15.00, cat: 'Bebidas' }
 ]
 
 const CATEGORIAS = [
@@ -32,7 +30,10 @@ const CATEGORIAS = [
   { id: 5, nombre: 'Bebidas' }
 ]
 
-// Enviar mensaje a la API de WhatsApp Graph
+// ==========================================
+// HELPERS PARA COMUNICACIÓN CON WHATSAPP API
+// ==========================================
+
 async function sendWhatsAppMessage(to: string, messageData: any) {
   if (!GRAPH_API_TOKEN) {
     console.error('WHATSAPP_ACCESS_TOKEN no configurado')
@@ -59,25 +60,53 @@ async function sendWhatsAppMessage(to: string, messageData: any) {
   }
 }
 
-// Helpers para enviar textos, botones y listas
 async function sendText(to: string, body: string) {
   return await sendWhatsAppMessage(to, { type: 'text', text: { body } })
 }
 
-async function sendButtons(to: string, body: string, buttons: { id: string; title: string }[]) {
-  return await sendWhatsAppMessage(to, {
-    type: 'interactive',
-    interactive: {
-      type: 'button',
-      body: { text: body },
-      action: {
-        buttons: buttons.slice(0, 3).map(b => ({
-          type: 'reply',
-          reply: { id: b.id, title: b.title.slice(0, 20) }
-        }))
+async function sendButtons(to: string, body: string, buttons: { id: string; title: string }[], footer?: string) {
+  const interactive: any = {
+    type: 'button',
+    body: { text: body.slice(0, 1024) },
+    action: {
+      buttons: buttons.slice(0, 3).map(b => ({
+        type: 'reply',
+        reply: { id: b.id, title: b.title.slice(0, 20) }
+      }))
+    }
+  }
+  if (footer) {
+    interactive.footer = { text: footer.slice(0, 60) }
+  }
+  return await sendWhatsAppMessage(to, { type: 'interactive', interactive })
+}
+
+async function sendButtonsWithImage(to: string, imageUrl: string, body: string, buttons: { id: string; title: string }[], footer?: string) {
+  if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+    const payload: any = {
+      type: 'interactive',
+      interactive: {
+        type: 'button',
+        header: {
+          type: 'image',
+          image: { link: imageUrl }
+        },
+        body: { text: body.slice(0, 1024) },
+        action: {
+          buttons: buttons.slice(0, 3).map(b => ({
+            type: 'reply',
+            reply: { id: b.id, title: b.title.slice(0, 20) }
+          }))
+        }
       }
     }
-  })
+    if (footer) {
+      payload.interactive.footer = { text: footer.slice(0, 60) }
+    }
+    const res = await sendWhatsAppMessage(to, payload)
+    if (res?.messages) return res
+  }
+  return await sendButtons(to, body, buttons, footer)
 }
 
 async function sendList(to: string, header: string, body: string, buttonText: string, sections: any[]) {
@@ -94,6 +123,58 @@ async function sendList(to: string, header: string, body: string, buttonText: st
     }
   })
 }
+
+// ==========================================
+// CONTROL DE HISTORIAL Y NAVEGACIÓN "VOLVER"
+// ==========================================
+
+function pushHistorial(datos: any, paso: string) {
+  const historial = Array.isArray(datos?.historial) ? [...datos.historial] : []
+  if (historial[historial.length - 1] !== paso) {
+    historial.push(paso)
+  }
+  return historial.slice(-10) // Mantener últimos 10 pasos
+}
+
+function popHistorial(datos: any): { pasoPrevio: string; nuevoHistorial: string[] } {
+  const historial = Array.isArray(datos?.historial) ? [...datos.historial] : []
+  historial.pop() // Quitar el paso actual
+  const pasoPrevio = historial[historial.length - 1] || 'menu'
+  return { pasoPrevio, nuevoHistorial: historial }
+}
+
+async function repintarPantalla(phone: string, sesion: any, paso: string) {
+  if (paso === 'menu') {
+    await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
+    await mostrarMenuPrincipal(phone, sesion.nombre)
+  } else if (paso === 'destacados') {
+    await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
+    await mostrarPlatosDestacados(phone)
+  } else if (paso === 'categorias') {
+    await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
+    await mostrarCategorias(phone)
+  } else if (paso.startsWith('cat_')) {
+    const idCat = parseInt(paso.replace('cat_', ''))
+    await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
+    await mostrarPlatosPorCategoria(phone, idCat, 0)
+  } else if (paso === 'en_carrito') {
+    await supabase.from('wa_sesiones').update({ estado: 'en_carrito' }).eq('telefono', phone)
+    await mostrarResumenCarrito(phone, sesion)
+  } else if (paso === 'seleccion_pago') {
+    await supabase.from('wa_sesiones').update({ estado: 'seleccion_pago' }).eq('telefono', phone)
+    await pedirMetodoPago(phone, sesion)
+  } else if (paso === 'esperando_ubicacion') {
+    await supabase.from('wa_sesiones').update({ estado: 'esperando_ubicacion' }).eq('telefono', phone)
+    await pedirUbicacion(phone)
+  } else {
+    await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
+    await mostrarMenuPrincipal(phone, sesion.nombre)
+  }
+}
+
+// ==========================================
+// SERVIDOR PRINCIPAL DENO SERVE
+// ==========================================
 
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url)
@@ -115,9 +196,6 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'POST') {
     try {
       const body = await req.json()
-      console.log('Webhook payload recibido:', JSON.stringify(body))
-
-      // Soportar tanto producción (entry[0].changes[0].value) como la herramienta de prueba de Meta (body.value)
       const value = body.entry?.[0]?.changes?.[0]?.value || body.value || body
       const messages = value?.messages
 
@@ -126,10 +204,9 @@ Deno.serve(async (req: Request) => {
       }
 
       const msg = messages[0]
-      const from = msg.from // Teléfono del cliente
+      const from = msg.from
       const msgId = msg.id
 
-      // Procesar de forma asíncrona o directa
       try {
         await handleIncomingMessage(from, msg, msgId)
       } catch (err: any) {
@@ -146,36 +223,34 @@ Deno.serve(async (req: Request) => {
   return new Response('Método no permitido', { status: 405 })
 })
 
-// Lógica de conversación del Bot
+// ==========================================
+// LÓGICA DE CONVERSACIÓN MEJORADA (V2)
+// ==========================================
+
 async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
-  // Evitar procesar mensajes duplicados de Meta
-  const { data: existMsg, error: errCheck } = await supabase
+  // 1. Desduplicación de mensajes
+  const { data: existMsg } = await supabase
     .from('wa_mensajes')
     .select('id')
     .eq('wa_message_id', msgId)
     .maybeSingle()
 
-  if (errCheck) console.error('Error verificando wa_message_id:', errCheck)
   if (existMsg) return
 
-  // Registrar mensaje entrante en historial
-  const { error: errInsMsg } = await supabase.from('wa_mensajes').insert({
+  await supabase.from('wa_mensajes').insert({
     telefono: phone,
     sentido: 'in',
     tipo: msg.type,
     contenido: msg,
     wa_message_id: msgId
   })
-  if (errInsMsg) console.error('Error insertando en wa_mensajes:', errInsMsg)
 
-  // Obtener o crear sesión del usuario
-  let { data: sesion, error: errSes } = await supabase
+  // 2. Obtener o crear sesión
+  let { data: sesion } = await supabase
     .from('wa_sesiones')
     .select('*')
     .eq('telefono', phone)
     .maybeSingle()
-
-  if (errSes) console.error('Error leyendo wa_sesiones:', errSes)
 
   if (!sesion) {
     const { data: nueva } = await supabase
@@ -185,7 +260,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
         nombre: '',
         estado: 'pedir_nombre',
         carrito: [],
-        datos: {},
+        datos: { historial: ['menu'], errores: 0 },
         modo: 'bot'
       })
       .select()
@@ -193,7 +268,6 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     sesion = nueva
   }
 
-  // Si está en modo humano (asesor), el bot guarda silencio excepto si el cliente pide volver al bot
   const userText = (
     msg.text?.body ||
     msg.interactive?.button_reply?.title ||
@@ -207,31 +281,84 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     ''
   )
 
+  // 3. Manejo de Modo Humano (Asesor)
   if (sesion.modo === 'humano') {
-    if (userText === 'bot' || userText === 'reiniciar' || replyId === 'volver_bot') {
-      await supabase.from('wa_sesiones').update({ modo: 'bot', estado: 'menu' }).eq('telefono', phone)
-      await sendText(phone, '🤖 ¡Has regresado con el asistente virtual de Willy! ¿Qué deseas ordenar?')
+    if (userText === 'bot' || userText === 'reiniciar' || replyId === 'volver_bot' || userText === 'menu') {
+      await supabase.from('wa_sesiones').update({
+        modo: 'bot',
+        estado: 'menu',
+        datos: { ...sesion.datos, historial: ['menu'] }
+      }).eq('telefono', phone)
+      await sendText(phone, '🤖 ¡Has regresado con el asistente virtual de Willy! ¿Qué deseas ordenar hoy?')
       await mostrarMenuPrincipal(phone, sesion.nombre)
       return
     }
-    return // Silencio mientras lo atiende un humano
+    return // Bot silenciado mientras atiende una persona
   }
 
-  // Comando universal para pedir asesor humano
+  // 4. Comando Global: Pedir Asesor Humano en cualquier momento
   if (userText.includes('asesor') || userText.includes('humano') || replyId === 'pedir_asesor') {
     await supabase.from('wa_sesiones').update({ modo: 'humano' }).eq('telefono', phone)
     await sendButtons(
       phone,
-      '👨‍💼 He pausado el asistente. Un asesor de *El Puerto Cevichero de Willy* te responderá en este chat en breve.',
-      [{ id: 'volver_bot', title: '🤖 Volver al Bot' }]
+      '👨‍💼 He pausado el asistente virtual. Un asesor de *El Puerto Cevichero de Willy* te responderá por este chat en unos momentos.\n\n_Tu pedido y carrito se mantendrán guardados._',
+      [{ id: 'volver_bot', title: '🤖 Volver al Bot' }],
+      'El Puerto Cevichero de Willy'
     )
     return
   }
 
-  // Comando para reiniciar / cancelar / nuevo pedido
-  if (userText === 'cancelar' || userText === 'inicio' || replyId === 'reiniciar' || userText === 'hola' || userText === 'menu') {
-    await supabase.from('wa_sesiones').update({ estado: 'menu', carrito: [], datos: {} }).eq('telefono', phone)
-    await sendText(phone, '🔄 ¡Listo! Vamos a tomar tu pedido:')
+  // 5. Comando Global: Volver Atrás (⬅️ Volver)
+  if (userText === 'volver' || userText === 'atras' || replyId === 'volver') {
+    const { pasoPrevio, nuevoHistorial } = popHistorial(sesion.datos)
+    await supabase.from('wa_sesiones').update({
+      datos: { ...sesion.datos, historial: nuevoHistorial, errores: 0 }
+    }).eq('telefono', phone)
+    await repintarPantalla(phone, sesion, pasoPrevio)
+    return
+  }
+
+  // 6. Comando Global: Cancelar Pedido con Confirmación
+  if (userText === 'cancelar' || replyId === 'cancelar_todo') {
+    await supabase.from('wa_sesiones').update({ estado: 'confirmar_cancelar' }).eq('telefono', phone)
+    await sendButtons(
+      phone,
+      '⚠️ *¿Estás seguro de que deseas cancelar todo tu pedido?*\n\nSe vaciará tu carrito actual.',
+      [
+        { id: 'confirmar_cancelar_si', title: '🗑️ Sí, cancelar' },
+        { id: 'confirmar_cancelar_no', title: '↩️ No, seguir' }
+      ],
+      'Confirmación de cancelación'
+    )
+    return
+  }
+
+  // Si está en pantalla de confirmar cancelación
+  if (sesion.estado === 'confirmar_cancelar') {
+    if (replyId === 'confirmar_cancelar_si' || userText.includes('si')) {
+      await supabase.from('wa_sesiones').update({
+        estado: 'menu',
+        carrito: [],
+        datos: { historial: ['menu'], errores: 0 }
+      }).eq('telefono', phone)
+      await sendText(phone, '🔄 Tu pedido ha sido cancelado y tu carrito está vacío.')
+      await mostrarMenuPrincipal(phone, sesion.nombre)
+      return
+    } else {
+      const historial = sesion.datos?.historial || ['menu']
+      const paso = historial[historial.length - 1] || 'en_carrito'
+      await sendText(phone, '👍 ¡Excelente! Continuamos con tu orden.')
+      await repintarPantalla(phone, sesion, paso)
+      return
+    }
+  }
+
+  // Comando Menú / Hola / Reiniciar
+  if (userText === 'inicio' || userText === 'hola' || userText === 'menu' || replyId === 'seguir_bot') {
+    await supabase.from('wa_sesiones').update({
+      estado: 'menu',
+      datos: { ...sesion.datos, historial: ['menu'], errores: 0 }
+    }).eq('telefono', phone)
     await mostrarMenuPrincipal(phone, sesion.nombre)
     return
   }
@@ -240,10 +367,9 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
   // MÁQUINA DE ESTADOS DEL BOT
   // ==========================================
 
-  // 1. REGLA OBLIGATORIA: Pedir SIEMPRE el nombre al cliente si no lo tiene
+  // ESTADO 1: Captura Obligatoria de Nombre
   if (!sesion.nombre || sesion.estado === 'pedir_nombre') {
     const rawText = msg.text?.body?.trim()
-    // Si apenas está saludando o no envió texto
     if (!rawText || sesion.estado !== 'pedir_nombre' || rawText.toLowerCase() === 'hola') {
       await supabase.from('wa_sesiones').update({ estado: 'pedir_nombre' }).eq('telefono', phone)
       await sendText(
@@ -253,11 +379,11 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
       return
     }
 
-    // Guardar el nombre ingresado
     const nombreCliente = rawText.slice(0, 150)
     await supabase.from('wa_sesiones').update({
       nombre: nombreCliente,
-      estado: 'menu'
+      estado: 'menu',
+      datos: { historial: ['menu'], errores: 0 }
     }).eq('telefono', phone)
 
     await sendText(phone, `¡Mucho gusto, *${nombreCliente}*! 🙌`)
@@ -265,109 +391,182 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     return
   }
 
-  // 2. MENÚ PRINCIPAL (O NUEVO PEDIDO / ESTADO INICIO)
+  // ESTADO 2: Menú Principal
   if (sesion.estado === 'inicio' || sesion.estado === 'menu') {
-    if (sesion.estado === 'inicio') {
-      await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
-    }
-
     if (replyId === 'ver_destacados') {
+      const hist = pushHistorial(sesion.datos, 'destacados')
+      await supabase.from('wa_sesiones').update({ datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
       await mostrarPlatosDestacados(phone)
       return
     }
     if (replyId === 'ver_categorias') {
+      const hist = pushHistorial(sesion.datos, 'categorias')
+      await supabase.from('wa_sesiones').update({ datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
       await mostrarCategorias(phone)
       return
     }
     if (replyId.startsWith('cat_')) {
       const idCat = parseInt(replyId.replace('cat_', ''))
-      await mostrarPlatosPorCategoria(phone, idCat)
+      const hist = pushHistorial(sesion.datos, `cat_${idCat}`)
+      await supabase.from('wa_sesiones').update({ datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
+      await mostrarPlatosPorCategoria(phone, idCat, 0)
       return
     }
     if (replyId.startsWith('prod_')) {
       const idProd = parseInt(replyId.replace('prod_', ''))
-      await iniciarSeleccionCantidad(phone, idProd)
+      await iniciarSeleccionCantidad(phone, idProd, sesion)
       return
     }
     if (replyId === 'ver_carrito') {
+      const hist = pushHistorial(sesion.datos, 'en_carrito')
+      await supabase.from('wa_sesiones').update({ estado: 'en_carrito', datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
       await mostrarResumenCarrito(phone, sesion)
       return
     }
 
-    // Si escribe texto ("hola", "buenas", etc.)
+    // Texto no reconocido en menú: volver a mostrar
     await mostrarMenuPrincipal(phone, sesion.nombre)
     return
   }
 
-  // 3. SELECCIÓN DE CANTIDAD
+  // ESTADO 3: Selección de Cantidad Rápida (1, 2 o Más Cantidades)
   if (sesion.estado === 'seleccion_cantidad') {
     const idProducto = sesion.datos?.producto_seleccionado
-    let cantidad = 1
 
-    if (replyId.startsWith('cant_')) {
-      cantidad = parseInt(replyId.replace('cant_', ''))
-    } else if (msg.text?.body && !isNaN(parseInt(msg.text.body))) {
-      cantidad = Math.max(1, Math.min(20, parseInt(msg.text.body)))
+    if (replyId === 'cant_mas') {
+      await supabase.from('wa_sesiones').update({
+        estado: 'seleccion_cantidad_mas',
+        datos: { ...sesion.datos, historial: pushHistorial(sesion.datos, 'seleccion_cantidad') }
+      }).eq('telefono', phone)
+      await mostrarListaMasCantidades(phone)
+      return
     }
 
-    // Buscar producto
-    const { data: producto } = await supabase
-      .from('producto')
-      .select('idproducto, nombre, preciounitario')
-      .eq('idproducto', idProducto)
-      .single()
+    let cantidad = 0
+    if (replyId === 'cant_1') cantidad = 1
+    if (replyId === 'cant_2') cantidad = 2
 
-    if (producto) {
-      const carrito = Array.isArray(sesion.carrito) ? [...sesion.carrito] : []
-      const existente = carrito.find(item => item.idproducto === producto.idproducto)
-      const pu = Number(producto.preciounitario) || 0
+    // Si escribe número directamente
+    if (!cantidad && msg.text?.body && !isNaN(parseInt(msg.text.body))) {
+      cantidad = parseInt(msg.text.body)
+    }
 
-      if (existente) {
-        existente.cantidad += cantidad
-        existente.total = existente.cantidad * pu
-      } else {
-        carrito.push({
-          idproducto: producto.idproducto,
-          nombre: producto.nombre,
-          cantidad: cantidad,
-          preciounitario: pu,
-          total: cantidad * pu
-        })
-      }
+    if (cantidad > 20) {
+      await derivarPedidoGrande(phone, cantidad)
+      return
+    }
 
+    if (cantidad >= 1) {
+      await agregarProductoAlCarrito(phone, sesion, idProducto, cantidad)
+      return
+    }
+
+    // No entendió la cantidad
+    await registrarErrorEntrada(phone, sesion, 'Por favor elige una opción de porciones (1, 2 o Más):')
+    return
+  }
+
+  // ESTADO 3.1: Lista Extendida de Cantidades (3 a 8 o Personalizada)
+  if (sesion.estado === 'seleccion_cantidad_mas') {
+    const idProducto = sesion.datos?.producto_seleccionado
+
+    if (replyId.startsWith('cant_') && replyId !== 'cant_otra') {
+      const cantidad = parseInt(replyId.replace('cant_', ''))
+      await agregarProductoAlCarrito(phone, sesion, idProducto, cantidad)
+      return
+    }
+
+    if (replyId === 'cant_otra') {
       await supabase.from('wa_sesiones').update({
-        carrito: carrito,
-        estado: 'en_carrito',
-        datos: {}
+        estado: 'seleccion_cantidad_otra',
+        datos: { ...sesion.datos, historial: pushHistorial(sesion.datos, 'seleccion_cantidad_mas') }
       }).eq('telefono', phone)
-
-      const totalItem = cantidad * pu
-      await sendButtons(
-        phone,
-        `✅ Agregado: *${cantidad}x ${producto.nombre}* (S/ ${totalItem.toFixed(2)})\n\n¿Deseas pedir algo más o finalizar tu pedido?`,
-        [
-          { id: 'seguir_pidiendo', title: '➕ Seguir pidiendo' },
-          { id: 'confirmar_pedido', title: '🛍️ Finalizar pedido' }
-        ]
-      )
+      await sendText(phone, '✍️ Por favor escribe el *número de porciones* que deseas:')
       return
     }
   }
 
-  // 4. CARRITO
+  // ESTADO 3.2: Cantidad Escrita Manualmente
+  if (sesion.estado === 'seleccion_cantidad_otra') {
+    const idProducto = sesion.datos?.producto_seleccionado
+    const rawNum = msg.text?.body?.replace(/[^0-9]/g, '')
+    const cant = parseInt(rawNum || '0')
+
+    if (cant > 20) {
+      await derivarPedidoGrande(phone, cant)
+      return
+    }
+
+    if (cant >= 1) {
+      await agregarProductoAlCarrito(phone, sesion, idProducto, cant)
+      return
+    }
+
+    await sendButtons(
+      phone,
+      '⚠️ Por favor escribe un número válido de porciones (ejemplo: 4 o 10):',
+      [
+        { id: 'volver', title: '⬅️ Volver' },
+        { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
+      ]
+    )
+    return
+  }
+
+  // ESTADO 4: Carrito y Edición (Quitar plato)
   if (sesion.estado === 'en_carrito') {
     if (replyId === 'seguir_pidiendo') {
-      await supabase.from('wa_sesiones').update({ estado: 'menu' }).eq('telefono', phone)
+      await supabase.from('wa_sesiones').update({
+        estado: 'menu',
+        datos: { ...sesion.datos, historial: ['menu'] }
+      }).eq('telefono', phone)
       await mostrarMenuPrincipal(phone, sesion.nombre)
       return
     }
+
     if (replyId === 'confirmar_pedido' || replyId === 'proceder_pago') {
+      const hist = pushHistorial(sesion.datos, 'en_carrito')
+      await supabase.from('wa_sesiones').update({ datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
       await pedirMetodoPago(phone, sesion)
+      return
+    }
+
+    if (replyId === 'quitar_plato') {
+      await supabase.from('wa_sesiones').update({
+        estado: 'quitar_plato',
+        datos: { ...sesion.datos, historial: pushHistorial(sesion.datos, 'en_carrito') }
+      }).eq('telefono', phone)
+      await mostrarListaQuitarPlatos(phone, sesion)
       return
     }
   }
 
-  // 5. SELECCIÓN DE MÉTODO DE PAGO (INFORMATIVO, NO SE MARCA COBRADO)
+  // ESTADO 4.1: Quitar plato específico del carrito
+  if (sesion.estado === 'quitar_plato') {
+    if (replyId.startsWith('del_')) {
+      const idProdEliminar = parseInt(replyId.replace('del_', ''))
+      const carrito = Array.isArray(sesion.carrito) ? [...sesion.carrito] : []
+      const nuevoCarrito = carrito.filter(item => item.idproducto !== idProdEliminar)
+
+      await supabase.from('wa_sesiones').update({
+        carrito: nuevoCarrito,
+        estado: 'en_carrito'
+      }).eq('telefono', phone)
+
+      sesion.carrito = nuevoCarrito
+      if (nuevoCarrito.length === 0) {
+        await sendText(phone, '🗑️ Has eliminado todos los platos de tu pedido.')
+        await mostrarMenuPrincipal(phone, sesion.nombre)
+        return
+      }
+
+      await sendText(phone, '🗑️ Plato eliminado con éxito.')
+      await mostrarResumenCarrito(phone, sesion)
+      return
+    }
+  }
+
+  // ESTADO 5: Selección de Método de Pago
   if (sesion.estado === 'seleccion_pago') {
     let metodo = ''
     if (replyId === 'pago_yape') metodo = 'Yape'
@@ -375,21 +574,28 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     if (replyId === 'pago_efectivo') metodo = 'Efectivo'
 
     if (metodo === 'Efectivo') {
+      const hist = pushHistorial(sesion.datos, 'seleccion_pago')
       await supabase.from('wa_sesiones').update({
         estado: 'esperando_vuelto',
-        datos: { ...sesion.datos, metodo_pago: 'Efectivo' }
+        datos: { ...sesion.datos, metodo_pago: 'Efectivo', historial: hist }
       }).eq('telefono', phone)
 
       const total = calcularTotalCarrito(sesion.carrito)
-      await sendText(
+      await sendButtons(
         phone,
-        `💵 Tu total es *S/ ${total.toFixed(2)}*.\n\n*¿Con cuánto vas a pagar en efectivo?* (Ejemplo: escribe *50* o *100* para que el repartidor lleve tu vuelto listo):`
+        `💵 Tu total es *S/ ${total.toFixed(2)}*.\n\n*¿Con cuánto vas a pagar en efectivo?*\nEscribe el monto (ejemplo: *50* o *100*) para que el repartidor lleve tu vuelto listo:`,
+        [
+          { id: 'volver', title: '⬅️ Volver' },
+          { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
+        ],
+        'Pago contra entrega'
       )
       return
     } else if (metodo === 'Yape' || metodo === 'Plin') {
+      const hist = pushHistorial(sesion.datos, 'seleccion_pago')
       await supabase.from('wa_sesiones').update({
         estado: 'esperando_ubicacion',
-        datos: { ...sesion.datos, metodo_pago: metodo, paga_con: 0 }
+        datos: { ...sesion.datos, metodo_pago: metodo, paga_con: 0, historial: hist }
       }).eq('telefono', phone)
 
       await sendText(
@@ -401,21 +607,36 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     }
   }
 
-  // 5.1 SI PAGA EN EFECTIVO: REGISTRAR MONTO DE VUELTO
+  // ESTADO 5.1: Esperando Monto en Efectivo
   if (sesion.estado === 'esperando_vuelto') {
     const montoText = msg.text?.body?.replace(/[^0-9.]/g, '') || '0'
     const pagaCon = parseFloat(montoText) || 0
+    const total = calcularTotalCarrito(sesion.carrito)
 
-    await supabase.from('wa_sesiones').update({
-      estado: 'esperando_ubicacion',
-      datos: { ...sesion.datos, paga_con: pagaCon }
-    }).eq('telefono', phone)
+    if (pagaCon >= total) {
+      const hist = pushHistorial(sesion.datos, 'esperando_vuelto')
+      await supabase.from('wa_sesiones').update({
+        estado: 'esperando_ubicacion',
+        datos: { ...sesion.datos, paga_con: pagaCon, historial: hist, errores: 0 }
+      }).eq('telefono', phone)
 
-    await pedirUbicacion(phone)
-    return
+      const vuelto = pagaCon - total
+      if (vuelto > 0) {
+        await sendText(phone, `💵 Perfecto. Pagas con *S/ ${pagaCon.toFixed(2)}*. Tu vuelto será de *S/ ${vuelto.toFixed(2)}*.`)
+      }
+      await pedirUbicacion(phone)
+      return
+    } else {
+      await registrarErrorEntrada(
+        phone,
+        sesion,
+        `⚠️ El monto debe ser mayor o igual al total de tu pedido (*S/ ${total.toFixed(2)}*). Escribe con cuánto vas a pagar:`
+      )
+      return
+    }
   }
 
-  // 6. UBICACIÓN Y DIRECCIÓN
+  // ESTADO 6: Ubicación y Dirección
   if (sesion.estado === 'esperando_ubicacion') {
     let lat = null
     let lng = null
@@ -430,18 +651,22 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     }
 
     if (!direccion && !lat) {
-      await sendText(phone, '📍 Por favor comparte tu ubicación de WhatsApp o escribe tu dirección y referencia:')
+      await registrarErrorEntrada(
+        phone,
+        sesion,
+        '📍 Por favor comparte tu ubicación GPS de WhatsApp o escribe tu dirección y referencia:'
+      )
       return
     }
 
-    // 7. REGISTRAR EL PEDIDO EN LA BASE DE DATOS
+    // Registrar Pedido Final
     await registrarPedidoFinal(phone, sesion, direccion, lat, lng)
     return
   }
 }
 
 // ==========================================
-// FUNCIONES AUXILIARES DE VISTAS Y MENSAJES
+// VISTAS Y MENÚS INTERACTIVOS
 // ==========================================
 
 async function mostrarMenuPrincipal(phone: string, nombre: string) {
@@ -449,10 +674,11 @@ async function mostrarMenuPrincipal(phone: string, nombre: string) {
     phone,
     `🍽️ *El Puerto Cevichero de Willy*\nHola ${nombre || 'amigo'}, ¿cómo deseas armar tu pedido?`,
     [
-      { id: 'ver_destacados', title: '⭐ Los Más Pedidos' },
-      { id: 'ver_categorias', title: '📖 Toda la Carta' },
-      { id: 'pedir_asesor', title: '👨‍💼 Hablar con Asesor' }
-    ]
+      { id: 'ver_destacados', title: '⭐ Más pedidos' },
+      { id: 'ver_categorias', title: '📖 Toda la carta' },
+      { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
+    ],
+    'El Puerto Cevichero de Willy'
   )
 }
 
@@ -460,8 +686,20 @@ async function mostrarPlatosDestacados(phone: string) {
   const rows = PLATOS_DESTACADOS.map(p => ({
     id: `prod_${p.id}`,
     title: p.nombre.slice(0, 24),
-    description: `S/ ${p.precio.toFixed(2)} - Categoría: ${p.cat}`
+    description: `S/ ${p.precio.toFixed(2)} - ${p.cat}`.slice(0, 72)
   }))
+
+  // Filas fijas de navegación (Tope de 10 filas de Meta)
+  rows.push({
+    id: 'volver',
+    title: '⬅️ Volver',
+    description: 'Regresar al Menú Principal'
+  })
+  rows.push({
+    id: 'pedir_asesor',
+    title: '👨‍💼 Hablar con Asesor',
+    description: 'Atención personalizada'
+  })
 
   await sendList(
     phone,
@@ -475,9 +713,21 @@ async function mostrarPlatosDestacados(phone: string) {
 async function mostrarCategorias(phone: string) {
   const rows = CATEGORIAS.map(c => ({
     id: `cat_${c.id}`,
-    title: c.nombre,
-    description: `Ver todos los platos de ${c.nombre}`
+    title: c.nombre.slice(0, 24),
+    description: `Ver todos los platos de ${c.nombre}`.slice(0, 72)
   }))
+
+  // Filas fijas
+  rows.push({
+    id: 'volver',
+    title: '⬅️ Volver',
+    description: 'Regresar al Menú Principal'
+  })
+  rows.push({
+    id: 'pedir_asesor',
+    title: '👨‍💼 Hablar con Asesor',
+    description: 'Atención personalizada'
+  })
 
   await sendList(
     phone,
@@ -488,58 +738,160 @@ async function mostrarCategorias(phone: string) {
   )
 }
 
-async function mostrarPlatosPorCategoria(phone: string, idCategoria: number) {
-  const { data: platos } = await supabase
+async function mostrarPlatosPorCategoria(phone: string, idCategoria: number, offset: number = 0) {
+  const { data: platos, count } = await supabase
     .from('producto')
-    .select('idproducto, nombre, preciounitario')
+    .select('idproducto, nombre, preciounitario', { count: 'exact' })
     .eq('idcategoria', idCategoria)
     .is('deleted', null)
     .order('nombre')
-    .limit(10)
+    .range(offset, offset + 6) // Máximo 7 platos por página
 
   if (!platos || platos.length === 0) {
-    await sendText(phone, 'No hay platos disponibles en esta categoría por el momento.')
+    await sendButtons(
+      phone,
+      'No hay platos disponibles en esta categoría por el momento.',
+      [
+        { id: 'volver', title: '⬅️ Volver' },
+        { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
+      ]
+    )
     return
   }
 
-  const rows = platos.map(p => ({
+  const rows: any[] = platos.map(p => ({
     id: `prod_${p.idproducto}`,
     title: p.nombre.slice(0, 24),
     description: `S/ ${Number(p.preciounitario).toFixed(2)}`
   }))
+
+  // Paginación si hay más platos
+  const totalCount = count || platos.length
+  if (offset + 7 < totalCount) {
+    rows.push({
+      id: `mas_cat_${idCategoria}_${offset + 7}`,
+      title: '➡️ Ver más platos',
+      description: 'Cargar siguientes platos'
+    })
+  }
+
+  rows.push({
+    id: 'volver',
+    title: '⬅️ Volver',
+    description: 'Regresar a categorías'
+  })
+  rows.push({
+    id: 'pedir_asesor',
+    title: '👨‍💼 Hablar con Asesor',
+    description: 'Atención personalizada'
+  })
 
   await sendList(
     phone,
     'Platos Disponibles',
     'Selecciona el plato que deseas pedir:',
     'Seleccionar Plato',
-    [{ title: 'Platos', rows }]
+    [{ title: 'Platos', rows: rows.slice(0, 10) }]
   )
 }
 
-async function iniciarSeleccionCantidad(phone: string, idProducto: number) {
+async function iniciarSeleccionCantidad(phone: string, idProducto: number, sesion: any) {
   const { data: prod } = await supabase
     .from('producto')
-    .select('idproducto, nombre, preciounitario')
+    .select('idproducto, nombre, preciounitario, imagen')
     .eq('idproducto', idProducto)
     .single()
 
   if (!prod) return
 
+  const hist = pushHistorial(sesion.datos, 'menu')
   await supabase.from('wa_sesiones').update({
     estado: 'seleccion_cantidad',
-    datos: { producto_seleccionado: idProducto }
+    datos: { ...sesion.datos, producto_seleccionado: idProducto, historial: hist }
   }).eq('telefono', phone)
 
+  const bodyText = `🐟 *${prod.nombre}*\nPrecio: S/ ${Number(prod.preciounitario).toFixed(2)}\n\n¿Cuántas porciones deseas?`
+  const botones = [
+    { id: 'cant_1', title: '1 porción' },
+    { id: 'cant_2', title: '2 porciones' },
+    { id: 'cant_mas', title: '➕ Más cantidades' }
+  ]
+
+  // Enviar con foto si el producto la tiene
+  if (prod.imagen && (prod.imagen.startsWith('http://') || prod.imagen.startsWith('https://'))) {
+    await sendButtonsWithImage(phone, prod.imagen, bodyText, botones, 'Escribe VOLVER o ASESOR si necesitas')
+  } else {
+    await sendButtons(phone, bodyText, botones, 'Escribe VOLVER o ASESOR si necesitas')
+  }
+}
+
+async function mostrarListaMasCantidades(phone: string) {
+  const rows = [
+    { id: 'cant_3', title: '3 porciones', description: 'Porciones estándar' },
+    { id: 'cant_4', title: '4 porciones', description: 'Porciones estándar' },
+    { id: 'cant_5', title: '5 porciones', description: 'Porciones familiares' },
+    { id: 'cant_6', title: '6 porciones', description: 'Porciones familiares' },
+    { id: 'cant_7', title: '7 porciones', description: 'Porciones para grupo' },
+    { id: 'cant_8', title: '8 porciones', description: 'Porciones para grupo' },
+    { id: 'cant_otra', title: '✍️ Otra cantidad', description: 'Escribir número personalizado' },
+    { id: 'volver', title: '⬅️ Volver', description: 'Regresar al plato' },
+    { id: 'pedir_asesor', title: '👨‍💼 Asesor', description: 'Hablar con una persona' }
+  ]
+
+  await sendList(
+    phone,
+    'Elegir Cantidad',
+    'Selecciona cuántas porciones deseas ordenar:',
+    'Ver Cantidades',
+    [{ title: 'Opciones de Cantidad', rows }]
+  )
+}
+
+async function derivarPedidoGrande(phone: string, cantidad: number) {
+  await supabase.from('wa_sesiones').update({ modo: 'humano' }).eq('telefono', phone)
   await sendButtons(
     phone,
-    `🐟 *${prod.nombre}*\nPrecio: S/ ${Number(prod.preciounitario).toFixed(2)}\n\n¿Cuántas porciones deseas?`,
-    [
-      { id: 'cant_1', title: '1 porción' },
-      { id: 'cant_2', title: '2 porciones' },
-      { id: 'cant_3', title: '3 porciones' }
-    ]
+    `👨‍🍳 Has indicado *${cantidad} porciones*.\n\nPara pedidos mayores a 20 porciones (pedidos grandes / banquetes), un asesor se comunicará contigo de inmediato por este chat para coordinar el tiempo de preparación y facilidades de pago.`,
+    [{ id: 'volver_bot', title: '🤖 Volver al Bot' }],
+    'Atención para eventos y banquetes'
   )
+}
+
+async function agregarProductoAlCarrito(phone: string, sesion: any, idProducto: number, cantidad: number) {
+  const { data: producto } = await supabase
+    .from('producto')
+    .select('idproducto, nombre, preciounitario')
+    .eq('idproducto', idProducto)
+    .single()
+
+  if (!producto) return
+
+  const carrito = Array.isArray(sesion.carrito) ? [...sesion.carrito] : []
+  const existente = carrito.find(item => item.idproducto === producto.idproducto)
+  const pu = Number(producto.preciounitario) || 0
+
+  if (existente) {
+    existente.cantidad += cantidad
+    existente.total = existente.cantidad * pu
+  } else {
+    carrito.push({
+      idproducto: producto.idproducto,
+      nombre: producto.nombre,
+      cantidad: cantidad,
+      preciounitario: pu,
+      total: cantidad * pu
+    })
+  }
+
+  const hist = pushHistorial(sesion.datos, 'menu')
+  await supabase.from('wa_sesiones').update({
+    carrito: carrito,
+    estado: 'en_carrito',
+    datos: { ...sesion.datos, producto_seleccionado: null, historial: hist, errores: 0 }
+  }).eq('telefono', phone)
+
+  sesion.carrito = carrito
+  await mostrarResumenCarrito(phone, sesion, `✅ Agregado: *${cantidad}x ${producto.nombre}* (S/ ${(cantidad * pu).toFixed(2)})`)
 }
 
 function calcularTotalCarrito(carrito: any[]) {
@@ -547,7 +899,7 @@ function calcularTotalCarrito(carrito: any[]) {
   return carrito.reduce((sum, item) => sum + (Number(item.total) || 0), 0)
 }
 
-async function mostrarResumenCarrito(phone: string, sesion: any) {
+async function mostrarResumenCarrito(phone: string, sesion: any, mensajeExito?: string) {
   const carrito = sesion.carrito || []
   if (carrito.length === 0) {
     await sendText(phone, '🛒 Tu carrito está vacío. ¡Elige un plato para empezar!')
@@ -555,7 +907,8 @@ async function mostrarResumenCarrito(phone: string, sesion: any) {
     return
   }
 
-  let resumen = '🛒 *Tu Pedido Actual:*\n\n'
+  let resumen = mensajeExito ? `${mensajeExito}\n\n` : ''
+  resumen += '🛒 *Tu Pedido Actual:*\n\n'
   carrito.forEach((item: any) => {
     resumen += `• ${item.cantidad}x ${item.nombre} - S/ ${Number(item.total).toFixed(2)}\n`
   })
@@ -566,10 +919,39 @@ async function mostrarResumenCarrito(phone: string, sesion: any) {
     phone,
     resumen,
     [
-      { id: 'seguir_pidiendo', title: '➕ Agregar más' },
-      { id: 'confirmar_pedido', title: '🛍️ Proceder al Pago' },
-      { id: 'reiniciar', title: '🗑️ Cancelar todo' }
-    ]
+      { id: 'confirmar_pedido', title: '🛍️ Finalizar pedido' },
+      { id: 'seguir_pidiendo', title: '➕ Seguir pidiendo' },
+      { id: 'quitar_plato', title: '✏️ Quitar un plato' }
+    ],
+    'Escribe CANCELAR o ASESOR si necesitas'
+  )
+}
+
+async function mostrarListaQuitarPlatos(phone: string, sesion: any) {
+  const carrito = sesion.carrito || []
+  const rows: any[] = carrito.map((item: any) => ({
+    id: `del_${item.idproducto}`,
+    title: `${item.cantidad}x ${item.nombre}`.slice(0, 24),
+    description: `S/ ${Number(item.total).toFixed(2)} - Toca para eliminar`.slice(0, 72)
+  }))
+
+  rows.push({
+    id: 'volver',
+    title: '⬅️ Volver',
+    description: 'Regresar al carrito'
+  })
+  rows.push({
+    id: 'cancelar_todo',
+    title: '🗑️ Cancelar todo',
+    description: 'Vaciar todo el pedido'
+  })
+
+  await sendList(
+    phone,
+    'Quitar Plato',
+    'Selecciona el plato que deseas eliminar de tu orden:',
+    'Eliminar Plato',
+    [{ title: 'Platos en tu carrito', rows: rows.slice(0, 10) }]
   )
 }
 
@@ -584,18 +966,48 @@ async function pedirMetodoPago(phone: string, sesion: any) {
       { id: 'pago_yape', title: '📲 Yape' },
       { id: 'pago_plin', title: '📲 Plin' },
       { id: 'pago_efectivo', title: '💵 Efectivo' }
-    ]
+    ],
+    'Escribe VOLVER o ASESOR si lo requieres'
   )
 }
 
 async function pedirUbicacion(phone: string) {
-  await sendText(
+  await sendButtons(
     phone,
-    '📍 *Último paso:* Comparte tu *Ubicación en tiempo real / GPS* mediante el botón 📎 de WhatsApp, o escribe tu *Dirección exacta y referencia* (Ej: Jr. Los Pinos 123, frente al parque):'
+    '📍 *Último paso:* Comparte tu *Ubicación en tiempo real / GPS* mediante el botón 📎 de WhatsApp, o escribe tu *Dirección exacta y referencia* (Ej: Jr. Los Pinos 123, frente al parque):',
+    [
+      { id: 'volver', title: '⬅️ Volver' },
+      { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
+    ],
+    'Entrega a domicilio'
   )
 }
 
-// 7. REGISTRO EN BASE DE DATOS
+// Control proactivo de errores de entrada consecutivos
+async function registrarErrorEntrada(phone: string, sesion: any, mensajeError: string) {
+  const errores = (sesion.datos?.errores || 0) + 1
+  await supabase.from('wa_sesiones').update({
+    datos: { ...sesion.datos, errores: errores }
+  }).eq('telefono', phone)
+
+  if (errores >= 2) {
+    await sendButtons(
+      phone,
+      '🤝 ¿Te gustaría que te atienda una persona de nuestro equipo?',
+      [
+        { id: 'pedir_asesor', title: '👨‍💼 Sí, con un asesor' },
+        { id: 'seguir_bot', title: '🤖 Seguir con el bot' }
+      ]
+    )
+  } else {
+    await sendText(phone, mensajeError)
+  }
+}
+
+// ==========================================
+// REGISTRO DEL PEDIDO EN BASE DE DATOS
+// ==========================================
+
 async function registrarPedidoFinal(phone: string, sesion: any, direccion: string, lat: any, lng: any) {
   const carrito = sesion.carrito || []
   const total = calcularTotalCarrito(carrito)
@@ -615,14 +1027,13 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
   const now = new Date()
   const fechaLima = now.toLocaleDateString('en-CA', { timeZone: 'America/Lima' })
 
-  // Preparar payload para insertar_pedido_y_detalles
   const pedidoData = {
     cliente: sesion.nombre || 'Cliente WhatsApp',
-    mesa: 0, // 0 = DELIVERY en tu sistema
-    estado: '1', // 1 = PENDIENTE / NO COBRADO (OBLIGATORIO: EL MOZO COBRA)
+    mesa: 0, // 0 = DELIVERY
+    estado: '1', // 1 = PENDIENTE / NO COBRADO (EL MOZO O REPARTIDOR COBRA)
     total_pedidos: totalPedidos,
     fecha: fechaLima,
-    idmozo: 1, // Mozo 1 = "Delivery" en tu sistema
+    idmozo: 1, // Mozo 1 = "Delivery"
     total: total,
     comentarios: comentario
   }
@@ -634,7 +1045,6 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     lugarpedido: '1' // 1 = Para llevar / Delivery
   }))
 
-  // Llamar la función RPC de Supabase
   const { data: rpcResult, error: rpcError } = await supabase.rpc('insertar_pedido_y_detalles', {
     pedido_data: pedidoData,
     detalles: detalles
@@ -652,7 +1062,6 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
 
   const idPedido = rpcResult.idpedido
 
-  // Actualizar datos extra en el pedido (telefono, gps, direccion, metodo_pago)
   await supabase.from('pedido').update({
     telefono: phone,
     direccion: direccion,
@@ -666,14 +1075,13 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     visa: 0
   }).eq('idpedido', idPedido)
 
-  // Limpiar sesión del cliente para su siguiente pedido
+  // Limpiar sesión para nuevo pedido
   await supabase.from('wa_sesiones').update({
     estado: 'inicio',
     carrito: [],
-    datos: {}
+    datos: { historial: ['menu'], errores: 0 }
   }).eq('telefono', phone)
 
-  // Enviar confirmación al cliente
   let mapaLink = ''
   if (lat && lng) {
     mapaLink = `\n🗺️ Mapa: https://maps.google.com/?q=${lat},${lng}`

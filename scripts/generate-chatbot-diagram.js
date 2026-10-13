@@ -8,9 +8,8 @@ const diagramaFlujoPath = path.join(rootDir, 'chatbot', 'DIAGRAMA_FLUJO.md');
 const manualPath = path.join(rootDir, 'chatbot', 'DIAGRAMA_Y_MANUAL_FLUJO.md');
 
 function run() {
-  console.log('🔄 Analizando chatbot/index.ts para regenerar el diagrama de flujo...');
+  console.log('🔄 Analizando chatbot/index.ts para regenerar el diagrama de flujo v2...');
 
-  // Determinar archivo fuente principal
   let srcPath = chatbotIndexPath;
   if (!fs.existsSync(srcPath)) {
     srcPath = supabaseIndexPath;
@@ -23,7 +22,7 @@ function run() {
 
   const code = fs.readFileSync(srcPath, 'utf8');
 
-  // 1. Sincronizar con supabase si son diferentes
+  // 1. Sincronizar con supabase si difieren
   if (fs.existsSync(supabaseIndexPath)) {
     const supaCode = fs.readFileSync(supabaseIndexPath, 'utf8');
     if (srcPath === chatbotIndexPath && code !== supaCode) {
@@ -54,12 +53,11 @@ function run() {
     }
   }
 
-  // 4. Extraer Métodos de pago soportados
+  // 4. Extraer Métodos de pago
   const pagos = [];
   if (code.includes('pago_yape')) pagos.push('Yape');
   if (code.includes('pago_plin')) pagos.push('Plin');
   if (code.includes('pago_efectivo')) pagos.push('Efectivo');
-  if (code.includes('pago_tarjeta')) pagos.push('Tarjeta');
 
   // 5. Extraer Estados del Bot
   const estadosSet = new Set();
@@ -71,7 +69,6 @@ function run() {
   }
   const estados = Array.from(estadosSet);
 
-  // 6. Construir texto formateado de platos para el nodo del flujograma
   const listaPlatosTxt = platos.length > 0 
     ? platos.map(p => `• ${p.nombre} (S/ ${Number(p.precio).toFixed(2)})`).join('<br/>')
     : '• Platos y especialidades del día';
@@ -80,92 +77,155 @@ function run() {
     ? categorias.map(c => `${c.id}. ${c.nombre}`).join('<br/>')
     : '• Dúos, Tríos, Personales, Piqueos, Bebidas';
 
-  const listaPagosTxt = pagos.length > 0
-    ? pagos.map(p => `• ${p}`).join('<br/>')
-    : '• Yape<br/>• Plin<br/>• Efectivo';
-
-  // 7. Generar Código Mermaid Dinámico
+  // 6. Generar Código Mermaid Dinámico (v2 Mejorado)
   const timestamp = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
   const mermaidDiagram = `flowchart TD
-    Inicio([👤 Cliente envía mensaje por WhatsApp]) --> ComandosCheck{¿Es comando especial?<br/>hola / menu / cancelar / asesor}
+    %% Flujo mejorado del chatbot de pedidos por WhatsApp (v2)
+    %% Incluye: Volver atrás global, selector de cantidades, asesor en cada paso,
+    %% fotos de platos, quitar plato del carrito y confirmación de cancelación.
 
-    %% Comandos Universales
-    ComandosCheck -- "asesor / humano" --> ModoHumano[👨‍💼 Pausar Bot y activar Modo Humano<br/>Sesión: modo = 'humano'<br/>Bot guarda silencio]
-    ComandosCheck -- "cancelar / reiniciar" --> ResetSesion[🔄 Reiniciar Carrito<br/>Sesión: estado = 'menu', carrito = []]
+    Inicio(["👤 Cliente envía mensaje por WhatsApp"])
+    ComandosCheck{"¿Es comando especial?<br/>hola / menu / volver / cancelar / asesor<br/>(o toca el botón ⬅️ Volver / 👨‍💼 Asesor)"}
 
-    %% Validación de Nombre
-    ComandosCheck -- "Mensaje normal" --> CheckNombre{¿El cliente ya tiene<br/>nombre guardado?}
-    CheckNombre -- No o estado='pedir_nombre' --> PedirNombre[📝 Bot solicita Nombre y Apellido<br/>Estado: 'pedir_nombre']
-    PedirNombre --> ClienteEnviaNombre[Cliente escribe su nombre<br/>Ej: 'Alex Gomez']
-    ClienteEnviaNombre --> GuardarNombre[💾 Guarda nombre en wa_sesiones<br/>Envía: '¡Mucho gusto, Alex! 🙌']
+    %% Reglas Globales
+    ReglaGlobal["📌 Reglas en TODOS los pasos:<br/>• Listas interactivas: filas fijas ⬅️ Volver y 👨‍💼 Asesor al final (tope 10 filas)<br/>• Botones rápidos: ⬅️ Volver si hay lugar, Asesor en pie de mensaje<br/>• Historial en wa_sesiones para retroceder con carrito intacto"]
+
+    %% Atención Humana (Asesor)
+    ModoHumano["👨‍💼 Pausa el bot y activa Modo Humano<br/>Sesión: modo = 'humano'<br/>Conserva el paso actual y el carrito"]
+    NotificarPersonal["🔔 Avisa al personal en el restaurante<br/>Nombre, teléfono y carrito acumulado"]
+    AtencionHumana["💬 Atención por persona capacitada<br/>El bot guarda silencio"]
+    ReanudarBot["▶️ Reactiva el bot: modo = 'bot'<br/>Vuelve al menú con carrito intacto"]
+    OfrecerAsesor{"🤝 ¿Te atiende una persona?<br/>Botones: 👨‍💼 Sí, con asesor · 🤖 Seguir con bot"}
+
+    %% Volver y Cancelar
+    Volver["⬅️ Volver un paso<br/>Recupera estado del historial<br/>El carrito se conserva"]
+    Repintar["Re-envía la pantalla del paso anterior<br/>menú · categorías · platos · cantidad · carrito · pago"]
+    ConfirmarCancelar{"⚠️ ¿Cancelar todo el pedido?<br/>Botones: 🗑️ Sí, cancelar · ↩️ No, seguir"}
+    ResetSesion["🔄 Reinicia el carrito a cero<br/>Sesión: estado = 'menu', carrito = []"]
+
+    %% Nombre Obligatorio
+    CheckNombre{"¿El cliente ya tiene<br/>nombre guardado?"}
+    PedirNombre["📝 Bot solicita Nombre y Apellido<br/>Estado: 'pedir_nombre'"]
+    ClienteEnviaNombre["Cliente escribe su nombre<br/>Ej: 'Alex Gomez'"]
+    GuardarNombre["💾 Guarda nombre en wa_sesiones<br/>Envía: '¡Mucho gusto, Alex! 🙌'"]
 
     %% Menú Principal
-    GuardarNombre --> MenuPrincipal[🍽️ Menú Principal Interactivo<br/>Estado: 'menu']
-    CheckNombre -- Sí --> MenuPrincipal
-    ResetSesion --> MenuPrincipal
+    MenuPrincipal["🍽️ Menú Principal Interactivo<br/>Estado: 'menu'<br/>Botones: ⭐ Más pedidos · 📖 Toda la carta · 👨‍💼 Asesor"]
+    OpcionesMenu{"¿Qué botón presiona?"}
+    Destacados["⭐ Lista: Platos Más Pedidos<br/>${listaPlatosTxt}<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor"]
+    Categorias["📂 Lista de Categorías<br/>${listaCategoriasTxt}<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor"]
+    SelCategoria["Cliente elige una categoría"]
+    PlatosCategoria["Consulta la tabla 'producto'<br/>Muestra platos (máx. 7 por página) + ➡️ Ver más + ⬅️ Volver + 👨‍💼 Asesor"]
+    ElegirPlato["Cliente selecciona un plato"]
 
-    MenuPrincipal --> OpcionesMenu{¿Qué botón presiona?}
+    %% Cantidad y Porciones
+    PedirCantidad["🔢 Pregunta Cantidad (con foto si existe)<br/>Estado: 'seleccion_cantidad'<br/>Botones: 1 porción · 2 porciones · ➕ Más cantidades"]
+    ElegirCantidad{"¿Qué elige?"}
+    CantidadMas["🔢 Lista de más porciones<br/>3 · 4 · 5 · 6 · 7 · 8 porciones<br/>✍️ Otra cantidad<br/>Filas fijas: ⬅️ Volver · 👨‍💼 Asesor"]
+    CantidadEscrita["✍️ Pide escribir la cantidad numéricamente"]
+    ValidarCantidad{"¿Es un número válido?"}
 
-    %% Opción 1: Los Más Pedidos
-    OpcionesMenu -- "⭐ Los Más Pedidos" --> Destacados["📋 Lista de Especialidades:<br/>${listaPlatosTxt}"]
+    %% Carrito
+    AgregarCarrito["🛒 Agrega al Carrito en wa_sesiones<br/>Calcula subtotal: cantidad x precio<br/>Estado: 'en_carrito'"]
+    OpcionesCarrito{"Resumen del pedido y total en soles"}
+    QuitarPlato["✏️ Lista de platos del carrito<br/>Elimina el plato elegido y recalcula el total<br/>Filas fijas: ⬅️ Volver · 🗑️ Cancelar todo"]
 
-    %% Opción 2: Toda la Carta
-    OpcionesMenu -- "📖 Toda la Carta" --> Categorias["📂 Lista de Categorías:<br/>${listaCategoriasTxt}"]
-    Categorias --> SelCategoria[Cliente elige una categoría]
-    SelCategoria --> PlatosCategoria[Consulta base de datos 'producto'<br/>Muestra platos de esa categoría]
-
-    %% Opción 3: Hablar con Asesor
-    OpcionesMenu -- "👨‍💼 Hablar con Asesor" --> ModoHumano
-
-    %% Selección de Plato y Cantidad
-    Destacados --> ElegirPlato[Cliente selecciona un plato]
-    PlatosCategoria --> ElegirPlato
-
-    ElegirPlato --> PedirCantidad[🔢 Pregunta Cantidad<br/>Estado: 'seleccion_cantidad'<br/>Botones: 1 porción / 2 porciones / 3 porciones<br/>O escribe número por texto]
-
-    PedirCantidad --> AgregarCarrito[🛒 Agrega al Carrito en wa_sesiones<br/>Calcula subtotal: cantidad x precio<br/>Estado: 'en_carrito']
-
-    AgregarCarrito --> OpcionesCarrito{Botones en Carrito}
-    OpcionesCarrito -- "➕ Seguir pidiendo" --> MenuPrincipal
-    OpcionesCarrito -- "🛍️ Finalizar pedido" --> MetodoPago["💰 Selección de Método de Pago<br/>Estado: 'seleccion_pago'<br/>Opciones:<br/>${listaPagosTxt}"]
-    OpcionesCarrito -- "🗑️ Cancelar todo" --> ResetSesion
-
-    %% Métodos de Pago
-    MetodoPago --> ElegirPago{Botón de Pago}
-    ElegirPago -- "📲 Yape / Plin" --> PagoDigital[Registra método Yape/Plin<br/>Indica que se valida contra entrega]
-    ElegirPago -- "💵 Efectivo" --> PagoEfectivo[Pregunta: '¿Con cuánto vas a pagar?'<br/>Estado: 'esperando_vuelto']
-    PagoEfectivo --> ClienteIndicaMonto[Cliente escribe monto. Ej: '50' o '100'<br/>Guarda paga_con y calcula vuelto]
-
-    %% Ubicación y Entrega
-    PagoDigital --> SolicitarUbicacion[📍 Solicita Ubicación de Entrega<br/>Estado: 'esperando_ubicacion']
-    ClienteIndicaMonto --> SolicitarUbicacion
-
-    SolicitarUbicacion --> TipoUbicacion{¿Cómo envía ubicación?}
-    TipoUbicacion -- "Ubicación GPS (clip de WhatsApp)" --> CapturaGPS[Extrae latitud y longitud<br/>Genera enlace de Google Maps]
-    TipoUbicacion -- "Texto escrito" --> CapturaTexto[Guarda dirección y referencia escrita]
+    %% Pago y Ubicación
+    MetodoPago["💰 Selección de Método de Pago<br/>Estado: 'seleccion_pago'<br/>Botones: 📲 Yape · 📲 Plin · 💵 Efectivo"]
+    ElegirPago{"Botón de Pago"}
+    PagoDigital["Registra método Yape/Plin<br/>Indica que se valida contra entrega"]
+    PagoEfectivo["Pregunta: ¿Con cuánto vas a pagar?<br/>Estado: 'esperando_vuelto'"]
+    ClienteIndicaMonto["Cliente escribe monto. Ej: '50' o '100'<br/>Guarda paga_con y calcula vuelto"]
+    SolicitarUbicacion["📍 Solicita Ubicación de Entrega<br/>Estado: 'esperando_ubicacion'"]
+    TipoUbicacion{"¿Cómo envía ubicación?"}
+    CapturaGPS["Extrae latitud y longitud<br/>Genera enlace de Google Maps"]
+    CapturaTexto["Guarda dirección y referencia escrita"]
 
     %% Inserción en Base de Datos
-    CapturaGPS --> InsertarBD[💾 Inserción Transaccional en Base de Datos<br/>RPC: insertar_pedido_y_detalles<br/>• mesa = 0 (DELIVERY)<br/>• idmozo = 1 (Delivery)<br/>• estado = '1' (PENDIENTE / NO COBRADO)<br/>• lugarpedido = '1' (Para Llevar)<br/>• telefono = 519XXXXXXXX<br/>• direccion, gps, metodo_pago, paga_con]
-    CapturaTexto --> InsertarBD
-
-    InsertarBD --> ConfirmarCliente[🎉 Mensaje de Confirmación al Cliente:<br/>• N° de Pedido #ID<br/>• Detalle de platos y Total S/<br/>• Enlace de Google Maps<br/>• Estado: Enviado a cocina]
-    InsertarBD --> ResetFinal[Limpia sesión para siguiente pedido:<br/>estado = 'inicio', carrito = []]
-
-    %% Disparo POS en tiempo real
-    InsertarBD -. Realtime postgres_changes .-> POSAngular[🖥️ Sistema POS Angular del Restaurante]
+    InsertarBD["💾 Inserción Transaccional en Base de Datos<br/>RPC: insertar_pedido_y_detalles<br/>• mesa = 0 (DELIVERY)<br/>• idmozo = 1 (Delivery)<br/>• estado = '1' (PENDIENTE / NO COBRADO)<br/>• lugarpedido = '1' (Para Llevar)<br/>• telefono = 519XXXXXXXX<br/>• direccion, gps, metodo_pago, paga_con"]
+    ConfirmarCliente["🎉 Mensaje de Confirmación al Cliente:<br/>• N° de Pedido #ID<br/>• Detalle de platos y Total S/<br/>• Enlace de Google Maps<br/>• Estado: Enviado a cocina"]
+    ResetFinal["Limpia sesión para siguiente pedido:<br/>estado = 'inicio', carrito = []"]
+    POSAngular["🖥️ Sistema POS Angular del Restaurante"]
 
     subgraph POS_ANGULAR ["🖥️ Respuesta Inmediata en el Sistema POS"]
-        POSAngular --> ChimeSonoro[🔔 Campana Sonora en bucle cada 3.2s]
-        POSAngular --> AutoRefresh[⚡ ListarPedidos() auto-refresca pedidos activos]
-        POSAngular --> ModalRojo[🚨 Modal Rojo Urgente en Pantalla Completa<br/>Datos del cliente, platos, teléfono, mapa y vuelto]
-        ModalRojo --> ClickAtender[Botón: '🚨 Atender Pedido e Imprimir Comanda']
-        ClickAtender --> Silenciar[Silencia campana y cierra modal]
-        ClickAtender --> SeleccionarMesa0[Autoselecciona Mesa 0 en panel de pedidos]
-        ClickAtender --> ImprimirComanda[📄 Dispara y abre PDF de Comanda de Cocina listo para imprimir]
-    end`;
+        POSAngular --> ChimeSonoro["🔔 Campana Sonora en bucle cada 3.2s"]
+        POSAngular --> AutoRefresh["⚡ ListarPedidos() auto-refresca pedidos activos"]
+        POSAngular --> ModalRojo["🚨 Modal Rojo Urgente en Pantalla Completa<br/>Datos del cliente, platos, teléfono, mapa y vuelto"]
+        ModalRojo --> ClickAtender["Botón: '🚨 Atender Pedido e Imprimir Comanda'"]
+        ClickAtender --> Silenciar["Silencia campana y cierra modal"]
+        ClickAtender --> SeleccionarMesa0["Autoselecciona Mesa 0 en panel de pedidos"]
+        ClickAtender --> ImprimirComanda["📄 Dispara y abre PDF de Comanda de Cocina listo para imprimir"]
+    end
 
-  // 8. Crear archivo dedicado: chatbot/DIAGRAMA_FLUJO.md
-  const contenidoDiagramaMd = `# 🔄 Diagrama de Flujo del Chatbot de WhatsApp
+    %% Conexiones
+    Inicio --> ComandosCheck
+    ReglaGlobal -.-> ComandosCheck
+    ComandosCheck -->|"asesor / humano / 👨‍💼"| ModoHumano
+    ComandosCheck -->|"volver / ⬅️"| Volver
+    ComandosCheck -->|"cancelar"| ConfirmarCancelar
+    ComandosCheck -.->|"2 errores seguidos"| OfrecerAsesor
+    ComandosCheck -->|"Mensaje normal / hola / menu"| CheckNombre
+
+    ModoHumano --> NotificarPersonal --> AtencionHumana
+    AtencionHumana -->|"Escribe menu o bot"| ReanudarBot
+    ReanudarBot --> MenuPrincipal
+    OfrecerAsesor -->|"Sí, con asesor"| ModoHumano
+    OfrecerAsesor -->|"Seguir con bot"| Repintar
+
+    Volver --> Repintar
+    ConfirmarCancelar -->|"Sí, cancelar"| ResetSesion
+    ConfirmarCancelar -->|"No, seguir"| Repintar
+    ResetSesion --> MenuPrincipal
+
+    CheckNombre -->|"No o estado='pedir_nombre'"| PedirNombre
+    CheckNombre -->|"Sí"| MenuPrincipal
+    PedirNombre --> ClienteEnviaNombre --> GuardarNombre --> MenuPrincipal
+
+    MenuPrincipal --> OpcionesMenu
+    OpcionesMenu -->|"⭐ Más pedidos"| Destacados
+    OpcionesMenu -->|"📖 Toda la carta"| Categorias
+    OpcionesMenu -->|"👨‍💼 Asesor"| ModoHumano
+    Categorias --> SelCategoria --> PlatosCategoria
+    Destacados --> ElegirPlato
+    PlatosCategoria --> ElegirPlato
+
+    ElegirPlato --> PedirCantidad --> ElegirCantidad
+    ElegirCantidad -->|"1 o 2 porciones"| AgregarCarrito
+    ElegirCantidad -->|"➕ Más cantidades"| CantidadMas
+    ElegirCantidad -->|"Escribe un número"| ValidarCantidad
+    CantidadMas -->|"3 a 8 porciones"| AgregarCarrito
+    CantidadMas -->|"✍️ Otra cantidad"| CantidadEscrita
+    CantidadEscrita --> ValidarCantidad
+    ValidarCantidad -->|"Sí (1 a 20)"| AgregarCarrito
+    ValidarCantidad -->|"Más de 20 (pedido grande)"| ModoHumano
+    ValidarCantidad -->|"No es válido"| CantidadEscrita
+
+    AgregarCarrito --> OpcionesCarrito
+    OpcionesCarrito -->|"🛍️ Finalizar pedido"| MetodoPago
+    OpcionesCarrito -->|"➕ Seguir pidiendo"| MenuPrincipal
+    OpcionesCarrito -->|"✏️ Quitar un plato"| QuitarPlato
+    OpcionesCarrito -->|"🗑️ Cancelar todo"| ConfirmarCancelar
+    QuitarPlato --> OpcionesCarrito
+    QuitarPlato -->|"Carrito vacío"| MenuPrincipal
+
+    MetodoPago --> ElegirPago
+    ElegirPago -->|"📲 Yape / Plin"| PagoDigital
+    ElegirPago -->|"💵 Efectivo"| PagoEfectivo
+    PagoEfectivo --> ClienteIndicaMonto
+    PagoDigital --> SolicitarUbicacion
+    ClienteIndicaMonto --> SolicitarUbicacion
+    SolicitarUbicacion --> TipoUbicacion
+    TipoUbicacion -->|"Ubicación GPS (clip WhatsApp)"| CapturaGPS
+    TipoUbicacion -->|"Texto escrito"| CapturaTexto
+
+    CapturaGPS --> InsertarBD
+    CapturaTexto --> InsertarBD
+    InsertarBD --> ConfirmarCliente
+    InsertarBD --> ResetFinal
+    InsertarBD -. Realtime postgres_changes .-> POSAngular`;
+
+  // 7. Guardar en chatbot/DIAGRAMA_FLUJO.md
+  const contenidoDiagramaMd = `# 🔄 Diagrama de Flujo del Chatbot de WhatsApp (Versión 2 Mejorada)
 > **Última sincronización automática:** ${timestamp}  
 > **Archivo origen:** \`chatbot/index.ts\` (analizado automáticamente)
 
@@ -185,7 +245,7 @@ ${mermaidDiagram}
 
 | Parámetro | Valores Detectados en el Código |
 | :--- | :--- |
-| **Estados de Sesión** | \`${estados.join(', ') || 'pedir_nombre, menu, seleccion_cantidad, en_carrito, seleccion_pago, esperando_vuelto, esperando_ubicacion'}\` |
+| **Estados de Sesión** | \`${estados.join(', ')}\` |
 | **Platos Destacados** | ${platos.length} platos registrados (\`${platos.map(p => p.nombre).slice(0, 4).join(', ')}...\`) |
 | **Categorías de Carta** | ${categorias.length} categorías (\`${categorias.map(c => c.nombre).join(', ')}\`) |
 | **Métodos de Pago** | \`${pagos.join(', ')}\` |
@@ -195,8 +255,9 @@ ${mermaidDiagram}
 
 ---
 
-## 🛠️ Cómo regenerar este diagrama manualmente
-Si realizaste cambios en \`chatbot/index.ts\`, puedes regenerar este diagrama ejecutando:
+## 🛠️ Cómo regenerar este diagrama automáticamente
+Si realizaste cambios en \`chatbot/index.ts\`, el diagrama se actualiza solo al hacer \`git commit\`.  
+También puedes forzar la actualización ejecutando:
 \`\`\`bash
 npm run update-diagram
 \`\`\`
@@ -209,14 +270,14 @@ npm run watch-diagram
   fs.writeFileSync(diagramaFlujoPath, contenidoDiagramaMd, 'utf8');
   console.log(`✅ Diagrama generado con éxito en: ${path.relative(rootDir, diagramaFlujoPath)}`);
 
-  // 9. Actualizar también en chatbot/DIAGRAMA_Y_MANUAL_FLUJO.md (reemplazando el bloque mermaid)
+  // 8. Actualizar también en chatbot/DIAGRAMA_Y_MANUAL_FLUJO.md
   if (fs.existsSync(manualPath)) {
     let manualContent = fs.readFileSync(manualPath, 'utf8');
     const regexMermaid = /```mermaid[\s\S]*?```/;
     if (regexMermaid.test(manualContent)) {
       manualContent = manualContent.replace(regexMermaid, `\`\`\`mermaid\n${mermaidDiagram}\n\`\`\``);
       fs.writeFileSync(manualPath, manualContent, 'utf8');
-      console.log(`✅ Manual actualizado con el nuevo flujograma en: ${path.relative(rootDir, manualPath)}`);
+      console.log(`✅ Manual actualizado con el nuevo flujograma v2 en: ${path.relative(rootDir, manualPath)}`);
     }
   }
 }
