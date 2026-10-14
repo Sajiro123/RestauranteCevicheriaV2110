@@ -832,47 +832,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
       return
     }
 
-    if (replyId === 'obs_mas') {
-      await mostrarListaOpcionesCocina(phone)
-      return
-    }
 
-    // Opciones seleccionadas desde la lista
-    if (replyId.startsWith('obs_opt_')) {
-      let nota = ''
-      if (replyId === 'obs_opt_sin_camote') nota = 'Sin camote'
-      else if (replyId === 'obs_opt_sin_cebolla') nota = 'Sin cebolla'
-      else if (replyId === 'obs_opt_sin_aji_camote') nota = 'Sin ají ni camote'
-      else if (replyId === 'obs_opt_bajo_aji') nota = 'Bajo en ají'
-      else if (replyId === 'obs_opt_bien_picante') nota = 'Bien picante'
-      else if (replyId === 'obs_opt_ensalada_aparte') nota = 'Ensalada aparte'
-      else if (replyId === 'obs_opt_sin_yuca') nota = 'Sin yuca'
-      else if (replyId === 'obs_opt_sin_arroz') nota = 'Sin arroz'
-
-      if (replyId === 'obs_opt_escribir') {
-        await sendButtons(
-          phone,
-          '✍️ Por favor escribe aquí tu indicación para la cocina (ejemplo: _"el ceviche sin ají y el chaufa bien dorado"_):',
-          [
-            { id: 'volver', title: '⬅️ Volver' },
-            { id: 'obs_normal', title: '⏩ Todo normal' }
-          ]
-        )
-        return
-      }
-
-      if (nota) {
-        const hist = pushHistorial(sesion.datos, 'esperando_observaciones')
-        await supabase.from('wa_sesiones').update({
-          estado: 'seleccion_pago',
-          datos: { ...sesion.datos, observaciones: nota, historial: hist }
-        }).eq('telefono', phone)
-        sesion.datos = { ...sesion.datos, observaciones: nota }
-        await sendText(phone, `👨‍🍳 ¡Anotado! Indicación de cocina: *${nota}*. 👍`)
-        await pedirMetodoPago(phone, sesion)
-        return
-      }
-    }
 
     // Si el usuario escribe texto directamente con su observación
     const textoIngresado = msg.text?.body?.trim()
@@ -1499,39 +1459,21 @@ async function pedirObservacionesCocina(phone: string, sesion: any) {
   await sendButtons(
     phone,
     `👨‍🍳 *¿Alguna indicación especial para la cocina?*\n\n` +
-    `Si tienes alguna preferencia para tus platos (como *sin ají*, *sin camote*, *sin cebolla*, etc.):\n\n` +
-    `• Elige un botón rápido\n` +
-    `• O *escribe directamente tu nota* por este chat.\n\n` +
-    `_Si deseas tus platos tal como vienen en la carta, presiona *⏩ Todo normal*._`,
+    `Escribe por aquí tu indicación para que el equipo prepare tu pedido a tu gusto.\n\n` +
+    `💡 *Ideas de cómo pedir:*\n` +
+    `• _"Sin ají"_\n` +
+    `• _"Sin camote"_\n` +
+    `• _"Sin cebolla"_\n` +
+    `• _"Sin ají y sin camote"_\n` +
+    `• _"Ensalada aparte"_\n` +
+    `• _"Poco picante"_\n\n` +
+    `_Si no tienes ninguna indicación especial, presiona *⏩ Todo normal* para continuar:_`,
     [
       { id: 'obs_normal', title: '⏩ Todo normal' },
       { id: 'obs_sin_aji', title: '🌶️ Sin ají' },
-      { id: 'obs_mas', title: '📋 Más opciones' }
+      { id: 'volver', title: '⬅️ Volver' }
     ],
-    'Indicaciones de cocina'
-  )
-}
-
-async function mostrarListaOpcionesCocina(phone: string) {
-  const rows = [
-    { id: 'obs_opt_sin_camote', title: '🍠 Sin camote', description: 'No incluir camote en los platos' },
-    { id: 'obs_opt_sin_cebolla', title: '🧅 Sin cebolla', description: 'Preparar platos sin cebolla' },
-    { id: 'obs_opt_sin_aji_camote', title: '🌶️ Sin ají ni camote', description: 'Sin picante y sin camote' },
-    { id: 'obs_opt_bajo_aji', title: '🌶️ Bajo en ají', description: 'Poco picante' },
-    { id: 'obs_opt_bien_picante', title: '🔥 Bien picante', description: 'Con bastante ají / picante' },
-    { id: 'obs_opt_ensalada_aparte', title: '🥗 Ensalada aparte', description: 'Servir guarnición por separado' },
-    { id: 'obs_opt_sin_yuca', title: '🥔 Sin yuca', description: 'No incluir yuca' },
-    { id: 'obs_opt_sin_arroz', title: '🍚 Sin arroz', description: 'No incluir arroz' },
-    { id: 'obs_opt_escribir', title: '✍️ Escribir otra nota', description: 'Escribir indicación personalizada' },
-    { id: 'obs_normal', title: '⏩ Todo normal', description: 'Preparación estándar sin cambios' }
-  ]
-
-  await sendList(
-    phone,
-    'Notas para Cocina',
-    'Selecciona una indicación o preferencia para la preparación de tu pedido:',
-    'Ver opciones',
-    [{ title: 'Preferencias frecuentes', rows }]
+    'El Puerto Cevichero de Willy'
   )
 }
 
@@ -1541,7 +1483,7 @@ function obtenerToppingIdsDeTexto(textoObservacion: string): string {
   const ids: number[] = []
 
   // Mapeo con los IDs reales de la tabla toppings en Supabase
-  if (norm.includes('sin aji') || norm.includes('sin picante') || norm.includes('no aji') || norm.includes('no picante') || norm.includes('cero aji')) {
+  if (norm.includes('sin aji') || norm.includes('sin picante') || norm.includes('no aji') || norm.includes('no picante') || norm.includes('cero aji') || norm.includes('nada de aji')) {
     ids.push(1) // SIN AJI
   }
   if (norm.includes('sin camote') || norm.includes('no camote') || norm.includes('sin camotito')) {
@@ -1549,12 +1491,16 @@ function obtenerToppingIdsDeTexto(textoObservacion: string): string {
   }
   if (norm.includes('sin cebolla') || norm.includes('no cebolla') || norm.includes('sin cebollita')) {
     ids.push(4) // SIN CEBOLLA
+  } else if (norm.includes('poca cebolla') || norm.includes('poco cebolla')) {
+    ids.push(24) // poca cebolla
   }
   if (norm.includes('sin yuca') || norm.includes('no yuca')) {
     ids.push(7) // SIN YUCA
   }
   if (norm.includes('sin arroz') || norm.includes('no arroz')) {
     ids.push(8) // SIN ARROZ
+  } else if (norm.includes('poco arroz') || norm.includes('poca arroz')) {
+    ids.push(30) // poco arroz
   }
   if (norm.includes('ensalada aparte') || norm.includes('aparte ensalada')) {
     ids.push(9) // ENSALADA APARTE
@@ -1564,6 +1510,9 @@ function obtenerToppingIdsDeTexto(textoObservacion: string): string {
   }
   if (norm.includes('bien picante') || norm.includes('bastante aji') || norm.includes('muy picante') || norm.includes('harto aji')) {
     ids.push(29) // bien picante
+  }
+  if (norm.includes('bajo sal') || norm.includes('poca sal') || norm.includes('sin sal')) {
+    ids.push(16) // BAJO SAL
   }
 
   return ids.length > 0 ? ids.join(',') : '0'
