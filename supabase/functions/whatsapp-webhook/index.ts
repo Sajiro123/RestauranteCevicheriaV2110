@@ -1600,6 +1600,7 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
 
   const pedidoData = {
     cliente: sesion.nombre || 'Cliente WhatsApp',
+    telefono: phone,
     mesa: 0, // 0 = DELIVERY
     estado: '1', // 1 = PENDIENTE / NO COBRADO (EL MOZO O REPARTIDOR COBRA)
     total_pedidos: totalPedidos,
@@ -1608,6 +1609,11 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     total: total,
     comentario: comentario,
     comentarios: comentario,
+    direccion: direccion,
+    latitud: lat,
+    longitud: lng,
+    metodo_pago: metodoPago,
+    paga_con: pagaCon,
     es_chatbot: true
   }
 

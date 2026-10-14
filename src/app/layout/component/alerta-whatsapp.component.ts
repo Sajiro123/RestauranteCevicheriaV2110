@@ -10,138 +10,172 @@ import { ImportsModule } from '../../pages/imports';
     standalone: true,
     imports: [CommonModule, ImportsModule],
     template: `
-        <!-- DIÁLOGO MODAL GIGANTE DE ALERTA ROJA URGENTE -->
+        <!-- DIÁLOGO MODAL ELEGANTE DE ALERTA DELIVERY WHATSAPP -->
         <p-dialog
             [(visible)]="visible"
             [modal]="true"
             [closable]="false"
             [draggable]="false"
             [resizable]="false"
-            [style]="{ width: '92vw', maxWidth: '650px' }"
+            [style]="{ width: '92vw', maxWidth: '640px' }"
             styleClass="alerta-whatsapp-dialog"
         >
             <ng-template pTemplate="header">
-                <div class="flex items-center justify-between w-full p-2 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white rounded-t-lg -m-6 mb-0 px-6 py-4 shadow-xl border-b-2 border-red-500 animate-pulse">
+                <div class="flex items-center justify-between w-full p-2 bg-gradient-to-r from-rose-600 to-rose-700 text-white rounded-t-lg -m-6 mb-0 px-5 py-3.5 shadow-md border-b border-rose-400/30">
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full bg-white text-red-600 flex items-center justify-center text-2xl shadow-lg font-bold">
-                            <i class="pi pi-bell text-2xl animate-bounce"></i>
+                        <div class="w-10 h-10 rounded-full bg-white text-rose-600 flex items-center justify-center text-xl shadow-md font-bold flex-shrink-0">
+                            <i class="pi pi-bell text-xl"></i>
                         </div>
                         <div>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs uppercase tracking-wider font-extrabold bg-red-800/90 px-2 py-0.5 rounded text-red-100 border border-red-400/40">
-                                    ¡ALERTA URGENTE!
+                                <span class="text-[11px] uppercase tracking-wider font-extrabold bg-rose-800/80 px-2 py-0.5 rounded text-rose-100 border border-rose-400/30">
+                                    NUEVO PEDIDO
                                 </span>
-                                <span class="text-xs font-bold text-red-200">DELIVERY WHATSAPP</span>
+                                <span class="text-xs font-bold text-rose-200">DELIVERY WHATSAPP</span>
                             </div>
-                            <h2 class="text-xl sm:text-2xl font-black text-white m-0 leading-tight">
-                                NUEVO PEDIDO #{{ pedido?.idpedido }}
+                            <h2 class="text-lg sm:text-xl font-black text-white m-0 leading-tight">
+                                PEDIDO #{{ pedido?.idpedido }}
                             </h2>
                         </div>
                     </div>
                     <button
                         (click)="silenciar()"
-                        class="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow"
+                        class="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
                         title="Silenciar sonido de alarma"
                     >
-                        <i [ngClass]="sonando ? 'pi pi-volume-up animate-spin' : 'pi pi-volume-off'"></i>
+                        <i [ngClass]="sonando ? 'pi pi-volume-up' : 'pi pi-volume-off'"></i>
                         {{ sonando ? 'Silenciar Alarma' : 'Silenciado' }}
                     </button>
                 </div>
             </ng-template>
 
-            <div class="flex flex-col gap-4 mt-6" *ngIf="pedido">
+            <div class="flex flex-col gap-3.5 mt-5" *ngIf="pedido">
                 <!-- Tarjeta de Cliente y Pago -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-                        <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                            <i class="pi pi-user text-red-600"></i> Cliente
-                        </span>
-                        <div class="text-base font-black text-slate-800">{{ pedido.cliente || 'Cliente WhatsApp' }}</div>
-                        <div class="text-xs text-slate-600 mt-1 flex items-center gap-2" *ngIf="pedido.telefono">
-                            <i class="pi pi-whatsapp text-emerald-600 text-sm"></i>
-                            <span class="font-bold font-mono">{{ pedido.telefono }}</span>
+                    <!-- Tarjeta Cliente con Teléfono -->
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-[11px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="pi pi-user text-rose-600"></i> Cliente
+                                </span>
+                                <span class="text-[10px] bg-rose-100 text-rose-800 font-extrabold px-1.5 py-0.5 rounded border border-rose-200">
+                                    Delivery
+                                </span>
+                            </div>
+                            <div class="text-base sm:text-lg font-black text-slate-800 leading-tight">
+                                {{ pedido.cliente || 'Cliente WhatsApp' }}
+                            </div>
+                        </div>
+
+                        <!-- Número de Teléfono / WhatsApp -->
+                        <div class="mt-2.5 pt-2 border-t border-slate-200/70 flex items-center justify-between gap-2 flex-wrap">
+                            <div class="flex items-center gap-1.5">
+                                <i class="pi pi-whatsapp text-emerald-600 text-base font-bold"></i>
+                                <span class="text-sm font-black text-slate-800 font-mono">
+                                    {{ formatTelefono(pedido.telefono) }}
+                                </span>
+                            </div>
                             <a
+                                *ngIf="pedido.telefono"
                                 [href]="'https://wa.me/' + cleanPhone(pedido.telefono)"
                                 target="_blank"
-                                class="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold hover:bg-emerald-200"
+                                class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded-md font-bold shadow-xs transition-colors inline-flex items-center gap-1"
                             >
-                                Abrir Chat
+                                <i class="pi pi-comments text-[10px]"></i> Chat
                             </a>
                         </div>
                     </div>
 
-                    <div class="p-3.5 bg-red-50/80 border border-red-200 rounded-xl">
-                        <span class="text-xs text-red-700 font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                            <i class="pi pi-wallet text-red-600"></i> Pago (Cobro pendiente)
-                        </span>
-                        <div class="text-base font-black text-red-900 flex items-center gap-2">
-                            <span>{{ pedido.metodo_pago || 'Por coordinar' }}</span>
-                            <span class="text-xs px-2 py-0.5 bg-red-100 text-red-800 border border-red-300 rounded font-black">
-                                NO COBRADO
+                    <!-- Tarjeta Pago -->
+                    <div class="p-3 bg-rose-50/70 border border-rose-200/80 rounded-xl flex flex-col justify-between">
+                        <div>
+                            <span class="text-[11px] text-rose-800 font-bold uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                                <i class="pi pi-wallet text-rose-600"></i> Pago
                             </span>
+                            <div class="text-base font-black text-rose-950 flex items-center gap-2">
+                                <span>{{ pedido.metodo_pago || 'Por coordinar' }}</span>
+                                <span class="text-[10px] px-1.5 py-0.5 bg-rose-100 text-rose-800 border border-rose-300 rounded font-black">
+                                    NO COBRADO
+                                </span>
+                            </div>
                         </div>
-                        <div class="text-xs text-red-800 mt-1" *ngIf="pedido.metodo_pago === 'Efectivo' && pedido.paga_con > 0">
-                            Paga con: <b>S/ {{ pedido.paga_con | number:'1.2-2' }}</b> | Vuelto: <b class="text-red-700 font-black">S/ {{ calcularVuelto() | number:'1.2-2' }}</b>
+                        <div class="text-xs text-rose-900 font-bold mt-2 pt-2 border-t border-rose-200/60" *ngIf="pedido.metodo_pago === 'Efectivo' && pedido.paga_con > 0">
+                            Paga con: <b>S/ {{ pedido.paga_con | number:'1.2-2' }}</b> | Vuelto: <b class="text-rose-700 font-black">S/ {{ calcularVuelto() | number:'1.2-2' }}</b>
                         </div>
                     </div>
                 </div>
 
                 <!-- Dirección / GPS -->
-                <div class="p-3 bg-rose-50/60 border border-rose-200 rounded-xl flex items-start justify-between gap-3" *ngIf="pedido.direccion || pedido.latitud">
+                <div class="p-2.5 bg-rose-50/50 border border-rose-200/70 rounded-xl flex items-start justify-between gap-3" *ngIf="pedido.direccion || pedido.latitud">
                     <div class="flex items-start gap-2">
-                        <i class="pi pi-map-marker text-red-600 text-lg mt-0.5"></i>
+                        <i class="pi pi-map-marker text-rose-600 text-base mt-0.5"></i>
                         <div>
-                            <span class="text-xs font-bold text-red-900 uppercase tracking-wider block">Dirección de Entrega:</span>
-                            <p class="text-sm font-semibold text-slate-800 m-0">{{ pedido.direccion || 'Ubicación GPS' }}</p>
+                            <span class="text-[11px] font-bold text-rose-950 uppercase tracking-wider block">Dirección de Entrega:</span>
+                            <p class="text-xs sm:text-sm font-semibold text-slate-800 m-0 leading-snug">{{ pedido.direccion || 'Ubicación GPS' }}</p>
                         </div>
                     </div>
                     <a
                         *ngIf="pedido.latitud && pedido.longitud"
                         [href]="'https://maps.google.com/?q=' + pedido.latitud + ',' + pedido.longitud"
                         target="_blank"
-                        class="flex-shrink-0 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow"
+                        class="flex-shrink-0 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs"
                     >
-                        <i class="pi pi-external-link"></i> Ver Mapa GPS
+                        <i class="pi pi-external-link text-[10px]"></i> Ver GPS
                     </a>
                 </div>
 
                 <!-- Detalle de Platos -->
-                <div class="border border-slate-200 rounded-xl overflow-hidden">
-                    <div class="bg-slate-100 px-3.5 py-2 border-b border-slate-200 flex justify-between items-center">
+                <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                    <div class="bg-slate-100 px-3 py-1.5 border-b border-slate-200 flex justify-between items-center">
                         <span class="text-xs font-black text-slate-700 uppercase tracking-wider">
                             <i class="pi pi-list mr-1"></i> Platos Solicitados ({{ detalles.length }})
                         </span>
                         <span class="text-xs text-slate-500 font-semibold">Total Ítems: {{ pedido.total_pedidos }}</span>
                     </div>
-                    <div class="divide-y divide-slate-100 max-h-48 overflow-y-auto">
-                        <div *ngFor="let item of detalles" class="px-3.5 py-2.5 flex justify-between items-center hover:bg-slate-50 text-sm">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-6 h-6 rounded-full bg-red-100 text-red-800 font-black text-xs flex items-center justify-center">
+                    <div class="divide-y divide-slate-100 max-h-40 overflow-y-auto">
+                        <div *ngFor="let item of detalles" class="px-3 py-2 flex justify-between items-center hover:bg-slate-50 text-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-800 font-black text-xs flex items-center justify-center">
                                     {{ item.cantidad }}
                                 </span>
                                 <div>
-                                    <span class="font-bold text-slate-800">{{ item.producto?.nombre || 'Plato' }}</span>
-                                    <span class="text-xs font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded block mt-0.5" *ngIf="formatToppings(item.toppings)">
+                                    <span class="font-bold text-slate-800 text-xs sm:text-sm">{{ item.producto?.nombre || 'Plato' }}</span>
+                                    <span class="text-[11px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1 py-0.5 rounded block mt-0.5" *ngIf="formatToppings(item.toppings)">
                                         ⚠️ {{ formatToppings(item.toppings) }}
                                     </span>
-                                    <span class="text-xs text-slate-400 block" *ngIf="!formatToppings(item.toppings) && item.toppings && item.toppings !== '0'">Extra: {{ item.toppings }}</span>
                                 </div>
                             </div>
-                            <span class="font-bold text-slate-700">S/ {{ item.total | number:'1.2-2' }}</span>
+                            <span class="font-bold text-slate-700 text-xs sm:text-sm">S/ {{ item.total | number:'1.2-2' }}</span>
                         </div>
                         <div *ngIf="detalles.length === 0" class="p-3 text-center text-xs text-slate-400">
                             Cargando platos...
                         </div>
                     </div>
-                    <div class="bg-red-50 px-4 py-3 border-t border-red-200 flex justify-between items-center">
-                        <span class="text-sm font-black text-red-950 uppercase">TOTAL A COBRAR:</span>
-                        <span class="text-2xl font-black text-red-600 font-mono">S/ {{ pedido.total | number:'1.2-2' }}</span>
+                    <div class="bg-rose-50/60 px-3.5 py-2.5 border-t border-rose-200 flex justify-between items-center">
+                        <span class="text-xs sm:text-sm font-black text-rose-950 uppercase">TOTAL A COBRAR:</span>
+                        <span class="text-xl sm:text-2xl font-black text-rose-700 font-mono">S/ {{ pedido.total | number:'1.2-2' }}</span>
                     </div>
                 </div>
 
-                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-bold flex items-start gap-2 shadow-xs" *ngIf="pedido.comentario">
-                    <i class="pi pi-info-circle text-amber-600 text-sm mt-0.5 flex-shrink-0"></i>
-                    <span>{{ pedido.comentario }}</span>
+                <!-- NOTA COCINA DESTACADA (GRANDE Y EN NEGRITA) -->
+                <div class="p-3 bg-amber-50 border-2 border-amber-400 rounded-xl flex flex-col gap-1 shadow-xs" *ngIf="obtenerNotaCocina(pedido.comentario)">
+                    <div class="flex items-center gap-1.5 text-xs font-black uppercase text-amber-900 tracking-wider">
+                        <i class="pi pi-exclamation-triangle text-amber-600 text-base"></i>
+                        <span>INDICACIÓN ESPECIAL DE COCINA:</span>
+                    </div>
+                    <div class="text-base sm:text-lg font-black text-amber-950 tracking-wide leading-snug">
+                        "{{ obtenerNotaCocina(pedido.comentario) }}"
+                    </div>
+                </div>
+
+                <!-- OBSERVACIONES / DETALLES DEL PEDIDO (TEXTO MÁS GRANDE Y EN NEGRITA) -->
+                <div class="p-3 bg-slate-100 border border-slate-300 rounded-xl text-xs sm:text-sm text-slate-800 flex items-start gap-2 shadow-xs" *ngIf="pedido.comentario">
+                    <i class="pi pi-info-circle text-rose-600 text-base mt-0.5 flex-shrink-0"></i>
+                    <div class="flex flex-col gap-0.5">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Nota / Detalle del Pedido:</span>
+                        <span class="font-bold text-slate-900 leading-snug">{{ pedido.comentario }}</span>
+                    </div>
                 </div>
             </div>
 
@@ -151,14 +185,14 @@ import { ImportsModule } from '../../pages/imports';
                         pButton
                         label="Cerrar y Silenciar"
                         icon="pi pi-times"
-                        class="p-button-outlined p-button-secondary font-bold text-sm"
+                        class="p-button-outlined p-button-secondary font-bold text-xs sm:text-sm"
                         (click)="cerrarAlerta()"
                     ></button>
                     <button
                         pButton
                         label="🚨 Atender Pedido e Imprimir Comanda"
                         icon="pi pi-print"
-                        class="p-button-danger font-black shadow-lg shadow-red-500/40 text-sm sm:text-base px-4 py-2.5 animate-pulse"
+                        class="p-button-danger font-black shadow-md text-xs sm:text-sm px-4 py-2.5 bg-rose-600 hover:bg-rose-700 border-none"
                         (click)="atenderPedido()"
                     ></button>
                 </div>
@@ -167,8 +201,8 @@ import { ImportsModule } from '../../pages/imports';
     `,
     styles: [`
         :host ::ng-deep .alerta-whatsapp-dialog .p-dialog {
-            border: 3px solid #dc2626 !important;
-            box-shadow: 0 0 45px rgba(220, 38, 38, 0.45), 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+            border: 2px solid #fda4af !important;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.18), 0 10px 15px -3px rgba(225, 29, 72, 0.12) !important;
             border-radius: 1.25rem !important;
             overflow: hidden;
         }
@@ -177,7 +211,7 @@ import { ImportsModule } from '../../pages/imports';
             border: none !important;
         }
         :host ::ng-deep .alerta-whatsapp-dialog .p-dialog-content {
-            padding: 1.25rem 1.5rem !important;
+            padding: 1rem 1.25rem !important;
         }
     `]
 })
@@ -186,6 +220,9 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
     pedido: any = null;
     detalles: any[] = [];
     sonando: boolean = false;
+
+    // Control para que un pedido cerrado o atendido NUNCA vuelva a disparar el modal
+    private pedidosSilenciadosOCerrados: Set<number> = new Set<number>();
 
     private audioCtx: any = null;
     private soundInterval: any = null;
@@ -198,6 +235,7 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
+        this.cargarPedidosSilenciados();
         this.iniciarListenerRealtime();
     }
 
@@ -206,6 +244,25 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
         if (this.channel) {
             this.supabaseService.client.removeChannel(this.channel);
         }
+    }
+
+    private cargarPedidosSilenciados(): void {
+        try {
+            const guardados = sessionStorage.getItem('pedidos_wa_silenciados');
+            if (guardados) {
+                const arr = JSON.parse(guardados);
+                this.pedidosSilenciadosOCerrados = new Set(arr);
+            }
+        } catch {}
+    }
+
+    private guardarPedidosSilenciados(): void {
+        try {
+            sessionStorage.setItem(
+                'pedidos_wa_silenciados',
+                JSON.stringify(Array.from(this.pedidosSilenciadosOCerrados))
+            );
+        } catch {}
     }
 
     private iniciarListenerRealtime(): void {
@@ -217,6 +274,11 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
                     { event: 'INSERT', schema: 'public', table: 'pedido' },
                     async (payload: any) => {
                         const nuevo = payload.new;
+                        if (!nuevo?.idpedido) return;
+                        if (this.pedidosSilenciadosOCerrados.has(Number(nuevo.idpedido))) {
+                            return;
+                        }
+
                         // Solo pedidos de Delivery (mesa 0) generados por el Chatbot
                         const esChatbot = nuevo && (
                             nuevo.es_chatbot === true ||
@@ -224,7 +286,7 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
                             (nuevo.comentario && nuevo.comentario.includes('WHATSAPP'))
                         );
 
-                        if (nuevo && String(nuevo.mesa) === '0' && esChatbot) {
+                        if (String(nuevo.mesa) === '0' && esChatbot) {
                             await this.activarAlerta(nuevo);
                         }
                     }
@@ -234,6 +296,11 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
                     { event: 'UPDATE', schema: 'public', table: 'pedido' },
                     async (payload: any) => {
                         const nuevo = payload.new;
+                        if (!nuevo?.idpedido) return;
+                        if (this.pedidosSilenciadosOCerrados.has(Number(nuevo.idpedido))) {
+                            return;
+                        }
+
                         // Si se actualizó con es_chatbot = true y es mesa 0, y la alerta aún no se activó
                         const esChatbot = nuevo && (
                             nuevo.es_chatbot === true ||
@@ -241,7 +308,7 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
                             (nuevo.comentario && nuevo.comentario.includes('WHATSAPP'))
                         );
 
-                        if (nuevo && String(nuevo.mesa) === '0' && esChatbot) {
+                        if (String(nuevo.mesa) === '0' && esChatbot) {
                             if (!this.visible && (!this.pedido || this.pedido.idpedido !== nuevo.idpedido)) {
                                 await this.activarAlerta(nuevo);
                             }
@@ -255,6 +322,11 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
     }
 
     async activarAlerta(pedidoData: any): Promise<void> {
+        if (!pedidoData?.idpedido) return;
+        if (this.pedidosSilenciadosOCerrados.has(Number(pedidoData.idpedido))) {
+            return;
+        }
+
         // Asegurar cargar los datos más actualizados del pedido
         try {
             const { data: pedidoActualizado } = await this.supabaseService.client
@@ -265,6 +337,32 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
             this.pedido = pedidoActualizado || pedidoData;
         } catch {
             this.pedido = pedidoData;
+        }
+
+        // Si telefono no vino en pedido, buscarlo en wa_sesiones o en comentario
+        if (!this.pedido.telefono) {
+            try {
+                if (this.pedido.cliente) {
+                    const { data: sesionData } = await this.supabaseService.client
+                        .from('wa_sesiones')
+                        .select('telefono')
+                        .eq('nombre', this.pedido.cliente)
+                        .order('actualizado_en', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    if (sesionData?.telefono) {
+                        this.pedido.telefono = sesionData.telefono;
+                    }
+                }
+                if (!this.pedido.telefono && this.pedido.comentario) {
+                    const matchTel = this.pedido.comentario.match(/(\+?51)?\s*(9\d{8})/);
+                    if (matchTel && matchTel[2]) {
+                        this.pedido.telefono = matchTel[2];
+                    }
+                }
+            } catch (err) {
+                console.warn('Error buscando teléfono alternativo:', err);
+            }
         }
 
         this.detalles = [];
@@ -296,11 +394,9 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
         }
     }
 
-    // Generador de sonido de campana de restaurante usando Web Audio API
     private iniciarSonido(): void {
         this.sonando = true;
         this.reproducirCampana();
-        // Repetir cada 3.2 segundos hasta que lo atiendan o silencien
         if (this.soundInterval) clearInterval(this.soundInterval);
         this.soundInterval = setInterval(() => {
             if (this.visible && this.sonando) {
@@ -325,7 +421,6 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
             const ctx = this.audioCtx;
             const now = ctx.currentTime;
 
-            // Secuencia armónica ding-dong-dong de alta atención
             const notas = [880, 1046.5, 1318.5]; // La5, Do6, Mi6
             notas.forEach((freq, idx) => {
                 const osc = ctx.createOscillator();
@@ -357,19 +452,28 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
     }
 
     cerrarAlerta(): void {
+        if (this.pedido?.idpedido) {
+            this.pedidosSilenciadosOCerrados.add(Number(this.pedido.idpedido));
+            this.guardarPedidosSilenciados();
+        }
         this.silenciar();
         this.visible = false;
     }
 
     atenderPedido(): void {
         const pedidoSeleccionado = this.pedido;
+        if (pedidoSeleccionado?.idpedido) {
+            this.pedidosSilenciadosOCerrados.add(Number(pedidoSeleccionado.idpedido));
+            this.guardarPedidosSilenciados();
+        }
         this.cerrarAlerta();
 
-        if (this.router.url !== '/') {
-            this.router.navigate(['/']).then(() => {
+        // Redireccionar a /mesas y autoseleccionar el pedido delivery abriendo la comanda de cocina
+        if (!this.router.url.includes('/mesas')) {
+            this.router.navigate(['/mesas']).then(() => {
                 setTimeout(() => {
                     this.pedidoService.ejecutarSeleccionEImpresion(pedidoSeleccionado);
-                }, 400);
+                }, 450);
             });
         } else {
             this.pedidoService.ejecutarSeleccionEImpresion(pedidoSeleccionado);
@@ -386,6 +490,25 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
     cleanPhone(phone: string): string {
         if (!phone) return '';
         return phone.replace(/[^0-9]/g, '');
+    }
+
+    formatTelefono(telefono: string): string {
+        if (!telefono) return 'Sin número';
+        const clean = telefono.replace(/[^0-9]/g, '');
+        if (clean.length === 9) {
+            return `${clean.substring(0, 3)} ${clean.substring(3, 6)} ${clean.substring(6)}`;
+        }
+        if (clean.length === 11 && clean.startsWith('51')) {
+            const num = clean.substring(2);
+            return `+51 ${num.substring(0, 3)} ${num.substring(3, 6)} ${num.substring(6)}`;
+        }
+        return telefono;
+    }
+
+    obtenerNotaCocina(comentario: string): string {
+        if (!comentario) return '';
+        const match = comentario.match(/NOTA COCINA:\s*([^|]+)/i);
+        return match && match[1] ? match[1].trim() : '';
     }
 
     formatToppings(toppings: any): string {

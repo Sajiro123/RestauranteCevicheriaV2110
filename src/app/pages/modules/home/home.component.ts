@@ -1719,7 +1719,7 @@ export class HomeComponent {
 
         if (this.pedido_mesa_status) {
             this.hydrateNuevoPedido(mesa.numero, this.pedido_mesa_status, this.mesaSeleccionada);
-            if (typeof window !== 'undefined' && window.innerWidth < 1440) {
+            if (typeof window !== 'undefined' && window.innerWidth < 1440 && String(mesa.numero) !== '0') {
                 this.isDeliveryCollapsed = true;
             }
         }
