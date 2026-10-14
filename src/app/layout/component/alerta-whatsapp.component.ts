@@ -213,9 +213,34 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
                     { event: 'INSERT', schema: 'public', table: 'pedido' },
                     async (payload: any) => {
                         const nuevo = payload.new;
-                        // Solo pedidos de Delivery (mesa 0)
-                        if (nuevo && String(nuevo.mesa) === '0') {
+                        // Solo pedidos de Delivery (mesa 0) generados por el Chatbot
+                        const esChatbot = nuevo && (
+                            nuevo.es_chatbot === true ||
+                            nuevo.es_chatbot === 'true' ||
+                            (nuevo.comentario && nuevo.comentario.includes('WHATSAPP'))
+                        );
+
+                        if (nuevo && String(nuevo.mesa) === '0' && esChatbot) {
                             await this.activarAlerta(nuevo);
+                        }
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'pedido' },
+                    async (payload: any) => {
+                        const nuevo = payload.new;
+                        // Si se actualizó con es_chatbot = true y es mesa 0, y la alerta aún no se activó
+                        const esChatbot = nuevo && (
+                            nuevo.es_chatbot === true ||
+                            nuevo.es_chatbot === 'true' ||
+                            (nuevo.comentario && nuevo.comentario.includes('WHATSAPP'))
+                        );
+
+                        if (nuevo && String(nuevo.mesa) === '0' && esChatbot) {
+                            if (!this.visible && (!this.pedido || this.pedido.idpedido !== nuevo.idpedido)) {
+                                await this.activarAlerta(nuevo);
+                            }
                         }
                     }
                 )
@@ -226,7 +251,18 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
     }
 
     async activarAlerta(pedidoData: any): Promise<void> {
-        this.pedido = pedidoData;
+        // Asegurar cargar los datos más actualizados del pedido
+        try {
+            const { data: pedidoActualizado } = await this.supabaseService.client
+                .from('pedido')
+                .select('*')
+                .eq('idpedido', pedidoData.idpedido)
+                .single();
+            this.pedido = pedidoActualizado || pedidoData;
+        } catch {
+            this.pedido = pedidoData;
+        }
+
         this.detalles = [];
         this.visible = true;
 
@@ -234,7 +270,7 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
         this.iniciarSonido();
 
         // Notificar inmediatamente a HomeComponent para actualizar la lista de pedidos en tiempo real
-        this.pedidoService.notificarNuevoPedidoWhatsApp(pedidoData);
+        this.pedidoService.notificarNuevoPedidoWhatsApp(this.pedido);
 
         // Cargar platos del pedido
         try {

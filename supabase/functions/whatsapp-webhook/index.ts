@@ -545,6 +545,15 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     return
   }
 
+  // Manejo de recepción de imágenes (captura de comprobante / Yape / Plin)
+  if (msg.type === 'image' && sesion.estado !== 'esperando_ubicacion') {
+    await sendText(
+      phone,
+      '📸 ¡Captura de pantalla recibida con éxito! 🙌\nNuestro equipo verificará tu constancia de pago al preparar y despachar tu pedido. ¡Muchas gracias!'
+    )
+    return
+  }
+
   // ==========================================
   // MÁQUINA DE ESTADOS DEL BOT
   // ==========================================
@@ -798,9 +807,9 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
   // ESTADO 5: Selección de Método de Pago
   if (sesion.estado === 'seleccion_pago') {
     let metodo = ''
-    if (replyId === 'pago_yape') metodo = 'Yape'
-    if (replyId === 'pago_plin') metodo = 'Plin'
-    if (replyId === 'pago_efectivo') metodo = 'Efectivo'
+    if (replyId === 'pago_yape' || userText.includes('yape')) metodo = 'Yape'
+    else if (replyId === 'pago_plin' || userText.includes('plin')) metodo = 'Plin'
+    else if (replyId === 'pago_efectivo' || userText.includes('efectivo')) metodo = 'Efectivo'
 
     if (metodo === 'Efectivo') {
       const hist = pushHistorial(sesion.datos, 'seleccion_pago')
@@ -827,10 +836,28 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
         datos: { ...sesion.datos, metodo_pago: metodo, paga_con: 0, historial: hist }
       }).eq('telefono', phone)
 
-      await sendText(
-        phone,
-        `📲 Has elegido *${metodo}*.\nPodrás pagar al momento de recibir tu pedido o transferir al número del restaurante.`
-      )
+      const total = calcularTotalCarrito(sesion.carrito)
+      if (metodo === 'Yape') {
+        await sendText(
+          phone,
+          `📲 Has elegido *Yape*.\n\n` +
+          `Por favor realiza el yapeo al siguiente número:\n` +
+          `📱 *974372084*\n` +
+          `👤 Titular: *Espinoza Willy*\n` +
+          `💵 Monto a transferir: *S/ ${total.toFixed(2)}*\n\n` +
+          `📸 *Importante:* Envíanos la captura de pantalla de tu constancia por este chat para que tu pedido pueda salir.`
+        )
+      } else {
+        await sendText(
+          phone,
+          `📲 Has elegido *Plin*.\n\n` +
+          `Por favor realiza la transferencia al siguiente número:\n` +
+          `📱 *974372084*\n` +
+          `👤 Titular: *Espinoza Willy*\n` +
+          `💵 Monto a transferir: *S/ ${total.toFixed(2)}*\n\n` +
+          `📸 *Importante:* Envíanos la captura de pantalla de tu constancia por este chat para que tu pedido pueda salir.`
+        )
+      }
       await pedirUbicacion(phone)
       return
     }
@@ -875,6 +902,12 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
       lat = msg.location.latitude
       lng = msg.location.longitude
       direccion = msg.location.address || msg.location.name || 'Ubicación GPS compartida'
+    } else if (msg.type === 'image') {
+      await sendText(
+        phone,
+        '📸 ¡Captura de pago recibida! Muchas gracias 🙌\n\nAhora, para poder llevarte el pedido, por favor *comparte tu ubicación GPS* (botón 📎) o escribe tu *dirección y referencia* de entrega:'
+      )
+      return
     } else if (msg.text?.body) {
       direccion = msg.text.body.trim()
     }
@@ -1447,7 +1480,9 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     fecha: fechaLima,
     idmozo: 1, // Mozo 1 = "Delivery"
     total: total,
-    comentarios: comentario
+    comentario: comentario,
+    comentarios: comentario,
+    es_chatbot: true
   }
 
   const detalles = carrito.map((item: any) => ({
@@ -1474,7 +1509,7 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
 
   const idPedido = rpcResult.idpedido
 
-  await supabase.from('pedido').update({
+  const updatePayload: any = {
     telefono: phone,
     direccion: direccion,
     latitud: lat,
@@ -1484,8 +1519,16 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     yape: 0,
     plin: 0,
     efectivo: 0,
-    visa: 0
-  }).eq('idpedido', idPedido)
+    visa: 0,
+    es_chatbot: true
+  }
+
+  const { error: updateErr } = await supabase.from('pedido').update(updatePayload).eq('idpedido', idPedido)
+  if (updateErr) {
+    console.warn('Aviso al actualizar pedido con es_chatbot:', updateErr)
+    delete updatePayload.es_chatbot
+    await supabase.from('pedido').update(updatePayload).eq('idpedido', idPedido)
+  }
 
   // Limpiar sesión para nuevo pedido
   await supabase.from('wa_sesiones').update({
@@ -1499,14 +1542,26 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     mapaLink = `\n🗺️ Mapa: https://maps.google.com/?q=${lat},${lng}`
   }
 
+  let metodoDetalle = metodoPago
+  if (metodoPago === 'Efectivo') {
+    metodoDetalle = pagaCon > 0 ? `Efectivo (Paga con S/ ${pagaCon.toFixed(2)})` : 'Efectivo contra entrega'
+  } else if (metodoPago === 'Yape' || metodoPago === 'Plin') {
+    metodoDetalle = `${metodoPago} (Transferencia)`
+  }
+
+  let recordatorioPago = ''
+  if (metodoPago === 'Yape' || metodoPago === 'Plin') {
+    recordatorioPago = `\n\n⚠️ *Recordatorio:* Si aún no enviaste la captura de pantalla de tu ${metodoPago} al *974372084 (Espinoza Willy)*, por favor envíala por aquí para despachar tu pedido de inmediato.`
+  }
+
   await sendText(
     phone,
     `🎉 *¡PEDIDO CONFIRMADO CON ÉXITO!* 🎉\n\n` +
     `📋 *Pedido N°:* #${idPedido}\n` +
     `👤 *Cliente:* ${sesion.nombre}\n` +
     `💰 *Total:* S/ ${total.toFixed(2)}\n` +
-    `💳 *Pago:* ${metodoPago} *(se cobra contra entrega)*\n` +
+    `💳 *Pago:* ${metodoDetalle}\n` +
     `📍 *Entrega:* ${direccion}${mapaLink}\n\n` +
-    `👨‍🍳 El equipo de cocina de *El Puerto Cevichero de Willy* ya recibió tu comanda y comenzará su preparación. ¡Muchas gracias!`
+    `👨‍🍳 El equipo de cocina de *El Puerto Cevichero de Willy* ya recibió tu comanda y comenzará su preparación. ¡Muchas gracias!${recordatorioPago}`
   )
 }

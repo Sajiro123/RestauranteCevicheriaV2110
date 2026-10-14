@@ -26,4 +26,12 @@ export interface Pedido {
     created_at?: any;
     cliente?: string;
     estado_cocina?: number;
+    telefono?: string;
+    direccion?: string;
+    referencia?: string;
+    latitud?: number;
+    longitud?: number;
+    metodo_pago?: string;
+    paga_con?: number;
+    es_chatbot?: boolean;
 }
