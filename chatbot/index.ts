@@ -342,6 +342,9 @@ async function repintarPantalla(phone: string, sesion: any, paso: string) {
   } else if (paso === 'en_carrito') {
     await supabase.from('wa_sesiones').update({ estado: 'en_carrito' }).eq('telefono', phone)
     await mostrarResumenCarrito(phone, sesion)
+  } else if (paso === 'esperando_observaciones') {
+    await supabase.from('wa_sesiones').update({ estado: 'esperando_observaciones' }).eq('telefono', phone)
+    await pedirObservacionesCocina(phone, sesion)
   } else if (paso === 'seleccion_pago') {
     await supabase.from('wa_sesiones').update({ estado: 'seleccion_pago' }).eq('telefono', phone)
     await pedirMetodoPago(phone, sesion)
@@ -759,7 +762,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     if (replyId === 'confirmar_pedido' || replyId === 'proceder_pago') {
       const hist = pushHistorial(sesion.datos, 'en_carrito')
       await supabase.from('wa_sesiones').update({ datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
-      await pedirMetodoPago(phone, sesion)
+      await pedirObservacionesCocina(phone, sesion)
       return
     }
 
@@ -802,6 +805,92 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
       await mostrarResumenCarrito(phone, sesion)
       return
     }
+  }
+
+  // ESTADO 4.2: Observaciones e Indicaciones para Cocina (Sin ají, sin camote, etc.)
+  if (sesion.estado === 'esperando_observaciones') {
+    if (replyId === 'obs_normal' || userText === 'normal' || userText === 'todo bien' || userText === 'nada' || userText === 'ninguna' || userText === 'sin cambios') {
+      const hist = pushHistorial(sesion.datos, 'esperando_observaciones')
+      await supabase.from('wa_sesiones').update({
+        estado: 'seleccion_pago',
+        datos: { ...sesion.datos, observaciones: '', historial: hist }
+      }).eq('telefono', phone)
+      sesion.datos = { ...sesion.datos, observaciones: '' }
+      await pedirMetodoPago(phone, sesion)
+      return
+    }
+
+    if (replyId === 'obs_sin_aji') {
+      const hist = pushHistorial(sesion.datos, 'esperando_observaciones')
+      await supabase.from('wa_sesiones').update({
+        estado: 'seleccion_pago',
+        datos: { ...sesion.datos, observaciones: 'Sin ají', historial: hist }
+      }).eq('telefono', phone)
+      sesion.datos = { ...sesion.datos, observaciones: 'Sin ají' }
+      await sendText(phone, '🌶️❌ ¡Anotado! Prepararemos tus platos *Sin ají*.')
+      await pedirMetodoPago(phone, sesion)
+      return
+    }
+
+    if (replyId === 'obs_mas') {
+      await mostrarListaOpcionesCocina(phone)
+      return
+    }
+
+    // Opciones seleccionadas desde la lista
+    if (replyId.startsWith('obs_opt_')) {
+      let nota = ''
+      if (replyId === 'obs_opt_sin_camote') nota = 'Sin camote'
+      else if (replyId === 'obs_opt_sin_cebolla') nota = 'Sin cebolla'
+      else if (replyId === 'obs_opt_sin_aji_camote') nota = 'Sin ají ni camote'
+      else if (replyId === 'obs_opt_bajo_aji') nota = 'Bajo en ají'
+      else if (replyId === 'obs_opt_bien_picante') nota = 'Bien picante'
+      else if (replyId === 'obs_opt_ensalada_aparte') nota = 'Ensalada aparte'
+      else if (replyId === 'obs_opt_sin_yuca') nota = 'Sin yuca'
+      else if (replyId === 'obs_opt_sin_arroz') nota = 'Sin arroz'
+
+      if (replyId === 'obs_opt_escribir') {
+        await sendButtons(
+          phone,
+          '✍️ Por favor escribe aquí tu indicación para la cocina (ejemplo: _"el ceviche sin ají y el chaufa bien dorado"_):',
+          [
+            { id: 'volver', title: '⬅️ Volver' },
+            { id: 'obs_normal', title: '⏩ Todo normal' }
+          ]
+        )
+        return
+      }
+
+      if (nota) {
+        const hist = pushHistorial(sesion.datos, 'esperando_observaciones')
+        await supabase.from('wa_sesiones').update({
+          estado: 'seleccion_pago',
+          datos: { ...sesion.datos, observaciones: nota, historial: hist }
+        }).eq('telefono', phone)
+        sesion.datos = { ...sesion.datos, observaciones: nota }
+        await sendText(phone, `👨‍🍳 ¡Anotado! Indicación de cocina: *${nota}*. 👍`)
+        await pedirMetodoPago(phone, sesion)
+        return
+      }
+    }
+
+    // Si el usuario escribe texto directamente con su observación
+    const textoIngresado = msg.text?.body?.trim()
+    if (textoIngresado && textoIngresado.length >= 2) {
+      const hist = pushHistorial(sesion.datos, 'esperando_observaciones')
+      await supabase.from('wa_sesiones').update({
+        estado: 'seleccion_pago',
+        datos: { ...sesion.datos, observaciones: textoIngresado, historial: hist }
+      }).eq('telefono', phone)
+      sesion.datos = { ...sesion.datos, observaciones: textoIngresado }
+      await sendText(phone, `📝 ¡Anotado para la cocina! "*${textoIngresado}*" 👨‍🍳👍`)
+      await pedirMetodoPago(phone, sesion)
+      return
+    }
+
+    // Si no reconoció la opción, volver a consultar
+    await pedirObservacionesCocina(phone, sesion)
+    return
   }
 
   // ESTADO 5: Selección de Método de Pago
@@ -1400,13 +1489,98 @@ async function mostrarListaQuitarPlatos(phone: string, sesion: any) {
   )
 }
 
+async function pedirObservacionesCocina(phone: string, sesion: any) {
+  const hist = pushHistorial(sesion.datos, 'en_carrito')
+  await supabase.from('wa_sesiones').update({
+    estado: 'esperando_observaciones',
+    datos: { ...sesion.datos, historial: hist }
+  }).eq('telefono', phone)
+
+  await sendButtons(
+    phone,
+    `👨‍🍳 *¿Alguna indicación especial para la cocina?*\n\n` +
+    `Si tienes alguna preferencia para tus platos (como *sin ají*, *sin camote*, *sin cebolla*, etc.):\n\n` +
+    `• Elige un botón rápido\n` +
+    `• O *escribe directamente tu nota* por este chat.\n\n` +
+    `_Si deseas tus platos tal como vienen en la carta, presiona *⏩ Todo normal*._`,
+    [
+      { id: 'obs_normal', title: '⏩ Todo normal' },
+      { id: 'obs_sin_aji', title: '🌶️ Sin ají' },
+      { id: 'obs_mas', title: '📋 Más opciones' }
+    ],
+    'Indicaciones de cocina'
+  )
+}
+
+async function mostrarListaOpcionesCocina(phone: string) {
+  const rows = [
+    { id: 'obs_opt_sin_camote', title: '🍠 Sin camote', description: 'No incluir camote en los platos' },
+    { id: 'obs_opt_sin_cebolla', title: '🧅 Sin cebolla', description: 'Preparar platos sin cebolla' },
+    { id: 'obs_opt_sin_aji_camote', title: '🌶️ Sin ají ni camote', description: 'Sin picante y sin camote' },
+    { id: 'obs_opt_bajo_aji', title: '🌶️ Bajo en ají', description: 'Poco picante' },
+    { id: 'obs_opt_bien_picante', title: '🔥 Bien picante', description: 'Con bastante ají / picante' },
+    { id: 'obs_opt_ensalada_aparte', title: '🥗 Ensalada aparte', description: 'Servir guarnición por separado' },
+    { id: 'obs_opt_sin_yuca', title: '🥔 Sin yuca', description: 'No incluir yuca' },
+    { id: 'obs_opt_sin_arroz', title: '🍚 Sin arroz', description: 'No incluir arroz' },
+    { id: 'obs_opt_escribir', title: '✍️ Escribir otra nota', description: 'Escribir indicación personalizada' },
+    { id: 'obs_normal', title: '⏩ Todo normal', description: 'Preparación estándar sin cambios' }
+  ]
+
+  await sendList(
+    phone,
+    'Notas para Cocina',
+    'Selecciona una indicación o preferencia para la preparación de tu pedido:',
+    'Ver opciones',
+    [{ title: 'Preferencias frecuentes', rows }]
+  )
+}
+
+function obtenerToppingIdsDeTexto(textoObservacion: string): string {
+  if (!textoObservacion) return '0'
+  const norm = normalizeText(textoObservacion)
+  const ids: number[] = []
+
+  // Mapeo con los IDs reales de la tabla toppings en Supabase
+  if (norm.includes('sin aji') || norm.includes('sin picante') || norm.includes('no aji') || norm.includes('no picante') || norm.includes('cero aji')) {
+    ids.push(1) // SIN AJI
+  }
+  if (norm.includes('sin camote') || norm.includes('no camote') || norm.includes('sin camotito')) {
+    ids.push(5) // SIN CAMOTE
+  }
+  if (norm.includes('sin cebolla') || norm.includes('no cebolla') || norm.includes('sin cebollita')) {
+    ids.push(4) // SIN CEBOLLA
+  }
+  if (norm.includes('sin yuca') || norm.includes('no yuca')) {
+    ids.push(7) // SIN YUCA
+  }
+  if (norm.includes('sin arroz') || norm.includes('no arroz')) {
+    ids.push(8) // SIN ARROZ
+  }
+  if (norm.includes('ensalada aparte') || norm.includes('aparte ensalada')) {
+    ids.push(9) // ENSALADA APARTE
+  }
+  if (norm.includes('bajo aji') || norm.includes('poco aji') || norm.includes('poco picante') || norm.includes('suave aji')) {
+    ids.push(11) // BAJO AJI
+  }
+  if (norm.includes('bien picante') || norm.includes('bastante aji') || norm.includes('muy picante') || norm.includes('harto aji')) {
+    ids.push(29) // bien picante
+  }
+
+  return ids.length > 0 ? ids.join(',') : '0'
+}
+
 async function pedirMetodoPago(phone: string, sesion: any) {
   const total = calcularTotalCarrito(sesion.carrito)
   await supabase.from('wa_sesiones').update({ estado: 'seleccion_pago' }).eq('telefono', phone)
 
+  let notaText = ''
+  if (sesion.datos?.observaciones) {
+    notaText = `\n📝 *Nota cocina:* ${sesion.datos.observaciones}`
+  }
+
   await sendButtons(
     phone,
-    `💰 El total a pagar es *S/ ${total.toFixed(2)}*.\n\n¿Cómo deseas pagar cuando llegue tu pedido?`,
+    `💰 El total a pagar es *S/ ${total.toFixed(2)}*.${notaText}\n\n¿Cómo deseas pagar cuando llegue tu pedido?`,
     [
       { id: 'pago_yape', title: '📲 Yape' },
       { id: 'pago_plin', title: '📲 Plin' },
@@ -1460,10 +1634,16 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
   const metodoPago = sesion.datos?.metodo_pago || 'Por coordinar'
   const pagaCon = Number(sesion.datos?.paga_con) || 0
 
+  const observacionCliente = sesion.datos?.observaciones ? String(sesion.datos.observaciones).trim() : ''
+  const toppingIdsStr = obtenerToppingIdsDeTexto(observacionCliente)
+
   let comentario = `[PEDIDO WHATSAPP DELIVERY] Método de pago: ${metodoPago}`
   if (metodoPago === 'Efectivo' && pagaCon > 0) {
     const vuelto = Math.max(0, pagaCon - total)
     comentario += ` (Paga con: S/ ${pagaCon.toFixed(2)} | Vuelto: S/ ${vuelto.toFixed(2)})`
+  }
+  if (observacionCliente) {
+    comentario += ` | NOTA COCINA: ${observacionCliente}`
   }
   if (direccion) {
     comentario += ` | Dirección: ${direccion}`
@@ -1489,7 +1669,9 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     idproducto: item.idproducto,
     cantidad: item.cantidad,
     preciounitario: item.preciounitario,
-    lugarpedido: '1' // 1 = Para llevar / Delivery
+    lugarpedido: '1', // 1 = Para llevar / Delivery
+    toppings: toppingIdsStr,
+    opcionespedido: observacionCliente || null
   }))
 
   const { data: rpcResult, error: rpcError } = await supabase.rpc('insertar_pedido_y_detalles', {
@@ -1508,6 +1690,15 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
   }
 
   const idPedido = rpcResult.idpedido
+
+  // Si hay toppings seleccionados por las notas del cliente, asegurar actualización en pedidodetalle
+  if (toppingIdsStr && toppingIdsStr !== '0') {
+    await supabase.from('pedidodetalle').update({
+      toppings: toppingIdsStr,
+      opcionespedido: observacionCliente || null,
+      descripcion: observacionCliente || null
+    }).eq('idpedido', idPedido)
+  }
 
   const updatePayload: any = {
     telefono: phone,
@@ -1549,6 +1740,11 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     metodoDetalle = `${metodoPago} (Transferencia)`
   }
 
+  let notaClienteMsg = ''
+  if (observacionCliente) {
+    notaClienteMsg = `\n📝 *Nota para cocina:* ${observacionCliente}`
+  }
+
   let recordatorioPago = ''
   if (metodoPago === 'Yape' || metodoPago === 'Plin') {
     recordatorioPago = `\n\n⚠️ *Recordatorio:* Si aún no enviaste la captura de pantalla de tu ${metodoPago} al *974372084 (Espinoza Willy)*, por favor envíala por aquí para despachar tu pedido de inmediato.`
@@ -1560,7 +1756,7 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     `📋 *Pedido N°:* #${idPedido}\n` +
     `👤 *Cliente:* ${sesion.nombre}\n` +
     `💰 *Total:* S/ ${total.toFixed(2)}\n` +
-    `💳 *Pago:* ${metodoDetalle}\n` +
+    `💳 *Pago:* ${metodoDetalle}${notaClienteMsg}\n` +
     `📍 *Entrega:* ${direccion}${mapaLink}\n\n` +
     `👨‍🍳 El equipo de cocina de *El Puerto Cevichero de Willy* ya recibió tu comanda y comenzará su preparación. ¡Muchas gracias!${recordatorioPago}`
   )

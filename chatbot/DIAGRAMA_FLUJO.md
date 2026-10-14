@@ -1,5 +1,5 @@
 # 🔄 Diagrama de Flujo del Chatbot de WhatsApp (Modelo Híbrido Cevichero)
-> **Última sincronización automática:** 14/10/2026, 12:22:07 a. m.  
+> **Última sincronización automática:** 14/10/2026, 11:44:40 a. m.  
 > **Archivo origen:** `chatbot/index.ts` (analizado automáticamente)
 
 Este diagrama representa con exactitud la lógica activa en el código del chatbot. Se actualiza de forma automática cada vez que se realizan modificaciones en `chatbot/index.ts`.
@@ -183,7 +183,7 @@ flowchart TD
 | Parámetro | Valores Detectados en el Código |
 | :--- | :--- |
 | **Arquitectura de Carta** | **Modelo Híbrido** (Subcategorías Culinarias + Buscador Inteligente en Chat + Top 7 Destacados) |
-| **Estados de Sesión** | `menu, en_carrito, seleccion_pago, esperando_ubicacion, pedir_nombre, confirmar_cancelar, inicio, seleccion_cantidad, seleccion_cantidad_mas, esperando_cantidad_escrita, quitar_plato, esperando_vuelto, 1` |
+| **Estados de Sesión** | `menu, en_carrito, esperando_observaciones, seleccion_pago, esperando_ubicacion, pedir_nombre, confirmar_cancelar, inicio, seleccion_cantidad, seleccion_cantidad_mas, esperando_cantidad_escrita, quitar_plato, esperando_vuelto, 1` |
 | **Platos Destacados (Top Ventas)** | 7 platos registrados (`Arroz con Mariscos Trio, Chaufa Trio Ceviche, Arroz Marisco Duo, Chicharron Pescado Duo...`) |
 | **Subcategorías Culinarias** | 8 subcategorías (`🐟 Ceviches y Tiraditos, 🍤 Chicharrones y Jaleas, 🍚 Arroces y Chaufas, 🍲 Sudados y Parihuelas, 🍽️ Dúos y Tríos, 🐟 Pescados y Segundos, 🍟 Piqueos y Entradas, 🥤 Bebidas y Cervezas`) |
 | **Buscador Inteligente en Chat** | Activo (Coincidencia directa a cantidad, listas multi-resultado, tolerancia a tildes) |

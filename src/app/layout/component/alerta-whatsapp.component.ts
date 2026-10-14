@@ -121,7 +121,10 @@ import { ImportsModule } from '../../pages/imports';
                                 </span>
                                 <div>
                                     <span class="font-bold text-slate-800">{{ item.producto?.nombre || 'Plato' }}</span>
-                                    <span class="text-xs text-slate-400 block" *ngIf="item.toppings">Extra: {{ item.toppings }}</span>
+                                    <span class="text-xs font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded block mt-0.5" *ngIf="formatToppings(item.toppings)">
+                                        ⚠️ {{ formatToppings(item.toppings) }}
+                                    </span>
+                                    <span class="text-xs text-slate-400 block" *ngIf="!formatToppings(item.toppings) && item.toppings && item.toppings !== '0'">Extra: {{ item.toppings }}</span>
                                 </div>
                             </div>
                             <span class="font-bold text-slate-700">S/ {{ item.total | number:'1.2-2' }}</span>
@@ -136,8 +139,9 @@ import { ImportsModule } from '../../pages/imports';
                     </div>
                 </div>
 
-                <div class="text-xs text-slate-400 italic" *ngIf="pedido.comentario">
-                    Nota: {{ pedido.comentario }}
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-bold flex items-start gap-2 shadow-xs" *ngIf="pedido.comentario">
+                    <i class="pi pi-info-circle text-amber-600 text-sm mt-0.5 flex-shrink-0"></i>
+                    <span>{{ pedido.comentario }}</span>
                 </div>
             </div>
 
@@ -382,5 +386,22 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
     cleanPhone(phone: string): string {
         if (!phone) return '';
         return phone.replace(/[^0-9]/g, '');
+    }
+
+    formatToppings(toppings: any): string {
+        if (!toppings || toppings === '0') return '';
+        const mapaToppings: { [key: string]: string } = {
+            '1': 'SIN AJÍ',
+            '4': 'SIN CEBOLLA',
+            '5': 'SIN CAMOTE',
+            '7': 'SIN YUCA',
+            '8': 'SIN ARROZ',
+            '9': 'ENSALADA APARTE',
+            '11': 'BAJO AJÍ',
+            '29': 'BIEN PICANTE'
+        };
+        const ids = String(toppings).split(',').map((s: string) => s.trim());
+        const nombres = ids.map((id: string) => mapaToppings[id] || '').filter(Boolean);
+        return nombres.join(', ');
     }
 }
