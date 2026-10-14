@@ -2,7 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const VERIFY_TOKEN = Deno.env.get('WHATSAPP_VERIFY_TOKEN') || 'cevicheria_willy_seguro_2026'
 const GRAPH_API_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') || 'EAANNNuVBiJsBSuAgnUjw8f6PXj9vLwzZBZBZBAufeNTvRdxTEHxsHtMMAUnk5hL3iB7YczVzGorQZCywe5JotSjDIfNC2BN0lQqNhz0xFojuvDE07uZB4uoei473NuFCY6jH7FL5x5NJYHaAVw9ToPkz4ZAFwBZAfjvOw8aAMOjdLkLRJTo81Pcef89opO0x5elOfTTQIB25SlfKIxicvY4hAFMbt4FZA9dtBRC80BaUsvRCYDy4RweJOiW2fzZAXxZBZCoIinfkxkB0KJGxR0qz0LofAZDZD'
-const PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '1317677311436064'
+const PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '1411155722076604'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || ''

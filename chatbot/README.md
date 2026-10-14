@@ -99,7 +99,7 @@ npx supabase functions deploy whatsapp-webhook --no-verify-jwt
 ## 🔑 Variables de Entorno en Supabase
 Configuradas en Supabase Dashboard > Edge Functions > `whatsapp-webhook` > Secrets:
 - `WHATSAPP_ACCESS_TOKEN`: Token permanente de System User de Meta Cloud API.
-- `WHATSAPP_PHONE_NUMBER_ID`: `1317677311436064` (ID de teléfono del restaurante).
+- `WHATSAPP_PHONE_NUMBER_ID`: `1411155722076604` (ID de teléfono del restaurante).
 - `WHATSAPP_VERIFY_TOKEN`: `cevicheria_willy_seguro_2026` (Token para verificación del Webhook en Meta).
 - `SUPABASE_URL`: URL del proyecto Supabase.
 - `SUPABASE_SERVICE_ROLE_KEY`: Service role secret para inserciones automáticas sin restricciones de RLS.
