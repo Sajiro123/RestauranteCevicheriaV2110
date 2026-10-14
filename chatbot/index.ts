@@ -809,7 +809,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
 
   // ESTADO 4.2: Observaciones e Indicaciones para Cocina (Sin ají, sin camote, etc.)
   if (sesion.estado === 'esperando_observaciones') {
-    if (replyId === 'obs_normal' || userText === 'normal' || userText === 'todo bien' || userText === 'nada' || userText === 'ninguna' || userText === 'sin cambios') {
+    if (replyId === 'obs_continuar' || replyId === 'obs_normal' || userText === 'continuar' || userText === 'todo normal' || userText === 'normal' || userText === 'todo bien' || userText === 'nada' || userText === 'ninguna' || userText === 'sin cambios') {
       const hist = pushHistorial(sesion.datos, 'esperando_observaciones')
       await supabase.from('wa_sesiones').update({
         estado: 'seleccion_pago',
@@ -827,12 +827,10 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
         datos: { ...sesion.datos, observaciones: 'Sin ají', historial: hist }
       }).eq('telefono', phone)
       sesion.datos = { ...sesion.datos, observaciones: 'Sin ají' }
-      await sendText(phone, '🌶️❌ ¡Anotado! Prepararemos tus platos *Sin ají*.')
+      await sendText(phone, '🌶️❌ ¡Anotado para la cocina! "*Sin ají*". 👨‍🍳👍')
       await pedirMetodoPago(phone, sesion)
       return
     }
-
-
 
     // Si el usuario escribe texto directamente con su observación
     const textoIngresado = msg.text?.body?.trim()
@@ -1467,10 +1465,9 @@ async function pedirObservacionesCocina(phone: string, sesion: any) {
     `• _"Sin ají y sin camote"_\n` +
     `• _"Ensalada aparte"_\n` +
     `• _"Poco picante"_\n\n` +
-    `_Si no tienes ninguna indicación especial, presiona *⏩ Todo normal* para continuar:_`,
+    `_Si no tienes ninguna indicación especial, presiona *⏩ Continuar* para avanzar:_`,
     [
-      { id: 'obs_normal', title: '⏩ Todo normal' },
-      { id: 'obs_sin_aji', title: '🌶️ Sin ají' },
+      { id: 'obs_continuar', title: '⏩ Continuar' },
       { id: 'volver', title: '⬅️ Volver' }
     ],
     'El Puerto Cevichero de Willy'
@@ -1584,15 +1581,15 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
   const pagaCon = Number(sesion.datos?.paga_con) || 0
 
   const observacionCliente = sesion.datos?.observaciones ? String(sesion.datos.observaciones).trim() : ''
-  const toppingIdsStr = obtenerToppingIdsDeTexto(observacionCliente)
 
-  let comentario = `[PEDIDO WHATSAPP DELIVERY] Método de pago: ${metodoPago}`
+  let comentario = ''
+  if (observacionCliente) {
+    comentario += `⚠️ NOTA COCINA: ${observacionCliente.toUpperCase()} | `
+  }
+  comentario += `[PEDIDO WHATSAPP DELIVERY] Método de pago: ${metodoPago}`
   if (metodoPago === 'Efectivo' && pagaCon > 0) {
     const vuelto = Math.max(0, pagaCon - total)
     comentario += ` (Paga con: S/ ${pagaCon.toFixed(2)} | Vuelto: S/ ${vuelto.toFixed(2)})`
-  }
-  if (observacionCliente) {
-    comentario += ` | NOTA COCINA: ${observacionCliente}`
   }
   if (direccion) {
     comentario += ` | Dirección: ${direccion}`
@@ -1614,13 +1611,14 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     es_chatbot: true
   }
 
+  // Las indicaciones de cocina son generales para todo el pedido, no se asignan a nivel de pedidodetalle
   const detalles = carrito.map((item: any) => ({
     idproducto: item.idproducto,
     cantidad: item.cantidad,
     preciounitario: item.preciounitario,
     lugarpedido: '1', // 1 = Para llevar / Delivery
-    toppings: toppingIdsStr,
-    opcionespedido: observacionCliente || null
+    toppings: '0',
+    opcionespedido: null
   }))
 
   const { data: rpcResult, error: rpcError } = await supabase.rpc('insertar_pedido_y_detalles', {
@@ -1639,15 +1637,6 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
   }
 
   const idPedido = rpcResult.idpedido
-
-  // Si hay toppings seleccionados por las notas del cliente, asegurar actualización en pedidodetalle
-  if (toppingIdsStr && toppingIdsStr !== '0') {
-    await supabase.from('pedidodetalle').update({
-      toppings: toppingIdsStr,
-      opcionespedido: observacionCliente || null,
-      descripcion: observacionCliente || null
-    }).eq('idpedido', idPedido)
-  }
 
   const updatePayload: any = {
     telefono: phone,

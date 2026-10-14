@@ -2711,10 +2711,15 @@ export class HomeComponent {
             doc.setFontSize(8.5);
             doc.text('OBSERVACIONES / NOTA COCINA:', 7, y + 4);
 
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
             let comY = y + 7.8;
             comLines.forEach((cl: string) => {
+                if (cl.includes('NOTA COCINA') || cl.includes('⚠️')) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8.5);
+                } else {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                }
                 doc.text(cl, 7, comY);
                 comY += 3.8;
             });
