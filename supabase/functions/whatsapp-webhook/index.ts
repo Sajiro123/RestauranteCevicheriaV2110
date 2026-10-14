@@ -77,34 +77,133 @@ function matchesSubcategory(nombre: string, idcategoria: number, subcatKey: stri
   return false
 }
 
-function matchProduct(prodName: string, query: string): boolean {
-  const normName = normalizeText(prodName)
-  const cleanQuery = normalizeText(query)
-  const nameTokens = normName.split(/[\s,+/()_-]+/).filter(Boolean)
-  const queryWords = cleanQuery.split(/[\s,+/()_-]+/).filter(w => w.length >= 2)
+// ==========================================
+// MOTOR NLP DE BÚSQUEDA INTELIGENTE EN ESPAÑOL (100% GRATIS)
+// ==========================================
 
-  if (queryWords.length === 0) return false
+const STOP_WORDS = new Set([
+  'un', 'una', 'unos', 'unas', 'el', 'la', 'los', 'las', 'lo',
+  'al', 'del', 'de', 'con', 'sin', 'y', 'e', 'o', 'u', 'en', 'por', 'para',
+  'quiero', 'quisiera', 'dame', 'trae', 'traeme', 'deseo', 'sirve', 'sirveme',
+  'vende', 'venden', 'tienen', 'hay', 'tienes',
+  'plato', 'platos', 'comida', 'pedido', 'orden', 'carta',
+  'favor', 'porfa', 'porfavor', 'gracias',
+  'buenas', 'buenos', 'dias', 'tardes', 'noches', 'hola', 'amigo', 'amiga',
+  'precio', 'cuanto', 'cuesta', 'vale', 'costo', 'comprar', 'pedir',
+  'uno', 'dos', 'tres', 'cuatro', '1', '2', '3', '4'
+])
 
-  // 1. Coincidencia directa completa de frase
-  if (normName.includes(cleanQuery)) {
-    // Si busca "chicha" no debe coincidir con "chicharron"
-    if (cleanQuery.startsWith('chicha') && !cleanQuery.startsWith('chicharr')) {
-      return nameTokens.some(tok => tok === 'chicha' || tok === 'chichas')
+function stemWord(word: string): string {
+  let w = word
+  // Quitar diminutivos comunes peruanos (chaufita -> chaufa, cevichito -> ceviche)
+  w = w.replace(/(itos|itas|ito|ita)$/, '')
+  // Plurales en español
+  if (w.endsWith('es') && w.length > 4) {
+    w = w.slice(0, -2)
+  } else if (w.endsWith('s') && w.length > 3) {
+    w = w.slice(0, -1)
+  }
+  return w
+}
+
+function levenshteinDistance(a: string, b: string): number {
+  if (a.length === 0) return b.length
+  if (b.length === 0) return a.length
+  const matrix: number[][] = []
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i]
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      )
     }
-    return true
+  }
+  return matrix[b.length][a.length]
+}
+
+function calculateProductScore(prodName: string, userQuery: string): number {
+  const normProd = normalizeText(prodName)
+  const normQuery = normalizeText(userQuery)
+
+  if (!normQuery) return 0
+  if (normProd === normQuery) return 100
+
+  // 1. Extraer palabras clave eliminando stopwords conversacionales
+  const rawTokens = normQuery.split(/[\s,+/()_-]+/).filter(Boolean)
+  let keywords = rawTokens.filter(t => !STOP_WORDS.has(t))
+  if (keywords.length === 0) keywords = rawTokens
+
+  const prodTokens = normProd.split(/[\s,+/()_-]+/).filter(Boolean)
+  const prodStems = prodTokens.map(stemWord)
+
+  let score = 0
+  let matchedKeywords = 0
+
+  for (const kw of keywords) {
+    const kwStem = stemWord(kw)
+    let bestMatchForThisKw = 0
+
+    for (let i = 0; i < prodTokens.length; i++) {
+      const pt = prodTokens[i]
+      const ptStem = prodStems[i]
+
+      // Coincidencia exacta de palabra
+      if (pt === kw) {
+        bestMatchForThisKw = Math.max(bestMatchForThisKw, 40)
+        continue
+      }
+
+      // Coincidencia de raíz (stem / diminutivo / plural)
+      if (ptStem === kwStem || (kwStem.length >= 4 && ptStem.startsWith(kwStem)) || (ptStem.length >= 4 && kwStem.startsWith(ptStem))) {
+        // Excepción de negocio: "chicha" no debe confundirse con "chicharron"
+        if (kw.startsWith('chicha') && pt.startsWith('chicharr')) continue
+        if (kw.startsWith('chicharr') && pt === 'chicha') continue
+
+        bestMatchForThisKw = Math.max(bestMatchForThisKw, 35)
+        continue
+      }
+
+      // Tolerancia a errores ortográficos (Levenshtein)
+      if (kw.length >= 4) {
+        const dist = levenshteinDistance(kw, pt)
+        if (dist === 1) {
+          if (kw.startsWith('chicha') && pt.startsWith('chicharr')) continue
+          bestMatchForThisKw = Math.max(bestMatchForThisKw, 28)
+        } else if (dist === 2 && kw.length >= 6) {
+          bestMatchForThisKw = Math.max(bestMatchForThisKw, 18)
+        }
+      }
+    }
+
+    if (bestMatchForThisKw > 0) {
+      score += bestMatchForThisKw
+      matchedKeywords++
+    }
   }
 
-  // 2. Coincidencia por todas las palabras clave
-  return queryWords.every(qw => {
-    return nameTokens.some(tok => {
-      if (tok === qw) return true
-      if (qw.length >= 4 && tok.startsWith(qw)) {
-        if (qw === 'chicha' && tok.startsWith('chicharr')) return false
-        return true
-      }
-      return false
-    })
-  })
+  // Bonus por coincidencia de frase limpia completa (ej: "arroz mariscos")
+  const cleanPhrase = keywords.join(' ')
+  if (cleanPhrase && normProd.includes(cleanPhrase)) {
+    const isChichaConfusion = cleanPhrase.startsWith('chicha') && !cleanPhrase.startsWith('chicharr') && normProd.includes('chicharr')
+    if (!isChichaConfusion) {
+      score += 30
+    }
+  }
+
+  // Penalización ponderada si solo coincidió una fracción de las palabras clave
+  if (keywords.length > 1 && matchedKeywords < keywords.length) {
+    score = score * (matchedKeywords / keywords.length)
+  }
+
+  return Math.round(score)
+}
+
+function matchProduct(prodName: string, query: string): boolean {
+  return calculateProductScore(prodName, query) >= 25
 }
 
 // ==========================================
@@ -1008,19 +1107,23 @@ async function buscarPlatosPorTexto(phone: string, query: string, sesion: any) {
     return
   }
 
-  const matches = prods.filter(p => matchProduct(p.nombre, query))
+  // Búsqueda inteligente con NLP y puntuación difusa
+  const scored = prods
+    .map(p => ({ ...p, score: calculateProductScore(p.nombre, query) }))
+    .filter(p => p.score >= 25)
+    .sort((a, b) => b.score - a.score)
 
-  // Caso 1: Coincidencia única exacta -> Lleva directo a seleccionar porciones
-  if (matches.length === 1) {
-    const plato = matches[0]
+  // Caso 1: Coincidencia única clara o el primer plato tiene una clara ventaja (score >= 70 y ventaja de al menos 20 pts)
+  if (scored.length === 1 || (scored.length > 1 && scored[0].score >= 70 && scored[0].score - scored[1].score >= 20)) {
+    const plato = scored[0]
     await sendText(phone, `🎯 ¡Excelente elección! Encontré *${plato.nombre}* (S/ ${Number(plato.preciounitario).toFixed(2)}).`)
     await iniciarSeleccionCantidad(phone, plato.idproducto, sesion)
     return
   }
 
   // Caso 2: Múltiples coincidencias (entre 2 y 7 platos) -> Muestra lista interactiva de resultados
-  if (matches.length >= 2 && matches.length <= 7) {
-    const rows: any[] = matches.map(p => ({
+  if (scored.length >= 2 && scored.length <= 7) {
+    const rows: any[] = scored.map(p => ({
       id: `prod_${p.idproducto}`,
       title: p.nombre.slice(0, 24),
       description: `S/ ${Number(p.preciounitario).toFixed(2)}`
@@ -1040,16 +1143,17 @@ async function buscarPlatosPorTexto(phone: string, query: string, sesion: any) {
     await sendList(
       phone,
       '🔍 Resultados de Búsqueda',
-      `Encontré estos ${matches.length} platos que coinciden con "*${query}*":`,
+      `Encontré estos ${scored.length} platos para "*${query}*":`,
       'Ver Platos',
       [{ title: 'Resultados Encontrados', rows }]
     )
     return
   }
 
-  // Caso 3: Demasiadas coincidencias (> 7 platos) -> Muestra los primeros 6 y pide afinar búsqueda
-  if (matches.length > 7) {
-    const rows: any[] = matches.slice(0, 6).map(p => ({
+  // Caso 3: Demasiadas coincidencias (> 7 platos) -> Muestra los 6 de mayor relevancia
+  if (scored.length > 7) {
+    const top6 = scored.slice(0, 6)
+    const rows: any[] = top6.map(p => ({
       id: `prod_${p.idproducto}`,
       title: p.nombre.slice(0, 24),
       description: `S/ ${Number(p.preciounitario).toFixed(2)}`
@@ -1069,7 +1173,7 @@ async function buscarPlatosPorTexto(phone: string, query: string, sesion: any) {
     await sendList(
       phone,
       '🔍 Resultados de Búsqueda',
-      `Encontré ${matches.length} platos para "*${query}*". Aquí tienes los principales (o sé más específico):`,
+      `Encontré ${scored.length} platos relacionados con "*${query}*". Aquí tienes las mejores opciones:`,
       'Ver Platos',
       [{ title: 'Resultados Destacados', rows }]
     )
