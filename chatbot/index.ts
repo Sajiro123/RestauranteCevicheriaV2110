@@ -84,7 +84,7 @@ function matchesSubcategory(nombre: string, idcategoria: number, subcatKey: stri
 const STOP_WORDS = new Set([
   'un', 'una', 'unos', 'unas', 'el', 'la', 'los', 'las', 'lo',
   'al', 'del', 'de', 'con', 'sin', 'y', 'e', 'o', 'u', 'en', 'por', 'para',
-  'quiero', 'quisiera', 'dame', 'trae', 'traeme', 'deseo', 'sirve', 'sirveme',
+  'quiero', 'quier', 'quisiera', 'kiero', 'kero', 'dame', 'deme', 'trae', 'traeme', 'deseo', 'sirve', 'sirveme',
   'vende', 'venden', 'tienen', 'hay', 'tienes',
   'plato', 'platos', 'comida', 'pedido', 'orden', 'carta',
   'favor', 'porfa', 'porfavor', 'gracias',
@@ -107,22 +107,25 @@ function stemWord(word: string): string {
 }
 
 function levenshteinDistance(a: string, b: string): number {
-  if (a.length === 0) return b.length
-  if (b.length === 0) return a.length
-  const matrix: number[][] = []
-  for (let i = 0; i <= b.length; i++) matrix[i] = [i]
-  for (let j = 0; j <= a.length; j++) matrix[0][j] = j
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1
-      matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,
-        matrix[i][j - 1] + 1,
-        matrix[i - 1][j - 1] + cost
-      )
+  const al = a.length
+  const bl = b.length
+  if (al === 0) return bl
+  if (bl === 0) return al
+
+  const row = new Array(bl + 1)
+  for (let j = 0; j <= bl; j++) row[j] = j
+
+  for (let i = 1; i <= al; i++) {
+    let prev = i
+    for (let j = 1; j <= bl; j++) {
+      const val = a[i - 1] === b[j - 1] ? row[j - 1] : Math.min(row[j - 1], prev, row[j]) + 1
+      row[j - 1] = prev
+      prev = val
     }
+    row[bl] = prev
   }
-  return matrix[b.length][a.length]
+
+  return row[bl]
 }
 
 function calculateProductScore(prodName: string, userQuery: string): number {
@@ -900,7 +903,7 @@ async function mostrarMenuPrincipal(phone: string, nombre: string) {
     phone,
     `🍽️ *El Puerto Cevichero de Willy*\n¡Hola ${nombre || 'amigo'}! ¿Cómo deseas armar tu pedido hoy?\n\n💡 *Buscador rápido:* También puedes escribir directamente el plato que buscas (ejemplo: _"ceviche mixto"_, _"arroz con marisco"_, _"parihuela"_, _"chicha"_).`,
     [
-      { id: 'ver_destacados', title: '⭐ Más pedidos' },
+      { id: 'ver_destacados', title: '⭐ Platos Más Pedidos' },
       { id: 'ver_subcategorias', title: '📖 Toda la carta' },
       { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
     ],
@@ -943,7 +946,7 @@ async function mostrarPlatosDestacados(phone: string) {
 
   await sendList(
     phone,
-    '⭐ Platos Más Pedidos',
+    '⭐ Los Platos Más Pedidos',
     'Selecciona un plato para agregarlo a tu pedido:',
     'Ver Platos',
     [{ title: 'Especialidades', rows }]
