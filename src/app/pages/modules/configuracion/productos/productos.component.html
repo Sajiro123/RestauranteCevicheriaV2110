@@ -24,7 +24,7 @@
 
         <!-- ── MÉTRICAS / KPIS DE RESUMEN (COMBINACIÓN CON PLOMO) ── -->
         <div class="header-kpis">
-            <div class="kpi-card kpi-total" (click)="clearCategoryFilter()" [class.active]="!selectedCategory">
+            <div class="kpi-card kpi-total" (click)="clearCategoryFilter()" [class.active]="!selectedCategory && !filterChatbotOnly">
                 <div class="kpi-icon icon-total">
                     <i class="fa-solid fa-utensils"></i>
                 </div>
@@ -41,6 +41,16 @@
                 <div class="kpi-info">
                     <span class="kpi-val">{{ totalCategorias }}</span>
                     <span class="kpi-lbl">Categorías Activas</span>
+                </div>
+            </div>
+
+            <div class="kpi-card kpi-chatbot" (click)="toggleChatbotFilter()" [class.active]="filterChatbotOnly" pTooltip="Filtrar platos activos en WhatsApp" tooltipPosition="bottom">
+                <div class="kpi-icon icon-chatbot">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <div class="kpi-info">
+                    <span class="kpi-val">{{ totalEnChatbot }}</span>
+                    <span class="kpi-lbl">En Carta WhatsApp</span>
                 </div>
             </div>
 
@@ -64,10 +74,13 @@
             <div class="toolbar-left">
                 <button pButton label="Nuevo Producto" icon="pi pi-plus" class="btn-create" (click)="openNew()"></button>
 
-                <!-- Chips de filtro rápido por categoría (incluyendo 'Todos') -->
+                <!-- Chips de filtro rápido por categoría (incluyendo 'Todos' y 'En Chatbot') -->
                 <div class="filter-chips">
-                    <button type="button" class="chip-item" [class.active]="!selectedCategory" (click)="clearCategoryFilter()">
+                    <button type="button" class="chip-item" [class.active]="!selectedCategory && !filterChatbotOnly" (click)="clearCategoryFilter()">
                         Todos ({{ totalProductos }})
+                    </button>
+                    <button type="button" class="chip-item chip-chatbot-filter" [class.active]="filterChatbotOnly" (click)="toggleChatbotFilter()">
+                        <i class="fa-brands fa-whatsapp text-emerald-500 mr-1"></i> En WhatsApp ({{ totalEnChatbot }})
                     </button>
                     <button *ngFor="let cat of categorias" type="button" class="chip-item"
                         [class.active]="selectedCategory?.idcategoria === cat.idcategoria"
@@ -121,10 +134,13 @@
                         <th pSortableColumn="preciounitario" style="width: 150px; text-align: right;">
                             Precio Unitario <p-sortIcon field="preciounitario" />
                         </th>
-                        <th style="width: 130px; text-align: center;">
+                        <th pSortableColumn="en_chatbot" style="width: 150px; text-align: center;">
+                            <i class="fa-brands fa-whatsapp text-emerald-500 mr-1"></i> Chatbot <p-sortIcon field="en_chatbot" />
+                        </th>
+                        <th style="width: 110px; text-align: center;">
                             Estado
                         </th>
-                        <th style="width: 130px; text-align: center;">
+                        <th style="width: 120px; text-align: center;">
                             Acciones
                         </th>
                     </tr>
@@ -175,7 +191,22 @@
                             </span>
                         </td>
 
-                        <!-- 6. Estado -->
+                        <!-- 6. En Chatbot WhatsApp Switch & Badge -->
+                        <td style="text-align: center;">
+                            <div class="chatbot-cell" (click)="$event.stopPropagation()">
+                                <p-toggleSwitch [(ngModel)]="producto.en_chatbot"
+                                    (onChange)="toggleChatbot(producto)" />
+                                <span class="chatbot-badge" [class.active]="producto.en_chatbot"
+                                    (click)="toggleChatbot(producto)"
+                                    pTooltip="{{ producto.en_chatbot ? 'Activo en WhatsApp (Clic para alternar)' : 'Inactivo en WhatsApp (Clic para alternar)' }}"
+                                    tooltipPosition="top">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                    {{ producto.en_chatbot ? 'Activo' : 'No' }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <!-- 7. Estado -->
                         <td style="text-align: center;">
                             <span class="status-pill active">
                                 <span class="status-dot"></span>
@@ -183,7 +214,7 @@
                             </span>
                         </td>
 
-                        <!-- 7. Acciones -->
+                        <!-- 8. Acciones -->
                         <td style="text-align: center;">
                             <div class="actions-group">
                                 <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm btn-edit"
@@ -198,7 +229,7 @@
                 <!-- Estado Vacío -->
                 <ng-template pTemplate="emptymessage">
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state-box">
                                 <div class="empty-icon-circle">
                                     <i class="fa-solid fa-bowl-food"></i>
@@ -298,6 +329,22 @@
                 </div>
             </div>
 
+            <!-- Selección para Carta Chatbot de WhatsApp -->
+            <div class="form-field chatbot-field-card">
+                <div class="chatbot-checkbox-row">
+                    <p-checkbox id="en_chatbot" formControlName="en_chatbot" [binary]="true" inputId="en_chatbot"></p-checkbox>
+                    <label for="en_chatbot" class="chatbot-checkbox-label">
+                        <span class="chatbot-label-title">
+                            <i class="fa-brands fa-whatsapp text-emerald-500"></i>
+                            Vender este plato en Chatbot de WhatsApp
+                        </span>
+                        <span class="chatbot-label-desc">
+                            Al activar esta casilla, los clientes podrán ver, buscar y pedir este plato automáticamente a través de WhatsApp.
+                        </span>
+                    </label>
+                </div>
+            </div>
+
             <!-- Live Preview -->
             <div class="preview-card" *ngIf="productoForm.get('nombre')?.value">
                 <div class="preview-header">
@@ -308,6 +355,9 @@
                     <div class="preview-left">
                         <span class="preview-acronym" *ngIf="productoForm.get('acronimo')?.value">{{ productoForm.get('acronimo')?.value }}</span>
                         <span class="preview-name">{{ productoForm.get('nombre')?.value }}</span>
+                        <span class="preview-chatbot-pill" *ngIf="productoForm.get('en_chatbot')?.value">
+                            <i class="fa-brands fa-whatsapp"></i> Chatbot Activo
+                        </span>
                     </div>
                     <span class="preview-price">{{ (productoForm.get('preciounitario')?.value || 0) | currency:'S/ ' }}</span>
                 </div>

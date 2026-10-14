@@ -810,7 +810,21 @@ async function mostrarMenuPrincipal(phone: string, nombre: string) {
 }
 
 async function mostrarPlatosDestacados(phone: string) {
-  const rows = PLATOS_DESTACADOS.map(p => ({
+  // Consultar platos activos en chatbot para los destacados
+  const { data: dbDestacados } = await supabase
+    .from('producto')
+    .select('idproducto, nombre, preciounitario, en_chatbot')
+    .in('idproducto', PLATOS_DESTACADOS.map(p => p.id))
+    .eq('en_chatbot', true)
+    .is('deleted', null)
+
+  const activosIds = new Set((dbDestacados || []).map(p => p.idproducto))
+  // Si hay platos marcados en BD, mostramos solo esos; de lo contrario fallback a PLATOS_DESTACADOS
+  const platosAMostrar = activosIds.size > 0
+    ? PLATOS_DESTACADOS.filter(p => activosIds.has(p.id))
+    : PLATOS_DESTACADOS
+
+  const rows = platosAMostrar.map(p => ({
     id: `prod_${p.id}`,
     title: p.nombre.slice(0, 24),
     description: `S/ ${p.precio.toFixed(2)} - ${p.cat}`.slice(0, 72)
@@ -876,12 +890,25 @@ async function mostrarPlatosPorSubcategoria(phone: string, subcatKey: string, of
     desc: ''
   }
 
-  const { data: todos } = await supabase
+  // Filtrar solo platos marcados para vender en Chatbot
+  let { data: todos, error } = await supabase
     .from('producto')
-    .select('idproducto, nombre, preciounitario, idcategoria')
+    .select('idproducto, nombre, preciounitario, idcategoria, en_chatbot')
     .is('deleted', null)
     .not('preciounitario', 'is', null)
     .gt('preciounitario', 0)
+    .eq('en_chatbot', true)
+
+  // Resiliencia: si la columna en_chatbot aún no existe en BD, cargar sin filtro
+  if (error && (error as any).code === '42703') {
+    const res = await supabase
+      .from('producto')
+      .select('idproducto, nombre, preciounitario, idcategoria')
+      .is('deleted', null)
+      .not('preciounitario', 'is', null)
+      .gt('preciounitario', 0)
+    todos = res.data
+  }
 
   if (!todos || todos.length === 0) {
     await sendButtons(
@@ -956,12 +983,24 @@ async function mostrarPlatosPorCategoria(phone: string, idCategoria: number, off
 // ==========================================
 
 async function buscarPlatosPorTexto(phone: string, query: string, sesion: any) {
-  const { data: prods } = await supabase
+  let { data: prods, error } = await supabase
     .from('producto')
-    .select('idproducto, nombre, preciounitario, imagen')
+    .select('idproducto, nombre, preciounitario, imagen, en_chatbot')
     .is('deleted', null)
     .not('preciounitario', 'is', null)
     .gt('preciounitario', 0)
+    .eq('en_chatbot', true)
+
+  // Resiliencia si la columna aún no existe
+  if (error && (error as any).code === '42703') {
+    const res = await supabase
+      .from('producto')
+      .select('idproducto, nombre, preciounitario, imagen')
+      .is('deleted', null)
+      .not('preciounitario', 'is', null)
+      .gt('preciounitario', 0)
+    prods = res.data
+  }
 
   if (!prods || prods.length === 0) {
     await sendText(phone, 'No pudimos consultar la carta en este momento. Por favor elige una categoría:')
@@ -1052,11 +1091,17 @@ async function buscarPlatosPorTexto(phone: string, query: string, sesion: any) {
 async function iniciarSeleccionCantidad(phone: string, idProducto: number, sesion: any) {
   const { data: prod } = await supabase
     .from('producto')
-    .select('idproducto, nombre, preciounitario, imagen')
+    .select('idproducto, nombre, preciounitario, imagen, en_chatbot')
     .eq('idproducto', idProducto)
     .single()
 
   if (!prod) return
+
+  if (prod.en_chatbot === false) {
+    await sendText(phone, '⚠️ Lo sentimos, este plato no se encuentra disponible actualmente en la carta de WhatsApp.')
+    await repintarPantalla(phone, sesion, 'menu')
+    return
+  }
 
   const hist = pushHistorial(sesion.datos, 'menu')
   await supabase.from('wa_sesiones').update({
@@ -1114,11 +1159,17 @@ async function derivarPedidoGrande(phone: string, cantidad: number) {
 async function agregarProductoAlCarrito(phone: string, sesion: any, idProducto: number, cantidad: number) {
   const { data: producto } = await supabase
     .from('producto')
-    .select('idproducto, nombre, preciounitario')
+    .select('idproducto, nombre, preciounitario, en_chatbot')
     .eq('idproducto', idProducto)
     .single()
 
   if (!producto) return
+
+  if (producto.en_chatbot === false) {
+    await sendText(phone, '⚠️ Lo sentimos, este plato ya no está disponible para pedidos por WhatsApp.')
+    await repintarPantalla(phone, sesion, 'menu')
+    return
+  }
 
   const carrito = Array.isArray(sesion.carrito) ? [...sesion.carrito] : []
   const existente = carrito.find(item => item.idproducto === producto.idproducto)

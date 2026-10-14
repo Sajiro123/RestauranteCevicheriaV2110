@@ -26,6 +26,7 @@ export class ProductosComponent {
     productoForm: FormGroup;
     isEditing: boolean = false;
     selectedCategory: any = null;
+    filterChatbotOnly: boolean = false;
     filteredProductos: any[] = [];
     loading: boolean = false;
     searchTerm: string = '';
@@ -36,7 +37,8 @@ export class ProductosComponent {
             preciounitario: [0, [Validators.required, Validators.min(0)]],
             idcategoria: ['', Validators.required],
             acronimo: ['', [Validators.required, Validators.maxLength(20)]],
-            numero_carta: [null, [Validators.min(0)]]
+            numero_carta: [null, [Validators.min(0)]],
+            en_chatbot: [false]
         });
     }
 
@@ -47,6 +49,10 @@ export class ProductosComponent {
 
     get totalCategorias(): number {
         return this.categorias.length;
+    }
+
+    get totalEnChatbot(): number {
+        return this.productos.filter(p => !!p.en_chatbot).length;
     }
 
     get precioPromedio(): number {
@@ -80,7 +86,10 @@ export class ProductosComponent {
                 .order('numero_carta');
 
             if (error) throw error;
-            this.productos = data || [];
+            this.productos = (data || []).map(p => ({
+                ...p,
+                en_chatbot: !!p.en_chatbot
+            }));
             this.filterProductos();
         } catch (error) {
             console.error('Error loading productos:', error);
@@ -100,6 +109,12 @@ export class ProductosComponent {
 
     clearCategoryFilter() {
         this.selectedCategory = null;
+        this.filterChatbotOnly = false;
+        this.filterProductos();
+    }
+
+    toggleChatbotFilter() {
+        this.filterChatbotOnly = !this.filterChatbotOnly;
         this.filterProductos();
     }
 
@@ -139,6 +154,10 @@ export class ProductosComponent {
             );
         }
 
+        if (this.filterChatbotOnly) {
+            list = list.filter(producto => !!producto.en_chatbot);
+        }
+
         if (this.searchTerm) {
             const term = this.searchTerm.toLowerCase().trim();
             list = list.filter(p =>
@@ -171,7 +190,14 @@ export class ProductosComponent {
 
     openNew() {
         this.producto = {};
-        this.productoForm.reset();
+        this.productoForm.reset({
+            nombre: '',
+            preciounitario: 0,
+            idcategoria: '',
+            acronimo: '',
+            numero_carta: null,
+            en_chatbot: false
+        });
         this.submitted = false;
         this.isEditing = false;
         this.productoDialog = true;
@@ -184,7 +210,8 @@ export class ProductosComponent {
             nombre: producto.nombre,
             preciounitario: producto.preciounitario,
             idcategoria: producto.idcategoria,
-            acronimo: producto.acronimo
+            acronimo: producto.acronimo,
+            en_chatbot: !!producto.en_chatbot
         });
         this.isEditing = true;
         this.productoDialog = true;
@@ -225,6 +252,40 @@ export class ProductosComponent {
         });
     }
 
+    async toggleChatbot(producto: any) {
+        const nuevoEstado = !producto.en_chatbot;
+        const anteriorEstado = producto.en_chatbot;
+
+        // Optimistic UI update
+        producto.en_chatbot = nuevoEstado;
+
+        try {
+            const { error } = await this.supabaseService.client
+                .from('producto')
+                .update({ en_chatbot: nuevoEstado })
+                .eq('idproducto', producto.idproducto);
+
+            if (error) {
+                producto.en_chatbot = anteriorEstado;
+                throw error;
+            }
+
+            this.messageService.add({
+                severity: nuevoEstado ? 'success' : 'info',
+                summary: nuevoEstado ? 'Carta WhatsApp' : 'Quitado de WhatsApp',
+                detail: `"${producto.nombre}" ${nuevoEstado ? 'activado para vender en Chatbot' : 'desactivado del Chatbot'}.`,
+                life: 2500
+            });
+        } catch (error: any) {
+            console.error('Error actualizando estado en_chatbot:', error);
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error al cambiar estado',
+                detail: error.message || 'No se pudo actualizar el producto. Verifique que la columna en_chatbot exista en Supabase.'
+            });
+        }
+    }
+
     async saveProducto() {
         this.submitted = true;
 
@@ -232,16 +293,19 @@ export class ProductosComponent {
             const formData = this.productoForm.value;
 
             try {
+                const payload = {
+                    nombre: formData.nombre,
+                    preciounitario: formData.preciounitario,
+                    idcategoria: formData.idcategoria,
+                    acronimo: formData.acronimo,
+                    numero_carta: formData.numero_carta,
+                    en_chatbot: !!formData.en_chatbot
+                };
+
                 if (this.isEditing) {
                     const { error } = await this.supabaseService.client
                         .from('producto')
-                        .update({
-                            nombre: formData.nombre,
-                            preciounitario: formData.preciounitario,
-                            idcategoria: formData.idcategoria,
-                            acronimo: formData.acronimo,
-                            numero_carta: formData.numero_carta
-                        })
+                        .update(payload)
                         .eq('idproducto', this.producto.idproducto);
 
                     if (error) throw error;
@@ -253,13 +317,7 @@ export class ProductosComponent {
                         life: 3000
                     });
                 } else {
-                    const { error } = await this.supabaseService.client.from('producto').insert({
-                        nombre: formData.nombre,
-                        preciounitario: formData.preciounitario,
-                        idcategoria: formData.idcategoria,
-                        acronimo: formData.acronimo,
-                        numero_carta: formData.numero_carta
-                    });
+                    const { error } = await this.supabaseService.client.from('producto').insert(payload);
 
                     if (error) throw error;
 
@@ -273,12 +331,12 @@ export class ProductosComponent {
 
                 this.productoDialog = false;
                 this.loadProductos();
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error saving producto:', error);
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
-                    detail: 'Error al guardar producto'
+                    detail: error.message || 'Error al guardar producto'
                 });
             }
         } else {

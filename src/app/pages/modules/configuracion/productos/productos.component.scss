@@ -137,8 +137,33 @@ $slate-50:          #f8fafc;
 // ── KPIS DE CABECERA (PLOMO CORPORATIVO + BORDE NEGRO) ────────────
 .header-kpis {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 1.15rem;
+}
+
+.kpi-chatbot {
+    .icon-chatbot {
+        background: rgba(16, 185, 129, 0.18);
+        border-color: rgba(52, 211, 153, 0.45);
+        color: #34d399;
+    }
+
+    &:hover .icon-chatbot {
+        background: #10b981;
+        color: #ffffff;
+        border-color: #34d399;
+    }
+
+    &.active {
+        border-color: #34d399;
+        box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.35), 0 8px 22px rgba(0, 0, 0, 0.38);
+
+        .icon-chatbot {
+            background: #10b981;
+            color: #ffffff;
+            border-color: #34d399;
+        }
+    }
 }
 
 .kpi-card {
@@ -311,6 +336,14 @@ $slate-50:          #f8fafc;
         color: $corp-header-start;
         font-weight: 700;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+}
+
+.chip-chatbot-filter {
+    &.active {
+        background: #ecfdf5 !important;
+        color: #065f46 !important;
+        border: 1px solid #a7f3d0 !important;
     }
 }
 
@@ -507,6 +540,44 @@ $slate-50:          #f8fafc;
         border-radius: 50%;
         background: #10b981;
         box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+    }
+}
+
+.chatbot-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+}
+
+.chatbot-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+
+    i {
+        font-size: 0.8rem;
+    }
+
+    &:hover {
+        transform: scale(1.05);
+    }
+
+    &.active {
+        background: #ecfdf5;
+        color: #059669;
+        border-color: #a7f3d0;
+        box-shadow: 0 1px 3px rgba(16, 185, 129, 0.15);
     }
 }
 
@@ -737,6 +808,55 @@ $slate-50:          #f8fafc;
     margin-top: 0.15rem;
 }
 
+// ── TARJETA CHECKBOX CHATBOT EN DIALOG ────────────────────────────
+.chatbot-field-card {
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 0.85rem 1.1rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: #86efac;
+        background: #ecfdf5;
+    }
+
+    .chatbot-checkbox-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        cursor: pointer;
+    }
+
+    .chatbot-checkbox-label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        cursor: pointer;
+        user-select: none;
+        flex: 1;
+    }
+
+    .chatbot-label-title {
+        font-size: 0.88rem;
+        font-weight: 800;
+        color: #166534;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+
+        i {
+            font-size: 1.1rem;
+        }
+    }
+
+    .chatbot-label-desc {
+        font-size: 0.76rem;
+        color: #15803d;
+        line-height: 1.35;
+    }
+}
+
 .preview-card {
     background: #f8fafc;
     border: 1px dashed $slate-300;
@@ -774,6 +894,7 @@ $slate-50:          #f8fafc;
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        flex-wrap: wrap;
     }
 
     .preview-acronym {
@@ -791,6 +912,23 @@ $slate-50:          #f8fafc;
         font-size: 0.85rem;
         font-weight: 700;
         color: $slate-800;
+    }
+
+    .preview-chatbot-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #059669;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+
+        i {
+            font-size: 0.75rem;
+        }
     }
 
     .preview-price {
@@ -829,13 +967,17 @@ $slate-50:          #f8fafc;
 }
 
 // ── RESPONSIVE ────────────────────────────────────────────────────
-@media (max-width: 991px) {
+@media (max-width: 1200px) {
     .header-kpis {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 768px) {
+    .header-kpis {
+        grid-template-columns: 1fr;
+    }
+
     .table-toolbar {
         flex-direction: column;
         align-items: stretch;
