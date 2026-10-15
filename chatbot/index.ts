@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const VERIFY_TOKEN = Deno.env.get('WHATSAPP_VERIFY_TOKEN') || 'cevicheria_willy_seguro_2026'
-const GRAPH_API_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') || 'EAANNNuVBiJsBStRm1Y0A0GqjaBvC1cZCVwpavlZA6HsvxRYF2qyY7BLT4NttN2hgS8QwZAIMpY79izuLWrjk862EdGjCuJV6Pihb51x5R2hAno8DcyOCGc7ZB6kkzsfFtbUKRvSkh2h6RxfMgn5P5kfmZAToexPDZCZBws0uZCAMHW32H7NjiVNEPqRsqubCWB48riAZBy30W8B7peJ5UuRvZAJ3AmVOnqfVuAP5SpYl3oZBdwwiHHMengUvwCmbvyk56ghPn01ZBZCmZBWuwZAl6v35BrXLJyZBCwZDZD'
+const GRAPH_API_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') || 'EAANNNuVBiJsBSoDsBQzhZBrP6Lldi8q7q8g5KANtcKWI5SpXR1QvBQ0YnAoZCxuSiZBVD9nevRu4cxu00vgom5mAvFdbMXqWAWDRKSqbdoNVb7YpO5eZA9KbgL5pTuO9GXUyCtp1q5cGzvKOrnmZBOJgsMDVgnvwTNy04BPjf7vFtpNa1ESsaPGcVTaZAgwAZDZD'
 const envPhoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')
 // Si el secreto de Supabase aún tiene el ID de prueba de Meta (1089514050604081), usar el número de producción
 const PHONE_NUMBER_ID = (envPhoneId && envPhoneId !== '1089514050604081') ? envPhoneId : '1411155722076604'
