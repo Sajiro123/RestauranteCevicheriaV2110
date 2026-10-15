@@ -641,7 +641,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string, con
       await supabase.from('wa_sesiones').update({ estado: 'pedir_nombre' }).eq('telefono', phone)
       await sendText(
         phone,
-        '¡Hola! 🐟 Bienvenido a *El Puerto Cevichero de Willy*.\n\nPara poder registrar tu pedido y atenderte mejor, *¿cuál es tu nombre y apellido?*'
+        '¡Hola! 🐟 Bienvenido a *El Puerto Cevichero de Willy*.\n¿Cuál es tu nombre para tomar tu pedido?'
       )
       return
     }
@@ -675,7 +675,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string, con
       await supabase.from('wa_sesiones').update({ estado: 'pedir_nombre' }).eq('telefono', phone)
       await sendText(
         phone,
-        '¡Hola! 🐟 Bienvenido a *El Puerto Cevichero de Willy*.\n\nPara poder registrar tu pedido y atenderte mejor, *¿cuál es tu nombre y apellido?*'
+        '¡Hola! 🐟 Bienvenido a *El Puerto Cevichero de Willy*.\n¿Cuál es tu nombre para tomar tu pedido?'
       )
       return
     }
@@ -1092,7 +1092,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string, con
 async function mostrarMenuPrincipal(phone: string, nombre: string) {
   await sendButtons(
     phone,
-    `🍽️ *El Puerto Cevichero de Willy*\n¡Hola ${nombre || 'amigo'}! ¿Cómo deseas armar tu pedido hoy?\n\n💡 *Buscador rápido:* También puedes escribir directamente el plato que buscas (ejemplo: _"ceviche mixto"_, _"arroz con marisco"_, _"parihuela"_, _"chicha"_).`,
+    `🍽️ *El Puerto Cevichero de Willy*\n¡Hola ${nombre || 'amigo'}! ¿Cómo deseas pedir hoy?\n_Toca una opción o escribe tu plato directo:_`,
     [
       { id: 'ver_destacados', title: '⭐ Platos Más Pedidos' },
       { id: 'ver_subcategorias', title: '📖 Toda la carta' },
