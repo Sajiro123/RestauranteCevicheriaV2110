@@ -1,8 +1,12 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const VERIFY_TOKEN = Deno.env.get('WHATSAPP_VERIFY_TOKEN') || 'cevicheria_willy_seguro_2026'
-const GRAPH_API_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') || 'EAANNNuVBiJsBSkGCwZChuk0pco7IhNmA3RVclSJhmixnvhe12iBKQxdIPVY6EeXBtiZCERDZCQODRjysIN6TByMdLtOtCzg86ioKXUpdQIhPG8ljMpaRYQCXRRjiBg3ZBv443azDnKXCKUJNK3pvS1RNiR1IIO2RI28FS5v5t3ZCkJdzZCDD0Gu2n92JbLamXXWqc892fsglQSXK4oV0ClZADcCVvKZCSM8cqcqzgHrVRantG8CnNVvu1yEonmYQJ6ZB8nzCwFZApki0hdBjOing31Fdz9O9lMCpqTlEcZD'
-const PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '1411155722076604'
+const GRAPH_API_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') || 'EAANNNuVBiJsBStRm1Y0A0GqjaBvC1cZCVwpavlZA6HsvxRYF2qyY7BLT4NttN2hgS8QwZAIMpY79izuLWrjk862EdGjCuJV6Pihb51x5R2hAno8DcyOCGc7ZB6kkzsfFtbUKRvSkh2h6RxfMgn5P5kfmZAToexPDZCZBws0uZCAMHW32H7NjiVNEPqRsqubCWB48riAZBy30W8B7peJ5UuRvZAJ3AmVOnqfVuAP5SpYl3oZBdwwiHHMengUvwCmbvyk56ghPn01ZBZCmZBWuwZAl6v35BrXLJyZBCwZDZD'
+const envPhoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')
+// Si el secreto de Supabase aún tiene el ID de prueba de Meta (1089514050604081), usar el número de producción
+const PHONE_NUMBER_ID = (envPhoneId && envPhoneId !== '1089514050604081') ? envPhoneId : '1411155722076604'
+let currentIncomingPhoneId = PHONE_NUMBER_ID
+const NUMERO_ASESOR = Deno.env.get('WHATSAPP_ASESOR_PHONE') || '51991687503'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || ''
@@ -214,12 +218,13 @@ function matchProduct(prodName: string, query: string): boolean {
 // ==========================================
 
 async function sendWhatsAppMessage(to: string, messageData: any) {
+  const activePhoneId = currentIncomingPhoneId || PHONE_NUMBER_ID || '1411155722076604'
   if (!GRAPH_API_TOKEN) {
     console.error('WHATSAPP_ACCESS_TOKEN no configurado')
     return null
   }
   try {
-    const res = await fetch(`https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`, {
+    const res = await fetch(`https://graph.facebook.com/v22.0/${activePhoneId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${GRAPH_API_TOKEN}`,
@@ -232,6 +237,18 @@ async function sendWhatsAppMessage(to: string, messageData: any) {
       })
     })
     const json = await res.json()
+    if (json.error) {
+      console.error('Error enviando mensaje WhatsApp Meta API:', JSON.stringify(json.error))
+      try {
+        await supabase.from('wa_mensajes').insert({
+          telefono: to,
+          sentido: 'out_error',
+          tipo: 'error',
+          contenido: json.error,
+          wa_message_id: 'meta_err_' + Date.now()
+        })
+      } catch (_) {}
+    }
     return json
   } catch (err) {
     console.error('Error enviando mensaje WhatsApp:', err)
@@ -301,6 +318,55 @@ async function sendList(to: string, header: string, body: string, buttonText: st
       }
     }
   })
+}
+
+async function sendCtaUrlButton(to: string, header: string, body: string, buttonText: string, url: string, footer?: string) {
+  const interactive: any = {
+    type: 'cta_url',
+    body: { text: body.slice(0, 1024) },
+    action: {
+      name: 'cta_url',
+      parameters: {
+        display_text: buttonText.slice(0, 20),
+        url: url
+      }
+    }
+  }
+  if (header) {
+    interactive.header = { type: 'text', text: header.slice(0, 60) }
+  }
+  if (footer) {
+    interactive.footer = { text: footer.slice(0, 60) }
+  }
+  return await sendWhatsAppMessage(to, { type: 'interactive', interactive })
+}
+
+async function transferirAAsesor(phone: string, sesion: any) {
+  const nombreCliente = sesion?.nombre || 'Cliente'
+  const waUrl = `https://wa.me/${NUMERO_ASESOR}?text=${encodeURIComponent(`Hola, soy ${nombreCliente} y solicito atención con mi pedido en El Puerto Cevichero`)}`
+
+  // 1. Enviar botón nativo interactivo para chatear directamente con el asesor humano
+  await sendCtaUrlButton(
+    phone,
+    '👨‍💼 Atención Personalizada',
+    `¡Hola *${nombreCliente}*! Para comunicarte directamente con nuestro asesor en el restaurante, toca el botón de abajo:\n\n_Tu pedido y carrito de compras seguirán guardados._`,
+    '💬 Hablar con Asesor',
+    waUrl,
+    'El Puerto Cevichero de Willy'
+  )
+
+  // 2. Notificar inmediatamente al WhatsApp del asesor humano (991 687 503)
+  try {
+    const carrito = sesion?.carrito || []
+    let detalleCarrito = 'Sin platos seleccionados aún'
+    if (carrito.length > 0) {
+      detalleCarrito = carrito.map((i: any) => `• ${i.cantidad}x ${i.nombre} (S/ ${Number(i.total).toFixed(2)})`).join('\n')
+    }
+    const mensajeAlAsesor = `🚨 *SOLICITUD DE ASESOR - EL PUERTO CEVICHERO* 🚨\n\n👤 *Cliente:* ${nombreCliente}\n📱 *Teléfono:* +${phone}\n🛒 *Carrito:* \n${detalleCarrito}\n\n👉 *Escríbele directamente:* https://wa.me/${phone}`
+    await sendText(NUMERO_ASESOR, mensajeAlAsesor)
+  } catch (err) {
+    console.error('Error notificando al asesor humano:', err)
+  }
 }
 
 // ==========================================
@@ -388,12 +454,18 @@ Deno.serve(async (req: Request) => {
         return new Response('EVENT_RECEIVED', { status: 200 })
       }
 
+      const metadataPhoneId = value?.metadata?.phone_number_id
+      if (metadataPhoneId && metadataPhoneId !== '1089514050604081') {
+        currentIncomingPhoneId = metadataPhoneId
+      }
+      const contactProfileName = value?.contacts?.[0]?.profile?.name || ''
+
       const msg = messages[0]
       const from = msg.from
       const msgId = msg.id
 
       try {
-        await handleIncomingMessage(from, msg, msgId)
+        await handleIncomingMessage(from, msg, msgId, contactProfileName)
       } catch (err: any) {
         console.error('Error procesando handleIncomingMessage:', err.message || err)
       }
@@ -412,7 +484,7 @@ Deno.serve(async (req: Request) => {
 // LÓGICA DE CONVERSACIÓN MEJORADA (V2 + MODELO HÍBRIDO)
 // ==========================================
 
-async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
+async function handleIncomingMessage(phone: string, msg: any, msgId: string, contactProfileName: string = '') {
   // 1. Desduplicación de mensajes
   const { data: existMsg } = await supabase
     .from('wa_mensajes')
@@ -438,12 +510,13 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     .maybeSingle()
 
   if (!sesion) {
+    const defaultName = contactProfileName ? contactProfileName.trim() : ''
     const { data: nueva } = await supabase
       .from('wa_sesiones')
       .insert({
         telefono: phone,
-        nombre: '',
-        estado: 'pedir_nombre',
+        nombre: defaultName,
+        estado: 'menu',
         carrito: [],
         datos: { historial: ['menu'], errores: 0 },
         modo: 'bot'
@@ -451,6 +524,9 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
       .select()
       .single()
     sesion = nueva
+  } else if (!sesion.nombre && contactProfileName) {
+    sesion.nombre = contactProfileName.trim()
+    await supabase.from('wa_sesiones').update({ nombre: sesion.nombre }).eq('telefono', phone)
   }
 
   const userText = (
@@ -483,13 +559,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
 
   // 4. Comando Global: Pedir Asesor Humano en cualquier momento
   if (userText.includes('asesor') || userText.includes('humano') || replyId === 'pedir_asesor') {
-    await supabase.from('wa_sesiones').update({ modo: 'humano' }).eq('telefono', phone)
-    await sendButtons(
-      phone,
-      '👨‍💼 He pausado el asistente virtual. Un asesor de *El Puerto Cevichero de Willy* te responderá por este chat en unos momentos.\n\n_Tu pedido y carrito se mantendrán guardados._',
-      [{ id: 'volver_bot', title: '🤖 Volver al Bot' }],
-      'El Puerto Cevichero de Willy'
-    )
+    await transferirAAsesor(phone, sesion)
     return
   }
 
@@ -561,8 +631,8 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
   // MÁQUINA DE ESTADOS DEL BOT
   // ==========================================
 
-  // ESTADO 1: Captura Obligatoria de Nombre
-  if (!sesion.nombre || sesion.estado === 'pedir_nombre') {
+  // ESTADO 1: Captura Obligatoria de Nombre (solo si no viene de una interacción de botones o carta)
+  if ((!sesion.nombre || sesion.estado === 'pedir_nombre') && !replyId && !userText.startsWith('prod_')) {
     const rawText = msg.text?.body?.trim()
     if (!rawText || sesion.estado !== 'pedir_nombre' || rawText.toLowerCase() === 'hola') {
       await supabase.from('wa_sesiones').update({ estado: 'pedir_nombre' }).eq('telefono', phone)
@@ -1634,11 +1704,7 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
 
   if (rpcError || !rpcResult?.success) {
     console.error('Error insertando pedido:', rpcError)
-    await sendText(
-      phone,
-      '⚠️ Hubo un pequeño inconveniente al registrar el pedido en el sistema. Un asesor te atenderá de inmediato por este chat.'
-    )
-    await supabase.from('wa_sesiones').update({ modo: 'humano' }).eq('telefono', phone)
+    await transferirAAsesor(phone, sesion)
     return
   }
 
