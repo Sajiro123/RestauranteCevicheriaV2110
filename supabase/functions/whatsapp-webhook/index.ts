@@ -213,6 +213,36 @@ function matchProduct(prodName: string, query: string): boolean {
   return calculateProductScore(prodName, query) >= 25
 }
 
+function isGreetingOrOrderIntent(text: string): boolean {
+  if (!text) return false
+  const clean = text.toLowerCase().trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const exactIntents = [
+    'hola', 'ola', 'buenas', 'buen dia', 'buenos dias', 'buenas tardes', 'buenas noches',
+    'inicio', 'menu', 'carta', 'empezar', 'comenzar', 'pedir', 'pedido',
+    'quiero pedir', 'quiero ordenar', 'hacer pedido', 'hacer un pedido',
+    'quiero hacer un pedido', 'deseo hacer un pedido', 'realizar pedido',
+    'realizar un pedido', 'quiero comprar', 'atencion', 'delivery'
+  ]
+
+  if (exactIntents.includes(clean)) return true
+
+  if (clean.startsWith('hola') || clean.startsWith('buenas') || clean.startsWith('buen dia')) {
+    if (clean.length < 40) return true
+  }
+  if (clean.includes('pedido') || clean.includes('pedir') || clean.includes('ordenar')) {
+    if (clean.includes('quiero') || clean.includes('hacer') || clean.includes('deseo') || clean.includes('realizar') || clean.startsWith('para')) {
+      return true
+    }
+  }
+
+  return false
+}
+
 // ==========================================
 // HELPERS PARA COMUNICACIÓN CON WHATSAPP API
 // ==========================================
@@ -510,13 +540,12 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string, con
     .maybeSingle()
 
   if (!sesion) {
-    const defaultName = contactProfileName ? contactProfileName.trim() : ''
     const { data: nueva } = await supabase
       .from('wa_sesiones')
       .insert({
         telefono: phone,
-        nombre: defaultName,
-        estado: 'menu',
+        nombre: '',
+        estado: 'pedir_nombre',
         carrito: [],
         datos: { historial: ['menu'], errores: 0 },
         modo: 'bot'
@@ -524,9 +553,6 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string, con
       .select()
       .single()
     sesion = nueva
-  } else if (!sesion.nombre && contactProfileName) {
-    sesion.nombre = contactProfileName.trim()
-    await supabase.from('wa_sesiones').update({ nombre: sesion.nombre }).eq('telefono', phone)
   }
 
   const userText = (
@@ -608,8 +634,19 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string, con
     }
   }
 
-  // Comando Menú / Hola / Reiniciar
-  if (userText === 'inicio' || userText === 'hola' || userText === 'menu' || replyId === 'seguir_bot') {
+  // Saludos e intención de pedido (ej: "Hola", "quiero hacer un pedido", "hacer pedido", "buenas tardes", "menu", "carta")
+  if (isGreetingOrOrderIntent(userText) || userText === 'inicio' || userText === 'menu' || userText === 'carta' || replyId === 'seguir_bot') {
+    // Si aún no ha ingresado su nombre real o la sesión está en pedir_nombre:
+    if (!sesion.nombre || sesion.estado === 'pedir_nombre') {
+      await supabase.from('wa_sesiones').update({ estado: 'pedir_nombre' }).eq('telefono', phone)
+      await sendText(
+        phone,
+        '¡Hola! 🐟 Bienvenido a *El Puerto Cevichero de Willy*.\n\nPara poder registrar tu pedido y atenderte mejor, *¿cuál es tu nombre y apellido?*'
+      )
+      return
+    }
+
+    // Si ya tiene su nombre registrado, saludamos por su nombre y mostramos el menú principal
     await supabase.from('wa_sesiones').update({
       estado: 'menu',
       datos: { ...sesion.datos, historial: ['menu'], errores: 0 }
@@ -634,7 +671,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string, con
   // ESTADO 1: Captura Obligatoria de Nombre (solo si no viene de una interacción de botones o carta)
   if ((!sesion.nombre || sesion.estado === 'pedir_nombre') && !replyId && !userText.startsWith('prod_')) {
     const rawText = msg.text?.body?.trim()
-    if (!rawText || sesion.estado !== 'pedir_nombre' || rawText.toLowerCase() === 'hola') {
+    if (!rawText || sesion.estado !== 'pedir_nombre' || isGreetingOrOrderIntent(rawText)) {
       await supabase.from('wa_sesiones').update({ estado: 'pedir_nombre' }).eq('telefono', phone)
       await sendText(
         phone,
@@ -710,6 +747,10 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string, con
 
     // Buscador Inteligente en Chat (Modelo Híbrido: escribe e.g. "ceviche mixto", "parihuela", "chicha")
     if (userText && userText.length >= 2) {
+      if (isGreetingOrOrderIntent(userText)) {
+        await mostrarMenuPrincipal(phone, sesion.nombre)
+        return
+      }
       await buscarPlatosPorTexto(phone, userText, sesion)
       return
     }
