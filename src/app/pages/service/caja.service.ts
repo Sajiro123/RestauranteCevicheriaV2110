@@ -63,9 +63,12 @@ export class CajaService {
   // 📌 INSERTAR
   // ============================
   async create(item: Caja) {
+    const { total, validado, ...insertData } = item;
+    insertData.created_at = validado ? (item.created_at || new Date().toISOString()) : null;
+
     const { data, error } = await this.supabase
       .from('caja_semanal')
-      .insert(item)
+      .insert(insertData)
       .select();
 
     return { data, error };
@@ -75,12 +78,28 @@ export class CajaService {
   // 📌 ACTUALIZAR
   // ============================
   async update(id: number, item: Partial<Caja>) {
-    // Remove total field if present since it's a generated column
-    const { total, ...updateData } = item;
+    // Remove total and validado fields before sending to DB
+    const { total, validado, ...updateData } = item;
+    if (validado !== undefined) {
+      updateData.created_at = validado ? (item.created_at || new Date().toISOString()) : null;
+    }
 
     const { data, error } = await this.supabase
       .from('caja_semanal')
       .update(updateData)
+      .eq('id', id)
+      .select();
+
+    return { data, error };
+  }
+
+  // ============================
+  // 📌 ACTUALIZAR VALIDACIÓN (CUADRE)
+  // ============================
+  async updateValidacion(id: number, validado: boolean) {
+    const { data, error } = await this.supabase
+      .from('caja_semanal')
+      .update({ created_at: validado ? new Date().toISOString() : null })
       .eq('id', id)
       .select();
 

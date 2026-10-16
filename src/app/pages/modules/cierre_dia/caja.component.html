@@ -208,6 +208,27 @@
           </div>
         </div>
 
+        <!-- Estado de Validación (Cuadre de Bolsa / Yape y Efectivo) -->
+        <div class="validacion-modal-box" [class.is-validated]="form.validado" (click)="form.validado = !form.validado">
+          <div class="validacion-modal-info">
+            <div class="validacion-modal-icon">
+              <i class="pi" [class.pi-check-circle]="form.validado" [class.pi-clock]="!form.validado"></i>
+            </div>
+            <div>
+              <span class="validacion-modal-title">
+                {{ form.validado ? 'Cuadre Validado (Bolsa y Yape verificados)' : 'Pendiente de Validación (Sin cuadrar)' }}
+              </span>
+              <span class="validacion-modal-sub">
+                Marque como validado cuando haya recibido la bolsa de dinero y verificado el efectivo y Yape.
+              </span>
+            </div>
+          </div>
+          <button type="button" class="btn-toggle-val-modal" [class.active]="form.validado">
+            <i class="pi" [class.pi-check]="form.validado" [class.pi-hourglass]="!form.validado"></i>
+            {{ form.validado ? 'Validado' : 'Pendiente' }}
+          </button>
+        </div>
+
         <!-- Detalles de Gastos App si existen -->
         <div class="gastos-app-box" *ngIf="gastosAppDetalles.length > 0">
           <div class="gastos-app-header">
@@ -258,13 +279,14 @@
             <th>Gastos</th>
             <th>Gastos App</th>
             <th>Notas</th>
+            <th class="td-center">Validación</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           <!-- Estado vacío -->
           <tr *ngIf="cajasFiltradas.length === 0">
-            <td colspan="13" class="empty-state">
+            <td colspan="14" class="empty-state">
               <i class="pi pi-inbox"></i>
               <span>No hay registros para mostrar</span>
             </td>
@@ -286,6 +308,16 @@
             <td class="td-gastos">S/. {{ c.gastos | number:'1.2-2' }}</td>
             <td class="td-gastos-app">S/. {{ gastosAppValues[c.fecha] | number:'1.2-2' }}</td>
             <td class="td-notas" [title]="c.notas || ''">{{ c.notas || '—' }}</td>
+            <td class="td-center">
+              <button type="button" class="badge-validacion"
+                [class.is-validado]="c.validado"
+                [class.is-pendiente]="!c.validado"
+                (click)="toggleValidacion(c)"
+                [title]="c.validado ? 'Clic para marcar como Pendiente' : 'Clic para validar cuadre (Efectivo y Yape)'">
+                <i class="pi" [class.pi-check-circle]="c.validado" [class.pi-clock]="!c.validado"></i>
+                <span>{{ c.validado ? 'Validado' : 'Pendiente' }}</span>
+              </button>
+            </td>
             <td class="td-actions">
               <button class="btn-edit" (click)="edit(c)">
                 <i class="pi pi-pencil"></i>
@@ -310,7 +342,7 @@
             <td class="tfoot-total">S/. {{ getTotalGeneral() | number:'1.2-2' }}</td>
             <td class="tfoot-gastos">S/. {{ getTotalGastos() | number:'1.2-2' }}</td>
             <td class="tfoot-gapp">S/. {{ getTotalGastosApp() | number:'1.2-2' }}</td>
-            <td colspan="2"></td>
+            <td colspan="3"></td>
           </tr>
         </tfoot>
       </table>
