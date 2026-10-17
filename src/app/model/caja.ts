@@ -11,4 +11,6 @@ export interface Caja {
   gastos: number;
   notas?: string;
   plin: number;
+  created_at?: string | null;
+  validado?: boolean;
 }

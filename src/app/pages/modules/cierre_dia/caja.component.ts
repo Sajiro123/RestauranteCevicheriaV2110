@@ -74,6 +74,7 @@ export class CajaComponent implements OnInit {
       // Deduplicar registros con la misma fecha y turno por seguridad para la tabla y totales
       const mapUnicos = new Map<string, Caja>();
       raw.forEach((item: Caja) => {
+        item.validado = !!item.created_at;
         const key = `${item.fecha}_${(item.trabajo || '').trim().toLowerCase()}`;
         if (!mapUnicos.has(key)) {
           mapUnicos.set(key, item);
@@ -96,7 +97,7 @@ export class CajaComponent implements OnInit {
   }
 
   resetForm(): Caja {
-    return { semana: 0, trabajo: '', fecha: '', dia: 0, yape: 0, efectivo: 0, tarjeta: 0, gastos: 0, plin: 0, notas: '' };
+    return { semana: 0, trabajo: '', fecha: '', dia: 0, yape: 0, efectivo: 0, tarjeta: 0, gastos: 0, plin: 0, notas: '', validado: false };
   }
 
   getWeekNumber(date: Date): number {
@@ -437,7 +438,30 @@ export class CajaComponent implements OnInit {
     }
   }
 
-  edit(item: Caja) { this.editingId = item.id!; this.form = { ...item }; this.displayDialog = true; this.fetchGastosAppData(item.fecha); }
+  edit(item: Caja) {
+    this.editingId = item.id!;
+    this.form = { ...item, validado: !!item.validado };
+    this.displayDialog = true;
+    this.fetchGastosAppData(item.fecha);
+  }
+
+  toggleValidacion(item: Caja) {
+    if (!item.id) return;
+    const nuevoEstado = !item.validado;
+    this.cajaService.updateValidacion(item.id, nuevoEstado).then(({ error }) => {
+      if (error) {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar la validación.' });
+        return;
+      }
+      item.validado = nuevoEstado;
+      item.created_at = nuevoEstado ? new Date().toISOString() : null;
+      this.messageService.add({
+        severity: nuevoEstado ? 'success' : 'info',
+        summary: nuevoEstado ? 'Cuadre Validado' : 'Validación Pendiente',
+        detail: `El día ${item.fecha} se marcó como ${nuevoEstado ? 'Validado (Cuadrado)' : 'Pendiente de validar'}.`
+      });
+    });
+  }
 
   delete(id: number) {
     if (confirm('Eliminar registro?')) {
