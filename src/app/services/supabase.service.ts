@@ -108,11 +108,21 @@ export class SupabaseService {
     }
 
     // Pedido operations
+    async getFechaPeruHoy(): Promise<string> {
+        try {
+            const { data: serverDate, error } = await this.supabase.rpc('obtener_fecha_lima');
+            if (!error && serverDate) {
+                return serverDate;
+            }
+        } catch (e) {
+            console.warn('Error consultando obtener_fecha_lima:', e);
+        }
+        return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+    }
+
     async getPedidosHoy() {
-        const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
+        const fechaPeru = await this.getFechaPeruHoy();
+        const fechaAyer = new Date(new Date(fechaPeru).getTime() - 86400000).toISOString().slice(0, 10);
 
         const { data, error } = await this.supabase
             .from('pedido')
@@ -134,11 +144,10 @@ export class SupabaseService {
         )
       `
             )
-            .eq('fecha', fechaPeru)
             .eq('estado', '1')
             .is('deleted', null)
             .is('pedidodetalle.deleted', null)
-
+            .or(`fecha.eq.${fechaPeru},created_at.gte.${fechaPeru}T00:00:00,fecha.gte.${fechaAyer}`)
             .order('created_at', { ascending: false });
 
         return { success: !error, data, error };
@@ -169,10 +178,8 @@ export class SupabaseService {
     }
 
     async deletePedido(idpedido: number, motivo: string, responsable: string) {
+        const fechaPeru = await this.getFechaPeruHoy();
         const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
         const horaPeru = now.toLocaleString('es-PE', {
             timeZone: 'America/Lima',
             hour: '2-digit',

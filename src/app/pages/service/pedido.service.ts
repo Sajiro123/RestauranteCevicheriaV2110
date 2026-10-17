@@ -37,6 +37,9 @@ export class PedidoService {
         pedido.total_pedidos = total_pedidos;
 
         pedido.total = total;
+        if (!pedido.fecha) {
+            pedido.fecha = await this.supabaseService.getFechaPeruHoy();
+        }
         const { data, error } = await this.supabaseService.client.rpc('editar_pedido_y_detalles', {
             pedido_data: pedido, // 👈 este nombre debe coincidir con el de la función SQL
             detalles: detalles
@@ -56,6 +59,9 @@ export class PedidoService {
 
         pedido.total_pedidos = total_pedidos;
         pedido.total = total;
+        if (!pedido.fecha) {
+            pedido.fecha = await this.supabaseService.getFechaPeruHoy();
+        }
         const { data, error } = await this.supabaseService.client.rpc('insertar_pedido_y_detalles', {
             pedido_data: pedido, // 👈 este nombre debe coincidir con el de la función SQL
             detalles: detalles

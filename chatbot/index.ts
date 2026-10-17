@@ -1706,8 +1706,15 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     comentario += ` | Dirección: ${direccion}`
   }
 
-  const now = new Date()
-  const fechaLima = now.toLocaleDateString('en-CA', { timeZone: 'America/Lima' })
+  let fechaLima = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' })
+  try {
+    const { data: serverDate, error: rpcDateErr } = await supabase.rpc('obtener_fecha_lima')
+    if (!rpcDateErr && serverDate) {
+      fechaLima = serverDate
+    }
+  } catch (e) {
+    console.warn('Error obteniendo fecha_lima en chatbot:', e)
+  }
 
   const pedidoData = {
     cliente: sesion.nombre || 'Cliente WhatsApp',

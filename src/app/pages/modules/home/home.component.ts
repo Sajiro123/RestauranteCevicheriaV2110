@@ -850,6 +850,9 @@ export class HomeComponent {
             // 1️⃣ Preparamos los datos
             const pedido = this.NuevoPedido;
             this.NuevoPedido.comentario = this.comentarios;
+            if (!this.NuevoPedido.fecha) {
+                this.NuevoPedido.fecha = await this.supabaseService.getFechaPeruHoy();
+            }
             const detalles = this.NuevoPedido.pedidodetalle.map((element) => ({
                 ...element,
                 idpedido: pedido.idpedido,
@@ -1012,11 +1015,7 @@ export class HomeComponent {
             try {
                 // 1️⃣ Preparamos los datos
                 const pedido = this.NuevoPedido;
-                const now = new Date();
-
-                const fechaPeru = now.toLocaleDateString('en-CA', {
-                    timeZone: 'America/Lima'
-                });
+                const fechaPeru = await this.supabaseService.getFechaPeruHoy();
 
                 this.NuevoPedido.comentario = this.comentarios;
                 this.NuevoPedido.fecha = fechaPeru;
@@ -1171,7 +1170,8 @@ export class HomeComponent {
                 plin: 0,
                 efectivo: 0,
                 cliente: status_array[0]?.cliente || '',
-                idmozo: status_array[0]?.persona == undefined ? null : status_array[0]?.persona.idpersona
+                idmozo: status_array[0]?.persona == undefined ? null : status_array[0]?.persona.idpersona,
+                fecha: status_array[0]?.fecha ? String(status_array[0].fecha).slice(0, 10) : undefined
             };
             this.NuevoPedido.pedidodetalle = status_array[0].pedidodetalle.map(
                 (pedido: { producto: any; idpedidodetalle: number; idpedido: any; nombre: any; idproducto: any; precioU: any; cantidad: any; descripcion: any; total: any; estado: any; lugarpedido: any; comentario: any }) => ({
@@ -2952,7 +2952,8 @@ export class HomeComponent {
                 plin: Number(pedidoActual.plin) || 0,
                 efectivo: Number(pedidoActual.efectivo) || 0,
                 cliente: (pedidoActual as any).cliente || '',
-                idmozo: pedidoActual.persona == null ? ((pedidoActual as any).idmozo || null) : pedidoActual.persona.idpersona
+                idmozo: pedidoActual.persona == null ? ((pedidoActual as any).idmozo || null) : pedidoActual.persona.idpersona,
+                fecha: pedidoActual.fecha ? String(pedidoActual.fecha).slice(0, 10) : undefined
             };
 
             this.comentarios = pedidoActual.comentario || '';

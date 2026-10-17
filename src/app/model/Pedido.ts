@@ -25,6 +25,7 @@ export interface Pedido {
     persona?: any;
     created_at?: any;
     cliente?: string;
+    fecha?: string;
     estado_cocina?: number;
     telefono?: string;
     direccion?: string;

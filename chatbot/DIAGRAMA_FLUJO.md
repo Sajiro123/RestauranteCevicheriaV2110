@@ -1,5 +1,5 @@
 # 🔄 Diagrama de Flujo del Chatbot de WhatsApp (Modelo Híbrido Cevichero)
-> **Última sincronización automática:** 14/10/2026, 7:32:45 p. m.  
+> **Última sincronización automática:** 2026-10-17 1:23:35 PM  
 > **Archivo origen:** `chatbot/index.ts` (analizado automáticamente)
 
 Este diagrama representa con exactitud la lógica activa en el código del chatbot. Se actualiza de forma automática cada vez que se realizan modificaciones en `chatbot/index.ts`.
