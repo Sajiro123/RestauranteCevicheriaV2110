@@ -521,10 +521,163 @@ export class SupabaseService {
         return { success: !error, data, error };
     }
 
-    async getTrabajadores() {
-        const { data, error } = await this.supabase.from('persona').select('*').is('deleted', null).eq('idestado', 1);
+    private getPerfilNombreDefault(id: number): string {
+        switch (Number(id)) {
+            case 1: return 'Administrador de Restaurante';
+            case 2: return 'Mozo / Mesero';
+            case 3: return 'Cocinero / Chef';
+            case 4: return 'Cajero de Restaurante';
+            default: return 'Personal';
+        }
+    }
 
-        return { success: !error, data, error };
+    /**
+     * Obtiene el personal del negocio directamente desde SaaS Master API,
+     * sincronizando transparentemente la tabla local persona en Supabase
+     * para asegurar idpersona válidos y consistentes en aperturas y planillas.
+     */
+    async getTrabajadores(forceRefresh: boolean = false) {
+        try {
+            const tenantId = (environment as any).defaultTenantId || 'a0000000-0000-0000-0000-000000000004';
+            const apiUrl = (environment as any).saasMasterApiUrl || 'https://saas-master-api.onrender.com/api/v1';
+
+            const response = await fetch(`${apiUrl}/usuarios-negocio?negocioId=${tenantId}`);
+            if (response.ok) {
+                const json = await response.json();
+                const saasUsers: any[] = json.data || [];
+
+                if (saasUsers.length > 0) {
+                    const { data: dbPersonas } = await this.supabase
+                        .from('persona')
+                        .select('*, perfil:idperfil(nombre)');
+
+                    const personasLocales = dbPersonas || [];
+
+                    const mapPerfil = (codigo: string): number => {
+                        const c = (codigo || '').toUpperCase();
+                        if (c.includes('ADMIN')) return 1;
+                        if (c.includes('MOZO') || c.includes('MESERO')) return 2;
+                        if (c.includes('COCIN') || c.includes('CHEF')) return 3;
+                        if (c.includes('CAJER')) return 4;
+                        return 2;
+                    };
+
+                    const trabajadoresSincronizados: any[] = [];
+
+                    for (const u of saasUsers) {
+                        const nombres = (u.nombres || u.email || '').trim();
+                        const apellidos = (u.apellidos || '').trim();
+                        const apellidosParts = apellidos.split(' ');
+                        const apellidopat = apellidosParts[0] || '.';
+                        const apellidomat = apellidosParts.slice(1).join(' ') || '.';
+                        const doc = (u.numeroDocumento || '').trim();
+                        const email = (u.email || '').trim().toLowerCase();
+                        const idperfil = mapPerfil(u.perfilCodigo);
+                        const estaActivo = u.estaActivo !== false;
+
+                        // Buscar coincidencia en la BD local
+                        let matched = personasLocales.find((p: any) => {
+                            if (doc && p.numerodoc && p.numerodoc.trim() === doc) return true;
+                            if (email && p.correo && p.correo.trim().toLowerCase() === email) return true;
+                            const localFull = `${p.nombres || ''} ${p.apellidopat || ''}`.toLowerCase().replace(/\s+/g, ' ').trim();
+                            const saasFull = `${nombres} ${apellidopat}`.toLowerCase().replace(/\s+/g, ' ').trim();
+                            return localFull && saasFull && (localFull.includes(saasFull) || saasFull.includes(localFull));
+                        });
+
+                        let idpersona = matched ? matched.idpersona : null;
+
+                        if (matched) {
+                            if (matched.idestado !== (estaActivo ? 1 : 0) || matched.idperfil !== idperfil) {
+                                await this.supabase
+                                    .from('persona')
+                                    .update({
+                                        idestado: estaActivo ? 1 : 0,
+                                        idperfil: idperfil,
+                                        celular: u.telefono || matched.celular,
+                                        direccion: u.direccion || matched.direccion
+                                    })
+                                    .eq('idpersona', matched.idpersona);
+                            }
+                        } else {
+                            const { data: nuevaPersona } = await this.supabase
+                                .from('persona')
+                                .insert({
+                                    nombres: nombres,
+                                    apellidopat: apellidopat,
+                                    apellidomat: apellidomat,
+                                    numerodoc: doc || null,
+                                    correo: email || null,
+                                    celular: u.telefono || null,
+                                    direccion: u.direccion || null,
+                                    idperfil: idperfil,
+                                    idestado: estaActivo ? 1 : 0,
+                                    tipo: '1'
+                                })
+                                .select()
+                                .single();
+
+                            if (nuevaPersona) {
+                                idpersona = nuevaPersona.idpersona;
+                            }
+                        }
+
+                        if (estaActivo && idpersona) {
+                            const perfilNombre = u.perfilNombre || this.getPerfilNombreDefault(idperfil);
+                            trabajadoresSincronizados.push({
+                                idpersona: idpersona,
+                                id: idpersona,
+                                id_persona: idpersona,
+                                saasId: u.id,
+                                usuarioId: u.usuarioId,
+                                personaId: u.personaId,
+                                nombres: nombres,
+                                apellidos: apellidos,
+                                apellidopat: apellidopat,
+                                apellidomat: apellidomat,
+                                nombreCompleto: u.nombreCompleto || `${nombres} ${apellidos}`.trim(),
+                                numerodoc: doc,
+                                correo: email,
+                                email: email,
+                                celular: u.telefono,
+                                direccion: u.direccion,
+                                idperfil: idperfil,
+                                perfilCodigo: u.perfilCodigo,
+                                perfilNombre: perfilNombre,
+                                perfil: { nombre: perfilNombre },
+                                estaActivo: estaActivo,
+                                idestado: 1
+                            });
+                        }
+                    }
+
+                    if (trabajadoresSincronizados.length > 0) {
+                        return { success: true, data: trabajadoresSincronizados, error: null };
+                    }
+                }
+            }
+        } catch (saasErr) {
+            console.warn('[SupabaseService] Error consultando SaaS Master, usando fallback local de persona:', saasErr);
+        }
+
+        // Fallback local a Supabase si no hay conexión con SaaS Master
+        const { data, error } = await this.supabase
+            .from('persona')
+            .select('*, perfil:idperfil(nombre)')
+            .is('deleted', null)
+            .eq('idestado', 1)
+            .order('nombres');
+
+        const fallbackData = (data || []).map((p: any) => {
+            const perfilNom = p.perfil?.nombre || this.getPerfilNombreDefault(p.idperfil);
+            return {
+                ...p,
+                nombreCompleto: `${p.nombres || ''} ${p.apellidopat || ''} ${p.apellidomat || ''}`.trim(),
+                perfilNombre: perfilNom,
+                perfil: { nombre: perfilNom }
+            };
+        });
+
+        return { success: !error, data: fallbackData, error };
     }
 
     // Reports

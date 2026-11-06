@@ -241,12 +241,19 @@ export class PersonalComponent implements OnInit {
         try {
             const perfilesSaaS = await this.saasMasterService.getPerfiles();
             if (perfilesSaaS && perfilesSaaS.length > 0) {
-                this.perfiles = perfilesSaaS.map(p => ({
-                    idperfil: this.mapPerfilCodeToId(p.codigo),
-                    codigo: p.codigo,
-                    nombre: p.nombre,
-                    descripcion: p.descripcion
-                }));
+                const mapUnicos = new Map<number, any>();
+                for (const p of perfilesSaaS) {
+                    const idperfil = this.mapPerfilCodeToId(p.codigo);
+                    if (!mapUnicos.has(idperfil)) {
+                        mapUnicos.set(idperfil, {
+                            idperfil: idperfil,
+                            codigo: p.codigo,
+                            nombre: p.nombre,
+                            descripcion: p.descripcion
+                        });
+                    }
+                }
+                this.perfiles = Array.from(mapUnicos.values());
                 return;
             }
             this.setDefaultPerfiles();
@@ -257,10 +264,10 @@ export class PersonalComponent implements OnInit {
 
     private setDefaultPerfiles() {
         this.perfiles = [
-            { idperfil: 1, codigo: 'ADMIN_RESTAURANTE', nombre: 'Administrador' },
+            { idperfil: 1, codigo: 'ADMIN_RESTAURANTE', nombre: 'Administrador de Restaurante' },
             { idperfil: 2, codigo: 'MOZO_RESTAURANTE', nombre: 'Mozo / Mesero' },
             { idperfil: 3, codigo: 'COCINERO_RESTAURANTE', nombre: 'Cocinero / Chef' },
-            { idperfil: 4, codigo: 'CAJERO_RESTAURANTE', nombre: 'Cajero' }
+            { idperfil: 4, codigo: 'CAJERO_RESTAURANTE', nombre: 'Cajero de Restaurante' }
         ];
     }
 
@@ -403,6 +410,13 @@ export class PersonalComponent implements OnInit {
                     });
                 }
 
+                // Sincronizar inmediatamente la tabla local persona con el personal actualizado de SaaS
+                try {
+                    await this.supabaseService.getTrabajadores(true);
+                } catch (e) {
+                    console.warn('[Personal] Sync local persona:', e);
+                }
+
                 this.personalDialog = false;
                 this.loadPersonal();
             } catch (error: any) {
@@ -429,10 +443,10 @@ export class PersonalComponent implements OnInit {
         const perfil = this.perfiles.find(p => p.idperfil === idperfil);
         if (perfil) return perfil.nombre;
         switch (Number(idperfil)) {
-            case 1: return 'Administrador';
+            case 1: return 'Administrador de Restaurante';
             case 2: return 'Mozo / Mesero';
             case 3: return 'Cocinero / Chef';
-            case 4: return 'Cajero';
+            case 4: return 'Cajero de Restaurante';
             default: return 'Colaborador';
         }
     }

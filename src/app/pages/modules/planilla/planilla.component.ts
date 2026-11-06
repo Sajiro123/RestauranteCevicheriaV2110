@@ -53,6 +53,10 @@ export class PlanillaComponent implements OnInit {
     planillas: RegistroPlanilla[] = [];
     empleados: any[] = [];
     empleadoSeleccionado: any = '';
+    empleadoSearchText: string = '';
+    empleadosSugeridos: any[] = [];
+    mostrarSugerencias: boolean = false;
+    cargandoPersonal: boolean = false;
 
     // Filtros principales
     fechaInicioFiltro: string = '';
@@ -146,17 +150,20 @@ export class PlanillaComponent implements OnInit {
             return;
         }
 
-        this.adelantos = (data || []).map((d: any) => ({
-            id_adelanto: d.id_adelanto,
-            idpersona: d.idpersona,
-            nombre_persona: d.persona?.nombres || 'Empleado',
-            monto: d.monto,
-            fecha_adelanto: d.fecha_adelanto,
-            estado: d.estado,
-            tipo: d.tipo ?? 1,
-            notas: d.notas,
-            created_at: d.created_at
-        }));
+        this.adelantos = (data || []).map((d: any) => {
+            const emp = this.empleados.find(e => (e.idpersona || e.id_persona) == d.idpersona);
+            return {
+                id_adelanto: d.id_adelanto,
+                idpersona: d.idpersona,
+                nombre_persona: emp?.nombreCompleto || d.persona?.nombres || 'Empleado',
+                monto: d.monto,
+                fecha_adelanto: d.fecha_adelanto,
+                estado: d.estado,
+                tipo: d.tipo ?? 1,
+                notas: d.notas,
+                created_at: d.created_at
+            };
+        });
 
         this.totalPendiente = this.adelantos.reduce((sum, a) => sum + Number(a.monto), 0);
     }
@@ -234,12 +241,71 @@ export class PlanillaComponent implements OnInit {
             this.empresaInfo = res.data[0];
         }
     }
-    async cargarEmpleados() {
-        const res = await this.supabaseService.getTrabajadores();
-        if (res.success) {
-            this.empleados = res.data || [];
+    async cargarEmpleados(forceRefresh: boolean = false) {
+        this.cargandoPersonal = true;
+        try {
+            const res = await this.supabaseService.getTrabajadores(forceRefresh);
+            if (res.success) {
+                this.empleados = res.data || [];
+                this.empleadosSugeridos = [...this.empleados];
+                if (this.empleadoSeleccionado) {
+                    const emp = this.empleados.find(e => (e.idpersona || e.id_persona) == this.empleadoSeleccionado);
+                    if (emp) this.empleadoSearchText = emp.nombreCompleto || emp.nombres;
+                }
+            } else {
+                console.error('Error al cargar empleados:', res.error);
+            }
+        } finally {
+            this.cargandoPersonal = false;
+        }
+    }
+
+    onSearchEmpleadoInput(event: Event) {
+        const text = (event.target as HTMLInputElement).value || '';
+        this.empleadoSearchText = text;
+        this.filterEmpleados(text);
+        this.mostrarSugerencias = true;
+    }
+
+    filterEmpleados(query: string) {
+        if (!query.trim()) {
+            this.empleadosSugeridos = [...this.empleados];
+            return;
+        }
+        const q = query.toLowerCase().trim();
+        this.empleadosSugeridos = this.empleados.filter((emp: any) => {
+            const nom = (emp.nombreCompleto || emp.nombres || '').toLowerCase();
+            const ape = (emp.apellidos || emp.apellidopat || '').toLowerCase();
+            const doc = (emp.numerodoc || '').toLowerCase();
+            const cargo = (emp.perfilNombre || emp.perfil?.nombre || '').toLowerCase();
+            return nom.includes(q) || ape.includes(q) || doc.includes(q) || cargo.includes(q);
+        });
+    }
+
+    seleccionarEmpleado(emp: any | null) {
+        if (!emp) {
+            this.empleadoSeleccionado = '';
+            this.empleadoSearchText = '';
         } else {
-            console.error('Error al cargar empleados:', res.error);
+            this.empleadoSeleccionado = emp.idpersona || emp.id_persona;
+            this.empleadoSearchText = emp.nombreCompleto || emp.nombres;
+        }
+        this.mostrarSugerencias = false;
+        this.listarPlanillas();
+    }
+
+    limpiarEmpleadoSeleccionado() {
+        this.empleadoSeleccionado = '';
+        this.empleadoSearchText = '';
+        this.mostrarSugerencias = false;
+        this.listarPlanillas();
+    }
+
+    async recargarPersonalSaaS() {
+        await this.cargarEmpleados(true);
+        await this.listarAdelantos();
+        if (this.fechaInicioFiltro && this.fechaFinFiltro) {
+            await this.listarPlanillas();
         }
     }
 
@@ -385,8 +451,8 @@ export class PlanillaComponent implements OnInit {
 
             this.planillasGeneradas.push({
                 idpersona: id,
-                nombre_persona: emp.nombres,
-                cargo_persona: emp.perfil?.nombre || 'Personal',
+                nombre_persona: emp.nombreCompleto || emp.nombres,
+                cargo_persona: emp.perfilNombre || emp.perfil?.nombre || 'Personal',
                 salario: salarioBase,
                 dias_trabajados: dias,
                 tardanzas_cantidad_dias: 0,
@@ -952,11 +1018,13 @@ export class PlanillaComponent implements OnInit {
         }
 
         if (data) {
-            this.planillas = data.map((d: any) => ({
-                id_planilla: d.id_planilla,
-                idpersona: d.idpersona,
-                nombre_persona: d.persona?.nombres || 'Empleado',
-                cargo_persona: 'Personal',
+            this.planillas = data.map((d: any) => {
+                const emp = this.empleados.find(e => (e.idpersona || e.id_persona) == d.idpersona);
+                return {
+                    id_planilla: d.id_planilla,
+                    idpersona: d.idpersona,
+                    nombre_persona: emp?.nombreCompleto || d.persona?.nombres || 'Empleado',
+                    cargo_persona: emp?.perfilNombre || emp?.perfil?.nombre || 'Personal',
                 salario: d.salario,
                 dias_trabajados: d.dias_trabajados,
                 tardanzas_cantidad_dias: d.tardanzas_cantidad_dias,
@@ -968,7 +1036,8 @@ export class PlanillaComponent implements OnInit {
                 laborfin: d.laborfin,
                 observacion: d.observacion,
                 frecuencia: d.frecuencia
-            }));
+                };
+            });
         }
     }
 }

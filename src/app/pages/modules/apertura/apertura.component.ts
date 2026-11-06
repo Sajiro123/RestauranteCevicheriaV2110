@@ -576,9 +576,9 @@ export class AperturaComponent {
         });
     }
 
-    getWorkerName(idpersona: number): string {
-        const worker = this.trabajadoresList.find((t: any) => t.idpersona === idpersona);
-        return worker ? worker.nombres : `Trabajador #${idpersona}`;
+    getWorkerName(idpersona: any): string {
+        const worker = this.trabajadoresList.find((t: any) => t.idpersona == idpersona || t.id == idpersona || t.saasId == idpersona);
+        return worker ? (worker.nombreCompleto || worker.nombres) : `Trabajador #${idpersona}`;
     }
 
     getWorkerInitials(idpersona: number): string {

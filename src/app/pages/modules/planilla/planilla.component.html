@@ -22,13 +22,40 @@
                 (onClearClick)="onClearRangoFechas()" [showButtonBar]="true" [style]="{ 'min-width': '260px' }">
             </p-datepicker>
         </div>
-        <div class="filter-group">
-            <span class="filter-label">Buscar Empleado</span>
-            <select class="date-input" [(ngModel)]="empleadoSeleccionado">
-                <option value="">Todos los empleados</option>
-                <option *ngFor="let emp of empleados" [value]="emp.idpersona || emp.id_persona">{{ emp.nombres }}
-                </option>
-            </select>
+        <div class="filter-group autocomplete-container" style="position: relative;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span class="filter-label">Buscar Empleado</span>
+                <button type="button" class="btn-sync-saas" (click)="recargarPersonalSaaS()" title="Actualizar personal desde SaaS" [disabled]="cargandoPersonal">
+                    <i class="pi pi-sync" [class.pi-spin]="cargandoPersonal"></i> SaaS
+                </button>
+            </div>
+            <div class="autocomplete-input-wrapper">
+                <i class="pi pi-search search-icon"></i>
+                <input
+                    type="text"
+                    class="date-input emp-search-input"
+                    [(ngModel)]="empleadoSearchText"
+                    (input)="onSearchEmpleadoInput($event)"
+                    (focus)="mostrarSugerencias = true"
+                    placeholder="Escriba nombre o DNI..."
+                />
+                <button *ngIf="empleadoSearchText" type="button" class="btn-clear-search" (click)="limpiarEmpleadoSeleccionado()">
+                    <i class="pi pi-times"></i>
+                </button>
+            </div>
+            <!-- Dropdown desplegable de autocompletado -->
+            <div *ngIf="mostrarSugerencias && empleadosSugeridos.length > 0" class="autocomplete-dropdown shadow-lg">
+                <div class="autocomplete-item all-item" (click)="seleccionarEmpleado(null)">
+                    <div class="item-title"><i class="pi pi-users" style="margin-right: 4px;"></i> Todos los empleados ({{ empleados.length }})</div>
+                </div>
+                <div *ngFor="let emp of empleadosSugeridos" class="autocomplete-item" (click)="seleccionarEmpleado(emp)">
+                    <div class="item-title">{{ emp.nombreCompleto || emp.nombres }}</div>
+                    <div class="item-subtitle">
+                        <span class="role-tag"><i class="pi pi-briefcase" style="font-size: 10px;"></i> {{ emp.perfilNombre || emp.perfil?.nombre || 'Personal' }}</span>
+                        <span *ngIf="emp.numerodoc" class="doc-tag">DNI: {{ emp.numerodoc }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="filter-actions-group">
             <button class="btn btn-ghost" style="border: 1px solid #d1d5db;" (click)="listarPlanillas()">
@@ -414,7 +441,7 @@
                         [class.input-error]="adelantoForm.get('idpersona')?.invalid && adelantoForm.get('idpersona')?.touched">
                         <option [ngValue]="null" disabled>Seleccionar trabajador...</option>
                         <option *ngFor="let emp of empleados" [value]="emp.idpersona || emp.id_persona">
-                            {{ emp.nombres }}
+                            {{ emp.nombreCompleto || emp.nombres }} — {{ emp.perfilNombre || emp.perfil?.nombre || 'Personal' }}
                         </option>
                     </select>
                     <span class="error-hint"
