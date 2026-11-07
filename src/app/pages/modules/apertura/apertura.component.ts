@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, DebugElement } from '@angular/core';
 import { Router } from '@angular/router';
 import { AperturaService } from '../../service/apertura.service';
+import { SupabaseService } from '../../../services/supabase.service';
 import { PedidoService } from '../../service/pedido.service';
 import { ImportsModule } from '../../imports';
 import { CommonModule } from '@angular/common';
@@ -41,9 +42,12 @@ export class AperturaComponent {
     gastoEditando: any = null;
     modoEdicion = false;
 
+    private visibilityHandler?: () => void;
+
     constructor(
         private AperturaService_: AperturaService,
         private pedidoService_: PedidoService,
+        private supabaseService: SupabaseService,
         private fb: FormBuilder,
         private messageService: MessageService,
         private confirmationService: ConfirmationService,
@@ -82,12 +86,43 @@ export class AperturaComponent {
         });
     }
 
-    ngOnInit(): void {
-        this.fechaActual = getFechaPeru();
-        this.fecha_actual = getFechaTextoPeru();
+    async ngOnInit(): Promise<void> {
+        await this.sincronizarFechaServidor();
         this.ListAperturaNow();
         this.ListGastos();
         this.ListarTrabajadores();
+
+        // Refrescar automáticamente al reanudar la PC o volver a la pestaña
+        this.visibilityHandler = async () => {
+            if (document.visibilityState === 'visible') {
+                const prev = this.fechaActual;
+                await this.sincronizarFechaServidor();
+                if (prev !== this.fechaActual) {
+                    console.log('[Apertura] Cambio de día detectado al despertar. Refrescando datos...');
+                    this.ListAperturaNow();
+                    this.ListGastos();
+                }
+            }
+        };
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+        window.addEventListener('focus', this.visibilityHandler);
+    }
+
+    ngOnDestroy(): void {
+        if (this.visibilityHandler) {
+            document.removeEventListener('visibilitychange', this.visibilityHandler);
+            window.removeEventListener('focus', this.visibilityHandler);
+        }
+    }
+
+    async sincronizarFechaServidor(): Promise<void> {
+        try {
+            this.fechaActual = await this.supabaseService.getFechaPeruHoy();
+        } catch (e) {
+            this.fechaActual = getFechaPeru();
+        }
+        this.fecha_actual = getFechaTextoPeru(this.fechaActual);
+        this.cd.detectChanges();
     }
 
     GuardarCaja() {
@@ -494,6 +529,18 @@ export class AperturaComponent {
                 this.data_apertura = []; // Limpiar antes de asignar
                 if (response.data && response.data.length > 0) {
                     const apertura = response.data[0];
+
+                    // Validar estrictamente con la fecha actual del servidor
+                    if (this.fechaActual && apertura.fecha !== this.fechaActual) {
+                        this.estado_caja = null;
+                        this.texto_estado_caja = 'Abrir Caja?';
+                        this.cajaForm.enable();
+                        this.cajaForm.reset({ caja: '1', estado: 1, monto: '', trabajadores: [] });
+                        this.data_apertura = [];
+                        this.cd.detectChanges();
+                        return;
+                    }
+
                     this.estado_caja = apertura.estado ?? null;
 
                     switch (this.estado_caja) {
@@ -561,8 +608,8 @@ export class AperturaComponent {
         return estus;
     }
 
-    ListGastos() {
-        const fecha = getFechaPeru();
+    async ListGastos() {
+        const fecha = this.fechaActual || await this.supabaseService.getFechaPeruHoy();
         this.AperturaService_.ListGastos(fecha).subscribe((response) => {
             if (response.success) {
                 if (response.data) {

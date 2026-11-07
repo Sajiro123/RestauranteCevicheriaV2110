@@ -23,76 +23,69 @@ export class AperturaService {
     }
 
     registrarCaja(value: any): Observable<any> {
-        debugger
-        const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
-        var trabajadores = "";
+        return from((async () => {
+            const fechaPeru = await this.supabaseService.getFechaPeruHoy();
+            let trabajadores = '';
 
-        value.trabajadores.forEach((element: any) => {
-            trabajadores += element + ",";
-        });
-        trabajadores = trabajadores.replace(/,\s*$/, "");
-        const aperturaData = {
-            fecha: fechaPeru,
-            total: value.monto,
-            estado: 1,
-            responsable: value.responsable,
-            trabajadores: trabajadores,
-            turno: value.turno,
-            id_created_at: 1
-        };
+            (value.trabajadores || []).forEach((element: any) => {
+                trabajadores += element + ',';
+            });
+            trabajadores = trabajadores.replace(/,\s*$/, '');
+            const aperturaData = {
+                fecha: fechaPeru,
+                total: value.monto,
+                estado: 1,
+                responsable: value.responsable,
+                trabajadores: trabajadores,
+                turno: value.turno,
+                id_created_at: 1
+            };
 
-        return from(this.supabaseService.insertAperturaCaja(aperturaData));
+            return await this.supabaseService.insertAperturaCaja(aperturaData);
+        })());
     }
 
     registrarGastos(value: any): Observable<any> {
-        const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
+        return from((async () => {
+            const fechaPeru = await this.supabaseService.getFechaPeruHoy();
+            const gastoData = {
+                descripcion: value.descripcion,
+                idcategoriagastos: value.categoria,
+                monto: value.monto,
+                fecha: fechaPeru,
+                notas: value.notas,
+                id_created_at: 1
+            };
 
-        const gastoData = {
-            descripcion: value.descripcion,
-            idcategoriagastos: value.categoria,
-            monto: value.monto,
-            fecha: fechaPeru,
-            notas: value.notas,
-            id_created_at: 1
-        };
-
-        return from(this.supabaseService.insertGasto(gastoData));
+            return await this.supabaseService.insertGasto(gastoData);
+        })());
     }
 
-    cerrarCaja(value: any): Observable<any> {
-        const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
-        return from(this.supabaseService.cerrarCaja(fechaPeru));
+    cerrarCaja(value?: any): Observable<any> {
+        return from((async () => {
+            const fechaPeru = await this.supabaseService.getFechaPeruHoy();
+            return await this.supabaseService.cerrarCaja(fechaPeru);
+        })());
     }
 
     actualizarCaja(value: any): Observable<any> {
-        const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
-        let trabajadores = '';
-        value.trabajadores.forEach((element: any) => {
-            trabajadores += element + ',';
-        });
-        trabajadores = trabajadores.replace(/,\s*$/, '');
+        return from((async () => {
+            const fechaPeru = await this.supabaseService.getFechaPeruHoy();
+            let trabajadores = '';
+            (value.trabajadores || []).forEach((element: any) => {
+                trabajadores += element + ',';
+            });
+            trabajadores = trabajadores.replace(/,\s*$/, '');
 
-        const updateData = {
-            total: value.monto,
-            responsable: value.responsable,
-            trabajadores: trabajadores,
-            turno: value.turno
-        };
-        return from(this.supabaseService.updateAperturaCaja(fechaPeru, updateData));
+            const updateData = {
+                total: value.monto,
+                responsable: value.responsable,
+                trabajadores: trabajadores,
+                turno: value.turno
+            };
+            return await this.supabaseService.updateAperturaCaja(fechaPeru, updateData);
+        })());
     }
-
 
     eliminarGasto(idgastos: number): Observable<any> {
         return from(this.supabaseService.softDeleteGasto(idgastos));

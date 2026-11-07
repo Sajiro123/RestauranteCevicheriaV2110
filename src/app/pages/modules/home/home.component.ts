@@ -181,6 +181,10 @@ export class HomeComponent {
     // Caja status properties
     cajaAbierta: boolean = false;
     verificandoCaja: boolean = true;
+    lastCajaCheckDate: string = '';
+    private visibilityHandler?: () => void;
+    private focusHandler?: () => void;
+    private checkDateInterval?: any;
 
     // Comprobante (Boleta / Factura)
     comprobanteDialog: boolean = false;
@@ -193,20 +197,66 @@ export class HomeComponent {
     Comprobante_PDF_Dialog: boolean = false;
 
     async verificarCajaAbierta(): Promise<void> {
-        return new Promise((resolve) => {
-            this.aperturaService.ListarAperturaHoy().subscribe((response) => {
-                if (response.success && response.data && response.data.length > 0) {
-                    this.AperturaHoy = response.data;
-                    // Check if caja is open (estado === 1 or estado === 2)
-                    this.cajaAbierta = response.data[0].estado == 1 || response.data[0].estado == 2;
-                    this.verificandoCaja = false;
-                } else {
-                    this.cajaAbierta = false;
-                    this.verificandoCaja = false;
-                }
-                resolve();
+        this.verificandoCaja = true;
+        try {
+            const fechaHoy = await this.supabaseService.getFechaPeruHoy();
+            this.lastCajaCheckDate = fechaHoy;
+
+            return new Promise((resolve) => {
+                this.aperturaService.ListarAperturaHoy().subscribe({
+                    next: (response) => {
+                        if (response.success && response.data && response.data.length > 0) {
+                            const apertura = response.data[0];
+                            // Validar estrictamente que la apertura pertenezca al día de hoy oficial
+                            if (apertura && apertura.fecha === fechaHoy) {
+                                this.AperturaHoy = response.data;
+                                // Caja abierta si estado === 1 (abierta) o 2 (cerrada pero de hoy)
+                                this.cajaAbierta = apertura.estado == 1 || apertura.estado == 2;
+                            } else {
+                                this.AperturaHoy = null;
+                                this.cajaAbierta = false;
+                            }
+                        } else {
+                            this.AperturaHoy = null;
+                            this.cajaAbierta = false;
+                        }
+                        this.verificandoCaja = false;
+                        this.cd.detectChanges();
+                        resolve();
+                    },
+                    error: (err) => {
+                        console.error('Error al verificar caja abierta:', err);
+                        this.AperturaHoy = null;
+                        this.cajaAbierta = false;
+                        this.verificandoCaja = false;
+                        this.cd.detectChanges();
+                        resolve();
+                    }
+                });
             });
-        });
+        } catch (e) {
+            console.error('Error obteniendo fecha del servidor:', e);
+            this.verificandoCaja = false;
+            this.cd.detectChanges();
+        }
+    }
+
+    async verificarCambioDeDia(): Promise<void> {
+        try {
+            const fechaActual = await this.supabaseService.getFechaPeruHoy();
+            if (this.lastCajaCheckDate && this.lastCajaCheckDate !== fechaActual) {
+                console.log(`[AutoRefresh] Cambio de día detectado: ${this.lastCajaCheckDate} -> ${fechaActual}. Actualizando estado de caja...`);
+                await this.verificarCajaAbierta();
+                if (this.cajaAbierta) {
+                    await this.cargarMesas();
+                } else {
+                    this.mesas = [];
+                    this.cd.detectChanges();
+                }
+            }
+        } catch (err) {
+            console.warn('[AutoRefresh] Error comprobando cambio de día:', err);
+        }
     }
 
     irAApertura(): void {
@@ -304,6 +354,23 @@ export class HomeComponent {
             // Only proceed with initialization if user is authenticated
         });
 
+        // Detección automática al reanudar la PC o volver a la pestaña (evita estado del día anterior)
+        this.visibilityHandler = () => {
+            if (document.visibilityState === 'visible') {
+                this.verificarCambioDeDia();
+            }
+        };
+        this.focusHandler = () => {
+            this.verificarCambioDeDia();
+        };
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+        window.addEventListener('focus', this.focusHandler);
+
+        // Verificación periódica cada 3 minutos en caso la PC quede encendida durante medianoche
+        this.checkDateInterval = setInterval(() => {
+            this.verificarCambioDeDia();
+        }, 3 * 60 * 1000);
+
         // Setup timer to actively update elapsed times
         this.timeUpdateSubscription = interval(30000).subscribe(() => {
             // Force change detection every 30 seconds to update the active order timers
@@ -339,6 +406,15 @@ export class HomeComponent {
     }
 
     ngOnDestroy(): void {
+        if (this.visibilityHandler) {
+            document.removeEventListener('visibilitychange', this.visibilityHandler);
+        }
+        if (this.focusHandler) {
+            window.removeEventListener('focus', this.focusHandler);
+        }
+        if (this.checkDateInterval) {
+            clearInterval(this.checkDateInterval);
+        }
         if (this.authSubscription) {
             this.authSubscription.unsubscribe();
         }

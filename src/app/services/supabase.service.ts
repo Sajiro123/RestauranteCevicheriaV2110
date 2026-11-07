@@ -14,7 +14,13 @@ export class SupabaseService {
                 persistSession: true,
                 autoRefreshToken: true,
                 storageListener: false
-            } as any // 👈 forzamos a TypeScript a no quejarse,
+            } as any,
+            global: {
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache'
+                }
+            }
         });
     }
 
@@ -237,19 +243,28 @@ export class SupabaseService {
         return { success: !error, data, error };
     }
 
-    // Apertura caja operations
-    async getAperturaHoy() {
-        const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
+    // Apertura caja operations - Sincronizado con fecha oficial del servidor
+    async getAperturaHoy(): Promise<{ success: boolean; data: any[]; error: any; fechaConsultada: string }> {
+        const fechaPeru = await this.getFechaPeruHoy();
 
-        const { data, error } = await this.supabase.from('apertura_caja').select('*').eq('fecha', fechaPeru).is('deleted', null).maybeSingle();
+        const { data, error } = await this.supabase
+            .from('apertura_caja')
+            .select('*')
+            .eq('fecha', fechaPeru)
+            .is('deleted', null)
+            .maybeSingle();
 
-        return { success: !error, data: data ? [data] : [], error };
+        // Validar estrictamente que el registro pertenezca a la fecha oficial del servidor
+        const dataValida = (data && data.fecha === fechaPeru) ? [data] : [];
+
+        return { success: !error, data: dataValida, error, fechaConsultada: fechaPeru };
     }
 
     async insertAperturaCaja(aperturaData: any) {
+        if (!aperturaData.fecha) {
+            aperturaData.fecha = await this.getFechaPeruHoy();
+        }
+
         // Validación de anti-duplicidad: verificar si ya existe caja para esa fecha
         const { data: existing } = await this.supabase
             .from('apertura_caja')
@@ -271,8 +286,9 @@ export class SupabaseService {
         return { success: !error, data, error };
     }
 
-    async cerrarCaja(fecha: string) {
-        const { data, error } = await this.supabase.from('apertura_caja').update({ estado: 2 }).eq('fecha', fecha).is('deleted', null);
+    async cerrarCaja(fecha?: string) {
+        const fechaPeru = fecha || await this.getFechaPeruHoy();
+        const { data, error } = await this.supabase.from('apertura_caja').update({ estado: 2 }).eq('fecha', fechaPeru).is('deleted', null);
 
         return { success: !error, data, error };
     }

@@ -154,7 +154,7 @@ export class AperturasComponent implements OnInit {
             await this.cargarTrabajadores();
         }
 
-        const hoyPeru = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        const hoyPeru = await this.supabase.getFechaPeruHoy();
         this.nuevaForm.reset({
             fecha: hoyPeru,
             turno: 'Mañana',
@@ -166,9 +166,9 @@ export class AperturasComponent implements OnInit {
         this.nuevaAperturaVisible = true;
     }
 
-    onFechaNuevaChange(nuevaFecha: string) {
+    async onFechaNuevaChange(nuevaFecha: string) {
         if (!nuevaFecha) return;
-        const hoyPeru = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        const hoyPeru = await this.supabase.getFechaPeruHoy();
         if (nuevaFecha < hoyPeru) {
             // Fecha anterior: sugerir estado Cerrada (2) para regularizaciones
             this.nuevaForm.patchValue({ estado: 2 });
