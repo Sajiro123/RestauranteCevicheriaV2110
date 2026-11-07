@@ -31,7 +31,8 @@
                     </div>
 
                     <!-- Atajos de selección de mes -->
-                    <div class="filter-shortcuts">
+                    <!-- Atajos de selección de mes (Solo visible para el Administrador) -->
+                    <div class="filter-shortcuts" *ngIf="esAdmin">
                         <button type="button" class="btn-quick-date" (click)="seleccionarMesActual()" title="Ver todo el mes actual (del 1 al último día)">
                             <i class="pi pi-calendar"></i> Este Mes
                         </button>

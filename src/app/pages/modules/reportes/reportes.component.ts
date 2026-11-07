@@ -39,6 +39,7 @@ export class ReportesComponent implements OnInit {
     PedidoReporteSinCobrar: any[] = [];
     array_data = [] as any;
     array_data_total: any = {};
+    esAdmin: boolean = false;
     allClientsData: any[] = [];
     mostrarDiasSinVentas: boolean = true;
     cargandoConsolidado: boolean = false;
@@ -100,14 +101,17 @@ export class ReportesComponent implements OnInit {
             return;
         }
 
-        const idperfil = JSON.parse(localStorage.getItem('currentUser') || '{}').idperfil || 0;
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const idperfil = currentUser.idperfil || 0;
+        this.esAdmin = (idperfil == 1);
 
-        if (idperfil != 1) {
+        if (!this.esAdmin) {
+            // No admin: solo consultar hasta 3 días atrás
             const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
+            const threeDaysAgo = new Date(today);
+            threeDaysAgo.setDate(today.getDate() - 3);
 
-            this.minDate = yesterday;
+            this.minDate = threeDaysAgo;
             this.maxDate = today;
         } else {
             // Admin: sin restricción de fechas
@@ -700,6 +704,7 @@ export class ReportesComponent implements OnInit {
     }
 
     seleccionarMesActual() {
+        if (!this.esAdmin) return;
         const now = new Date();
         const y = now.getFullYear();
         const m = now.getMonth();
@@ -710,6 +715,7 @@ export class ReportesComponent implements OnInit {
     }
 
     seleccionarMesAnterior() {
+        if (!this.esAdmin) return;
         const now = new Date();
         const y = now.getFullYear();
         const m = now.getMonth();
@@ -720,6 +726,7 @@ export class ReportesComponent implements OnInit {
     }
 
     seleccionarUltimos30Dias() {
+        if (!this.esAdmin) return;
         const fin = new Date();
         const inicio = new Date();
         inicio.setDate(fin.getDate() - 30);
