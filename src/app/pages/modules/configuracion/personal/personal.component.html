@@ -232,8 +232,9 @@
     </div>
 
     <!-- ── DIALOG DE CREACIÓN / EDICIÓN ── -->
-    <p-dialog [(visible)]="personalDialog" [style]="{ width: '620px' }" [modal]="true"
-        [closable]="true" styleClass="personal-dialog" [formGroup]="personalForm">
+    <p-dialog [(visible)]="personalDialog" [style]="{ width: '680px', maxWidth: '95vw' }" [modal]="true"
+        [closable]="true" [dismissableMask]="false" [closeOnEscape]="false" appendTo="body"
+        styleClass="personal-dialog" [formGroup]="personalForm">
         <ng-template pTemplate="header">
             <div class="dialog-header-custom">
                 <div class="dialog-header-icon">
@@ -280,7 +281,7 @@
 
                     <div class="form-field">
                         <label for="cumpleanos">Fecha de Cumpleaños</label>
-                        <p-datepicker formControlName="cumpleanos" inputId="cumpleanos" placeholder="dd/mm/aaaa" fluid />
+                        <p-datepicker formControlName="cumpleanos" inputId="cumpleanos" placeholder="dd/mm/aaaa" fluid appendTo="body" />
                     </div>
                 </div>
 
@@ -340,6 +341,7 @@
                         <label for="idperfil">Cargo / Perfil <span class="req">*</span></label>
                         <p-select formControlName="idperfil" inputId="idperfil" [options]="perfiles"
                             optionLabel="nombre" optionValue="idperfil" placeholder="Seleccione un cargo" fluid
+                            appendTo="body" [scrollHeight]="'220px'"
                             [class.ng-invalid]="personalForm.get('idperfil')?.invalid && submitted" />
                         <small class="error-msg" *ngIf="submitted && personalForm.get('idperfil')?.errors?.['required']">
                             El cargo es obligatorio
@@ -349,7 +351,7 @@
                     <div class="form-field">
                         <label for="idestado">Estado Operativo <span class="req">*</span></label>
                         <p-select formControlName="idestado" inputId="idestado" [options]="estados" optionLabel="label"
-                            optionValue="value" placeholder="Seleccione estado" fluid />
+                            optionValue="value" placeholder="Seleccione estado" fluid appendTo="body" [scrollHeight]="'220px'" />
                     </div>
                 </div>
 
