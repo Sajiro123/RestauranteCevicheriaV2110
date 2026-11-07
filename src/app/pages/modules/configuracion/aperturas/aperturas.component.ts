@@ -45,6 +45,11 @@ export class AperturasComponent implements OnInit {
     editForm: FormGroup;
     aperturaEditando: AperturaCaja | null = null;
 
+    // Modal regularizar / nueva apertura
+    nuevaAperturaVisible = false;
+    guardandoNueva = false;
+    nuevaForm: FormGroup;
+
     constructor(
         private supabase: SupabaseService,
         private aperturaService: AperturaService,
@@ -52,11 +57,12 @@ export class AperturasComponent implements OnInit {
         private messageService: MessageService,
         private confirmationService: ConfirmationService
     ) {
-        // Rango por defecto: últimos 30 días
+        // Rango por defecto: últimos 30 días en horario de Perú
         const hoy = new Date();
+        const hoyStr = hoy.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
         const hace30 = new Date();
         hace30.setDate(hoy.getDate() - 30);
-        this.fechaHasta = hoy.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        this.fechaHasta = hoyStr;
         this.fechaDesde = hace30.toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
 
         this.editForm = this.fb.group({
@@ -65,6 +71,15 @@ export class AperturasComponent implements OnInit {
             total: [0, [Validators.required, Validators.min(0)]],
             trabajadores: [[], Validators.required],
             estado: [1, Validators.required]
+        });
+
+        this.nuevaForm = this.fb.group({
+            fecha: [hoyStr, Validators.required],
+            turno: ['Mañana', Validators.required],
+            responsable: ['', Validators.required],
+            total: [0, [Validators.required, Validators.min(0)]],
+            trabajadores: [[], Validators.required],
+            estado: [2, Validators.required] // Por defecto 2 (Cerrada) para regularizaciones
         });
     }
 
@@ -81,7 +96,13 @@ export class AperturasComponent implements OnInit {
     async buscar() {
         if (!this.fechaDesde || !this.fechaHasta) return;
         this.cargando = true;
-        const { data, error } = await this.supabase.client.from('apertura_caja').select('*').gte('fecha', this.fechaDesde).lte('fecha', this.fechaHasta).is('deleted', null).order('fecha', { ascending: false });
+        const { data, error } = await this.supabase.client
+            .from('apertura_caja')
+            .select('*')
+            .gte('fecha', this.fechaDesde)
+            .lte('fecha', this.fechaHasta)
+            .is('deleted', null)
+            .order('fecha', { ascending: false });
 
         this.cargando = false;
         if (error) {
@@ -94,14 +115,14 @@ export class AperturasComponent implements OnInit {
             trabajadoresArray: a.trabajadores
                 ? a.trabajadores
                       .split(',')
-                      .map((id: string) => parseInt(id.trim()))
+                      .map((id: string) => parseInt(id.trim(), 10))
                       .filter((id: number) => !isNaN(id))
                 : []
         }));
     }
 
     getEstadoBadge(estado: number): { label: string; cls: string } {
-        return estado == 1 ? { label: 'Abierta', cls: 'badge-open' } : { label: 'Cerrada', cls: 'badge-closed' };
+        return Number(estado) === 1 ? { label: 'Abierta', cls: 'badge-open' } : { label: 'Cerrada', cls: 'badge-closed' };
     }
 
     getNombreTrabajador(id: number): string {
@@ -127,6 +148,167 @@ export class AperturasComponent implements OnInit {
         return diasSemana[fechaObj.getDay()];
     }
 
+    // ── GESTIÓN DE NUEVA / REGULARIZAR APERTURA ──────────────────────
+    async abrirNuevaApertura() {
+        if (!this.trabajadoresList || this.trabajadoresList.length === 0) {
+            await this.cargarTrabajadores();
+        }
+
+        const hoyPeru = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        this.nuevaForm.reset({
+            fecha: hoyPeru,
+            turno: 'Mañana',
+            responsable: '',
+            total: 0,
+            trabajadores: [],
+            estado: 1 // Si es hoy, sugerir abierta
+        });
+        this.nuevaAperturaVisible = true;
+    }
+
+    onFechaNuevaChange(nuevaFecha: string) {
+        if (!nuevaFecha) return;
+        const hoyPeru = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+        if (nuevaFecha < hoyPeru) {
+            // Fecha anterior: sugerir estado Cerrada (2) para regularizaciones
+            this.nuevaForm.patchValue({ estado: 2 });
+        } else if (nuevaFecha === hoyPeru) {
+            // Fecha de hoy: sugerir estado Abierta (1)
+            this.nuevaForm.patchValue({ estado: 1 });
+        }
+    }
+
+    async guardarNuevaApertura() {
+        if (this.nuevaForm.invalid) {
+            this.nuevaForm.markAllAsTouched();
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Campos requeridos',
+                detail: 'Por favor completa todos los campos obligatorios.',
+                life: 3500
+            });
+            return;
+        }
+
+        const val = this.nuevaForm.value;
+        const trabajadoresArr = Array.isArray(val.trabajadores) ? val.trabajadores : [];
+        if (trabajadoresArr.length === 0) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Personal requerido',
+                detail: 'Debes seleccionar al menos un colaborador asignado a la jornada.',
+                life: 3500
+            });
+            return;
+        }
+
+        this.guardandoNueva = true;
+
+        // Verificar si ya existe una apertura para esta fecha y turno
+        try {
+            const { data: existing, error: checkError } = await this.supabase.client
+                .from('apertura_caja')
+                .select('id, fecha, turno, responsable, total, estado')
+                .eq('fecha', val.fecha)
+                .eq('turno', val.turno)
+                .is('deleted', null)
+                .maybeSingle();
+
+            if (checkError) {
+                console.error('Error verificando apertura existente:', checkError);
+            }
+
+            if (existing) {
+                this.guardandoNueva = false;
+                this.confirmationService.confirm({
+                    message: `Ya existe una apertura registrada para el día <strong>${val.fecha}</strong> en el turno <strong>${val.turno}</strong> (Responsable: ${existing.responsable || 'Sin asignar'}).<br><br>¿Deseas registrar esta nueva apertura de todas formas?`,
+                    header: 'Apertura Existente',
+                    icon: 'pi pi-exclamation-triangle',
+                    acceptLabel: 'Sí, registrar',
+                    rejectLabel: 'Cancelar',
+                    accept: () => {
+                        this.ejecutarGuardadoApertura(val, trabajadoresArr);
+                    }
+                });
+                return;
+            }
+
+            await this.ejecutarGuardadoApertura(val, trabajadoresArr);
+        } catch (err: any) {
+            this.guardandoNueva = false;
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: err.message || 'Error inesperado al verificar duplicidad.',
+                life: 3500
+            });
+        }
+    }
+
+    private async ejecutarGuardadoApertura(val: any, trabajadoresArr: number[]) {
+        this.guardandoNueva = true;
+        try {
+            const trabajadoresStr = trabajadoresArr.join(',');
+            const payload = {
+                fecha: val.fecha,
+                total: Number(val.total) || 0,
+                estado: Number(val.estado),
+                responsable: val.responsable,
+                trabajadores: trabajadoresStr,
+                turno: val.turno,
+                id_created_at: 1,
+                created_at: new Date().toISOString()
+            };
+
+            const { data, error } = await this.supabase.client
+                .from('apertura_caja')
+                .insert(payload)
+                .select()
+                .single();
+
+            this.guardandoNueva = false;
+
+            if (error) {
+                console.error('Error insertando en apertura_caja:', error);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: error.message || 'No se pudo registrar la apertura en la base de datos.',
+                    life: 3500
+                });
+                return;
+            }
+
+            this.messageService.add({
+                severity: 'success',
+                summary: 'Apertura Regularizada',
+                detail: `Apertura del ${val.fecha} (${val.turno}) registrada correctamente.`,
+                life: 3500
+            });
+
+            this.nuevaAperturaVisible = false;
+
+            // Ajustar rango de fechas si la fecha está fuera de la búsqueda actual
+            if (val.fecha < this.fechaDesde) {
+                this.fechaDesde = val.fecha;
+            }
+            if (val.fecha > this.fechaHasta) {
+                this.fechaHasta = val.fecha;
+            }
+
+            await this.buscar();
+        } catch (err: any) {
+            this.guardandoNueva = false;
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: err.message || 'Error al procesar el guardado de la apertura.',
+                life: 3500
+            });
+        }
+    }
+
+    // ── GESTIÓN DE EDICIÓN ──────────────────────────────────────────
     abrirEditar(apertura: AperturaCaja) {
         this.aperturaEditando = apertura;
         this.editForm.patchValue({
@@ -134,7 +316,7 @@ export class AperturasComponent implements OnInit {
             turno: apertura.turno,
             total: Number(apertura.total),
             trabajadores: apertura.trabajadoresArray || [],
-            estado: Number(apertura.estado)  // forzar int para que [ngValue] coincida
+            estado: Number(apertura.estado) // forzar int para que [ngValue] coincida
         });
         this.editVisible = true;
     }
@@ -157,7 +339,7 @@ export class AperturasComponent implements OnInit {
                 turno: val.turno,
                 total: val.total,
                 trabajadores: trabajadoresStr,
-                estado: Number(val.estado)   // guardar como int en Supabase
+                estado: Number(val.estado) // guardar como int en Supabase
             })
             .eq('id', this.aperturaEditando.id);
 
@@ -193,7 +375,7 @@ export class AperturasComponent implements OnInit {
 
     get resumenAsistencia(): { nombre: string; asistencias: number }[] {
         const conteo: { [id: number]: number } = {};
-        
+
         this.aperturas.forEach((a) => {
             if (a.trabajadoresArray) {
                 a.trabajadoresArray.forEach((id) => {

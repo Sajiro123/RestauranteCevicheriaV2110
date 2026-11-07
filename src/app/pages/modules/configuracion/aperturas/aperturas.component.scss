@@ -66,6 +66,54 @@ $closed-dot: #ef4444;
     }
 }
 
+
+.ap-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-nueva-apertura {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    height: 42px;
+    padding: 0 1.35rem;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+
+    i {
+        font-size: 1rem;
+        transition: transform 0.2s ease;
+    }
+
+    &:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+
+        i {
+            transform: rotate(90deg);
+        }
+    }
+
+    &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    }
+}
+
 .ap-title-block {
     display: flex;
     align-items: center;
@@ -918,3 +966,52 @@ tbody td {
     font-size: 0.7rem;
 }
 
+
+
+// ── REGULARIZAR BANNER & HELPERS ──────────────────────────────
+.regularizar-info-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    background: #f0f7ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+
+    .banner-icon {
+        color: #2563eb;
+        font-size: 1.2rem;
+        margin-top: 1px;
+    }
+
+    .banner-text {
+        strong {
+            display: block;
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 2px;
+        }
+        p {
+            font-size: 0.78rem;
+            color: #3b82f6;
+            margin: 0;
+            line-height: 1.4;
+        }
+    }
+}
+
+.field-help-text {
+    font-size: 0.74rem;
+    color: #64748b;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    i {
+        font-size: 0.72rem;
+        color: #3b82f6;
+    }
+}
