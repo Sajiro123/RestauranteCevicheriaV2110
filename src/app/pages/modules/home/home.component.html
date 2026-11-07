@@ -117,8 +117,10 @@
                     }" (click)="seleccionarMesa({ numero: '0', estado: '0', pedidos: [], idpedido: pedido.idpedido })">
                     <div class="flex items-center gap-1.5 w-full border-0 min-w-0">
                         <div
-                            class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold flex-shrink-0 shadow-xs border border-blue-200 text-[10px]">
-                            <i class="pi pi-user text-[10px]"></i>
+                            class="w-6 h-6 rounded-full flex items-center justify-center font-bold flex-shrink-0 shadow-xs border text-[10px]"
+                            [ngClass]="pedido.es_chatbot ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-blue-100 text-blue-600 border-blue-200'"
+                            [title]="pedido.es_chatbot ? 'Pedido recibido por WhatsApp Chatbot' : 'Pedido Delivery Manual'">
+                            <i [ngClass]="pedido.es_chatbot ? 'pi pi-whatsapp' : 'pi pi-user'" class="text-[10px]"></i>
                         </div>
                         <div class="flex-1 min-w-0">
                             <h3 class="font-bold text-gray-800 text-[11px] truncate m-0"
@@ -126,7 +128,10 @@
                                 {{ pedido.cliente || 'Cliente' }}
                             </h3>
                             <div class="flex items-center justify-between gap-1 mt-0.5">
-                                <span class="text-[10px] text-gray-500 font-semibold">#{{ pedido.idpedido }}</span>
+                                <span class="text-[10px] text-gray-500 font-semibold flex items-center gap-1">
+                                    #{{ pedido.idpedido }}
+                                    <span *ngIf="pedido.es_chatbot" class="text-[8px] bg-emerald-100 text-emerald-800 font-extrabold px-1 rounded border border-emerald-200">WA</span>
+                                </span>
                                 <span class="text-[9px] text-gray-400 font-medium flex items-center gap-0.5" *ngIf="pedido.pedido_hora">
                                     <i class="pi pi-clock text-[8px]"></i>{{ pedido.pedido_hora }}
                                 </span>
@@ -657,6 +662,9 @@
                                         <h3 class="font-black text-white text-2xl sm:text-3xl m-0 leading-tight tracking-tight">
                                             {{ pedido.mesa == '0' ? 'DELIVERY' : 'MESA ' + pedido.mesa }}
                                         </h3>
+                                        <span *ngIf="pedido.es_chatbot" class="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs" title="Pedido del Chatbot WhatsApp">
+                                            <i class="pi pi-whatsapp"></i> BOT
+                                        </span>
                                         <span class="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                                             #{{ pedido.idpedido }}
                                         </span>

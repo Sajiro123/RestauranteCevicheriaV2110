@@ -45,7 +45,7 @@ export class PersonalComponent implements OnInit {
             nombres: ['', [Validators.required, Validators.minLength(2)]],
             apellidopat: ['', [Validators.required, Validators.minLength(2)]],
             apellidomat: [''],
-            numerodoc: [''],
+            numerodoc: ['', [Validators.required, Validators.minLength(8)]],
             correo: ['', [Validators.email]],
             celular: [''],
             direccion: [''],
@@ -241,12 +241,19 @@ export class PersonalComponent implements OnInit {
         try {
             const perfilesSaaS = await this.saasMasterService.getPerfiles();
             if (perfilesSaaS && perfilesSaaS.length > 0) {
-                this.perfiles = perfilesSaaS.map(p => ({
-                    idperfil: this.mapPerfilCodeToId(p.codigo),
-                    codigo: p.codigo,
-                    nombre: p.nombre,
-                    descripcion: p.descripcion
-                }));
+                const mapUnicos = new Map<number, any>();
+                for (const p of perfilesSaaS) {
+                    const idperfil = this.mapPerfilCodeToId(p.codigo);
+                    if (!mapUnicos.has(idperfil)) {
+                        mapUnicos.set(idperfil, {
+                            idperfil: idperfil,
+                            codigo: p.codigo,
+                            nombre: p.nombre,
+                            descripcion: p.descripcion
+                        });
+                    }
+                }
+                this.perfiles = Array.from(mapUnicos.values());
                 return;
             }
             this.setDefaultPerfiles();
@@ -257,10 +264,10 @@ export class PersonalComponent implements OnInit {
 
     private setDefaultPerfiles() {
         this.perfiles = [
-            { idperfil: 1, codigo: 'ADMIN_RESTAURANTE', nombre: 'Administrador' },
+            { idperfil: 1, codigo: 'ADMIN_RESTAURANTE', nombre: 'Administrador de Restaurante' },
             { idperfil: 2, codigo: 'MOZO_RESTAURANTE', nombre: 'Mozo / Mesero' },
             { idperfil: 3, codigo: 'COCINERO_RESTAURANTE', nombre: 'Cocinero / Chef' },
-            { idperfil: 4, codigo: 'CAJERO_RESTAURANTE', nombre: 'Cajero' }
+            { idperfil: 4, codigo: 'CAJERO_RESTAURANTE', nombre: 'Cajero de Restaurante' }
         ];
     }
 
@@ -291,7 +298,7 @@ export class PersonalComponent implements OnInit {
             nombres: persona.nombres,
             apellidopat: persona.apellidopat,
             apellidomat: persona.apellidomat || '',
-            numerodoc: persona.numerodoc || '',
+            numerodoc: persona.numerodoc || persona.numeroDocumento || '',
             correo: persona.correo || persona.email || '',
             celular: persona.celular || '',
             direccion: persona.direccion || '',
@@ -361,6 +368,17 @@ export class PersonalComponent implements OnInit {
                 }
             }
 
+            const cleanDoc = (formData.numerodoc || '').trim();
+            if (!cleanDoc) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Documento obligatorio',
+                    detail: 'El DNI o documento de identidad es obligatorio para registrar en SaaS Master.',
+                    life: 4000
+                });
+                return;
+            }
+
             const targetId = this.persona?.saasId || this.persona?.saasUsuarioId || this.persona?.personaId;
 
             const payload: any = {
@@ -368,7 +386,8 @@ export class PersonalComponent implements OnInit {
                 email,
                 nombres: formData.nombres,
                 apellidos,
-                numeroDocumento: formData.numerodoc,
+                tipoDocumento: 'DNI',
+                numeroDocumento: cleanDoc,
                 telefono: formData.celular,
                 direccion: formData.direccion,
                 fechanacimiento,
@@ -403,6 +422,13 @@ export class PersonalComponent implements OnInit {
                     });
                 }
 
+                // Sincronizar inmediatamente la tabla local persona con el personal actualizado de SaaS
+                try {
+                    await this.supabaseService.getTrabajadores(true);
+                } catch (e) {
+                    console.warn('[Personal] Sync local persona:', e);
+                }
+
                 this.personalDialog = false;
                 this.loadPersonal();
             } catch (error: any) {
@@ -429,10 +455,10 @@ export class PersonalComponent implements OnInit {
         const perfil = this.perfiles.find(p => p.idperfil === idperfil);
         if (perfil) return perfil.nombre;
         switch (Number(idperfil)) {
-            case 1: return 'Administrador';
+            case 1: return 'Administrador de Restaurante';
             case 2: return 'Mozo / Mesero';
             case 3: return 'Cocinero / Chef';
-            case 4: return 'Cajero';
+            case 4: return 'Cajero de Restaurante';
             default: return 'Colaborador';
         }
     }

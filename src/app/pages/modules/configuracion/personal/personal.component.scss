@@ -586,6 +586,8 @@ $slate-50:          #f8fafc;
     .p-dialog-content {
         padding: 1.5rem !important;
         background: #ffffff;
+        overflow-y: auto !important;
+        max-height: 75vh !important;
     }
 
     .p-dialog-footer {
@@ -687,4 +689,15 @@ $slate-50:          #f8fafc;
     .form-grid-2 {
         grid-template-columns: 1fr;
     }
-}
+}
+// ── Elevación y z-index para dropdowns y calendarios sobre el modal ──
+::ng-deep {
+    .p-select-overlay,
+    .p-select-panel,
+    .p-dropdown-panel,
+    .p-datepicker-panel,
+    .p-popover {
+        z-index: 1000000 !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    }
+}

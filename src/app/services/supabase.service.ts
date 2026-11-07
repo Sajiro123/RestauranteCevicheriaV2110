@@ -108,11 +108,21 @@ export class SupabaseService {
     }
 
     // Pedido operations
+    async getFechaPeruHoy(): Promise<string> {
+        try {
+            const { data: serverDate, error } = await this.supabase.rpc('obtener_fecha_lima');
+            if (!error && serverDate) {
+                return serverDate;
+            }
+        } catch (e) {
+            console.warn('Error consultando obtener_fecha_lima:', e);
+        }
+        return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+    }
+
     async getPedidosHoy() {
-        const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
+        const fechaPeru = await this.getFechaPeruHoy();
+        const fechaAyer = new Date(new Date(fechaPeru).getTime() - 86400000).toISOString().slice(0, 10);
 
         const { data, error } = await this.supabase
             .from('pedido')
@@ -134,11 +144,10 @@ export class SupabaseService {
         )
       `
             )
-            .eq('fecha', fechaPeru)
             .eq('estado', '1')
             .is('deleted', null)
             .is('pedidodetalle.deleted', null)
-
+            .or(`fecha.eq.${fechaPeru},created_at.gte.${fechaPeru}T00:00:00,fecha.gte.${fechaAyer}`)
             .order('created_at', { ascending: false });
 
         return { success: !error, data, error };
@@ -169,10 +178,8 @@ export class SupabaseService {
     }
 
     async deletePedido(idpedido: number, motivo: string, responsable: string) {
+        const fechaPeru = await this.getFechaPeruHoy();
         const now = new Date();
-        const fechaPeru = now.toLocaleDateString('en-CA', {
-            timeZone: 'America/Lima'
-        });
         const horaPeru = now.toLocaleString('es-PE', {
             timeZone: 'America/Lima',
             hour: '2-digit',
@@ -514,10 +521,180 @@ export class SupabaseService {
         return { success: !error, data, error };
     }
 
-    async getTrabajadores() {
-        const { data, error } = await this.supabase.from('persona').select('*').is('deleted', null).eq('idestado', 1);
+    private getPerfilNombreDefault(id: number): string {
+        switch (Number(id)) {
+            case 1: return 'Administrador de Restaurante';
+            case 2: return 'Mozo / Mesero';
+            case 3: return 'Cocinero / Chef';
+            case 4: return 'Cajero de Restaurante';
+            default: return 'Personal';
+        }
+    }
 
-        return { success: !error, data, error };
+    /**
+     * Obtiene el personal del negocio directamente desde SaaS Master API,
+     * sincronizando transparentemente la tabla local persona en Supabase
+     * para asegurar idpersona válidos y consistentes en aperturas y planillas.
+     */
+    async getTrabajadores(forceRefresh: boolean = false) {
+        try {
+            const tenantId = (environment as any).defaultTenantId || 'a0000000-0000-0000-0000-000000000004';
+            const apiUrl = (environment as any).saasMasterApiUrl || 'https://saas-master-api.onrender.com/api/v1';
+
+            const response = await fetch(`${apiUrl}/usuarios-negocio?negocioId=${tenantId}`);
+            if (response.ok) {
+                const json = await response.json();
+                const saasUsers: any[] = json.data || [];
+
+                if (saasUsers.length > 0) {
+                    const { data: dbPersonas } = await this.supabase
+                        .from('persona')
+                        .select('*, perfil:idperfil(nombre)');
+
+                    const personasLocales = dbPersonas || [];
+
+                    const mapPerfil = (codigo: string): number => {
+                        const c = (codigo || '').toUpperCase();
+                        if (c.includes('ADMIN')) return 1;
+                        if (c.includes('MOZO') || c.includes('MESERO')) return 2;
+                        if (c.includes('COCIN') || c.includes('CHEF')) return 3;
+                        if (c.includes('CAJER')) return 4;
+                        return 2;
+                    };
+
+                    const trabajadoresSincronizados: any[] = [];
+
+                    for (const u of saasUsers) {
+                        const nombres = (u.nombres || u.email || '').trim();
+                        const apellidos = (u.apellidos || '').trim();
+                        const apellidosParts = apellidos.split(' ');
+                        const apellidopat = apellidosParts[0] || '.';
+                        const apellidomat = apellidosParts.slice(1).join(' ') || '.';
+                        const doc = (u.numeroDocumento || '').trim();
+                        const email = (u.email || '').trim().toLowerCase();
+                        const idperfil = mapPerfil(u.perfilCodigo);
+                        const estaActivo = u.estaActivo !== false;
+
+                        // Reglas explícitas de negocio / IDs históricos del restaurante
+                        let matched: any = null;
+                        const nomLower = nombres.toLowerCase();
+                        const emailLower = email.toLowerCase();
+
+                        if (emailLower === 'maria@willys.com' || doc === '70234501' || nomLower.includes('maria claudia') || nomLower === 'maria') {
+                            matched = personasLocales.find((p: any) => p.idpersona === 1);
+                        } else if (emailLower === 'lucero@willys.com' || doc === '73628194' || nomLower.includes('lucero')) {
+                            matched = personasLocales.find((p: any) => p.idpersona === 2);
+                        } else if (emailLower === 'alex@willys.com' || doc === '75486273' || (nomLower.includes('alex') && !nomLower.includes('alexandra'))) {
+                            matched = personasLocales.find((p: any) => p.idpersona === 6);
+                        } else if (emailLower === 'sully@willys.com' || doc === '70234508' || nomLower.includes('alexandra')) {
+                            matched = personasLocales.find((p: any) => p.idpersona === 12);
+                        }
+
+                        // Si no es regla fija, buscar por documento, correo o coincidencia de nombres
+                        if (!matched) {
+                            matched = personasLocales.find((p: any) => {
+                                if (doc && p.numerodoc && p.numerodoc.trim() === doc) return true;
+                                if (email && p.correo && p.correo.trim().toLowerCase() === email) return true;
+                                const localFull = `${p.nombres || ''} ${p.apellidopat || ''}`.toLowerCase().replace(/\s+/g, ' ').trim();
+                                const saasFull = `${nombres} ${apellidopat}`.toLowerCase().replace(/\s+/g, ' ').trim();
+                                return localFull && saasFull && (localFull.includes(saasFull) || saasFull.includes(localFull));
+                            });
+                        }
+
+                        let idpersona = matched ? matched.idpersona : null;
+
+                        if (matched) {
+                            if (matched.idestado !== (estaActivo ? 1 : 0) || matched.idperfil !== idperfil) {
+                                await this.supabase
+                                    .from('persona')
+                                    .update({
+                                        idestado: estaActivo ? 1 : 0,
+                                        idperfil: idperfil,
+                                        celular: u.telefono || matched.celular,
+                                        direccion: u.direccion || matched.direccion
+                                    })
+                                    .eq('idpersona', matched.idpersona);
+                            }
+                        } else {
+                            const { data: nuevaPersona } = await this.supabase
+                                .from('persona')
+                                .insert({
+                                    nombres: nombres,
+                                    apellidopat: apellidopat,
+                                    apellidomat: apellidomat,
+                                    numerodoc: doc || null,
+                                    correo: email || null,
+                                    celular: u.telefono || null,
+                                    direccion: u.direccion || null,
+                                    idperfil: idperfil,
+                                    idestado: estaActivo ? 1 : 0,
+                                    tipo: '1'
+                                })
+                                .select()
+                                .single();
+
+                            if (nuevaPersona) {
+                                idpersona = nuevaPersona.idpersona;
+                            }
+                        }
+
+                        if (estaActivo && idpersona) {
+                            const perfilNombre = u.perfilNombre || this.getPerfilNombreDefault(idperfil);
+                            trabajadoresSincronizados.push({
+                                idpersona: idpersona,
+                                id: idpersona,
+                                id_persona: idpersona,
+                                saasId: u.id,
+                                usuarioId: u.usuarioId,
+                                personaId: u.personaId,
+                                nombres: nombres,
+                                apellidos: apellidos,
+                                apellidopat: apellidopat,
+                                apellidomat: apellidomat,
+                                nombreCompleto: u.nombreCompleto || `${nombres} ${apellidos}`.trim(),
+                                numerodoc: doc,
+                                correo: email,
+                                email: email,
+                                celular: u.telefono,
+                                direccion: u.direccion,
+                                idperfil: idperfil,
+                                perfilCodigo: u.perfilCodigo,
+                                perfilNombre: perfilNombre,
+                                perfil: { nombre: perfilNombre },
+                                estaActivo: estaActivo,
+                                idestado: 1
+                            });
+                        }
+                    }
+
+                    if (trabajadoresSincronizados.length > 0) {
+                        return { success: true, data: trabajadoresSincronizados, error: null };
+                    }
+                }
+            }
+        } catch (saasErr) {
+            console.warn('[SupabaseService] Error consultando SaaS Master, usando fallback local de persona:', saasErr);
+        }
+
+        // Fallback local a Supabase si no hay conexión con SaaS Master
+        const { data, error } = await this.supabase
+            .from('persona')
+            .select('*, perfil:idperfil(nombre)')
+            .is('deleted', null)
+            .eq('idestado', 1)
+            .order('nombres');
+
+        const fallbackData = (data || []).map((p: any) => {
+            const perfilNom = p.perfil?.nombre || this.getPerfilNombreDefault(p.idperfil);
+            return {
+                ...p,
+                nombreCompleto: `${p.nombres || ''} ${p.apellidopat || ''} ${p.apellidomat || ''}`.trim(),
+                perfilNombre: perfilNom,
+                perfil: { nombre: perfilNom }
+            };
+        });
+
+        return { success: !error, data: fallbackData, error };
     }
 
     // Reports
@@ -542,7 +719,13 @@ export class SupabaseService {
     }
 
     async getReporteRango(fechaInicio: string, fechaFin: string) {
-        // 1. Validar qué fechas en el rango consultado tienen la caja CERRADA (estado == 2 y deleted IS NULL)
+        // Helper para normalizar cualquier fecha a formato YYYY-MM-DD
+        const normalizarFecha = (f: any): string => {
+            if (!f) return '';
+            return String(f).trim().split('T')[0].split(' ')[0];
+        };
+
+        // 1. Consultar apertura_caja en el rango para conocer el estado de caja de cada día
         const { data: aperturas, error: errorApertura } = await this.supabase
             .from('apertura_caja')
             .select('fecha, estado')
@@ -550,59 +733,54 @@ export class SupabaseService {
             .lte('fecha', fechaFin)
             .is('deleted', null);
 
-        if (errorApertura) return { success: false, data: null, error: errorApertura };
+        if (errorApertura) console.warn('Aviso al consultar aperturas en rango:', errorApertura);
 
-        // Helper para normalizar cualquier fecha a formato YYYY-MM-DD
-        const normalizarFecha = (f: any): string => {
-            if (!f) return '';
-            return String(f).trim().split('T')[0].split(' ')[0];
-        };
+        // Mapear el estado de caja por cada fecha
+        const estadosCaja: Record<string, number> = {};
+        (aperturas || []).forEach((a: any) => {
+            const f = normalizarFecha(a.fecha);
+            if (f) {
+                estadosCaja[f] = Number(a.estado);
+            }
+        });
 
-        // Fechas que tienen estado == 2 (caja cerrada) normalizadas
-        const fechasCerradas = Array.from(
-            new Set(
-                (aperturas || [])
-                    .filter((a: any) => Number(a.estado) === 2)
-                    .map((a: any) => normalizarFecha(a.fecha))
-                    .filter((f: string) => !!f)
-            )
-        );
-
-        // Si ninguna fecha del rango tiene la caja cerrada, no se traen ventas
-        if (fechasCerradas.length === 0) {
-            return {
-                success: false,
-                cajaNoCerrada: true,
-                message: 'Aún falta cerrar la caja. No se pueden consultar ventas de fechas cuya caja aún no ha sido cerrada.',
-                data: [],
-                error: null
-            };
-        }
-
-        // 2. Consultar pedidos SOLO de las fechas con caja cerrada
-        const { data, error } = await this.supabase
+        // 2. Consultar pedidos con estado = 3 (atendidos/cobrados) en todo el rango
+        const { data: pedidosData, error: errorPedidos } = await this.supabase
             .from('pedido')
-            .select('yape, plin, visa, efectivo, fecha')
+            .select('yape, plin, visa, efectivo, fecha, total')
             .eq('estado', 3)
-            .in('fecha', fechasCerradas);
-
-        if (error) return { success: false, data: null, error };
-
-        // 3. Obtener gastos solo de las fechas con caja cerrada
-        const { data: gastosData } = await this.supabase
-            .from('gastos')
-            .select('monto, fecha')
-            .in('fecha', fechasCerradas)
+            .gte('fecha', fechaInicio)
+            .lte('fecha', fechaFin + 'T23:59:59')
             .is('deleted', null);
 
-        // Agrupar ventas y gastos por fecha unificada (YYYY-MM-DD)
+        if (errorPedidos) return { success: false, data: null, error: errorPedidos };
+
+        // 3. Obtener gastos registrados en el rango
+        const { data: gastosData, error: errorGastos } = await this.supabase
+            .from('gastos')
+            .select('monto, fecha')
+            .gte('fecha', fechaInicio)
+            .lte('fecha', fechaFin)
+            .is('deleted', null);
+
+        if (errorGastos) console.warn('Aviso al consultar gastos en rango:', errorGastos);
+
+        // 4. Agrupar ventas y gastos por fecha unificada (YYYY-MM-DD)
         const groupedData: Record<string, any> = {};
 
-        (data || []).forEach((curr: any) => {
+        (pedidosData || []).forEach((curr: any) => {
             const fecha = normalizarFecha(curr.fecha);
             if (!fecha) return;
             if (!groupedData[fecha]) {
-                groupedData[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, gastos: 0, fecha };
+                groupedData[fecha] = {
+                    yape: 0,
+                    plin: 0,
+                    visa: 0,
+                    efectivo: 0,
+                    gastos: 0,
+                    fecha,
+                    cajaEstado: estadosCaja[fecha] || null
+                };
             }
             groupedData[fecha].yape += Number(curr.yape) || 0;
             groupedData[fecha].plin += Number(curr.plin) || 0;
@@ -615,11 +793,193 @@ export class SupabaseService {
             const fecha = normalizarFecha(g.fecha);
             if (!fecha) return;
             if (!groupedData[fecha]) {
-                groupedData[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, gastos: 0, fecha };
+                groupedData[fecha] = {
+                    yape: 0,
+                    plin: 0,
+                    visa: 0,
+                    efectivo: 0,
+                    gastos: 0,
+                    fecha,
+                    cajaEstado: estadosCaja[fecha] || null
+                };
             }
             groupedData[fecha].gastos += Number(g.monto) || 0;
         });
 
+        // Asegurar que todas las fechas tengan su estado de caja
+        Object.keys(groupedData).forEach((f) => {
+            groupedData[f].cajaEstado = estadosCaja[f] || null;
+        });
+
         return { success: true, data: Object.values(groupedData), error: null };
+    }
+
+    // Obtener ranking de platos, bebidas y gaseosas vendidas en un rango de fechas
+    async getReportePlatosVendidos(fechaInicio: string, fechaFin: string): Promise<any> {
+        try {
+            // 1. Obtener catálogo de categorías activas
+            const { data: categoriasData } = await this.supabase
+                .from('categoria')
+                .select('idcategoria, nombre')
+                .is('deleted', null)
+                .order('idcategoria', { ascending: true });
+
+            const categoriasMap: Record<number, string> = {};
+            (categoriasData || []).forEach((c: any) => {
+                categoriasMap[Number(c.idcategoria)] = c.nombre;
+            });
+
+            // 2. Consultar todos los detalles de pedidos cobrados (estado = 3, deleted IS NULL)
+            // Usamos paginación por bloques de 1000 para no truncar meses con alto volumen
+            const pageSize = 1000;
+            let from = 0;
+            let allDetalles: any[] = [];
+
+            while (true) {
+                const { data: batch, error } = await this.supabase
+                    .from('pedidodetalle')
+                    .select(`
+                        idpedidodetalle,
+                        idpedido,
+                        idproducto,
+                        cantidad,
+                        precioU,
+                        total,
+                        lugarpedido,
+                        producto (
+                            idproducto,
+                            nombre,
+                            preciounitario,
+                            idcategoria
+                        ),
+                        pedido!inner (
+                            idpedido,
+                            fecha,
+                            mesa,
+                            estado,
+                            deleted
+                        )
+                    `)
+                    .eq('pedido.estado', 3)
+                    .is('pedido.deleted', null)
+                    .gte('pedido.fecha', fechaInicio)
+                    .lte('pedido.fecha', fechaFin + 'T23:59:59')
+                    .range(from, from + pageSize - 1);
+
+                if (error) {
+                    return { success: false, data: [], categorias: categoriasData || [], error };
+                }
+
+                if (!batch || batch.length === 0) {
+                    break;
+                }
+
+                allDetalles = allDetalles.concat(batch);
+
+                if (batch.length < pageSize) {
+                    break;
+                }
+                from += pageSize;
+            }
+
+            // 3. Agrupar por producto
+            const agrupado: Record<string, {
+                idproducto: number;
+                nombre: string;
+                idcategoria: number;
+                categoria: string;
+                precioUnitario: number;
+                cantidadVendida: number;
+                cantidadSalon: number;
+                cantidadLlevar: number;
+                totalRecaudado: number;
+                pedidosSet: Set<number>;
+                esBebida: boolean;
+                esGaseosa: boolean;
+            }> = {};
+
+            allDetalles.forEach((item: any) => {
+                const prod = item.producto || {};
+                const idProd = Number(item.idproducto || prod.idproducto || 0);
+                const nombreProd = (prod.nombre || `Producto #${idProd}`).trim();
+                const idCat = Number(prod.idcategoria || 0);
+                const nombreCat = categoriasMap[idCat] || (idCat === 5 ? 'Bebidas' : 'General');
+                const cant = Number(item.cantidad) || 0;
+                const precioU = Number(item.precioU ?? prod.preciounitario) || 0;
+                const subtotal = Number(item.total) || (cant * precioU);
+                const esLlevar = item.pedido?.mesa === 0 || Number(item.lugarpedido) === 1;
+
+                const key = idProd ? String(idProd) : nombreProd.toLowerCase();
+
+                if (!agrupado[key]) {
+                    const lowerName = nombreProd.toLowerCase();
+                    agrupado[key] = {
+                        idproducto: idProd,
+                        nombre: nombreProd,
+                        idcategoria: idCat,
+                        categoria: nombreCat,
+                        precioUnitario: Number(prod.preciounitario) || precioU,
+                        cantidadVendida: 0,
+                        cantidadSalon: 0,
+                        cantidadLlevar: 0,
+                        totalRecaudado: 0,
+                        pedidosSet: new Set<number>(),
+                        esBebida: idCat === 5 || lowerName.includes('gaseosa') || lowerName.includes('chicha') || lowerName.includes('limonada') || lowerName.includes('maracuya') || lowerName.includes('agua') || lowerName.includes('cerveza') || lowerName.includes('pilsen') || lowerName.includes('cusqueña'),
+                        esGaseosa: lowerName.includes('gaseosa')
+                    };
+                }
+
+                agrupado[key].cantidadVendida += cant;
+                if (esLlevar) {
+                    agrupado[key].cantidadLlevar += cant;
+                } else {
+                    agrupado[key].cantidadSalon += cant;
+                }
+                agrupado[key].totalRecaudado += subtotal;
+                if (item.idpedido) {
+                    agrupado[key].pedidosSet.add(Number(item.idpedido));
+                }
+            });
+
+            // 4. Convertir a arreglo y ordenar de mayor a menor cantidad vendida
+            const totalUnidadesGlobal = Object.values(agrupado).reduce((acc, p) => acc + p.cantidadVendida, 0);
+
+            const resultado = Object.values(agrupado)
+                .map((p) => ({
+                    idproducto: p.idproducto,
+                    nombre: p.nombre,
+                    idcategoria: p.idcategoria,
+                    categoria: p.categoria,
+                    precioUnitario: p.precioUnitario,
+                    cantidadVendida: p.cantidadVendida,
+                    cantidadSalon: p.cantidadSalon,
+                    cantidadLlevar: p.cantidadLlevar,
+                    pedidosCount: p.pedidosSet.size,
+                    totalRecaudado: Number(p.totalRecaudado.toFixed(2)),
+                    porcentajeUnidades: totalUnidadesGlobal > 0 ? Number(((p.cantidadVendida / totalUnidadesGlobal) * 100).toFixed(1)) : 0,
+                    esBebida: p.esBebida,
+                    esGaseosa: p.esGaseosa
+                }))
+                .sort((a, b) => {
+                    if (b.cantidadVendida !== a.cantidadVendida) {
+                        return b.cantidadVendida - a.cantidadVendida;
+                    }
+                    return b.totalRecaudado - a.totalRecaudado;
+                })
+                .map((item, idx) => ({
+                    ...item,
+                    ranking: idx + 1
+                }));
+
+            return {
+                success: true,
+                data: resultado,
+                categorias: categoriasData || [],
+                error: null
+            };
+        } catch (err) {
+            console.error('Error en getReportePlatosVendidos:', err);
+            return { success: false, data: [], categorias: [], error: err };
+        }
     }
 }
