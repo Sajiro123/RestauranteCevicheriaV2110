@@ -719,7 +719,13 @@ export class SupabaseService {
     }
 
     async getReporteRango(fechaInicio: string, fechaFin: string) {
-        // 1. Validar qué fechas en el rango consultado tienen la caja CERRADA (estado == 2 y deleted IS NULL)
+        // Helper para normalizar cualquier fecha a formato YYYY-MM-DD
+        const normalizarFecha = (f: any): string => {
+            if (!f) return '';
+            return String(f).trim().split('T')[0].split(' ')[0];
+        };
+
+        // 1. Consultar apertura_caja en el rango para conocer el estado de caja de cada día
         const { data: aperturas, error: errorApertura } = await this.supabase
             .from('apertura_caja')
             .select('fecha, estado')
@@ -727,59 +733,54 @@ export class SupabaseService {
             .lte('fecha', fechaFin)
             .is('deleted', null);
 
-        if (errorApertura) return { success: false, data: null, error: errorApertura };
+        if (errorApertura) console.warn('Aviso al consultar aperturas en rango:', errorApertura);
 
-        // Helper para normalizar cualquier fecha a formato YYYY-MM-DD
-        const normalizarFecha = (f: any): string => {
-            if (!f) return '';
-            return String(f).trim().split('T')[0].split(' ')[0];
-        };
+        // Mapear el estado de caja por cada fecha
+        const estadosCaja: Record<string, number> = {};
+        (aperturas || []).forEach((a: any) => {
+            const f = normalizarFecha(a.fecha);
+            if (f) {
+                estadosCaja[f] = Number(a.estado);
+            }
+        });
 
-        // Fechas que tienen estado == 2 (caja cerrada) normalizadas
-        const fechasCerradas = Array.from(
-            new Set(
-                (aperturas || [])
-                    .filter((a: any) => Number(a.estado) === 2)
-                    .map((a: any) => normalizarFecha(a.fecha))
-                    .filter((f: string) => !!f)
-            )
-        );
-
-        // Si ninguna fecha del rango tiene la caja cerrada, no se traen ventas
-        if (fechasCerradas.length === 0) {
-            return {
-                success: false,
-                cajaNoCerrada: true,
-                message: 'Aún falta cerrar la caja. No se pueden consultar ventas de fechas cuya caja aún no ha sido cerrada.',
-                data: [],
-                error: null
-            };
-        }
-
-        // 2. Consultar pedidos SOLO de las fechas con caja cerrada
-        const { data, error } = await this.supabase
+        // 2. Consultar pedidos con estado = 3 (atendidos/cobrados) en todo el rango
+        const { data: pedidosData, error: errorPedidos } = await this.supabase
             .from('pedido')
-            .select('yape, plin, visa, efectivo, fecha')
+            .select('yape, plin, visa, efectivo, fecha, total')
             .eq('estado', 3)
-            .in('fecha', fechasCerradas);
-
-        if (error) return { success: false, data: null, error };
-
-        // 3. Obtener gastos solo de las fechas con caja cerrada
-        const { data: gastosData } = await this.supabase
-            .from('gastos')
-            .select('monto, fecha')
-            .in('fecha', fechasCerradas)
+            .gte('fecha', fechaInicio)
+            .lte('fecha', fechaFin + 'T23:59:59')
             .is('deleted', null);
 
-        // Agrupar ventas y gastos por fecha unificada (YYYY-MM-DD)
+        if (errorPedidos) return { success: false, data: null, error: errorPedidos };
+
+        // 3. Obtener gastos registrados en el rango
+        const { data: gastosData, error: errorGastos } = await this.supabase
+            .from('gastos')
+            .select('monto, fecha')
+            .gte('fecha', fechaInicio)
+            .lte('fecha', fechaFin)
+            .is('deleted', null);
+
+        if (errorGastos) console.warn('Aviso al consultar gastos en rango:', errorGastos);
+
+        // 4. Agrupar ventas y gastos por fecha unificada (YYYY-MM-DD)
         const groupedData: Record<string, any> = {};
 
-        (data || []).forEach((curr: any) => {
+        (pedidosData || []).forEach((curr: any) => {
             const fecha = normalizarFecha(curr.fecha);
             if (!fecha) return;
             if (!groupedData[fecha]) {
-                groupedData[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, gastos: 0, fecha };
+                groupedData[fecha] = {
+                    yape: 0,
+                    plin: 0,
+                    visa: 0,
+                    efectivo: 0,
+                    gastos: 0,
+                    fecha,
+                    cajaEstado: estadosCaja[fecha] || null
+                };
             }
             groupedData[fecha].yape += Number(curr.yape) || 0;
             groupedData[fecha].plin += Number(curr.plin) || 0;
@@ -792,9 +793,22 @@ export class SupabaseService {
             const fecha = normalizarFecha(g.fecha);
             if (!fecha) return;
             if (!groupedData[fecha]) {
-                groupedData[fecha] = { yape: 0, plin: 0, visa: 0, efectivo: 0, gastos: 0, fecha };
+                groupedData[fecha] = {
+                    yape: 0,
+                    plin: 0,
+                    visa: 0,
+                    efectivo: 0,
+                    gastos: 0,
+                    fecha,
+                    cajaEstado: estadosCaja[fecha] || null
+                };
             }
             groupedData[fecha].gastos += Number(g.monto) || 0;
+        });
+
+        // Asegurar que todas las fechas tengan su estado de caja
+        Object.keys(groupedData).forEach((f) => {
+            groupedData[f].cajaEstado = estadosCaja[f] || null;
         });
 
         return { success: true, data: Object.values(groupedData), error: null };

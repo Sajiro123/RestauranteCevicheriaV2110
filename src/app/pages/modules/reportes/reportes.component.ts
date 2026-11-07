@@ -39,6 +39,9 @@ export class ReportesComponent implements OnInit {
     PedidoReporteSinCobrar: any[] = [];
     array_data = [] as any;
     array_data_total: any = {};
+    allClientsData: any[] = [];
+    mostrarDiasSinVentas: boolean = true;
+    cargandoConsolidado: boolean = false;
     PDF_Dialog: boolean = false;
     pdfUrl: SafeResourceUrl | null = null;
     fecha_actual: any;
@@ -144,13 +147,7 @@ export class ReportesComponent implements OnInit {
                     }
 
                     if (!this.cajaCerrada) {
-                        this.Clients = [];
-                        this.messageService.add({
-                            severity: 'warn',
-                            summary: 'Falta cerrar la caja',
-                            detail: 'No se puede visualizar el Reporte Consolidado de Ventas porque la caja aún no ha sido cerrada.',
-                            life: 5000
-                        });
+                        // Se guarda el estado de la caja de hoy sin vaciar los datos consultados
                     }
 
                     resolve(this.cajaCerrada);
@@ -579,21 +576,25 @@ export class ReportesComponent implements OnInit {
 
     showRerportemount(parameters: any = {}) {
         this.Clients = [];
-        this.array_data_total = {}; // Reiniciar el total
+        this.allClientsData = [];
+        this.array_data_total = {};
+        this.cargandoConsolidado = true;
 
         this.PedidoService.showRerporte(parameters).subscribe(
             (response: any) => {
+                this.cargandoConsolidado = false;
                 if (response && response.cajaNoCerrada) {
                     this.Clients = [];
+                    this.allClientsData = [];
                     this.mostrarAvisoAmigable(
                         'Aún falta cerrar la caja',
-                        response.message || 'No es posible consultar el Reporte Consolidado de Ventas porque la caja para la fecha seleccionada aún no ha sido cerrada. Debe realizar el cierre de caja para poder visualizar la información.',
+                        response.message || 'No es posible consultar el Reporte Consolidado de Ventas porque la caja para la fecha seleccionada aún no ha sido cerrada.',
                         'warning'
                     );
                     return;
                 }
+
                 if (response && response.success && Array.isArray(response.data)) {
-                    // Mapa para unificar por fecha normalizada (YYYY-MM-DD) y evitar duplicados
                     const mapaPorFecha = new Map<string, any>();
 
                     response.data.forEach((element: any) => {
@@ -606,19 +607,15 @@ export class ReportesComponent implements OnInit {
                         const efectivo = Number(element.efectivo) || 0;
                         const gastos = Number(element.gastos) || 0;
 
-                        if (!mapaPorFecha.has(rawFecha)) {
-                            // Calcular nombre del día sin desfase de zona horaria
-                            let nombreDia = '';
-                            const partes = rawFecha.split('-');
-                            if (partes.length === 3) {
-                                const y = parseInt(partes[0], 10);
-                                const m = parseInt(partes[1], 10) - 1;
-                                const d = parseInt(partes[2], 10);
-                                const dateObj = new Date(y, m, d);
-                                const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-                                nombreDia = dias[dateObj.getDay()];
-                            }
+                        let nombreDia = '';
+                        const partes = rawFecha.split('-');
+                        if (partes.length === 3) {
+                            const dateObj = new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                            const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                            nombreDia = dias[dateObj.getDay()];
+                        }
 
+                        if (!mapaPorFecha.has(rawFecha)) {
                             mapaPorFecha.set(rawFecha, {
                                 fecha: rawFecha,
                                 dia: nombreDia,
@@ -627,10 +624,11 @@ export class ReportesComponent implements OnInit {
                                 visa,
                                 efectivo,
                                 gastos,
-                                total: yape + plin + visa + efectivo
+                                total: yape + plin + visa + efectivo,
+                                cajaEstado: element.cajaEstado,
+                                sinVentas: (yape + plin + visa + efectivo) === 0 && gastos === 0
                             });
                         } else {
-                            // Si ya existe la fecha, consolidar montos en la misma fila
                             const existente = mapaPorFecha.get(rawFecha);
                             existente.yape += yape;
                             existente.plin += plin;
@@ -638,38 +636,132 @@ export class ReportesComponent implements OnInit {
                             existente.efectivo += efectivo;
                             existente.gastos += gastos;
                             existente.total = existente.yape + existente.plin + existente.visa + existente.efectivo;
+                            existente.sinVentas = existente.total === 0 && existente.gastos === 0;
+                            if (element.cajaEstado) existente.cajaEstado = element.cajaEstado;
                         }
                     });
 
-                    // Ordenar por fecha ASC
-                    this.array_data = Array.from(mapaPorFecha.values()).sort((a: any, b: any) => (a.fecha || '').localeCompare(b.fecha || ''));
-                    this.Clients = this.array_data;
-                    this.array_data_total = {
-                        efectivo: this.totalEfectivo,
-                        plin: this.totalPlin,
-                        visa: this.totalVisa,
-                        gastos: this.totalGastos,
-                        total: this.totalGeneral,
-                        yape: this.totalyape
-                    };
+                    // Generar todos los días del calendario en el rango seleccionado
+                    if (parameters.fechainicio && parameters.fechafin) {
+                        const [y1, m1, d1] = parameters.fechainicio.split('-').map(Number);
+                        const [y2, m2, d2] = parameters.fechafin.split('-').map(Number);
+                        const cur = new Date(y1, m1 - 1, d1);
+                        const end = new Date(y2, m2 - 1, d2);
+
+                        while (cur <= end) {
+                            const yyyy = cur.getFullYear();
+                            const mm = String(cur.getMonth() + 1).padStart(2, '0');
+                            const dd = String(cur.getDate()).padStart(2, '0');
+                            const fStr = `${yyyy}-${mm}-${dd}`;
+
+                            const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                            const nombreDia = dias[cur.getDay()];
+
+                            if (!mapaPorFecha.has(fStr)) {
+                                mapaPorFecha.set(fStr, {
+                                    fecha: fStr,
+                                    dia: nombreDia,
+                                    yape: 0,
+                                    plin: 0,
+                                    visa: 0,
+                                    efectivo: 0,
+                                    gastos: 0,
+                                    total: 0,
+                                    cajaEstado: null,
+                                    sinVentas: true
+                                });
+                            }
+                            cur.setDate(cur.getDate() + 1);
+                        }
+                    }
+
+                    // Ordenar cronológicamente por fecha ASC
+                    this.allClientsData = Array.from(mapaPorFecha.values()).sort((a: any, b: any) =>
+                        (a.fecha || '').localeCompare(b.fecha || '')
+                    );
+
+                    this.aplicarFiltroDiasSinVentas();
                 } else {
                     this.Clients = [];
-                    this.mostrarAvisoAmigable(
-                        'Falta cerrar la caja',
-                        response?.message || 'No es posible visualizar las ventas de este rango porque la caja aún no ha sido cerrada. Debe realizar el cierre de caja para consultar este reporte.',
-                        'warning'
-                    );
+                    this.allClientsData = [];
+                    this.recalcularTotales();
                 }
             },
             (error: any) => {
+                this.cargandoConsolidado = false;
                 console.error('Error al intentar consultar', error);
                 this.mostrarAvisoAmigable(
                     'Error de conexión',
-                    'Hubo un problema al conectar con el servidor para consultar las ventas. Por favor, revise su conexión a internet.',
+                    'Hubo un problema al conectar con el servidor para consultar las ventas.',
                     'error'
                 );
             }
         );
+    }
+
+    seleccionarMesActual() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        const inicio = new Date(y, m, 1);
+        const fin = new Date(y, m + 1, 0);
+        this.selectedRange = [inicio, fin];
+        this.handleCalendarBlur();
+    }
+
+    seleccionarMesAnterior() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        const inicio = new Date(y, m - 1, 1);
+        const fin = new Date(y, m, 0);
+        this.selectedRange = [inicio, fin];
+        this.handleCalendarBlur();
+    }
+
+    seleccionarUltimos30Dias() {
+        const fin = new Date();
+        const inicio = new Date();
+        inicio.setDate(fin.getDate() - 30);
+        this.selectedRange = [inicio, fin];
+        this.handleCalendarBlur();
+    }
+
+    toggleDiasSinVentas() {
+        this.mostrarDiasSinVentas = !this.mostrarDiasSinVentas;
+        this.aplicarFiltroDiasSinVentas();
+    }
+
+    aplicarFiltroDiasSinVentas() {
+        if (this.mostrarDiasSinVentas) {
+            this.Clients = [...this.allClientsData];
+        } else {
+            this.Clients = this.allClientsData.filter((c: any) => c.total > 0 || c.gastos > 0);
+        }
+        this.recalcularTotales();
+    }
+
+    recalcularTotales() {
+        this.array_data_total = {
+            efectivo: this.totalEfectivo,
+            plin: this.totalPlin,
+            visa: this.totalVisa,
+            gastos: this.totalGastos,
+            total: this.totalGeneral,
+            yape: this.totalyape
+        };
+    }
+
+    get totalDiasConVentas(): number {
+        return (this.allClientsData || []).filter((c: any) => (Number(c.total) || 0) > 0).length;
+    }
+
+    get totalDiasSinVentas(): number {
+        return (this.allClientsData || []).filter((c: any) => (Number(c.total) || 0) === 0 && (Number(c.gastos) || 0) === 0).length;
+    }
+
+    get balanceNeto(): number {
+        return (Number(this.array_data_total?.total) || 0) - (Number(this.array_data_total?.gastos) || 0);
     }
 
     showReporteDay(parameters: string) {
