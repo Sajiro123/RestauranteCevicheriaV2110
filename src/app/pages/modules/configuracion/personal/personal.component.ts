@@ -45,7 +45,7 @@ export class PersonalComponent implements OnInit {
             nombres: ['', [Validators.required, Validators.minLength(2)]],
             apellidopat: ['', [Validators.required, Validators.minLength(2)]],
             apellidomat: [''],
-            numerodoc: [''],
+            numerodoc: ['', [Validators.required, Validators.minLength(8)]],
             correo: ['', [Validators.email]],
             celular: [''],
             direccion: [''],
@@ -298,7 +298,7 @@ export class PersonalComponent implements OnInit {
             nombres: persona.nombres,
             apellidopat: persona.apellidopat,
             apellidomat: persona.apellidomat || '',
-            numerodoc: persona.numerodoc || '',
+            numerodoc: persona.numerodoc || persona.numeroDocumento || '',
             correo: persona.correo || persona.email || '',
             celular: persona.celular || '',
             direccion: persona.direccion || '',
@@ -368,6 +368,17 @@ export class PersonalComponent implements OnInit {
                 }
             }
 
+            const cleanDoc = (formData.numerodoc || '').trim();
+            if (!cleanDoc) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Documento obligatorio',
+                    detail: 'El DNI o documento de identidad es obligatorio para registrar en SaaS Master.',
+                    life: 4000
+                });
+                return;
+            }
+
             const targetId = this.persona?.saasId || this.persona?.saasUsuarioId || this.persona?.personaId;
 
             const payload: any = {
@@ -375,7 +386,8 @@ export class PersonalComponent implements OnInit {
                 email,
                 nombres: formData.nombres,
                 apellidos,
-                numeroDocumento: formData.numerodoc,
+                tipoDocumento: 'DNI',
+                numeroDocumento: cleanDoc,
                 telefono: formData.celular,
                 direccion: formData.direccion,
                 fechanacimiento,

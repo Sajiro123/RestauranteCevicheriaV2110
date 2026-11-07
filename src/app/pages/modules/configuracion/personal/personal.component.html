@@ -287,8 +287,15 @@
 
                 <div class="form-grid-2">
                     <div class="form-field">
-                        <label for="numerodoc">DNI / Documento</label>
-                        <input type="text" pInputText id="numerodoc" formControlName="numerodoc" placeholder="Ej: 75486273" />
+                        <label for="numerodoc">DNI / Documento <span class="req">*</span></label>
+                        <input type="text" pInputText id="numerodoc" formControlName="numerodoc" placeholder="Ej: 75486273"
+                            [class.ng-invalid]="personalForm.get('numerodoc')?.invalid && submitted" />
+                        <small class="error-msg" *ngIf="submitted && personalForm.get('numerodoc')?.errors?.['required']">
+                            El DNI / documento es obligatorio
+                        </small>
+                        <small class="error-msg" *ngIf="submitted && personalForm.get('numerodoc')?.errors?.['minlength']">
+                            El documento debe tener al menos 8 dígitos
+                        </small>
                     </div>
 
                     <div class="form-field">
