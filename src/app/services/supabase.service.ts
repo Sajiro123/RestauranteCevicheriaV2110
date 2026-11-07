@@ -575,14 +575,31 @@ export class SupabaseService {
                         const idperfil = mapPerfil(u.perfilCodigo);
                         const estaActivo = u.estaActivo !== false;
 
-                        // Buscar coincidencia en la BD local
-                        let matched = personasLocales.find((p: any) => {
-                            if (doc && p.numerodoc && p.numerodoc.trim() === doc) return true;
-                            if (email && p.correo && p.correo.trim().toLowerCase() === email) return true;
-                            const localFull = `${p.nombres || ''} ${p.apellidopat || ''}`.toLowerCase().replace(/\s+/g, ' ').trim();
-                            const saasFull = `${nombres} ${apellidopat}`.toLowerCase().replace(/\s+/g, ' ').trim();
-                            return localFull && saasFull && (localFull.includes(saasFull) || saasFull.includes(localFull));
-                        });
+                        // Reglas explícitas de negocio / IDs históricos del restaurante
+                        let matched: any = null;
+                        const nomLower = nombres.toLowerCase();
+                        const emailLower = email.toLowerCase();
+
+                        if (emailLower === 'maria@willys.com' || doc === '70234501' || nomLower.includes('maria claudia') || nomLower === 'maria') {
+                            matched = personasLocales.find((p: any) => p.idpersona === 1);
+                        } else if (emailLower === 'lucero@willys.com' || doc === '73628194' || nomLower.includes('lucero')) {
+                            matched = personasLocales.find((p: any) => p.idpersona === 2);
+                        } else if (emailLower === 'alex@willys.com' || doc === '75486273' || (nomLower.includes('alex') && !nomLower.includes('alexandra'))) {
+                            matched = personasLocales.find((p: any) => p.idpersona === 6);
+                        } else if (emailLower === 'sully@willys.com' || doc === '70234508' || nomLower.includes('alexandra')) {
+                            matched = personasLocales.find((p: any) => p.idpersona === 12);
+                        }
+
+                        // Si no es regla fija, buscar por documento, correo o coincidencia de nombres
+                        if (!matched) {
+                            matched = personasLocales.find((p: any) => {
+                                if (doc && p.numerodoc && p.numerodoc.trim() === doc) return true;
+                                if (email && p.correo && p.correo.trim().toLowerCase() === email) return true;
+                                const localFull = `${p.nombres || ''} ${p.apellidopat || ''}`.toLowerCase().replace(/\s+/g, ' ').trim();
+                                const saasFull = `${nombres} ${apellidopat}`.toLowerCase().replace(/\s+/g, ' ').trim();
+                                return localFull && saasFull && (localFull.includes(saasFull) || saasFull.includes(localFull));
+                            });
+                        }
 
                         let idpersona = matched ? matched.idpersona : null;
 
