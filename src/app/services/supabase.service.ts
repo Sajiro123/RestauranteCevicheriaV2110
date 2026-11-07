@@ -813,4 +813,173 @@ export class SupabaseService {
 
         return { success: true, data: Object.values(groupedData), error: null };
     }
+
+    // Obtener ranking de platos, bebidas y gaseosas vendidas en un rango de fechas
+    async getReportePlatosVendidos(fechaInicio: string, fechaFin: string): Promise<any> {
+        try {
+            // 1. Obtener catálogo de categorías activas
+            const { data: categoriasData } = await this.supabase
+                .from('categoria')
+                .select('idcategoria, nombre')
+                .is('deleted', null)
+                .order('idcategoria', { ascending: true });
+
+            const categoriasMap: Record<number, string> = {};
+            (categoriasData || []).forEach((c: any) => {
+                categoriasMap[Number(c.idcategoria)] = c.nombre;
+            });
+
+            // 2. Consultar todos los detalles de pedidos cobrados (estado = 3, deleted IS NULL)
+            // Usamos paginación por bloques de 1000 para no truncar meses con alto volumen
+            const pageSize = 1000;
+            let from = 0;
+            let allDetalles: any[] = [];
+
+            while (true) {
+                const { data: batch, error } = await this.supabase
+                    .from('pedidodetalle')
+                    .select(`
+                        idpedidodetalle,
+                        idpedido,
+                        idproducto,
+                        cantidad,
+                        precioU,
+                        total,
+                        lugarpedido,
+                        producto (
+                            idproducto,
+                            nombre,
+                            preciounitario,
+                            idcategoria
+                        ),
+                        pedido!inner (
+                            idpedido,
+                            fecha,
+                            mesa,
+                            estado,
+                            deleted
+                        )
+                    `)
+                    .eq('pedido.estado', 3)
+                    .is('pedido.deleted', null)
+                    .gte('pedido.fecha', fechaInicio)
+                    .lte('pedido.fecha', fechaFin + 'T23:59:59')
+                    .range(from, from + pageSize - 1);
+
+                if (error) {
+                    return { success: false, data: [], categorias: categoriasData || [], error };
+                }
+
+                if (!batch || batch.length === 0) {
+                    break;
+                }
+
+                allDetalles = allDetalles.concat(batch);
+
+                if (batch.length < pageSize) {
+                    break;
+                }
+                from += pageSize;
+            }
+
+            // 3. Agrupar por producto
+            const agrupado: Record<string, {
+                idproducto: number;
+                nombre: string;
+                idcategoria: number;
+                categoria: string;
+                precioUnitario: number;
+                cantidadVendida: number;
+                cantidadSalon: number;
+                cantidadLlevar: number;
+                totalRecaudado: number;
+                pedidosSet: Set<number>;
+                esBebida: boolean;
+                esGaseosa: boolean;
+            }> = {};
+
+            allDetalles.forEach((item: any) => {
+                const prod = item.producto || {};
+                const idProd = Number(item.idproducto || prod.idproducto || 0);
+                const nombreProd = (prod.nombre || `Producto #${idProd}`).trim();
+                const idCat = Number(prod.idcategoria || 0);
+                const nombreCat = categoriasMap[idCat] || (idCat === 5 ? 'Bebidas' : 'General');
+                const cant = Number(item.cantidad) || 0;
+                const precioU = Number(item.precioU ?? prod.preciounitario) || 0;
+                const subtotal = Number(item.total) || (cant * precioU);
+                const esLlevar = item.pedido?.mesa === 0 || Number(item.lugarpedido) === 1;
+
+                const key = idProd ? String(idProd) : nombreProd.toLowerCase();
+
+                if (!agrupado[key]) {
+                    const lowerName = nombreProd.toLowerCase();
+                    agrupado[key] = {
+                        idproducto: idProd,
+                        nombre: nombreProd,
+                        idcategoria: idCat,
+                        categoria: nombreCat,
+                        precioUnitario: Number(prod.preciounitario) || precioU,
+                        cantidadVendida: 0,
+                        cantidadSalon: 0,
+                        cantidadLlevar: 0,
+                        totalRecaudado: 0,
+                        pedidosSet: new Set<number>(),
+                        esBebida: idCat === 5 || lowerName.includes('gaseosa') || lowerName.includes('chicha') || lowerName.includes('limonada') || lowerName.includes('maracuya') || lowerName.includes('agua') || lowerName.includes('cerveza') || lowerName.includes('pilsen') || lowerName.includes('cusqueña'),
+                        esGaseosa: lowerName.includes('gaseosa')
+                    };
+                }
+
+                agrupado[key].cantidadVendida += cant;
+                if (esLlevar) {
+                    agrupado[key].cantidadLlevar += cant;
+                } else {
+                    agrupado[key].cantidadSalon += cant;
+                }
+                agrupado[key].totalRecaudado += subtotal;
+                if (item.idpedido) {
+                    agrupado[key].pedidosSet.add(Number(item.idpedido));
+                }
+            });
+
+            // 4. Convertir a arreglo y ordenar de mayor a menor cantidad vendida
+            const totalUnidadesGlobal = Object.values(agrupado).reduce((acc, p) => acc + p.cantidadVendida, 0);
+
+            const resultado = Object.values(agrupado)
+                .map((p) => ({
+                    idproducto: p.idproducto,
+                    nombre: p.nombre,
+                    idcategoria: p.idcategoria,
+                    categoria: p.categoria,
+                    precioUnitario: p.precioUnitario,
+                    cantidadVendida: p.cantidadVendida,
+                    cantidadSalon: p.cantidadSalon,
+                    cantidadLlevar: p.cantidadLlevar,
+                    pedidosCount: p.pedidosSet.size,
+                    totalRecaudado: Number(p.totalRecaudado.toFixed(2)),
+                    porcentajeUnidades: totalUnidadesGlobal > 0 ? Number(((p.cantidadVendida / totalUnidadesGlobal) * 100).toFixed(1)) : 0,
+                    esBebida: p.esBebida,
+                    esGaseosa: p.esGaseosa
+                }))
+                .sort((a, b) => {
+                    if (b.cantidadVendida !== a.cantidadVendida) {
+                        return b.cantidadVendida - a.cantidadVendida;
+                    }
+                    return b.totalRecaudado - a.totalRecaudado;
+                })
+                .map((item, idx) => ({
+                    ...item,
+                    ranking: idx + 1
+                }));
+
+            return {
+                success: true,
+                data: resultado,
+                categorias: categoriasData || [],
+                error: null
+            };
+        } catch (err) {
+            console.error('Error en getReportePlatosVendidos:', err);
+            return { success: false, data: [], categorias: [], error: err };
+        }
+    }
 }

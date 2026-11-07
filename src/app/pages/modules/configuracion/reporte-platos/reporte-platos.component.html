@@ -1,0 +1,247 @@
+<p-toast styleClass="text-2xl" />
+
+<div class="reportes-wrapper animate-fadein">
+    <div class="reportes-card">
+
+        <!-- BOTÓN VOLVER A CONFIGURACIÓN -->
+        <div class="back-nav-row">
+            <button type="button" class="btn-back-config" (click)="volver()">
+                <i class="pi pi-arrow-left"></i>
+                <span>Volver a Configuración</span>
+            </button>
+        </div>
+
+        <!-- CABECERA CORPORATIVA -->
+        <div class="tab-header-toolbar">
+            <div class="tab-header-title">
+                <i class="pi pi-chart-bar"></i>
+                <div>
+                    <h3>Reporte de Platos y Bebidas Vendidas</h3>
+                    <p>Ranking de platos, gaseosas y bebidas con mayor salida y recaudación en el periodo</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- BARRA DE FILTROS DE FECHA Y BÚSQUEDA -->
+        <div class="filter-bar-card">
+            <div class="filter-item">
+                <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
+                <p-datepicker #dpPlatos [(ngModel)]="selectedRange" selectionMode="range" [numberOfMonths]="2"
+                    class="date-range" [showButtonBar]="true" placeholder="Selecciona un rango de fechas..."
+                    (onSelect)="handleCalendarBlur()" (onShow)="onDatePickerShow(dpPlatos)" (onFocus)="onDatePickerShow(dpPlatos)"
+                    [defaultDate]="oneWeekAgo" [style]="{ width: '270px' }" [appendTo]="'body'"
+                    [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate">
+                </p-datepicker>
+            </div>
+
+            <!-- Atajos de fechas (Solo visible para el Administrador) -->
+            <div class="filter-shortcuts" *ngIf="esAdmin">
+                <button type="button" class="btn-quick-date" (click)="seleccionarHoy()" title="Ver ventas de hoy">
+                    <i class="pi pi-bolt"></i> Hoy
+                </button>
+                <button type="button" class="btn-quick-date" (click)="seleccionarMesActual()" title="Ver todo el mes actual">
+                    <i class="pi pi-calendar"></i> Este Mes
+                </button>
+                <button type="button" class="btn-quick-date" (click)="seleccionarMesAnterior()" title="Ver todo el mes anterior">
+                    <i class="pi pi-history"></i> Mes Anterior
+                </button>
+                <button type="button" class="btn-quick-date" (click)="seleccionarUltimos30Dias()" title="Ver los últimos 30 días">
+                    <i class="pi pi-clock"></i> Últimos 30 días
+                </button>
+            </div>
+
+            <!-- Buscador rápido por nombre -->
+            <div class="filter-search-box">
+                <i class="pi pi-search"></i>
+                <input type="text" [(ngModel)]="busqueda" (input)="aplicarFiltros()"
+                    placeholder="Buscar plato, gaseosa o bebida..." />
+                <button type="button" class="btn-clear-search" *ngIf="busqueda" (click)="busqueda = ''; aplicarFiltros()">
+                    <i class="pi pi-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- CHIPS DE FILTRO RÁPIDO POR TIPO / CATEGORÍA -->
+        <div class="category-chips-bar">
+            <button type="button" class="chip-filter" [class.active]="filtroTipo === 'TODOS'" (click)="cambiarFiltroTipo('TODOS')">
+                <i class="pi pi-th-large"></i> Todos ({{ allProductos.length }})
+            </button>
+            <button type="button" class="chip-filter chip-platos" [class.active]="filtroTipo === 'PLATOS'" (click)="cambiarFiltroTipo('PLATOS')">
+                <i class="fa-solid fa-utensils"></i> Solo Platos ({{ totalPlatosUnidades }} und.)
+            </button>
+            <button type="button" class="chip-filter chip-gaseosas" [class.active]="filtroTipo === 'GASEOSAS'" (click)="cambiarFiltroTipo('GASEOSAS')">
+                <i class="fa-solid fa-bottle-droplet"></i> Solo Gaseosas
+            </button>
+            <button type="button" class="chip-filter chip-bebidas" [class.active]="filtroTipo === 'BEBIDAS'" (click)="cambiarFiltroTipo('BEBIDAS')">
+                <i class="fa-solid fa-glass-water"></i> Todas las Bebidas ({{ totalBebidasUnidades }} und.)
+            </button>
+
+            <span class="chip-divider" *ngIf="categorias.length > 0"></span>
+
+            <button type="button" class="chip-filter chip-subcat"
+                *ngFor="let cat of categorias"
+                [class.active]="filtroTipo === 'CAT_' + cat.idcategoria"
+                (click)="cambiarFiltroTipo('CAT_' + cat.idcategoria)">
+                {{ cat.nombre }}
+            </button>
+        </div>
+
+        <!-- TARJETAS KPI DE RESUMEN -->
+        <div class="reportes-kpis-grid" *ngIf="allProductos.length > 0">
+            <div class="kpi-card-metric kpi-plato-top">
+                <div class="kpi-metric-icon"><i class="fa-solid fa-trophy"></i></div>
+                <div class="kpi-metric-info">
+                    <span class="kpi-metric-lbl">Plato Más Vendido</span>
+                    <span class="kpi-metric-val val-amber">{{ platoTop ? platoTop.nombre : 'Sin registros' }}</span>
+                    <span class="kpi-metric-sub" *ngIf="platoTop">
+                        <strong>{{ platoTop.cantidadVendida }} unidades</strong> · S/ {{ platoTop.totalRecaudado | number:'1.2-2' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="kpi-card-metric kpi-gaseosa-top">
+                <div class="kpi-metric-icon"><i class="fa-solid fa-bottle-droplet"></i></div>
+                <div class="kpi-metric-info">
+                    <span class="kpi-metric-lbl">Gaseosa / Bebida Top</span>
+                    <span class="kpi-metric-val val-blue">{{ gaseosaTop ? gaseosaTop.nombre : 'Sin registros' }}</span>
+                    <span class="kpi-metric-sub" *ngIf="gaseosaTop">
+                        <strong>{{ gaseosaTop.cantidadVendida }} unidades</strong> · S/ {{ gaseosaTop.totalRecaudado | number:'1.2-2' }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="kpi-card-metric kpi-unidades">
+                <div class="kpi-metric-icon"><i class="pi pi-box"></i></div>
+                <div class="kpi-metric-info">
+                    <span class="kpi-metric-lbl">Unidades Vendidas (Filtro)</span>
+                    <span class="kpi-metric-val val-slate">{{ totalUnidadesVista }} <small class="lbl-small">unidades</small></span>
+                    <span class="kpi-metric-sub">Salón: {{ totalSalonVista }} · Llevar/Delivery: {{ totalLlevarVista }}</span>
+                </div>
+            </div>
+
+            <div class="kpi-card-metric kpi-ventas">
+                <div class="kpi-metric-icon"><i class="pi pi-dollar"></i></div>
+                <div class="kpi-metric-info">
+                    <span class="kpi-metric-lbl">Total Recaudado (Filtro)</span>
+                    <span class="kpi-metric-val val-green">S/ {{ totalMontoVista | number:'1.2-2' }}</span>
+                    <span class="kpi-metric-sub">{{ productosFiltrados.length }} productos distintos vendidos</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLA CON EL MISMO ESTILO CORPORATIVO (.custom-table-darkgreen) -->
+        <div class="custom-table-darkgreen">
+            <p-table stripedRows #dtPlatos [value]="productosFiltrados" [loading]="cargando"
+                sortField="cantidadVendida" [sortOrder]="-1"
+                [rows]="25" [rowsPerPageOptions]="[10, 25, 50, 100]" [paginator]="true"
+                [rowHover]="true" dataKey="idproducto" [resizableColumns]="true"
+                currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} platos / bebidas"
+                [showCurrentPageReport]="true">
+
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="posicionVista" style="width: 7%; text-align: center;">
+                            # <p-sortIcon field="posicionVista" />
+                        </th>
+                        <th pSortableColumn="nombre" style="width: 28%;">
+                            🍽️ Plato / Bebida <p-sortIcon field="nombre" />
+                        </th>
+                        <th pSortableColumn="categoria" style="width: 13%; text-align: center;">
+                            🏷️ Categoría <p-sortIcon field="categoria" />
+                        </th>
+                        <th pSortableColumn="cantidadSalon" class="text-center" style="width: 10%;">
+                            🪑 Salón <p-sortIcon field="cantidadSalon" />
+                        </th>
+                        <th pSortableColumn="cantidadLlevar" class="text-center" style="width: 11%;">
+                            🛍️ Llevar / Deliv. <p-sortIcon field="cantidadLlevar" />
+                        </th>
+                        <th pSortableColumn="cantidadVendida" class="text-center" style="width: 14%;">
+                            🔥 Cant. Vendida <p-sortIcon field="cantidadVendida" />
+                        </th>
+                        <th pSortableColumn="precioUnitario" class="text-right" style="width: 8%;">
+                            💵 Precio Ref. <p-sortIcon field="precioUnitario" />
+                        </th>
+                        <th pSortableColumn="totalRecaudado" class="text-right" style="width: 9%;">
+                            💰 Total Ventas <p-sortIcon field="totalRecaudado" />
+                        </th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-item>
+                    <tr>
+                        <td class="text-center">
+                            <span class="rank-badge rank-1" *ngIf="item.posicionVista === 1" title="1° Lugar">🥇 1°</span>
+                            <span class="rank-badge rank-2" *ngIf="item.posicionVista === 2" title="2° Lugar">🥈 2°</span>
+                            <span class="rank-badge rank-3" *ngIf="item.posicionVista === 3" title="3° Lugar">🥉 3°</span>
+                            <span class="rank-badge rank-normal" *ngIf="item.posicionVista > 3">#{{ item.posicionVista }}</span>
+                        </td>
+
+                        <td>
+                            <div class="prod-cell-main">
+                                <span class="prod-icon" [ngClass]="item.esGaseosa ? 'icon-gaseosa' : (item.esBebida ? 'icon-bebida' : 'icon-plato')">
+                                    <i class="fa-solid" [ngClass]="item.esGaseosa ? 'fa-bottle-droplet' : (item.esBebida ? 'fa-glass-water' : 'fa-bowl-food')"></i>
+                                </span>
+                                <div class="prod-name-wrap">
+                                    <span class="font-bold text-gray-800">{{ item.nombre }}</span>
+                                    <small class="text-gray-400" *ngIf="item.pedidosCount">Presente en {{ item.pedidosCount }} pedidos</small>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="text-center">
+                            <span class="cat-badge" [ngClass]="getBadgeCategoriaClass(item.idcategoria, item.esGaseosa)">
+                                {{ item.esGaseosa ? 'Gaseosa' : item.categoria }}
+                            </span>
+                        </td>
+
+                        <td class="text-center font-semibold" [class.text-slate-700]="item.cantidadSalon > 0" [class.text-gray-400]="item.cantidadSalon === 0">
+                            {{ item.cantidadSalon }}
+                        </td>
+
+                        <td class="text-center font-semibold" [class.text-amber-700]="item.cantidadLlevar > 0" [class.text-gray-400]="item.cantidadLlevar === 0">
+                            {{ item.cantidadLlevar }}
+                        </td>
+
+                        <td class="text-center">
+                            <div class="qty-sold-wrapper">
+                                <span class="qty-pill">{{ item.cantidadVendida }} und.</span>
+                                <span class="qty-pct">{{ item.porcentajeVista }}%</span>
+                            </div>
+                            <div class="qty-progress-track">
+                                <div class="qty-progress-bar" [style.width.%]="item.porcentajeVista > 100 ? 100 : item.porcentajeVista"></div>
+                            </div>
+                        </td>
+
+                        <td class="text-right font-medium text-gray-600">
+                            S/ {{ item.precioUnitario | number:'1.2-2' }}
+                        </td>
+
+                        <td class="text-right font-extrabold text-emerald-700">
+                            S/ {{ item.totalRecaudado | number:'1.2-2' }}
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="footer">
+                    <tr *ngIf="productosFiltrados && productosFiltrados.length > 0" class="footer-totals-row">
+                        <td colspan="3" class="font-bold text-gray-900 uppercase tracking-wider text-xs">
+                            TOTAL GENERAL ({{ productosFiltrados.length }} PRODUCTOS LISTADOS)
+                        </td>
+                        <td class="text-center font-bold text-slate-800">{{ totalSalonVista }} und.</td>
+                        <td class="text-center font-bold text-amber-800">{{ totalLlevarVista }} und.</td>
+                        <td class="text-center font-black text-blue-900 text-base">{{ totalUnidadesVista }} und.</td>
+                        <td></td>
+                        <td class="text-right font-black text-emerald-800 text-lg">S/ {{ totalMontoVista | number:'1.2-2' }}</td>
+                    </tr>
+                    <tr *ngIf="!cargando && (!productosFiltrados || productosFiltrados.length === 0)">
+                        <td colspan="8" class="empty-state">
+                            <i class="pi pi-inbox"></i>
+                            <span>No se encontraron platos ni bebidas vendidas para los filtros seleccionados.</span>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+
+    </div>
+</div>
