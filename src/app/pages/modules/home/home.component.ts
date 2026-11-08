@@ -185,12 +185,19 @@ export class HomeComponent {
     // Comprobante (Boleta / Factura)
     comprobanteDialog: boolean = false;
     tipoComprobante: '01' | '03' = '03';
+    entornoSunat: 'produccion' | 'beta' = 'produccion';
+    formatoComprobante: 'ticket' | 'a4' = 'ticket';
+    archivosComprobante: { pdf_ticket?: string; pdf_a4?: string; xml?: string; cdr?: string } | null = null;
     documentoBusqueda: string = '';
     clienteEncontrado: any = null;
     mostrarFormNuevoCliente: boolean = false;
     nuevoCliente = { tipo_doc: '1', num_doc: '', razon_social: '', direccion: '' };
     emitiendo: boolean = false;
     Comprobante_PDF_Dialog: boolean = false;
+    historialComprobantesDialog: boolean = false;
+    listaComprobantesSunat: any[] = [];
+    cargandoHistorialSunat: boolean = false;
+    anulandoComprobanteId: number | null = null;
 
     async verificarCajaAbierta(): Promise<void> {
         return new Promise((resolve) => {
@@ -3181,46 +3188,98 @@ export class HomeComponent {
         this.nuevoCliente.tipo_doc = tipo === '01' ? '6' : '1';
     }
 
+    seleccionarClientesVarios() {
+        this.tipoComprobante = '03';
+        this.documentoBusqueda = '00000000';
+        this.mostrarFormNuevoCliente = false;
+        this.clienteEncontrado = {
+            tipo_doc: '0',
+            num_doc: '00000000',
+            razon_social: 'CLIENTES VARIOS',
+            direccion: ''
+        };
+    }
+
+    cambiarFormatoVistaPdf(formato: 'ticket' | 'a4') {
+        this.formatoComprobante = formato;
+        const targetUrl = formato === 'a4' ? this.archivosComprobante?.pdf_a4 : this.archivosComprobante?.pdf_ticket;
+        if (targetUrl) {
+            this.http.get(targetUrl, { responseType: 'blob' }).subscribe({
+                next: (blob) => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+                }
+            });
+        }
+    }
+
     async buscarClienteComprobante() {
         if (!this.documentoBusqueda) {
             this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'Ingrese un número de documento', life: 3000 });
             return;
         }
 
+        const numDoc = this.documentoBusqueda.trim();
+
         try {
-            // Buscar en Supabase: persona con tipo=2 y deleted IS NULL
-            const { data, error } = await this.supabaseService.client.from('persona').select('*').is('deleted', null).eq('tipo', 2).eq('numerodoc', this.documentoBusqueda.trim()).maybeSingle();
+            // 1. Buscar en Supabase: persona con deleted IS NULL
+            const { data, error } = await this.supabaseService.client.from('persona').select('*').is('deleted', null).eq('numerodoc', numDoc).maybeSingle();
 
             if (error) throw error;
 
             if (data) {
-                // Cliente encontrado
+                const sunatTipoDoc = this.tipoComprobante === '01'
+                    ? '6'
+                    : (Number(data.tipodoc) === 2 ? '6' : '1');
                 this.clienteEncontrado = {
                     num_doc: data.numerodoc,
-                    razon_social: `${data.nombres} ${data.apellidopat} ${data.apellidomat || ''}`.trim(),
+                    razon_social: `${data.nombres} ${data.apellidopat || ''} ${data.apellidomat || ''}`.trim(),
                     direccion: data.direccion || '',
-                    tipo_doc: data.tipodoc ? String(data.tipodoc) : this.tipoComprobante === '01' ? '6' : '1',
+                    tipo_doc: sunatTipoDoc,
                     idpersona: data.idpersona
                 };
                 this.mostrarFormNuevoCliente = false;
-            } else {
-                // No encontrado, abrir form de registro
-                this.clienteEncontrado = null;
-                this.nuevoCliente.num_doc = this.documentoBusqueda;
-                this.nuevoCliente.razon_social = '';
-                this.nuevoCliente.direccion = '';
-                this.mostrarFormNuevoCliente = true;
-                this.messageService.add({ severity: 'info', summary: 'No encontrado', detail: 'El cliente no está registrado. Complete los datos.', life: 4000 });
+                return;
             }
         } catch (error) {
-            console.error('Error buscando cliente:', error);
-            this.clienteEncontrado = null;
-            this.nuevoCliente.num_doc = this.documentoBusqueda;
-            this.nuevoCliente.razon_social = '';
-            this.nuevoCliente.direccion = '';
-            this.mostrarFormNuevoCliente = true;
-            this.messageService.add({ severity: 'info', summary: 'No encontrado', detail: 'Cliente no encontrado. Complete los datos para registrarlo.', life: 4000 });
+            console.error('Error buscando cliente en Supabase:', error);
         }
+
+        // 2. Si no está en Supabase, consultar a sunat-api (/api/consultar-documento/{numDoc})
+        this.http.get<any>(`http://127.0.0.1:8000/api/consultar-documento/${encodeURIComponent(numDoc)}`).subscribe({
+            next: (res) => {
+                if (res?.success && res?.data) {
+                    this.nuevoCliente = {
+                        tipo_doc: res.data.tipo_doc || (this.tipoComprobante === '01' ? '6' : '1'),
+                        num_doc: res.data.num_doc || numDoc,
+                        razon_social: res.data.razon_social || '',
+                        direccion: res.data.direccion || ''
+                    };
+                    this.clienteEncontrado = null;
+                    this.mostrarFormNuevoCliente = true;
+                    this.messageService.add({
+                        severity: 'info',
+                        summary: 'Datos encontrados en Padrón',
+                        detail: 'Verifique los datos autocompletados y haga clic en Guardar y Seleccionar.',
+                        life: 4000
+                    });
+                } else {
+                    this.abrirFormRegistroManual(numDoc);
+                }
+            },
+            error: () => {
+                this.abrirFormRegistroManual(numDoc);
+            }
+        });
+    }
+
+    private abrirFormRegistroManual(numDoc: string) {
+        this.clienteEncontrado = null;
+        this.nuevoCliente.num_doc = numDoc;
+        this.nuevoCliente.razon_social = '';
+        this.nuevoCliente.direccion = '';
+        this.mostrarFormNuevoCliente = true;
+        this.messageService.add({ severity: 'info', summary: 'No encontrado', detail: 'El cliente no está registrado. Complete los datos.', life: 4000 });
     }
 
     async guardarNuevoCliente() {
@@ -3257,7 +3316,7 @@ export class HomeComponent {
                 num_doc: data.numerodoc,
                 razon_social: data.nombres,
                 direccion: data.direccion || '',
-                tipo_doc: String(data.tipodoc),
+                tipo_doc: this.tipoComprobante === '01' ? '6' : '1',
                 idpersona: data.idpersona
             };
             this.mostrarFormNuevoCliente = false;
@@ -3281,6 +3340,8 @@ export class HomeComponent {
         const payload = {
             idpedido: this.NuevoPedido.idpedido,
             tipo_doc: this.tipoComprobante,
+            entorno: this.entornoSunat,
+            formato: this.formatoComprobante,
             cliente: this.clienteEncontrado
         };
 
@@ -3288,27 +3349,27 @@ export class HomeComponent {
             next: (res) => {
                 this.emitiendo = false;
                 this.comprobanteDialog = false;
+                this.archivosComprobante = res.archivos || null;
                 this.messageService.add({
                     severity: 'success',
                     summary: '¡Comprobante Emitido!',
-                    detail: `${this.tipoComprobante === '01' ? 'Factura' : 'Boleta'} enviada correctamente a SUNAT`,
+                    detail: res.message || `${this.tipoComprobante === '01' ? 'Factura' : 'Boleta'} enviada correctamente a SUNAT`,
                     life: 5000
                 });
                 console.log('Respuesta SUNAT:', res);
 
                 // Abrir modal con el PDF si viene en la respuesta
-                if (res.success && res.archivos?.pdf) {
+                const pdfInicial = res.archivos?.pdf || res.pdf;
+                if (res.success && pdfInicial) {
                     setTimeout(() => {
-                        // Descargar el PDF como blob para mostrarlo en el iframe
-                        this.http.get(res.archivos.pdf, { responseType: 'blob' }).subscribe({
+                        this.http.get(pdfInicial, { responseType: 'blob' }).subscribe({
                             next: (blob) => {
                                 const blobUrl = URL.createObjectURL(blob);
                                 this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
                                 this.Comprobante_PDF_Dialog = true;
                             },
                             error: () => {
-                                // Fallback: abrir en nueva pestaña
-                                window.open(res.archivos.pdf, '_blank');
+                                window.open(pdfInicial, '_blank');
                             }
                         });
                     }, 300);
@@ -3317,11 +3378,93 @@ export class HomeComponent {
             error: (err) => {
                 this.emitiendo = false;
                 console.error('Error al emitir comprobante:', err);
+                const msg = err?.error?.message || 'Hubo un error al emitir el comprobante. Revise la conexión con SUNAT.';
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al emitir',
+                    detail: msg,
+                    life: 6000
+                });
+            }
+        });
+    }
+
+    abrirHistorialComprobantes() {
+        this.historialComprobantesDialog = true;
+        this.cargarHistorialComprobantes();
+    }
+
+    cargarHistorialComprobantes() {
+        this.cargandoHistorialSunat = true;
+        this.http.get<any>('http://127.0.0.1:8000/api/comprobantes?limit=50').subscribe({
+            next: (res) => {
+                this.cargandoHistorialSunat = false;
+                this.listaComprobantesSunat = res?.data || [];
+            },
+            error: (err) => {
+                this.cargandoHistorialSunat = false;
+                console.error('Error cargando historial SUNAT:', err);
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
-                    detail: 'Hubo un error al emitir el comprobante. Revise la conexión con SUNAT.',
+                    detail: 'No se pudo cargar el historial de comprobantes.',
+                    life: 4000
+                });
+            }
+        });
+    }
+
+    verPdfDesdeHistorial(item: any, formato: 'ticket' | 'a4' = 'ticket') {
+        this.archivosComprobante = {
+            pdf_ticket: item.archivos?.pdf_ticket || item.archivos?.pdf,
+            pdf_a4: item.archivos?.pdf,
+            xml: item.archivos?.xml,
+            cdr: item.archivos?.cdr
+        };
+        this.formatoComprobante = formato;
+        const url = formato === 'ticket' ? (item.archivos?.pdf_ticket || item.archivos?.pdf) : item.archivos?.pdf;
+        if (!url) return;
+
+        this.http.get(url, { responseType: 'blob' }).subscribe({
+            next: (blob) => {
+                const blobUrl = URL.createObjectURL(blob);
+                this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+                this.Comprobante_PDF_Dialog = true;
+            },
+            error: () => {
+                window.open(url, '_blank');
+            }
+        });
+    }
+
+    anularComprobanteConNotaCredito(item: any) {
+        if (!confirm(`¿Está seguro de anular el comprobante ${item.numero_comprobante} mediante una Nota de Crédito en SUNAT?`)) {
+            return;
+        }
+
+        this.anulandoComprobanteId = item.id;
+        this.http.post<any>('http://127.0.0.1:8000/api/comprobantes/nota-credito', {
+            venta_id: item.id,
+            motivo: 'ANULACION DE LA OPERACION'
+        }).subscribe({
+            next: (res) => {
+                this.anulandoComprobanteId = null;
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Nota de Crédito Emitida',
+                    detail: res.message || 'El comprobante fue anulado correctamente en SUNAT.',
                     life: 5000
+                });
+                this.cargarHistorialComprobantes();
+            },
+            error: (err) => {
+                this.anulandoComprobanteId = null;
+                const msg = err?.error?.message || 'No se pudo emitir la Nota de Crédito.';
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al anular',
+                    detail: msg,
+                    life: 6000
                 });
             }
         });
