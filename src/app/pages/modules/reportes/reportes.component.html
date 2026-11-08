@@ -606,6 +606,313 @@
                 </div>
             </p-tabPanel>
 
+            <!-- ============================================================ -->
+            <!-- PESTAÑA 5: REPORTE DE COMPROBANTES SUNAT -->
+            <!-- ============================================================ -->
+            <p-tabPanel header="Comprobantes SUNAT">
+                <div class="tab-header-toolbar">
+                    <div class="tab-header-title">
+                        <i class="pi pi-receipt"></i>
+                        <div>
+                            <h3>Reporte de Comprobantes Electrónicos SUNAT</h3>
+                            <p>Consulta por rango de fecha, serie, correlativo y cliente con UBL 2.1</p>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-quick-date" (click)="cargarReporteComprobantes()" [disabled]="cargandoComprobantes">
+                            <i class="pi" [ngClass]="cargandoComprobantes ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
+                            <span>{{ cargandoComprobantes ? 'Consultando...' : 'Actualizar' }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtro Avanzado de Comprobantes -->
+                <div class="filter-bar-card">
+                    <!-- Rango de Fechas -->
+                    <div class="filter-item">
+                        <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
+                        <p-datepicker [(ngModel)]="selectedRangeComprobantes" selectionMode="range" [numberOfMonths]="2"
+                            class="date-range" [showButtonBar]="true" placeholder="Rango de emisión..."
+                            (onSelect)="cargarReporteComprobantes()"
+                            [style]="{ width: '250px' }" [appendTo]="'body'">
+                        </p-datepicker>
+                    </div>
+
+                    <!-- Atajos de selección rápida -->
+                    <div class="filter-shortcuts">
+                        <button type="button" class="btn-quick-date" (click)="seleccionarHoyComprobantes()" title="Solo comprobantes de hoy">
+                            <i class="pi pi-clock"></i> Hoy
+                        </button>
+                        <button type="button" class="btn-quick-date" (click)="seleccionarMesActualComprobantes()" title="Comprobantes del mes actual">
+                            <i class="pi pi-calendar"></i> Este Mes
+                        </button>
+                        <button type="button" class="btn-quick-date" (click)="seleccionarMesAnteriorComprobantes()" title="Comprobantes del mes anterior">
+                            <i class="pi pi-history"></i> Mes Anterior
+                        </button>
+                    </div>
+
+                    <!-- Filtro por Tipo de Comprobante -->
+                    <div class="filter-item">
+                        <label><i class="pi pi-tag"></i> Tipo:</label>
+                        <select [(ngModel)]="filtroTipoComprobante" (change)="cargarReporteComprobantes()"
+                            class="h-9 px-3 rounded-lg border border-slate-300 text-xs font-semibold bg-white text-slate-700 outline-none focus:border-blue-500">
+                            <option value="all">Todos los Comprobantes</option>
+                            <option value="03">Boletas de Venta (03)</option>
+                            <option value="01">Facturas Electrónicas (01)</option>
+                            <option value="07">Notas de Crédito (07)</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro por Serie -->
+                    <div class="filter-item">
+                        <label><i class="pi pi-hashtag"></i> Serie:</label>
+                        <input type="text" [(ngModel)]="filtroSerieComprobante" (keyup.enter)="cargarReporteComprobantes()"
+                            placeholder="Ej. B001" maxlength="4"
+                            class="h-9 px-3 w-24 uppercase rounded-lg border border-slate-300 text-xs font-semibold bg-white text-slate-700 outline-none focus:border-blue-500" />
+                    </div>
+
+                    <!-- Filtro por Número -->
+                    <div class="filter-item">
+                        <label><i class="pi pi-sort-numeric-up"></i> Número:</label>
+                        <input type="text" [(ngModel)]="filtroNumeroComprobante" (keyup.enter)="cargarReporteComprobantes()"
+                            placeholder="Ej. 2"
+                            class="h-9 px-3 w-24 rounded-lg border border-slate-300 text-xs font-semibold bg-white text-slate-700 outline-none focus:border-blue-500" />
+                    </div>
+
+                    <!-- Filtro por Cliente (RUC / DNI / Nombre) -->
+                    <div class="filter-item">
+                        <label><i class="pi pi-user"></i> Cliente:</label>
+                        <input type="text" [(ngModel)]="filtroClienteComprobante" (keyup.enter)="cargarReporteComprobantes()"
+                            placeholder="RUC, DNI o Nombre del Cliente..."
+                            class="h-9 px-3 w-64 rounded-lg border border-slate-300 text-xs font-semibold bg-white text-slate-700 outline-none focus:border-blue-500" />
+                    </div>
+
+                    <!-- Botón Buscar y Limpiar -->
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="btn-quick-date" style="background: #2563eb; color: #fff; border-color: #1d4ed8;"
+                            (click)="cargarReporteComprobantes()" title="Aplicar filtros de búsqueda">
+                            <i class="pi pi-search"></i> Filtrar
+                        </button>
+                        <button type="button" class="btn-quick-date" (click)="limpiarFiltrosComprobantes()" title="Restablecer filtros">
+                            <i class="pi pi-times"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjetas KPI de Resumen de Comprobantes -->
+                <div class="reportes-kpis-grid">
+                    <div class="kpi-card-metric kpi-ventas">
+                        <div class="kpi-metric-icon"><i class="pi pi-dollar"></i></div>
+                        <div class="kpi-metric-info">
+                            <span class="kpi-metric-lbl">Total Facturado</span>
+                            <span class="kpi-metric-val val-green">S/ {{ (resumenComprobantes.total_importe || 0) | number:'1.2-2' }}</span>
+                            <span class="kpi-metric-sub">Base Imponible: S/ {{ (resumenComprobantes.total_gravadas || 0) | number:'1.2-2' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card-metric kpi-gastos">
+                        <div class="kpi-metric-icon"><i class="pi pi-percentage"></i></div>
+                        <div class="kpi-metric-info">
+                            <span class="kpi-metric-lbl">Total IGV (18%)</span>
+                            <span class="kpi-metric-val val-rose">S/ {{ (resumenComprobantes.total_igv || 0) | number:'1.2-2' }}</span>
+                            <span class="kpi-metric-sub">Impuesto fiscal declarado</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card-metric kpi-balance">
+                        <div class="kpi-metric-icon"><i class="pi pi-file"></i></div>
+                        <div class="kpi-metric-info">
+                            <span class="kpi-metric-lbl">Boletas Emitidas</span>
+                            <span class="kpi-metric-val val-blue">{{ resumenComprobantes.count_boletas || 0 }}</span>
+                            <span class="kpi-metric-sub">Comprobantes tipo 03</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card-metric kpi-dias">
+                        <div class="kpi-metric-icon"><i class="pi pi-building"></i></div>
+                        <div class="kpi-metric-info">
+                            <span class="kpi-metric-lbl">Facturas / Notas</span>
+                            <span class="kpi-metric-val val-slate">{{ (resumenComprobantes.count_facturas || 0) }} / {{ (resumenComprobantes.count_notas || 0) }}</span>
+                            <span class="kpi-metric-sub">Total: {{ resumenComprobantes.total_comprobantes || 0 }} emitidos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Comprobantes SUNAT -->
+                <div class="custom-table-darkgreen">
+                    <p-table #dtComp [value]="listaComprobantes" dataKey="id" [rows]="15" [paginator]="true"
+                        [rowsPerPageOptions]="[10, 15, 25, 50, 100]" [rowHover]="true" [loading]="cargandoComprobantes"
+                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} comprobantes"
+                        [showCurrentPageReport]="true">
+
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th style="width: 3.5rem"></th>
+                                <th pSortableColumn="fecha_emision" style="width: 14%;">
+                                    📅 Emisión <p-sortIcon field="fecha_emision" />
+                                </th>
+                                <th pSortableColumn="tipo_doc" style="width: 10%;">
+                                    Tipo <p-sortIcon field="tipo_doc" />
+                                </th>
+                                <th pSortableColumn="numero_comprobante" style="width: 14%;">
+                                    Comprobante <p-sortIcon field="numero_comprobante" />
+                                </th>
+                                <th style="width: 12%;">Doc. Cliente</th>
+                                <th pSortableColumn="cliente_razon_social" style="width: 20%;">
+                                    Cliente / Razón Social <p-sortIcon field="cliente_razon_social" />
+                                </th>
+                                <th pSortableColumn="total" class="text-right" style="width: 11%;">
+                                    Total <p-sortIcon field="total" />
+                                </th>
+                                <th style="width: 12%; text-align: center;">Estado SUNAT</th>
+                                <th style="width: 14%; text-align: center;">Acciones</th>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="body" let-comp let-expanded="expanded">
+                            <tr>
+                                <td>
+                                    <button type="button" pButton [pRowToggler]="comp"
+                                        class="p-button-text p-button-rounded p-button-plain p-button-sm"
+                                        [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'">
+                                    </button>
+                                </td>
+                                <td>
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-slate-800 text-xs">{{ comp.fecha_emision }}</span>
+                                        <span class="text-[11px] text-slate-500">{{ comp.hora_emision || '' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span *ngIf="comp.tipo_doc === '03'"
+                                        class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                        BOLETA
+                                    </span>
+                                    <span *ngIf="comp.tipo_doc === '01'"
+                                        class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                                        FACTURA
+                                    </span>
+                                    <span *ngIf="comp.tipo_doc === '07'"
+                                        class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                                        NOTA CRÉDITO
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="font-mono font-bold text-slate-900 text-xs">{{ comp.numero_comprobante }}</span>
+                                    <span *ngIf="comp.pedido_id" class="block text-[11px] text-slate-500">Pedido #{{ comp.pedido_id }}</span>
+                                </td>
+                                <td>
+                                    <span class="font-mono text-xs font-semibold text-slate-700">
+                                        {{ comp.cliente_num_doc || '00000000' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="font-semibold text-slate-800 text-xs truncate max-w-[200px] block" [title]="comp.cliente_razon_social">
+                                        {{ comp.cliente_razon_social || 'CLIENTES VARIOS' }}
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    <span class="font-black text-emerald-700 text-sm">
+                                        S/ {{ (comp.total || 0) | number:'1.2-2' }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span *ngIf="comp.estado_sunat?.includes('Aceptado') || comp.estado_sunat?.includes('aceptada')"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                        [title]="comp.descripcion_cdr || 'Comprobante aceptado por SUNAT'">
+                                        <i class="pi pi-check-circle text-xs text-emerald-600"></i> Aceptado
+                                    </span>
+                                    <span *ngIf="comp.estado_sunat?.includes('Anulado')"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                        <i class="pi pi-times-circle text-xs text-rose-600"></i> Anulado
+                                    </span>
+                                    <span *ngIf="!comp.estado_sunat?.includes('Aceptado') && !comp.estado_sunat?.includes('aceptada') && !comp.estado_sunat?.includes('Anulado')"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200"
+                                        [title]="comp.descripcion_cdr || comp.estado_sunat">
+                                        <i class="pi pi-info-circle text-xs text-amber-600"></i> {{ comp.estado_sunat || 'Pendiente' }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                        <button type="button" (click)="verPdfComprobante(comp, 'ticket')"
+                                            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-xs font-bold transition-colors cursor-pointer"
+                                            title="Ver PDF Ticket 80mm">
+                                            <i class="pi pi-receipt text-[11px] mr-1"></i>Ticket
+                                        </button>
+                                        <button type="button" (click)="verPdfComprobante(comp, 'a4')"
+                                            class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 rounded text-xs font-bold transition-colors cursor-pointer"
+                                            title="Ver PDF Formato A4">
+                                            <i class="pi pi-file-pdf text-[11px] mr-1"></i>A4
+                                        </button>
+                                        <a *ngIf="comp.archivos?.xml" [href]="comp.archivos.xml" target="_blank"
+                                            class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded text-xs font-bold no-underline transition-colors"
+                                            title="Descargar XML UBL 2.1 firmado">
+                                            XML
+                                        </a>
+                                        <a *ngIf="comp.archivos?.cdr" [href]="comp.archivos.cdr" target="_blank"
+                                            class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 rounded text-xs font-bold no-underline transition-colors"
+                                            title="Descargar CDR de SUNAT">
+                                            CDR
+                                        </a>
+                                        <button *ngIf="(comp.tipo_doc === '01' || comp.tipo_doc === '03') && !comp.estado_sunat?.includes('Anulado')"
+                                            type="button" (click)="anularComprobanteReporte(comp)"
+                                            [disabled]="anulandoId === comp.id"
+                                            title="Anular emitiendo Nota de Crédito en SUNAT"
+                                            class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded text-xs font-bold cursor-pointer transition-colors">
+                                            {{ anulandoId === comp.id ? '...' : 'Anular' }}
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-template>
+
+                        <!-- Fila Expandida: Detalles de platos/productos del comprobante -->
+                        <ng-template pTemplate="rowexpansion" let-comp>
+                            <tr>
+                                <td colspan="9" class="p-3 bg-slate-50/70 border-y border-slate-200">
+                                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-xs font-bold text-slate-700">
+                                                <i class="pi pi-list mr-1"></i> Detalles del Comprobante {{ comp.numero_comprobante }}
+                                            </span>
+                                            <span class="text-[11px] font-mono text-slate-500">Hash: {{ comp.hash_sunat }}</span>
+                                        </div>
+                                        <table class="w-full text-xs text-left border-collapse">
+                                            <thead>
+                                                <tr class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                                                    <th class="p-2 text-center" style="width: 10%;">Cant.</th>
+                                                    <th class="p-2">Descripción</th>
+                                                    <th class="p-2 text-right" style="width: 15%;">P. Unitario</th>
+                                                    <th class="p-2 text-right" style="width: 15%;">Importe Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                <tr *ngFor="let det of comp.detalles">
+                                                    <td class="p-2 text-center font-bold text-slate-700">{{ det.cantidad }}</td>
+                                                    <td class="p-2 text-slate-800">{{ det.descripcion }}</td>
+                                                    <td class="p-2 text-right text-slate-600">S/ {{ det.mto_precio_unitario | number:'1.2-2' }}</td>
+                                                    <td class="p-2 text-right font-bold text-slate-900">S/ {{ det.total | number:'1.2-2' }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="emptymessage">
+                            <tr>
+                                <td colspan="9" class="empty-state text-center py-8">
+                                    <i class="pi pi-search text-3xl text-slate-400 mb-2"></i>
+                                    <p class="text-slate-600 font-bold m-0">No se encontraron comprobantes emitidos</p>
+                                    <span class="text-xs text-slate-400">Pruebe ampliando el rango de fechas o modificando los filtros de búsqueda.</span>
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
+            </p-tabPanel>
+
         </p-tabView>
     </div>
 </div>
@@ -878,6 +1185,47 @@
             </button>
         </div>
     </div>
+</p-dialog>
+
+<!-- ============================================================ -->
+<!-- MODAL: VISOR DE COMPROBANTE SUNAT PDF (TICKET / A4) -->
+<!-- ============================================================ -->
+<p-dialog [(visible)]="comprobantePdfDialog" [position]="'top'" [style]="{ width: '95vw', maxWidth: '780px' }"
+    [modal]="true" [draggable]="false" [resizable]="false" [closable]="true" (onHide)="comprobantePdfDialog = false">
+
+    <ng-template pTemplate="header">
+        <div class="flex items-center justify-between w-full pr-6">
+            <div class="flex items-center gap-2">
+                <i class="pi pi-file-pdf text-xl text-rose-600"></i>
+                <h3 class="text-base font-bold text-slate-800 m-0">Visor de Comprobante SUNAT</h3>
+            </div>
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+                <button type="button" (click)="cambiarFormatoPdfComprobante('ticket')"
+                    [ngClass]="comprobanteFormato === 'ticket' ? 'bg-white shadow text-slate-900 font-bold' : 'text-slate-600'"
+                    class="px-3 py-1 rounded text-xs transition-all cursor-pointer">
+                    Ticket 80mm
+                </button>
+                <button type="button" (click)="cambiarFormatoPdfComprobante('a4')"
+                    [ngClass]="comprobanteFormato === 'a4' ? 'bg-white shadow text-slate-900 font-bold' : 'text-slate-600'"
+                    class="px-3 py-1 rounded text-xs transition-all cursor-pointer">
+                    Formato A4
+                </button>
+            </div>
+        </div>
+    </ng-template>
+
+    <div class="pdf-container w-full" style="min-height: 550px;">
+        <iframe *ngIf="comprobantePdfUrl" [src]="comprobantePdfUrl" width="100%" height="560px" frameborder="0" class="rounded-lg border border-slate-200"></iframe>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-2 pt-2">
+            <button type="button" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition-colors cursor-pointer"
+                (click)="comprobantePdfDialog = false">
+                Cerrar
+            </button>
+        </div>
+    </ng-template>
 </p-dialog>
 
 <p-confirmDialog [style]="{ width: '450px' }" />

@@ -95,9 +95,10 @@ export class EmitirComprobanteComponent {
             .subscribe({
                 next: (res: any) => {
                     console.log('¡Éxito!', res);
-                    if (res.success && res.pdf) {
+                    const pdfLink = res.archivos?.pdf || res.pdf;
+                    if (res.success && pdfLink) {
                         // Abrir modal con el PDF
-                        this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(res.pdf);
+                        this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(pdfLink);
                         this.comprobanteTicket = res.ticket || '';
                         this.comprobanteMessage = res.message || 'Comprobante emitido';
                         this.pdfDialog = true;
@@ -105,7 +106,7 @@ export class EmitirComprobanteComponent {
                 },
                 error: (err) => {
                     console.error('Error al emitir', err);
-                    alert('Hubo un error con SUNAT o la BD');
+                    alert(err?.error?.message || 'Hubo un error con SUNAT o la BD');
                 }
             });
     }
