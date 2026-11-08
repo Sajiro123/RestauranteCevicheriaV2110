@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { ImportsModule } from '../../imports';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PedidoService } from '../../service/pedido.service';
@@ -47,6 +48,33 @@ export class ReportesComponent implements OnInit {
     pdfUrl: SafeResourceUrl | null = null;
     fecha_actual: any;
 
+    // ============================================================
+    // PESTAÑA 5: REPORTE DE COMPROBANTES ELECTRÓNICOS SUNAT
+    // ============================================================
+    selectedRangeComprobantes: Date[] | null = null;
+    filtroTipoComprobante: string = 'all';
+    filtroSerieComprobante: string = '';
+    filtroNumeroComprobante: string = '';
+    filtroClienteComprobante: string = '';
+    filtroSearchComprobante: string = '';
+    cargandoComprobantes: boolean = false;
+    listaComprobantes: any[] = [];
+    resumenComprobantes: any = {
+        total_importe: 0,
+        total_igv: 0,
+        total_gravadas: 0,
+        count_boletas: 0,
+        count_facturas: 0,
+        count_notas: 0,
+        total_comprobantes: 0
+    };
+    expandedRowsComprobantes: any = {};
+    comprobantePdfDialog: boolean = false;
+    comprobantePdfUrl: SafeResourceUrl | null = null;
+    comprobanteFormato: 'ticket' | 'a4' = 'ticket';
+    comprobanteArchivosActual: any = null;
+    anulandoId: number | null = null;
+
     // Estado de cierre de caja para el Reporte Consolidado
     cajaCerrada: boolean = false;
     verificandoCaja: boolean = true;
@@ -91,7 +119,8 @@ export class ReportesComponent implements OnInit {
         private AperturaService_: AperturaService,
         private messageService: MessageService,
         private router: Router,
-        private primeng: PrimeNG
+        private primeng: PrimeNG,
+        private http: HttpClient
     ) {
         // Establecer idioma español para PrimeNG
         this.primeng.setTranslation(ES_LOCALE);
@@ -169,6 +198,10 @@ export class ReportesComponent implements OnInit {
     onTabChange(event: any) {
         if (event && event.index === 0) {
             this.verificarEstadoCaja();
+        } else if (event && event.index === 4) {
+            if (this.listaComprobantes.length === 0) {
+                this.seleccionarMesActualComprobantes();
+            }
         }
     }
 
@@ -976,5 +1009,171 @@ export class ReportesComponent implements OnInit {
 
     private get datosVisibles(): any[] {
         return this.Clients;
+    }
+
+    // ============================================================
+    // MÉTODOS DEL REPORTE DE COMPROBANTES SUNAT
+    // ============================================================
+    cargarReporteComprobantes() {
+        this.cargandoComprobantes = true;
+        let url = 'http://127.0.0.1:8000/api/comprobantes?limit=250';
+
+        if (this.selectedRangeComprobantes && this.selectedRangeComprobantes[0]) {
+            const fInicio = this.formatDateToMySQL(this.selectedRangeComprobantes[0]);
+            url += `&fecha_inicio=${fInicio}`;
+            if (this.selectedRangeComprobantes[1]) {
+                const fFin = this.formatDateToMySQL(this.selectedRangeComprobantes[1]);
+                url += `&fecha_fin=${fFin}`;
+            } else {
+                url += `&fecha_fin=${fInicio}`;
+            }
+        }
+
+        if (this.filtroTipoComprobante && this.filtroTipoComprobante !== 'all') {
+            url += `&tipo_doc=${encodeURIComponent(this.filtroTipoComprobante)}`;
+        }
+        if (this.filtroSerieComprobante && this.filtroSerieComprobante.trim()) {
+            url += `&serie=${encodeURIComponent(this.filtroSerieComprobante.trim().toUpperCase())}`;
+        }
+        if (this.filtroNumeroComprobante && String(this.filtroNumeroComprobante).trim()) {
+            url += `&correlativo=${encodeURIComponent(String(this.filtroNumeroComprobante).trim())}`;
+        }
+        if (this.filtroClienteComprobante && this.filtroClienteComprobante.trim()) {
+            url += `&cliente=${encodeURIComponent(this.filtroClienteComprobante.trim())}`;
+        }
+        if (this.filtroSearchComprobante && this.filtroSearchComprobante.trim()) {
+            url += `&search=${encodeURIComponent(this.filtroSearchComprobante.trim())}`;
+        }
+
+        this.http.get<any>(url).subscribe({
+            next: (res) => {
+                this.cargandoComprobantes = false;
+                this.listaComprobantes = res?.data || [];
+                this.resumenComprobantes = res?.resumen || {
+                    total_importe: 0,
+                    total_igv: 0,
+                    total_gravadas: 0,
+                    count_boletas: 0,
+                    count_facturas: 0,
+                    count_notas: 0,
+                    total_comprobantes: 0
+                };
+            },
+            error: (err) => {
+                this.cargandoComprobantes = false;
+                console.error('Error cargando reporte comprobantes:', err);
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'No se pudo conectar con el servidor de comprobantes. Verifique que sunat-api esté activo.',
+                    life: 5000
+                });
+            }
+        });
+    }
+
+    seleccionarHoyComprobantes() {
+        const hoy = new Date();
+        this.selectedRangeComprobantes = [hoy, hoy];
+        this.cargarReporteComprobantes();
+    }
+
+    seleccionarMesActualComprobantes() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        this.selectedRangeComprobantes = [start, end];
+        this.cargarReporteComprobantes();
+    }
+
+    seleccionarMesAnteriorComprobantes() {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const end = new Date(now.getFullYear(), now.getMonth(), 0);
+        this.selectedRangeComprobantes = [start, end];
+        this.cargarReporteComprobantes();
+    }
+
+    limpiarFiltrosComprobantes() {
+        this.selectedRangeComprobantes = null;
+        this.filtroTipoComprobante = 'all';
+        this.filtroSerieComprobante = '';
+        this.filtroNumeroComprobante = '';
+        this.filtroClienteComprobante = '';
+        this.filtroSearchComprobante = '';
+        this.cargarReporteComprobantes();
+    }
+
+    verPdfComprobante(item: any, formato: 'ticket' | 'a4' = 'ticket') {
+        this.comprobanteArchivosActual = item.archivos || null;
+        this.comprobanteFormato = formato;
+        const targetUrl = formato === 'ticket'
+            ? (item.archivos?.pdf_ticket || item.archivos?.pdf)
+            : (item.archivos?.pdf_a4 || item.archivos?.pdf);
+
+        if (!targetUrl) {
+            this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'El archivo PDF no está disponible para este comprobante', life: 3000 });
+            return;
+        }
+
+        this.http.get(targetUrl, { responseType: 'blob' }).subscribe({
+            next: (blob) => {
+                const blobUrl = URL.createObjectURL(blob);
+                this.comprobantePdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+                this.comprobantePdfDialog = true;
+            },
+            error: () => {
+                window.open(targetUrl, '_blank');
+            }
+        });
+    }
+
+    cambiarFormatoPdfComprobante(formato: 'ticket' | 'a4') {
+        this.comprobanteFormato = formato;
+        const targetUrl = formato === 'ticket'
+            ? (this.comprobanteArchivosActual?.pdf_ticket || this.comprobanteArchivosActual?.pdf)
+            : (this.comprobanteArchivosActual?.pdf_a4 || this.comprobanteArchivosActual?.pdf);
+
+        if (targetUrl) {
+            this.http.get(targetUrl, { responseType: 'blob' }).subscribe({
+                next: (blob) => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    this.comprobantePdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+                }
+            });
+        }
+    }
+
+    anularComprobanteReporte(item: any) {
+        if (!confirm(`¿Está seguro de anular el comprobante ${item.numero_comprobante} de ${item.cliente_razon_social} mediante una Nota de Crédito en SUNAT?`)) {
+            return;
+        }
+
+        this.anulandoId = item.id;
+        this.http.post<any>('http://127.0.0.1:8000/api/comprobantes/nota-credito', {
+            venta_id: item.id,
+            motivo: 'ANULACION DE LA OPERACION'
+        }).subscribe({
+            next: (res) => {
+                this.anulandoId = null;
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Nota de Crédito Emitida',
+                    detail: res.message || 'El comprobante fue anulado con éxito en SUNAT.',
+                    life: 5000
+                });
+                this.cargarReporteComprobantes();
+            },
+            error: (err) => {
+                this.anulandoId = null;
+                const msg = err?.error?.message || 'No se pudo emitir la Nota de Crédito.';
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al anular',
+                    detail: msg,
+                    life: 6000
+                });
+            }
+        });
     }
 }

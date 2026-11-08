@@ -1,4 +1,4 @@
-﻿<style>
+<style>
     /* Small utility tweaks to preserve some original class names and give better admin UX */
 </style>
 <p-toast styleClass="text-2xl" />
@@ -130,18 +130,18 @@
                     }" (click)="seleccionarMesa({ numero: '0', estado: '0', pedidos: [], idpedido: pedido.idpedido })">
                     <div class="flex items-center gap-1.5 w-full border-0 min-w-0">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center font-bold flex-shrink-0 shadow-xs border text-[10px]"
-                            [ngClass]="pedido.es_chatbot ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-blue-100 text-blue-600 border-blue-200'"
-                            [title]="pedido.es_chatbot ? 'Pedido recibido por WhatsApp Chatbot' : 'Pedido Delivery Manual'">
-                            <i [ngClass]="pedido.es_chatbot ? 'pi pi-whatsapp' : 'pi pi-user'" class="text-[10px]"></i>
+                            [ngClass]="pedido['es_chatbot'] ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-blue-100 text-blue-600 border-blue-200'"
+                            [title]="pedido['es_chatbot'] ? 'Pedido recibido por WhatsApp Chatbot' : 'Pedido Delivery Manual'">
+                            <i [ngClass]="pedido['es_chatbot'] ? 'pi pi-whatsapp' : 'pi pi-user'" class="text-[10px]"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h3 class="font-bold text-gray-800 text-[11px] truncate m-0" title="{{ pedido.cliente }}">
-                                {{ pedido.cliente || 'Cliente' }}
+                            <h3 class="font-bold text-gray-800 text-[11px] truncate m-0" title="{{ pedido['cliente'] }}">
+                                {{ pedido['cliente'] || 'Cliente' }}
                             </h3>
                             <div class="flex items-center justify-between gap-1 mt-0.5">
                                 <span class="text-[10px] text-gray-500 font-semibold flex items-center gap-1">
                                     #{{ pedido.idpedido }}
-                                    <span *ngIf="pedido.es_chatbot"
+                                    <span *ngIf="pedido['es_chatbot']"
                                         class="text-[8px] bg-emerald-100 text-emerald-800 font-extrabold px-1 rounded border border-emerald-200">WA</span>
                                 </span>
                                 <span class="text-[9px] text-gray-400 font-medium flex items-center gap-0.5"
@@ -688,31 +688,29 @@
                                             class="font-black text-white text-2xl sm:text-3xl m-0 leading-tight tracking-tight">
                                             {{ pedido.mesa == '0' ? 'DELIVERY' : 'MESA ' + pedido.mesa }}
                                         </h3>
+                                        <span *ngIf="pedido['es_chatbot']"
+                                            class="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs"
+                                            title="Pedido del Chatbot WhatsApp">
+                                            <i class="pi pi-whatsapp"></i> BOT
+                                        </span>
                                         <span
                                             class="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                                            <span *ngIf="pedido.es_chatbot"
-                                                class="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs"
-                                                title="Pedido del Chatbot WhatsApp">
-                                                <i class="pi pi-whatsapp"></i> BOT
-                                            </span>
-                                            <span
-                                                class="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                                                #{{ pedido.idpedido }}
-                                            </span>
+                                            #{{ pedido.idpedido }}
+                                        </span>
                                     </div>
                                     <!-- Datos de Mozo y Cliente en estilo formal -->
                                     <div class="flex items-center gap-2 mt-1 text-xs text-slate-300 font-medium">
-                                        <span *ngIf="pedido.persona?.nombres" class="flex items-center gap-1">
+                                        <span *ngIf="pedido['persona']?.nombres" class="flex items-center gap-1">
                                             <i class="pi pi-user text-[10px] text-slate-400"></i>
-                                            {{ pedido.persona.nombres.split(' ')[0] }}
+                                            {{ pedido['persona'].nombres.split(' ')[0] }}
                                         </span>
-                                        <span *ngIf="pedido.persona?.nombres && pedido.cliente"
+                                        <span *ngIf="pedido['persona']?.nombres && pedido['cliente']"
                                             class="text-slate-600">•</span>
-                                        <span *ngIf="pedido.cliente"
+                                        <span *ngIf="pedido['cliente']"
                                             class="truncate max-w-[150px] flex items-center gap-1 text-slate-200"
-                                            [title]="pedido.cliente">
+                                            [title]="pedido['cliente']">
                                             <i class="pi pi-id-card text-[10px] text-slate-400"></i>
-                                            {{ pedido.cliente }}
+                                            {{ pedido['cliente'] }}
                                         </span>
                                     </div>
                                 </div>
