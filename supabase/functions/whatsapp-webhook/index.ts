@@ -1,8 +1,12 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const VERIFY_TOKEN = Deno.env.get('WHATSAPP_VERIFY_TOKEN') || 'cevicheria_willy_seguro_2026'
-const GRAPH_API_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') || 'EAANNNuVBiJsBSuAgnUjw8f6PXj9vLwzZBZBZBAufeNTvRdxTEHxsHtMMAUnk5hL3iB7YczVzGorQZCywe5JotSjDIfNC2BN0lQqNhz0xFojuvDE07uZB4uoei473NuFCY6jH7FL5x5NJYHaAVw9ToPkz4ZAFwBZAfjvOw8aAMOjdLkLRJTo81Pcef89opO0x5elOfTTQIB25SlfKIxicvY4hAFMbt4FZA9dtBRC80BaUsvRCYDy4RweJOiW2fzZAXxZBZCoIinfkxkB0KJGxR0qz0LofAZDZD'
-const PHONE_NUMBER_ID = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '1317677311436064'
+const GRAPH_API_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN') || 'EAANNNuVBiJsBSoDsBQzhZBrP6Lldi8q7q8g5KANtcKWI5SpXR1QvBQ0YnAoZCxuSiZBVD9nevRu4cxu00vgom5mAvFdbMXqWAWDRKSqbdoNVb7YpO5eZA9KbgL5pTuO9GXUyCtp1q5cGzvKOrnmZBOJgsMDVgnvwTNy04BPjf7vFtpNa1ESsaPGcVTaZAgwAZDZD'
+const envPhoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')
+// Si el secreto de Supabase aún tiene el ID de prueba de Meta (1089514050604081), usar el número de producción
+const PHONE_NUMBER_ID = (envPhoneId && envPhoneId !== '1089514050604081') ? envPhoneId : '1411155722076604'
+let currentIncomingPhoneId = PHONE_NUMBER_ID
+const NUMERO_ASESOR = Deno.env.get('WHATSAPP_ASESOR_PHONE') || '51991687503'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || ''
@@ -77,34 +81,166 @@ function matchesSubcategory(nombre: string, idcategoria: number, subcatKey: stri
   return false
 }
 
-function matchProduct(prodName: string, query: string): boolean {
-  const normName = normalizeText(prodName)
-  const cleanQuery = normalizeText(query)
-  const nameTokens = normName.split(/[\s,+/()_-]+/).filter(Boolean)
-  const queryWords = cleanQuery.split(/[\s,+/()_-]+/).filter(w => w.length >= 2)
+// ==========================================
+// MOTOR NLP DE BÚSQUEDA INTELIGENTE EN ESPAÑOL (100% GRATIS)
+// ==========================================
 
-  if (queryWords.length === 0) return false
+const STOP_WORDS = new Set([
+  'un', 'una', 'unos', 'unas', 'el', 'la', 'los', 'las', 'lo',
+  'al', 'del', 'de', 'con', 'sin', 'y', 'e', 'o', 'u', 'en', 'por', 'para',
+  'quiero', 'quier', 'quisiera', 'kiero', 'kero', 'dame', 'deme', 'trae', 'traeme', 'deseo', 'sirve', 'sirveme',
+  'vende', 'venden', 'tienen', 'hay', 'tienes',
+  'plato', 'platos', 'comida', 'pedido', 'orden', 'carta',
+  'favor', 'porfa', 'porfavor', 'gracias',
+  'buenas', 'buenos', 'dias', 'tardes', 'noches', 'hola', 'amigo', 'amiga',
+  'precio', 'cuanto', 'cuesta', 'vale', 'costo', 'comprar', 'pedir',
+  'uno', 'dos', 'tres', 'cuatro', '1', '2', '3', '4'
+])
 
-  // 1. Coincidencia directa completa de frase
-  if (normName.includes(cleanQuery)) {
-    // Si busca "chicha" no debe coincidir con "chicharron"
-    if (cleanQuery.startsWith('chicha') && !cleanQuery.startsWith('chicharr')) {
-      return nameTokens.some(tok => tok === 'chicha' || tok === 'chichas')
+function stemWord(word: string): string {
+  let w = word
+  // Quitar diminutivos comunes peruanos (chaufita -> chaufa, cevichito -> ceviche)
+  w = w.replace(/(itos|itas|ito|ita)$/, '')
+  // Plurales en español
+  if (w.endsWith('es') && w.length > 4) {
+    w = w.slice(0, -2)
+  } else if (w.endsWith('s') && w.length > 3) {
+    w = w.slice(0, -1)
+  }
+  return w
+}
+
+function levenshteinDistance(a: string, b: string): number {
+  const al = a.length
+  const bl = b.length
+  if (al === 0) return bl
+  if (bl === 0) return al
+
+  const row = new Array(bl + 1)
+  for (let j = 0; j <= bl; j++) row[j] = j
+
+  for (let i = 1; i <= al; i++) {
+    let prev = i
+    for (let j = 1; j <= bl; j++) {
+      const val = a[i - 1] === b[j - 1] ? row[j - 1] : Math.min(row[j - 1], prev, row[j]) + 1
+      row[j - 1] = prev
+      prev = val
     }
-    return true
+    row[bl] = prev
   }
 
-  // 2. Coincidencia por todas las palabras clave
-  return queryWords.every(qw => {
-    return nameTokens.some(tok => {
-      if (tok === qw) return true
-      if (qw.length >= 4 && tok.startsWith(qw)) {
-        if (qw === 'chicha' && tok.startsWith('chicharr')) return false
-        return true
+  return row[bl]
+}
+
+function calculateProductScore(prodName: string, userQuery: string): number {
+  const normProd = normalizeText(prodName)
+  const normQuery = normalizeText(userQuery)
+
+  if (!normQuery) return 0
+  if (normProd === normQuery) return 100
+
+  // 1. Extraer palabras clave eliminando stopwords conversacionales
+  const rawTokens = normQuery.split(/[\s,+/()_-]+/).filter(Boolean)
+  let keywords = rawTokens.filter(t => !STOP_WORDS.has(t))
+  if (keywords.length === 0) keywords = rawTokens
+
+  const prodTokens = normProd.split(/[\s,+/()_-]+/).filter(Boolean)
+  const prodStems = prodTokens.map(stemWord)
+
+  let score = 0
+  let matchedKeywords = 0
+
+  for (const kw of keywords) {
+    const kwStem = stemWord(kw)
+    let bestMatchForThisKw = 0
+
+    for (let i = 0; i < prodTokens.length; i++) {
+      const pt = prodTokens[i]
+      const ptStem = prodStems[i]
+
+      // Coincidencia exacta de palabra
+      if (pt === kw) {
+        bestMatchForThisKw = Math.max(bestMatchForThisKw, 40)
+        continue
       }
-      return false
-    })
-  })
+
+      // Coincidencia de raíz (stem / diminutivo / plural)
+      if (ptStem === kwStem || (kwStem.length >= 4 && ptStem.startsWith(kwStem)) || (ptStem.length >= 4 && kwStem.startsWith(ptStem))) {
+        // Excepción de negocio: "chicha" no debe confundirse con "chicharron"
+        if (kw.startsWith('chicha') && pt.startsWith('chicharr')) continue
+        if (kw.startsWith('chicharr') && pt === 'chicha') continue
+
+        bestMatchForThisKw = Math.max(bestMatchForThisKw, 35)
+        continue
+      }
+
+      // Tolerancia a errores ortográficos (Levenshtein)
+      if (kw.length >= 4) {
+        const dist = levenshteinDistance(kw, pt)
+        if (dist === 1) {
+          if (kw.startsWith('chicha') && pt.startsWith('chicharr')) continue
+          bestMatchForThisKw = Math.max(bestMatchForThisKw, 28)
+        } else if (dist === 2 && kw.length >= 6) {
+          bestMatchForThisKw = Math.max(bestMatchForThisKw, 18)
+        }
+      }
+    }
+
+    if (bestMatchForThisKw > 0) {
+      score += bestMatchForThisKw
+      matchedKeywords++
+    }
+  }
+
+  // Bonus por coincidencia de frase limpia completa (ej: "arroz mariscos")
+  const cleanPhrase = keywords.join(' ')
+  if (cleanPhrase && normProd.includes(cleanPhrase)) {
+    const isChichaConfusion = cleanPhrase.startsWith('chicha') && !cleanPhrase.startsWith('chicharr') && normProd.includes('chicharr')
+    if (!isChichaConfusion) {
+      score += 30
+    }
+  }
+
+  // Penalización ponderada si solo coincidió una fracción de las palabras clave
+  if (keywords.length > 1 && matchedKeywords < keywords.length) {
+    score = score * (matchedKeywords / keywords.length)
+  }
+
+  return Math.round(score)
+}
+
+function matchProduct(prodName: string, query: string): boolean {
+  return calculateProductScore(prodName, query) >= 25
+}
+
+function isGreetingOrOrderIntent(text: string): boolean {
+  if (!text) return false
+  const clean = text.toLowerCase().trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const exactIntents = [
+    'hola', 'ola', 'buenas', 'buen dia', 'buenos dias', 'buenas tardes', 'buenas noches',
+    'inicio', 'menu', 'carta', 'empezar', 'comenzar', 'pedir', 'pedido',
+    'quiero pedir', 'quiero ordenar', 'hacer pedido', 'hacer un pedido',
+    'quiero hacer un pedido', 'deseo hacer un pedido', 'realizar pedido',
+    'realizar un pedido', 'quiero comprar', 'atencion', 'delivery'
+  ]
+
+  if (exactIntents.includes(clean)) return true
+
+  if (clean.startsWith('hola') || clean.startsWith('buenas') || clean.startsWith('buen dia')) {
+    if (clean.length < 40) return true
+  }
+  if (clean.includes('pedido') || clean.includes('pedir') || clean.includes('ordenar')) {
+    if (clean.includes('quiero') || clean.includes('hacer') || clean.includes('deseo') || clean.includes('realizar') || clean.startsWith('para')) {
+      return true
+    }
+  }
+
+  return false
 }
 
 // ==========================================
@@ -112,12 +248,13 @@ function matchProduct(prodName: string, query: string): boolean {
 // ==========================================
 
 async function sendWhatsAppMessage(to: string, messageData: any) {
+  const activePhoneId = currentIncomingPhoneId || PHONE_NUMBER_ID || '1411155722076604'
   if (!GRAPH_API_TOKEN) {
     console.error('WHATSAPP_ACCESS_TOKEN no configurado')
     return null
   }
   try {
-    const res = await fetch(`https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`, {
+    const res = await fetch(`https://graph.facebook.com/v22.0/${activePhoneId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${GRAPH_API_TOKEN}`,
@@ -130,6 +267,18 @@ async function sendWhatsAppMessage(to: string, messageData: any) {
       })
     })
     const json = await res.json()
+    if (json.error) {
+      console.error('Error enviando mensaje WhatsApp Meta API:', JSON.stringify(json.error))
+      try {
+        await supabase.from('wa_mensajes').insert({
+          telefono: to,
+          sentido: 'out_error',
+          tipo: 'error',
+          contenido: json.error,
+          wa_message_id: 'meta_err_' + Date.now()
+        })
+      } catch (_) {}
+    }
     return json
   } catch (err) {
     console.error('Error enviando mensaje WhatsApp:', err)
@@ -201,6 +350,55 @@ async function sendList(to: string, header: string, body: string, buttonText: st
   })
 }
 
+async function sendCtaUrlButton(to: string, header: string, body: string, buttonText: string, url: string, footer?: string) {
+  const interactive: any = {
+    type: 'cta_url',
+    body: { text: body.slice(0, 1024) },
+    action: {
+      name: 'cta_url',
+      parameters: {
+        display_text: buttonText.slice(0, 20),
+        url: url
+      }
+    }
+  }
+  if (header) {
+    interactive.header = { type: 'text', text: header.slice(0, 60) }
+  }
+  if (footer) {
+    interactive.footer = { text: footer.slice(0, 60) }
+  }
+  return await sendWhatsAppMessage(to, { type: 'interactive', interactive })
+}
+
+async function transferirAAsesor(phone: string, sesion: any) {
+  const nombreCliente = sesion?.nombre || 'Cliente'
+  const waUrl = `https://wa.me/${NUMERO_ASESOR}?text=${encodeURIComponent(`Hola, soy ${nombreCliente} y solicito atención con mi pedido en El Puerto Cevichero`)}`
+
+  // 1. Enviar botón nativo interactivo para chatear directamente con el asesor humano
+  await sendCtaUrlButton(
+    phone,
+    '👨‍💼 Atención Personalizada',
+    `¡Hola *${nombreCliente}*! Para comunicarte directamente con nuestro asesor en el restaurante, toca el botón de abajo:\n\n_Tu pedido y carrito de compras seguirán guardados._`,
+    '💬 Hablar con Asesor',
+    waUrl,
+    'El Puerto Cevichero de Willy'
+  )
+
+  // 2. Notificar inmediatamente al WhatsApp del asesor humano (991 687 503)
+  try {
+    const carrito = sesion?.carrito || []
+    let detalleCarrito = 'Sin platos seleccionados aún'
+    if (carrito.length > 0) {
+      detalleCarrito = carrito.map((i: any) => `• ${i.cantidad}x ${i.nombre} (S/ ${Number(i.total).toFixed(2)})`).join('\n')
+    }
+    const mensajeAlAsesor = `🚨 *SOLICITUD DE ASESOR - EL PUERTO CEVICHERO* 🚨\n\n👤 *Cliente:* ${nombreCliente}\n📱 *Teléfono:* +${phone}\n🛒 *Carrito:* \n${detalleCarrito}\n\n👉 *Escríbele directamente:* https://wa.me/${phone}`
+    await sendText(NUMERO_ASESOR, mensajeAlAsesor)
+  } catch (err) {
+    console.error('Error notificando al asesor humano:', err)
+  }
+}
+
 // ==========================================
 // CONTROL DE HISTORIAL Y NAVEGACIÓN "VOLVER"
 // ==========================================
@@ -240,6 +438,9 @@ async function repintarPantalla(phone: string, sesion: any, paso: string) {
   } else if (paso === 'en_carrito') {
     await supabase.from('wa_sesiones').update({ estado: 'en_carrito' }).eq('telefono', phone)
     await mostrarResumenCarrito(phone, sesion)
+  } else if (paso === 'esperando_observaciones') {
+    await supabase.from('wa_sesiones').update({ estado: 'esperando_observaciones' }).eq('telefono', phone)
+    await pedirObservacionesCocina(phone, sesion)
   } else if (paso === 'seleccion_pago') {
     await supabase.from('wa_sesiones').update({ estado: 'seleccion_pago' }).eq('telefono', phone)
     await pedirMetodoPago(phone, sesion)
@@ -283,12 +484,18 @@ Deno.serve(async (req: Request) => {
         return new Response('EVENT_RECEIVED', { status: 200 })
       }
 
+      const metadataPhoneId = value?.metadata?.phone_number_id
+      if (metadataPhoneId && metadataPhoneId !== '1089514050604081') {
+        currentIncomingPhoneId = metadataPhoneId
+      }
+      const contactProfileName = value?.contacts?.[0]?.profile?.name || ''
+
       const msg = messages[0]
       const from = msg.from
       const msgId = msg.id
 
       try {
-        await handleIncomingMessage(from, msg, msgId)
+        await handleIncomingMessage(from, msg, msgId, contactProfileName)
       } catch (err: any) {
         console.error('Error procesando handleIncomingMessage:', err.message || err)
       }
@@ -307,7 +514,7 @@ Deno.serve(async (req: Request) => {
 // LÓGICA DE CONVERSACIÓN MEJORADA (V2 + MODELO HÍBRIDO)
 // ==========================================
 
-async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
+async function handleIncomingMessage(phone: string, msg: any, msgId: string, contactProfileName: string = '') {
   // 1. Desduplicación de mensajes
   const { data: existMsg } = await supabase
     .from('wa_mensajes')
@@ -378,13 +585,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
 
   // 4. Comando Global: Pedir Asesor Humano en cualquier momento
   if (userText.includes('asesor') || userText.includes('humano') || replyId === 'pedir_asesor') {
-    await supabase.from('wa_sesiones').update({ modo: 'humano' }).eq('telefono', phone)
-    await sendButtons(
-      phone,
-      '👨‍💼 He pausado el asistente virtual. Un asesor de *El Puerto Cevichero de Willy* te responderá por este chat en unos momentos.\n\n_Tu pedido y carrito se mantendrán guardados._',
-      [{ id: 'volver_bot', title: '🤖 Volver al Bot' }],
-      'El Puerto Cevichero de Willy'
-    )
+    await transferirAAsesor(phone, sesion)
     return
   }
 
@@ -433,8 +634,19 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     }
   }
 
-  // Comando Menú / Hola / Reiniciar
-  if (userText === 'inicio' || userText === 'hola' || userText === 'menu' || replyId === 'seguir_bot') {
+  // Saludos e intención de pedido (ej: "Hola", "quiero hacer un pedido", "hacer pedido", "buenas tardes", "menu", "carta")
+  if (isGreetingOrOrderIntent(userText) || userText === 'inicio' || userText === 'menu' || userText === 'carta' || replyId === 'seguir_bot') {
+    // Si aún no ha ingresado su nombre real o la sesión está en pedir_nombre:
+    if (!sesion.nombre || sesion.estado === 'pedir_nombre') {
+      await supabase.from('wa_sesiones').update({ estado: 'pedir_nombre' }).eq('telefono', phone)
+      await sendText(
+        phone,
+        '¡Hola! 🐟 Bienvenido a *El Puerto Cevichero de Willy*.\n¿Cuál es tu nombre para tomar tu pedido?'
+      )
+      return
+    }
+
+    // Si ya tiene su nombre registrado, saludamos por su nombre y mostramos el menú principal
     await supabase.from('wa_sesiones').update({
       estado: 'menu',
       datos: { ...sesion.datos, historial: ['menu'], errores: 0 }
@@ -443,18 +655,27 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     return
   }
 
+  // Manejo de recepción de imágenes (captura de comprobante / Yape / Plin)
+  if (msg.type === 'image' && sesion.estado !== 'esperando_ubicacion') {
+    await sendText(
+      phone,
+      '📸 ¡Captura de pantalla recibida con éxito! 🙌\nNuestro equipo verificará tu constancia de pago al preparar y despachar tu pedido. ¡Muchas gracias!'
+    )
+    return
+  }
+
   // ==========================================
   // MÁQUINA DE ESTADOS DEL BOT
   // ==========================================
 
-  // ESTADO 1: Captura Obligatoria de Nombre
-  if (!sesion.nombre || sesion.estado === 'pedir_nombre') {
+  // ESTADO 1: Captura Obligatoria de Nombre (solo si no viene de una interacción de botones o carta)
+  if ((!sesion.nombre || sesion.estado === 'pedir_nombre') && !replyId && !userText.startsWith('prod_')) {
     const rawText = msg.text?.body?.trim()
-    if (!rawText || sesion.estado !== 'pedir_nombre' || rawText.toLowerCase() === 'hola') {
+    if (!rawText || sesion.estado !== 'pedir_nombre' || isGreetingOrOrderIntent(rawText)) {
       await supabase.from('wa_sesiones').update({ estado: 'pedir_nombre' }).eq('telefono', phone)
       await sendText(
         phone,
-        '¡Hola! 🐟 Bienvenido a *El Puerto Cevichero de Willy*.\n\nPara poder registrar tu pedido y atenderte mejor, *¿cuál es tu nombre y apellido?*'
+        '¡Hola! 🐟 Bienvenido a *El Puerto Cevichero de Willy*.\n¿Cuál es tu nombre para tomar tu pedido?'
       )
       return
     }
@@ -526,6 +747,10 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
 
     // Buscador Inteligente en Chat (Modelo Híbrido: escribe e.g. "ceviche mixto", "parihuela", "chicha")
     if (userText && userText.length >= 2) {
+      if (isGreetingOrOrderIntent(userText)) {
+        await mostrarMenuPrincipal(phone, sesion.nombre)
+        return
+      }
       await buscarPlatosPorTexto(phone, userText, sesion)
       return
     }
@@ -648,7 +873,7 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     if (replyId === 'confirmar_pedido' || replyId === 'proceder_pago') {
       const hist = pushHistorial(sesion.datos, 'en_carrito')
       await supabase.from('wa_sesiones').update({ datos: { ...sesion.datos, historial: hist } }).eq('telefono', phone)
-      await pedirMetodoPago(phone, sesion)
+      await pedirObservacionesCocina(phone, sesion)
       return
     }
 
@@ -693,12 +918,56 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
     }
   }
 
+  // ESTADO 4.2: Observaciones e Indicaciones para Cocina (Sin ají, sin camote, etc.)
+  if (sesion.estado === 'esperando_observaciones') {
+    if (replyId === 'obs_continuar' || replyId === 'obs_normal' || userText === 'continuar' || userText === 'todo normal' || userText === 'normal' || userText === 'todo bien' || userText === 'nada' || userText === 'ninguna' || userText === 'sin cambios') {
+      const hist = pushHistorial(sesion.datos, 'esperando_observaciones')
+      await supabase.from('wa_sesiones').update({
+        estado: 'seleccion_pago',
+        datos: { ...sesion.datos, observaciones: '', historial: hist }
+      }).eq('telefono', phone)
+      sesion.datos = { ...sesion.datos, observaciones: '' }
+      await pedirMetodoPago(phone, sesion)
+      return
+    }
+
+    if (replyId === 'obs_sin_aji') {
+      const hist = pushHistorial(sesion.datos, 'esperando_observaciones')
+      await supabase.from('wa_sesiones').update({
+        estado: 'seleccion_pago',
+        datos: { ...sesion.datos, observaciones: 'Sin ají', historial: hist }
+      }).eq('telefono', phone)
+      sesion.datos = { ...sesion.datos, observaciones: 'Sin ají' }
+      await sendText(phone, '🌶️❌ ¡Anotado para la cocina! "*Sin ají*". 👨‍🍳👍')
+      await pedirMetodoPago(phone, sesion)
+      return
+    }
+
+    // Si el usuario escribe texto directamente con su observación
+    const textoIngresado = msg.text?.body?.trim()
+    if (textoIngresado && textoIngresado.length >= 2) {
+      const hist = pushHistorial(sesion.datos, 'esperando_observaciones')
+      await supabase.from('wa_sesiones').update({
+        estado: 'seleccion_pago',
+        datos: { ...sesion.datos, observaciones: textoIngresado, historial: hist }
+      }).eq('telefono', phone)
+      sesion.datos = { ...sesion.datos, observaciones: textoIngresado }
+      await sendText(phone, `📝 ¡Anotado para la cocina! "*${textoIngresado}*" 👨‍🍳👍`)
+      await pedirMetodoPago(phone, sesion)
+      return
+    }
+
+    // Si no reconoció la opción, volver a consultar
+    await pedirObservacionesCocina(phone, sesion)
+    return
+  }
+
   // ESTADO 5: Selección de Método de Pago
   if (sesion.estado === 'seleccion_pago') {
     let metodo = ''
-    if (replyId === 'pago_yape') metodo = 'Yape'
-    if (replyId === 'pago_plin') metodo = 'Plin'
-    if (replyId === 'pago_efectivo') metodo = 'Efectivo'
+    if (replyId === 'pago_yape' || userText.includes('yape')) metodo = 'Yape'
+    else if (replyId === 'pago_plin' || userText.includes('plin')) metodo = 'Plin'
+    else if (replyId === 'pago_efectivo' || userText.includes('efectivo')) metodo = 'Efectivo'
 
     if (metodo === 'Efectivo') {
       const hist = pushHistorial(sesion.datos, 'seleccion_pago')
@@ -725,10 +994,28 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
         datos: { ...sesion.datos, metodo_pago: metodo, paga_con: 0, historial: hist }
       }).eq('telefono', phone)
 
-      await sendText(
-        phone,
-        `📲 Has elegido *${metodo}*.\nPodrás pagar al momento de recibir tu pedido o transferir al número del restaurante.`
-      )
+      const total = calcularTotalCarrito(sesion.carrito)
+      if (metodo === 'Yape') {
+        await sendText(
+          phone,
+          `📲 Has elegido *Yape*.\n\n` +
+          `Por favor realiza el yapeo al siguiente número:\n` +
+          `📱 *974372084*\n` +
+          `👤 Titular: *Espinoza Willy*\n` +
+          `💵 Monto a transferir: *S/ ${total.toFixed(2)}*\n\n` +
+          `📸 *Importante:* Envíanos la captura de pantalla de tu constancia por este chat para que tu pedido pueda salir.`
+        )
+      } else {
+        await sendText(
+          phone,
+          `📲 Has elegido *Plin*.\n\n` +
+          `Por favor realiza la transferencia al siguiente número:\n` +
+          `📱 *974372084*\n` +
+          `👤 Titular: *Espinoza Willy*\n` +
+          `💵 Monto a transferir: *S/ ${total.toFixed(2)}*\n\n` +
+          `📸 *Importante:* Envíanos la captura de pantalla de tu constancia por este chat para que tu pedido pueda salir.`
+        )
+      }
       await pedirUbicacion(phone)
       return
     }
@@ -773,6 +1060,12 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
       lat = msg.location.latitude
       lng = msg.location.longitude
       direccion = msg.location.address || msg.location.name || 'Ubicación GPS compartida'
+    } else if (msg.type === 'image') {
+      await sendText(
+        phone,
+        '📸 ¡Captura de pago recibida! Muchas gracias 🙌\n\nAhora, para poder llevarte el pedido, por favor *comparte tu ubicación GPS* (botón 📎) o escribe tu *dirección y referencia* de entrega:'
+      )
+      return
     } else if (msg.text?.body) {
       direccion = msg.text.body.trim()
     }
@@ -799,9 +1092,9 @@ async function handleIncomingMessage(phone: string, msg: any, msgId: string) {
 async function mostrarMenuPrincipal(phone: string, nombre: string) {
   await sendButtons(
     phone,
-    `🍽️ *El Puerto Cevichero de Willy*\n¡Hola ${nombre || 'amigo'}! ¿Cómo deseas armar tu pedido hoy?\n\n💡 *Buscador rápido:* También puedes escribir directamente el plato que buscas (ejemplo: _"ceviche mixto"_, _"arroz con marisco"_, _"parihuela"_, _"chicha"_).`,
+    `🍽️ *El Puerto Cevichero de Willy*\n¡Hola ${nombre || 'amigo'}! ¿Cómo deseas pedir hoy?\n_Toca una opción o escribe tu plato directo:_`,
     [
-      { id: 'ver_destacados', title: '⭐ Más pedidos' },
+      { id: 'ver_destacados', title: '⭐ Platos Más Pedidos' },
       { id: 'ver_subcategorias', title: '📖 Toda la carta' },
       { id: 'pedir_asesor', title: '👨‍💼 Asesor' }
     ],
@@ -844,7 +1137,7 @@ async function mostrarPlatosDestacados(phone: string) {
 
   await sendList(
     phone,
-    '⭐ Platos Más Pedidos',
+    '⭐ Los Platos Más Pedidos',
     'Selecciona un plato para agregarlo a tu pedido:',
     'Ver Platos',
     [{ title: 'Especialidades', rows }]
@@ -1008,19 +1301,23 @@ async function buscarPlatosPorTexto(phone: string, query: string, sesion: any) {
     return
   }
 
-  const matches = prods.filter(p => matchProduct(p.nombre, query))
+  // Búsqueda inteligente con NLP y puntuación difusa
+  const scored = prods
+    .map(p => ({ ...p, score: calculateProductScore(p.nombre, query) }))
+    .filter(p => p.score >= 25)
+    .sort((a, b) => b.score - a.score)
 
-  // Caso 1: Coincidencia única exacta -> Lleva directo a seleccionar porciones
-  if (matches.length === 1) {
-    const plato = matches[0]
+  // Caso 1: Coincidencia única clara o el primer plato tiene una clara ventaja (score >= 70 y ventaja de al menos 20 pts)
+  if (scored.length === 1 || (scored.length > 1 && scored[0].score >= 70 && scored[0].score - scored[1].score >= 20)) {
+    const plato = scored[0]
     await sendText(phone, `🎯 ¡Excelente elección! Encontré *${plato.nombre}* (S/ ${Number(plato.preciounitario).toFixed(2)}).`)
     await iniciarSeleccionCantidad(phone, plato.idproducto, sesion)
     return
   }
 
   // Caso 2: Múltiples coincidencias (entre 2 y 7 platos) -> Muestra lista interactiva de resultados
-  if (matches.length >= 2 && matches.length <= 7) {
-    const rows: any[] = matches.map(p => ({
+  if (scored.length >= 2 && scored.length <= 7) {
+    const rows: any[] = scored.map(p => ({
       id: `prod_${p.idproducto}`,
       title: p.nombre.slice(0, 24),
       description: `S/ ${Number(p.preciounitario).toFixed(2)}`
@@ -1040,16 +1337,17 @@ async function buscarPlatosPorTexto(phone: string, query: string, sesion: any) {
     await sendList(
       phone,
       '🔍 Resultados de Búsqueda',
-      `Encontré estos ${matches.length} platos que coinciden con "*${query}*":`,
+      `Encontré estos ${scored.length} platos para "*${query}*":`,
       'Ver Platos',
       [{ title: 'Resultados Encontrados', rows }]
     )
     return
   }
 
-  // Caso 3: Demasiadas coincidencias (> 7 platos) -> Muestra los primeros 6 y pide afinar búsqueda
-  if (matches.length > 7) {
-    const rows: any[] = matches.slice(0, 6).map(p => ({
+  // Caso 3: Demasiadas coincidencias (> 7 platos) -> Muestra los 6 de mayor relevancia
+  if (scored.length > 7) {
+    const top6 = scored.slice(0, 6)
+    const rows: any[] = top6.map(p => ({
       id: `prod_${p.idproducto}`,
       title: p.nombre.slice(0, 24),
       description: `S/ ${Number(p.preciounitario).toFixed(2)}`
@@ -1069,7 +1367,7 @@ async function buscarPlatosPorTexto(phone: string, query: string, sesion: any) {
     await sendList(
       phone,
       '🔍 Resultados de Búsqueda',
-      `Encontré ${matches.length} platos para "*${query}*". Aquí tienes los principales (o sé más específico):`,
+      `Encontré ${scored.length} platos relacionados con "*${query}*". Aquí tienes las mejores opciones:`,
       'Ver Platos',
       [{ title: 'Resultados Destacados', rows }]
     )
@@ -1260,13 +1558,86 @@ async function mostrarListaQuitarPlatos(phone: string, sesion: any) {
   )
 }
 
+async function pedirObservacionesCocina(phone: string, sesion: any) {
+  const hist = pushHistorial(sesion.datos, 'en_carrito')
+  await supabase.from('wa_sesiones').update({
+    estado: 'esperando_observaciones',
+    datos: { ...sesion.datos, historial: hist }
+  }).eq('telefono', phone)
+
+  await sendButtons(
+    phone,
+    `👨‍🍳 *¿Alguna indicación especial para la cocina?*\n\n` +
+    `Escribe por aquí tu indicación para que el equipo prepare tu pedido a tu gusto.\n\n` +
+    `💡 *Ideas de cómo pedir:*\n` +
+    `• _"Sin ají"_\n` +
+    `• _"Sin camote"_\n` +
+    `• _"Sin cebolla"_\n` +
+    `• _"Sin ají y sin camote"_\n` +
+    `• _"Ensalada aparte"_\n` +
+    `• _"Poco picante"_\n\n` +
+    `_Si no tienes ninguna indicación especial, presiona *⏩ Continuar* para avanzar:_`,
+    [
+      { id: 'obs_continuar', title: '⏩ Continuar' },
+      { id: 'volver', title: '⬅️ Volver' }
+    ],
+    'El Puerto Cevichero de Willy'
+  )
+}
+
+function obtenerToppingIdsDeTexto(textoObservacion: string): string {
+  if (!textoObservacion) return '0'
+  const norm = normalizeText(textoObservacion)
+  const ids: number[] = []
+
+  // Mapeo con los IDs reales de la tabla toppings en Supabase
+  if (norm.includes('sin aji') || norm.includes('sin picante') || norm.includes('no aji') || norm.includes('no picante') || norm.includes('cero aji') || norm.includes('nada de aji')) {
+    ids.push(1) // SIN AJI
+  }
+  if (norm.includes('sin camote') || norm.includes('no camote') || norm.includes('sin camotito')) {
+    ids.push(5) // SIN CAMOTE
+  }
+  if (norm.includes('sin cebolla') || norm.includes('no cebolla') || norm.includes('sin cebollita')) {
+    ids.push(4) // SIN CEBOLLA
+  } else if (norm.includes('poca cebolla') || norm.includes('poco cebolla')) {
+    ids.push(24) // poca cebolla
+  }
+  if (norm.includes('sin yuca') || norm.includes('no yuca')) {
+    ids.push(7) // SIN YUCA
+  }
+  if (norm.includes('sin arroz') || norm.includes('no arroz')) {
+    ids.push(8) // SIN ARROZ
+  } else if (norm.includes('poco arroz') || norm.includes('poca arroz')) {
+    ids.push(30) // poco arroz
+  }
+  if (norm.includes('ensalada aparte') || norm.includes('aparte ensalada')) {
+    ids.push(9) // ENSALADA APARTE
+  }
+  if (norm.includes('bajo aji') || norm.includes('poco aji') || norm.includes('poco picante') || norm.includes('suave aji')) {
+    ids.push(11) // BAJO AJI
+  }
+  if (norm.includes('bien picante') || norm.includes('bastante aji') || norm.includes('muy picante') || norm.includes('harto aji')) {
+    ids.push(29) // bien picante
+  }
+  if (norm.includes('bajo sal') || norm.includes('poca sal') || norm.includes('sin sal')) {
+    ids.push(16) // BAJO SAL
+  }
+
+  return ids.length > 0 ? ids.join(',') : '0'
+}
+
 async function pedirMetodoPago(phone: string, sesion: any) {
   const total = calcularTotalCarrito(sesion.carrito)
   await supabase.from('wa_sesiones').update({ estado: 'seleccion_pago' }).eq('telefono', phone)
 
+  let notaText = ''
+  if (sesion.datos?.observaciones) {
+    notaText = `\n📝 *Nota cocina:* ${sesion.datos.observaciones}`
+  }
+
   await sendButtons(
     phone,
-    `💰 El total a pagar es *S/ ${total.toFixed(2)}*.\n\n¿Cómo deseas pagar cuando llegue tu pedido?`,
+    `💰 El total a pagar es *S/ ${total.toFixed(2)}*.${notaText}\n\n¿Cómo deseas pagar cuando llegue tu pedido?`,
     [
       { id: 'pago_yape', title: '📲 Yape' },
       { id: 'pago_plin', title: '📲 Plin' },
@@ -1320,7 +1691,13 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
   const metodoPago = sesion.datos?.metodo_pago || 'Por coordinar'
   const pagaCon = Number(sesion.datos?.paga_con) || 0
 
-  let comentario = `[PEDIDO WHATSAPP DELIVERY] Método de pago: ${metodoPago}`
+  const observacionCliente = sesion.datos?.observaciones ? String(sesion.datos.observaciones).trim() : ''
+
+  let comentario = ''
+  if (observacionCliente) {
+    comentario += `⚠️ NOTA COCINA: ${observacionCliente.toUpperCase()} | `
+  }
+  comentario += `[PEDIDO WHATSAPP DELIVERY] Método de pago: ${metodoPago}`
   if (metodoPago === 'Efectivo' && pagaCon > 0) {
     const vuelto = Math.max(0, pagaCon - total)
     comentario += ` (Paga con: S/ ${pagaCon.toFixed(2)} | Vuelto: S/ ${vuelto.toFixed(2)})`
@@ -1329,25 +1706,43 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     comentario += ` | Dirección: ${direccion}`
   }
 
-  const now = new Date()
-  const fechaLima = now.toLocaleDateString('en-CA', { timeZone: 'America/Lima' })
+  let fechaLima = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' })
+  try {
+    const { data: serverDate, error: rpcDateErr } = await supabase.rpc('obtener_fecha_lima')
+    if (!rpcDateErr && serverDate) {
+      fechaLima = serverDate
+    }
+  } catch (e) {
+    console.warn('Error obteniendo fecha_lima en chatbot:', e)
+  }
 
   const pedidoData = {
     cliente: sesion.nombre || 'Cliente WhatsApp',
+    telefono: phone,
     mesa: 0, // 0 = DELIVERY
     estado: '1', // 1 = PENDIENTE / NO COBRADO (EL MOZO O REPARTIDOR COBRA)
     total_pedidos: totalPedidos,
     fecha: fechaLima,
     idmozo: 1, // Mozo 1 = "Delivery"
     total: total,
-    comentarios: comentario
+    comentario: comentario,
+    comentarios: comentario,
+    direccion: direccion,
+    latitud: lat,
+    longitud: lng,
+    metodo_pago: metodoPago,
+    paga_con: pagaCon,
+    es_chatbot: true
   }
 
+  // Las indicaciones de cocina son generales para todo el pedido, no se asignan a nivel de pedidodetalle
   const detalles = carrito.map((item: any) => ({
     idproducto: item.idproducto,
     cantidad: item.cantidad,
     preciounitario: item.preciounitario,
-    lugarpedido: '1' // 1 = Para llevar / Delivery
+    lugarpedido: '1', // 1 = Para llevar / Delivery
+    toppings: '0',
+    opcionespedido: null
   }))
 
   const { data: rpcResult, error: rpcError } = await supabase.rpc('insertar_pedido_y_detalles', {
@@ -1357,17 +1752,13 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
 
   if (rpcError || !rpcResult?.success) {
     console.error('Error insertando pedido:', rpcError)
-    await sendText(
-      phone,
-      '⚠️ Hubo un pequeño inconveniente al registrar el pedido en el sistema. Un asesor te atenderá de inmediato por este chat.'
-    )
-    await supabase.from('wa_sesiones').update({ modo: 'humano' }).eq('telefono', phone)
+    await transferirAAsesor(phone, sesion)
     return
   }
 
   const idPedido = rpcResult.idpedido
 
-  await supabase.from('pedido').update({
+  const updatePayload: any = {
     telefono: phone,
     direccion: direccion,
     latitud: lat,
@@ -1377,8 +1768,16 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     yape: 0,
     plin: 0,
     efectivo: 0,
-    visa: 0
-  }).eq('idpedido', idPedido)
+    visa: 0,
+    es_chatbot: true
+  }
+
+  const { error: updateErr } = await supabase.from('pedido').update(updatePayload).eq('idpedido', idPedido)
+  if (updateErr) {
+    console.warn('Aviso al actualizar pedido con es_chatbot:', updateErr)
+    delete updatePayload.es_chatbot
+    await supabase.from('pedido').update(updatePayload).eq('idpedido', idPedido)
+  }
 
   // Limpiar sesión para nuevo pedido
   await supabase.from('wa_sesiones').update({
@@ -1392,14 +1791,31 @@ async function registrarPedidoFinal(phone: string, sesion: any, direccion: strin
     mapaLink = `\n🗺️ Mapa: https://maps.google.com/?q=${lat},${lng}`
   }
 
+  let metodoDetalle = metodoPago
+  if (metodoPago === 'Efectivo') {
+    metodoDetalle = pagaCon > 0 ? `Efectivo (Paga con S/ ${pagaCon.toFixed(2)})` : 'Efectivo contra entrega'
+  } else if (metodoPago === 'Yape' || metodoPago === 'Plin') {
+    metodoDetalle = `${metodoPago} (Transferencia)`
+  }
+
+  let notaClienteMsg = ''
+  if (observacionCliente) {
+    notaClienteMsg = `\n📝 *Nota para cocina:* ${observacionCliente}`
+  }
+
+  let recordatorioPago = ''
+  if (metodoPago === 'Yape' || metodoPago === 'Plin') {
+    recordatorioPago = `\n\n⚠️ *Recordatorio:* Si aún no enviaste la captura de pantalla de tu ${metodoPago} al *974372084 (Espinoza Willy)*, por favor envíala por aquí para despachar tu pedido de inmediato.`
+  }
+
   await sendText(
     phone,
     `🎉 *¡PEDIDO CONFIRMADO CON ÉXITO!* 🎉\n\n` +
     `📋 *Pedido N°:* #${idPedido}\n` +
     `👤 *Cliente:* ${sesion.nombre}\n` +
     `💰 *Total:* S/ ${total.toFixed(2)}\n` +
-    `💳 *Pago:* ${metodoPago} *(se cobra contra entrega)*\n` +
+    `💳 *Pago:* ${metodoDetalle}${notaClienteMsg}\n` +
     `📍 *Entrega:* ${direccion}${mapaLink}\n\n` +
-    `👨‍🍳 El equipo de cocina de *El Puerto Cevichero de Willy* ya recibió tu comanda y comenzará su preparación. ¡Muchas gracias!`
+    `👨‍🍳 El equipo de cocina de *El Puerto Cevichero de Willy* ya recibió tu comanda y comenzará su preparación. ¡Muchas gracias!${recordatorioPago}`
   )
 }

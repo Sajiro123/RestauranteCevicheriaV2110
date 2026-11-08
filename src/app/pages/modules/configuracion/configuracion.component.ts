@@ -14,6 +14,7 @@ import MenuListComponent from "./menu/menu-list/menu-list.component";
 import { RouterModule } from '@angular/router';
 import { AperturasComponent } from './aperturas/aperturas.component';
 import { ComprasComponent } from './compras/compras.component';
+import { ReportePlatosComponent } from './reporte-platos/reporte-platos.component';
 
 @Component({
     selector: 'app-configuracion',
@@ -28,6 +29,7 @@ import { ComprasComponent } from './compras/compras.component';
         PerfilPermisosComponent,
         AperturasComponent,
         ComprasComponent,
+        ReportePlatosComponent,
         CommonModule,
         FormsModule,
         ImportsModule,

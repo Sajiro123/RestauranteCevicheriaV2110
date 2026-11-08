@@ -13,12 +13,12 @@
                         <i class="pi pi-chart-line"></i>
                         <div>
                             <h3>Reporte Consolidado de Ventas</h3>
-                            <p>Resumen diario y mensual por métodos de pago</p>
+                            <p>Resumen diario y mensual por métodos de pago y liquidación de gastos</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Filtro de Fechas -->
+                <!-- Filtro de Fechas y Accesos Rápidos -->
                 <div class="filter-bar-card">
                     <div class="filter-item">
                         <label><i class="pi pi-calendar"></i> Rango de Fechas:</label>
@@ -29,86 +29,190 @@
                             [panelStyle]="{ 'z-index': '10000' }" [minDate]="minDate" [maxDate]="maxDate">
                         </p-datepicker>
                     </div>
+
+                    <!-- Atajos de selección de mes -->
+                    <!-- Atajos de selección de mes (Solo visible para el Administrador) -->
+                    <div class="filter-shortcuts" *ngIf="esAdmin">
+                        <button type="button" class="btn-quick-date" (click)="seleccionarMesActual()" title="Ver todo el mes actual (del 1 al último día)">
+                            <i class="pi pi-calendar"></i> Este Mes
+                        </button>
+                        <button type="button" class="btn-quick-date" (click)="seleccionarMesAnterior()" title="Ver todo el mes anterior completo">
+                            <i class="pi pi-history"></i> Mes Anterior
+                        </button>
+                        <button type="button" class="btn-quick-date" (click)="seleccionarUltimos30Dias()" title="Ver los últimos 30 días">
+                            <i class="pi pi-clock"></i> Últimos 30 días
+                        </button>
+                    </div>
+
+                    <!-- Switch de días sin ventas -->
+                    <div class="filter-toggle-container" *ngIf="allClientsData && allClientsData.length > 0">
+                        <button type="button" class="btn-toggle-dias" [class.active]="mostrarDiasSinVentas" (click)="toggleDiasSinVentas()">
+                            <i class="pi" [ngClass]="mostrarDiasSinVentas ? 'pi-check-circle' : 'pi-circle'"></i>
+                            <span>{{ mostrarDiasSinVentas ? 'Días completos (1 a ' + allClientsData.length + ')' : 'Solo días con ventas (' + totalDiasConVentas + ')' }}</span>
+                        </button>
+                    </div>
                 </div>
 
-                    <!-- Tabla con Cabecera Verde Oscuro -->
-                    <div class="custom-table-darkgreen">
-                        <p-table stripedRows #dt [value]="Clients" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan" [rows]="10" [paginator]="true"
-                            [rowHover]="true" dataKey="idpedido" [resizableColumns]="true"
-                            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-                            [showCurrentPageReport]="true">
-
-                            <ng-template pTemplate="header">
-                                <tr>
-                                    <th pSortableColumn="fecha" style="width: 14%;">
-                                        📅 Fecha <p-sortIcon field="fecha" />
-                                    </th>
-                                    <th pSortableColumn="dia" style="width: 12%;">
-                                        📅 Día <p-sortIcon field="dia" />
-                                    </th>
-                                    <th pSortableColumn="efectivo" class="text-right">
-                                        💵 Efectivo <p-sortIcon field="efectivo" />
-                                    </th>
-                                    <th pSortableColumn="yape" class="text-right">
-                                        📱 Yape <p-sortIcon field="yape" />
-                                    </th>
-                                    <th pSortableColumn="plin" class="text-right">
-                                        📱 Plin <p-sortIcon field="plin" />
-                                    </th>
-                                    <th pSortableColumn="visa" class="text-right">
-                                        💳 Visa / POS <p-sortIcon field="visa" />
-                                    </th>
-                                    <th pSortableColumn="gastos" class="text-right">
-                                        📉 Gastos <p-sortIcon field="gastos" />
-                                    </th>
-                                    <th pSortableColumn="total" class="text-right">
-                                        💰 Total <p-sortIcon field="total" />
-                                    </th>
-                                    <th style="width: 10%;">PDF</th>
-                                </tr>
-                            </ng-template>
-
-                            <ng-template pTemplate="body" let-customer let-rowIndex="rowIndex" let-rowgroup="rowgroup"
-                                let-rowspan="rowspan">
-                                <tr>
-                                    <td class="font-bold text-gray-800">{{ customer.fecha }}</td>
-                                    <td class="capitalize font-semibold text-gray-600">{{ customer.dia }}</td>
-                                    <td class="text-right font-medium text-emerald-700">S/ {{ customer.efectivo | number:'1.2-2' }}</td>
-                                    <td class="text-right font-medium text-purple-700">S/ {{ customer.yape | number:'1.2-2' }}</td>
-                                    <td class="text-right font-medium text-blue-700">S/ {{ customer.plin | number:'1.2-2' }}</td>
-                                    <td class="text-right font-medium text-indigo-700">S/ {{ customer.visa | number:'1.2-2' }}</td>
-                                    <td class="text-right font-semibold text-rose-600">S/ {{ (customer.gastos || 0) | number:'1.2-2' }}</td>
-                                    <td class="text-right font-extrabold text-gray-900">S/ {{ customer.total | number:'1.2-2' }}</td>
-                                    <td class="text-center">
-                                        <button pButton icon="pi pi-file-pdf"
-                                            class="p-button-rounded p-button-text p-button-danger hover:bg-rose-50"
-                                            (click)="PdfReporteDiario(customer.fecha)" title="Descargar Reporte del Día"></button>
-                                    </td>
-                                </tr>
-                            </ng-template>
-
-                            <ng-template pTemplate="footer">
-                                <tr *ngIf="Clients && Clients.length > 0">
-                                    <td colspan="2" class="font-bold text-gray-900 uppercase tracking-wider text-xs">
-                                        TOTAL GENERAL ({{ Clients.length }} DÍAS)
-                                    </td>
-                                    <td class="text-right font-bold text-emerald-800">S/ {{ (array_data_total.efectivo || 0) | number:'1.2-2' }}</td>
-                                    <td class="text-right font-bold text-purple-800">S/ {{ (array_data_total.yape || 0) | number:'1.2-2' }}</td>
-                                    <td class="text-right font-bold text-blue-800">S/ {{ (array_data_total.plin || 0) | number:'1.2-2' }}</td>
-                                    <td class="text-right font-bold text-indigo-800">S/ {{ (array_data_total.visa || 0) | number:'1.2-2' }}</td>
-                                    <td class="text-right font-bold text-rose-700">S/ {{ (array_data_total.gastos || 0) | number:'1.2-2' }}</td>
-                                    <td class="text-right font-black text-gray-950 text-lg">S/ {{ (array_data_total.total || 0) | number:'1.2-2' }}</td>
-                                    <td></td>
-                                </tr>
-                                <tr *ngIf="!Clients || Clients.length == 0">
-                                    <td colspan="9" class="empty-state">
-                                        <i class="pi pi-calendar-times"></i>
-                                        <span>No hay registros en este rango de fechas. Seleccione otro periodo para consultar.</span>
-                                    </td>
-                                </tr>
-                            </ng-template>
-                        </p-table>
+                <!-- Tarjetas KPI de Resumen Financiero -->
+                <div class="reportes-kpis-grid" *ngIf="Clients && Clients.length > 0">
+                    <div class="kpi-card-metric kpi-ventas">
+                        <div class="kpi-metric-icon"><i class="pi pi-dollar"></i></div>
+                        <div class="kpi-metric-info">
+                            <span class="kpi-metric-lbl">Total Ventas (Ingresos)</span>
+                            <span class="kpi-metric-val val-green">S/ {{ (array_data_total.total || 0) | number:'1.2-2' }}</span>
+                            <span class="kpi-metric-sub">Efectivo + Yape + Plin + POS</span>
+                        </div>
                     </div>
+
+                    <div class="kpi-card-metric kpi-gastos">
+                        <div class="kpi-metric-icon"><i class="pi pi-arrow-down-right"></i></div>
+                        <div class="kpi-metric-info">
+                            <span class="kpi-metric-lbl">Total Gastos Operativos</span>
+                            <span class="kpi-metric-val val-rose">S/ {{ (array_data_total.gastos || 0) | number:'1.2-2' }}</span>
+                            <span class="kpi-metric-sub">Salidas registradas del periodo</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card-metric kpi-balance">
+                        <div class="kpi-metric-icon"><i class="pi pi-wallet"></i></div>
+                        <div class="kpi-metric-info">
+                            <span class="kpi-metric-lbl">Balance Neto Real</span>
+                            <span class="kpi-metric-val val-blue">S/ {{ balanceNeto | number:'1.2-2' }}</span>
+                            <span class="kpi-metric-sub">Ventas menos Gastos</span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card-metric kpi-dias">
+                        <div class="kpi-metric-icon"><i class="pi pi-calendar-check"></i></div>
+                        <div class="kpi-metric-info">
+                            <span class="kpi-metric-lbl">Días en Periodo</span>
+                            <span class="kpi-metric-val val-slate">{{ totalDiasConVentas }} <small class="lbl-small">/ {{ allClientsData.length }} días</small></span>
+                            <span class="kpi-metric-sub">{{ totalDiasSinVentas }} días sin atención / 0 ventas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla con Cabecera Verde Oscuro -->
+                <div class="custom-table-darkgreen">
+                    <p-table stripedRows #dt [value]="Clients" sortField="fecha" [sortOrder]="1" rowGroupMode="rowspan"
+                        [rows]="31" [rowsPerPageOptions]="[10, 20, 31, 50, 100]" [paginator]="true"
+                        [rowHover]="true" dataKey="fecha" [resizableColumns]="true"
+                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} días"
+                        [showCurrentPageReport]="true">
+
+                        <ng-template pTemplate="header">
+                            <tr>
+                                <th pSortableColumn="fecha" style="width: 12%;">
+                                    📅 Fecha <p-sortIcon field="fecha" />
+                                </th>
+                                <th pSortableColumn="dia" style="width: 11%;">
+                                    📅 Día <p-sortIcon field="dia" />
+                                </th>
+                                <th pSortableColumn="efectivo" class="text-right">
+                                    💵 Efectivo <p-sortIcon field="efectivo" />
+                                </th>
+                                <th pSortableColumn="yape" class="text-right">
+                                    📱 Yape <p-sortIcon field="yape" />
+                                </th>
+                                <th pSortableColumn="plin" class="text-right">
+                                    📱 Plin <p-sortIcon field="plin" />
+                                </th>
+                                <th pSortableColumn="visa" class="text-right">
+                                    💳 Visa / POS <p-sortIcon field="visa" />
+                                </th>
+                                <th pSortableColumn="gastos" class="text-right">
+                                    📉 Gastos <p-sortIcon field="gastos" />
+                                </th>
+                                <th pSortableColumn="total" class="text-right">
+                                    💰 Total Ventas <p-sortIcon field="total" />
+                                </th>
+                                <th style="width: 11%; text-align: center;">Estado Caja</th>
+                                <th style="width: 7%; text-align: center;">PDF</th>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="body" let-customer let-rowIndex="rowIndex">
+                            <tr [class.row-sin-ventas]="customer.sinVentas">
+                                <td class="font-bold text-gray-800">
+                                    {{ customer.fecha | date:'dd/MM/yyyy' }}
+                                </td>
+                                <td class="capitalize font-semibold text-gray-600">{{ customer.dia }}</td>
+                                <td class="text-right font-medium" [class.text-emerald-700]="customer.efectivo > 0" [class.text-gray-400]="customer.efectivo === 0">
+                                    S/ {{ customer.efectivo | number:'1.2-2' }}
+                                </td>
+                                <td class="text-right font-medium" [class.text-purple-700]="customer.yape > 0" [class.text-gray-400]="customer.yape === 0">
+                                    S/ {{ customer.yape | number:'1.2-2' }}
+                                </td>
+                                <td class="text-right font-medium" [class.text-blue-700]="customer.plin > 0" [class.text-gray-400]="customer.plin === 0">
+                                    S/ {{ customer.plin | number:'1.2-2' }}
+                                </td>
+                                <td class="text-right font-medium" [class.text-indigo-700]="customer.visa > 0" [class.text-gray-400]="customer.visa === 0">
+                                    S/ {{ customer.visa | number:'1.2-2' }}
+                                </td>
+                                <td class="text-right font-semibold" [class.text-rose-600]="customer.gastos > 0" [class.text-gray-400]="customer.gastos === 0">
+                                    S/ {{ (customer.gastos || 0) | number:'1.2-2' }}
+                                </td>
+                                <td class="text-right font-extrabold" [class.text-gray-900]="customer.total > 0" [class.text-gray-400]="customer.total === 0">
+                                    S/ {{ customer.total | number:'1.2-2' }}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge-caja badge-caja-cerrada" *ngIf="customer.cajaEstado === 2" title="Caja cerrada correctamente">
+                                        <i class="pi pi-check-circle"></i> Cerrada
+                                    </span>
+                                    <span class="badge-caja badge-caja-abierta" *ngIf="customer.cajaEstado === 1" title="Caja abierta o en curso">
+                                        <i class="pi pi-clock"></i> Abierta
+                                    </span>
+                                    <span class="badge-caja badge-caja-none" *ngIf="!customer.cajaEstado && (customer.total > 0 || customer.gastos > 0)" title="Ventas registradas sin apertura formal">
+                                        <i class="pi pi-exclamation-circle"></i> Sin caja
+                                    </span>
+                                    <span class="badge-caja badge-caja-descanso" *ngIf="customer.sinVentas" title="Día sin ventas o descanso">
+                                        Descanso
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <button pButton icon="pi pi-file-pdf"
+                                        class="p-button-rounded p-button-text p-button-danger hover:bg-rose-50"
+                                        (click)="PdfReporteDiario(customer.fecha)"
+                                        [disabled]="customer.sinVentas && (!customer.gastos || customer.gastos === 0)"
+                                        [title]="customer.sinVentas ? 'Sin ventas este día' : 'Descargar Reporte del Día'"></button>
+                                </td>
+                            </tr>
+                        </ng-template>
+
+                        <ng-template pTemplate="footer">
+                            <tr *ngIf="Clients && Clients.length > 0" class="footer-totals-row">
+                                <td colspan="2" class="font-bold text-gray-900 uppercase tracking-wider text-xs">
+                                    TOTAL VENTAS ({{ totalDiasConVentas }} DÍAS CON VENTAS)
+                                </td>
+                                <td class="text-right font-bold text-emerald-800">S/ {{ (array_data_total.efectivo || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-bold text-purple-800">S/ {{ (array_data_total.yape || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-bold text-blue-800">S/ {{ (array_data_total.plin || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-bold text-indigo-800">S/ {{ (array_data_total.visa || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-bold text-rose-700">S/ {{ (array_data_total.gastos || 0) | number:'1.2-2' }}</td>
+                                <td class="text-right font-black text-gray-950 text-lg">S/ {{ (array_data_total.total || 0) | number:'1.2-2' }}</td>
+                                <td colspan="2"></td>
+                            </tr>
+                            <tr *ngIf="Clients && Clients.length > 0" class="footer-balance-row">
+                                <td colspan="6" class="text-right font-black uppercase text-gray-800 text-sm py-3">
+                                    💰 BALANCE NETO DEL PERIODO (VENTAS - GASTOS):
+                                </td>
+                                <td class="text-right font-bold text-rose-700 text-sm py-3">
+                                    - S/ {{ (array_data_total.gastos || 0) | number:'1.2-2' }}
+                                </td>
+                                <td class="text-right font-black text-emerald-700 text-xl py-3">
+                                    S/ {{ balanceNeto | number:'1.2-2' }}
+                                </td>
+                                <td colspan="2"></td>
+                            </tr>
+                            <tr *ngIf="!Clients || Clients.length == 0">
+                                <td colspan="10" class="empty-state">
+                                    <i class="pi pi-calendar-times"></i>
+                                    <span>No hay registros en este rango de fechas. Seleccione otro periodo para consultar.</span>
+                                </td>
+                            </tr>
+                        </ng-template>
+                    </p-table>
+                </div>
             </p-tabPanel>
 
             <!-- ============================================================ -->

@@ -1,4 +1,4 @@
-<style>
+﻿<style>
     /* Small utility tweaks to preserve some original class names and give better admin UX */
 </style>
 <p-toast styleClass="text-2xl" />
@@ -129,16 +129,21 @@
                         'border-gray-100 hover:border-blue-300 hover:shadow-sm': mesaSeleccionada?.idpedido !== pedido.idpedido
                     }" (click)="seleccionarMesa({ numero: '0', estado: '0', pedidos: [], idpedido: pedido.idpedido })">
                     <div class="flex items-center gap-1.5 w-full border-0 min-w-0">
-                        <div
-                            class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold flex-shrink-0 shadow-xs border border-blue-200 text-[10px]">
-                            <i class="pi pi-user text-[10px]"></i>
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center font-bold flex-shrink-0 shadow-xs border text-[10px]"
+                            [ngClass]="pedido.es_chatbot ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-blue-100 text-blue-600 border-blue-200'"
+                            [title]="pedido.es_chatbot ? 'Pedido recibido por WhatsApp Chatbot' : 'Pedido Delivery Manual'">
+                            <i [ngClass]="pedido.es_chatbot ? 'pi pi-whatsapp' : 'pi pi-user'" class="text-[10px]"></i>
                         </div>
                         <div class="flex-1 min-w-0">
                             <h3 class="font-bold text-gray-800 text-[11px] truncate m-0" title="{{ pedido.cliente }}">
                                 {{ pedido.cliente || 'Cliente' }}
                             </h3>
                             <div class="flex items-center justify-between gap-1 mt-0.5">
-                                <span class="text-[10px] text-gray-500 font-semibold">#{{ pedido.idpedido }}</span>
+                                <span class="text-[10px] text-gray-500 font-semibold flex items-center gap-1">
+                                    #{{ pedido.idpedido }}
+                                    <span *ngIf="pedido.es_chatbot"
+                                        class="text-[8px] bg-emerald-100 text-emerald-800 font-extrabold px-1 rounded border border-emerald-200">WA</span>
+                                </span>
                                 <span class="text-[9px] text-gray-400 font-medium flex items-center gap-0.5"
                                     *ngIf="pedido.pedido_hora">
                                     <i class="pi pi-clock text-[8px]"></i>{{ pedido.pedido_hora }}
@@ -685,8 +690,15 @@
                                         </h3>
                                         <span
                                             class="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                                            #{{ pedido.idpedido }}
-                                        </span>
+                                            <span *ngIf="pedido.es_chatbot"
+                                                class="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs"
+                                                title="Pedido del Chatbot WhatsApp">
+                                                <i class="pi pi-whatsapp"></i> BOT
+                                            </span>
+                                            <span
+                                                class="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                                                #{{ pedido.idpedido }}
+                                            </span>
                                     </div>
                                     <!-- Datos de Mozo y Cliente en estilo formal -->
                                     <div class="flex items-center gap-2 mt-1 text-xs text-slate-300 font-medium">
@@ -2064,13 +2076,14 @@
 </p-dialog>
 
 <!-- Modal Historial de Comprobantes Electrónicos SUNAT -->
-<p-dialog [(visible)]="historialComprobantesDialog" [position]="'center'" header="Historial de Comprobantes Electrónicos SUNAT"
-    [style]="{ width: '920px', maxWidth: '95vw' }" [modal]="true" [draggable]="false" [resizable]="false"
-    styleClass="p-fluid" [closeOnEscape]="true">
+<p-dialog [(visible)]="historialComprobantesDialog" [position]="'center'"
+    header="Historial de Comprobantes Electrónicos SUNAT" [style]="{ width: '920px', maxWidth: '95vw' }" [modal]="true"
+    [draggable]="false" [resizable]="false" styleClass="p-fluid" [closeOnEscape]="true">
     <ng-template pTemplate="content">
         <div class="p-3">
             <div class="flex justify-between items-center mb-3">
-                <span class="text-sm text-gray-600">Últimos comprobantes emitidos (Facturas, Boletas y Notas de Crédito)</span>
+                <span class="text-sm text-gray-600">Últimos comprobantes emitidos (Facturas, Boletas y Notas de
+                    Crédito)</span>
                 <button (click)="cargarHistorialComprobantes()"
                     class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-300 flex items-center gap-1.5 cursor-pointer">
                     <i class="pi pi-refresh text-xs"></i> Actualizar
@@ -2101,13 +2114,13 @@
                     <tbody class="divide-y divide-gray-200">
                         <tr *ngFor="let item of listaComprobantesSunat" class="hover:bg-slate-50">
                             <td class="p-2.5 font-bold text-slate-800">
-                                <span class="inline-block px-2 py-0.5 text-[10px] rounded mr-1 font-bold"
-                                    [ngClass]="{
+                                <span class="inline-block px-2 py-0.5 text-[10px] rounded mr-1 font-bold" [ngClass]="{
                                         'bg-amber-100 text-amber-800': item.tipo_doc === '01',
                                         'bg-indigo-100 text-indigo-800': item.tipo_doc === '03',
                                         'bg-rose-100 text-rose-800': item.tipo_doc === '07'
                                     }">
-                                    {{ item.tipo_doc === '01' ? 'FACTURA' : (item.tipo_doc === '07' ? 'NOTA CRÉD.' : 'BOLETA') }}
+                                    {{ item.tipo_doc === '01' ? 'FACTURA' : (item.tipo_doc === '07' ? 'NOTA CRÉD.' :
+                                    'BOLETA') }}
                                 </span>
                                 {{ item.numero_comprobante }}
                             </td>
@@ -2116,7 +2129,8 @@
                                 <div class="font-medium text-gray-800">{{ item.cliente_razon_social }}</div>
                                 <div class="text-xs text-gray-500">{{ item.cliente_num_doc }}</div>
                             </td>
-                            <td class="p-2.5 text-right font-bold text-slate-800">S/ {{ item.mto_imp_venta | number:'1.2-2' }}</td>
+                            <td class="p-2.5 text-right font-bold text-slate-800">S/ {{ item.mto_imp_venta |
+                                number:'1.2-2' }}</td>
                             <td class="p-2.5 text-center">
                                 <span class="px-2 py-1 text-xs font-bold rounded-full"
                                     [ngClass]="item.estado_sunat?.includes('Anulado') ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'">
@@ -2133,7 +2147,8 @@
                                         class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-xs font-bold cursor-pointer">
                                         A4
                                     </button>
-                                    <a *ngIf="item.archivos?.xml" [href]="item.archivos.xml + '&download=1'" target="_blank"
+                                    <a *ngIf="item.archivos?.xml" [href]="item.archivos.xml + '&download=1'"
+                                        target="_blank"
                                         class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded text-xs font-bold no-underline">
                                         XML
                                     </a>
@@ -2141,7 +2156,8 @@
                                         class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded text-xs font-bold no-underline">
                                         CDR
                                     </a>
-                                    <button *ngIf="(item.tipo_doc === '01' || item.tipo_doc === '03') && !item.estado_sunat?.includes('Anulado')"
+                                    <button
+                                        *ngIf="(item.tipo_doc === '01' || item.tipo_doc === '03') && !item.estado_sunat?.includes('Anulado')"
                                         (click)="anularComprobanteConNotaCredito(item)"
                                         [disabled]="anulandoComprobanteId === item.id"
                                         title="Anular con Nota de Crédito"

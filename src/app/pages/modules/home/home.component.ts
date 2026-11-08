@@ -857,6 +857,9 @@ export class HomeComponent {
             // 1️⃣ Preparamos los datos
             const pedido = this.NuevoPedido;
             this.NuevoPedido.comentario = this.comentarios;
+            if (!this.NuevoPedido.fecha) {
+                this.NuevoPedido.fecha = await this.supabaseService.getFechaPeruHoy();
+            }
             const detalles = this.NuevoPedido.pedidodetalle.map((element) => ({
                 ...element,
                 idpedido: pedido.idpedido,
@@ -1019,11 +1022,7 @@ export class HomeComponent {
             try {
                 // 1️⃣ Preparamos los datos
                 const pedido = this.NuevoPedido;
-                const now = new Date();
-
-                const fechaPeru = now.toLocaleDateString('en-CA', {
-                    timeZone: 'America/Lima'
-                });
+                const fechaPeru = await this.supabaseService.getFechaPeruHoy();
 
                 this.NuevoPedido.comentario = this.comentarios;
                 this.NuevoPedido.fecha = fechaPeru;
@@ -1178,7 +1177,8 @@ export class HomeComponent {
                 plin: 0,
                 efectivo: 0,
                 cliente: status_array[0]?.cliente || '',
-                idmozo: status_array[0]?.persona == undefined ? null : status_array[0]?.persona.idpersona
+                idmozo: status_array[0]?.persona == undefined ? null : status_array[0]?.persona.idpersona,
+                fecha: status_array[0]?.fecha ? String(status_array[0].fecha).slice(0, 10) : undefined
             };
             this.NuevoPedido.pedidodetalle = status_array[0].pedidodetalle.map(
                 (pedido: { producto: any; idpedidodetalle: number; idpedido: any; nombre: any; idproducto: any; precioU: any; cantidad: any; descripcion: any; total: any; estado: any; lugarpedido: any; comentario: any }) => ({
@@ -1726,7 +1726,7 @@ export class HomeComponent {
 
         if (this.pedido_mesa_status) {
             this.hydrateNuevoPedido(mesa.numero, this.pedido_mesa_status, this.mesaSeleccionada);
-            if (typeof window !== 'undefined' && window.innerWidth < 1440) {
+            if (typeof window !== 'undefined' && window.innerWidth < 1440 && String(mesa.numero) !== '0') {
                 this.isDeliveryCollapsed = true;
             }
         }
@@ -2718,10 +2718,15 @@ export class HomeComponent {
             doc.setFontSize(8.5);
             doc.text('OBSERVACIONES / NOTA COCINA:', 7, y + 4);
 
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
             let comY = y + 7.8;
             comLines.forEach((cl: string) => {
+                if (cl.includes('NOTA COCINA') || cl.includes('⚠️')) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(8.5);
+                } else {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                }
                 doc.text(cl, 7, comY);
                 comY += 3.8;
             });
@@ -2954,7 +2959,8 @@ export class HomeComponent {
                 plin: Number(pedidoActual.plin) || 0,
                 efectivo: Number(pedidoActual.efectivo) || 0,
                 cliente: (pedidoActual as any).cliente || '',
-                idmozo: pedidoActual.persona == null ? ((pedidoActual as any).idmozo || null) : pedidoActual.persona.idpersona
+                idmozo: pedidoActual.persona == null ? ((pedidoActual as any).idmozo || null) : pedidoActual.persona.idpersona,
+                fecha: pedidoActual.fecha ? String(pedidoActual.fecha).slice(0, 10) : undefined
             };
 
             this.comentarios = pedidoActual.comentario || '';

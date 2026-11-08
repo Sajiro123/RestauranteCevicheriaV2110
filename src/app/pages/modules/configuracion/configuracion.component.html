@@ -15,13 +15,13 @@
                         </span>
                     </div>
                     <p class="header-desc">
-                        Gestione los parámetros operativos del restaurante, módulos administrativos y nóminas contables.
+                        Gestione los parámetros operativos del restaurante, módulos administrativos, nóminas contables y reportes.
                     </p>
                 </div>
             </div>
         </header>
 
-        <!-- GRID DE TARJETAS (Restaurante, Administración, Contabilidad) -->
+        <!-- GRID DE TARJETAS (Restaurante, Administración, Contabilidad, Reportes) -->
         <div class="cards-grid">
 
             <!-- 1. RESTAURANTE CARD -->
@@ -231,6 +231,47 @@
                 </ul>
             </section>
 
+            <!-- 4. REPORTES CARD -->
+            <section class="config-card card-reportes" aria-label="Reportes">
+                <div class="card-header">
+                    <div class="card-header-icon icon-reportes">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div class="card-header-text">
+                        <h2>Reportes</h2>
+                        <span class="card-header-sub">Estadísticas de ventas, platos y bebidas</span>
+                    </div>
+                    <span class="module-counter">2 módulos</span>
+                </div>
+
+                <ul class="module-list">
+                    <li>
+                        <div class="module-item" tabindex="0" routerLink="/uikit/reportes">
+                            <div class="module-icon icon-blue">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Reporte de Ventas</span>
+                                <span class="module-desc">Consolidado diario y mensual de ventas, métodos de pago y gastos</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'reporte-platos'; selector = true">
+                            <div class="module-icon icon-amber">
+                                <i class="fa-solid fa-ranking-star"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Reporte de Platos Vendidos</span>
+                                <span class="module-desc">Ranking de platos, gaseosas y bebidas con mayor salida</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
         </div>
     </div>
     <app-toppings *ngIf="seleccciontext == 'toppings'" (backToMain)="selector = false; seleccciontext = ''"></app-toppings>
@@ -243,4 +284,5 @@
     <app-perfil-permisos *ngIf="seleccciontext == 'menuperfil'" (backToMain)="selector = false; seleccciontext = ''"></app-perfil-permisos>
     <app-aperturas *ngIf="seleccciontext == 'aperturas'" (backToMain)="selector = false; seleccciontext = ''"></app-aperturas>
     <app-compras *ngIf="seleccciontext == 'compras'" (backToMain)="selector = false; seleccciontext = ''"></app-compras>
+    <app-reporte-platos *ngIf="seleccciontext == 'reporte-platos'" (backToMain)="selector = false; seleccciontext = ''"></app-reporte-platos>
 </div>

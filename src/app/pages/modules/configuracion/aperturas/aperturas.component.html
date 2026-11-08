@@ -1,5 +1,5 @@
 <p-toast />
-<p-confirmDialog [style]="{ width: '420px' }" />
+<p-confirmDialog [style]="{ width: '440px' }" />
 
 <div class="aperturas-page">
 
@@ -9,14 +9,20 @@
             <i class="pi pi-arrow-left"></i>
             <span>Configuración</span>
         </button>
-        <div class="ap-title-block">
-            <div class="ap-title-icon">
-                <i class="pi pi-calendar"></i>
+        <div class="ap-header-row">
+            <div class="ap-title-block">
+                <div class="ap-title-icon">
+                    <i class="pi pi-calendar"></i>
+                </div>
+                <div>
+                    <h1>Historial de Aperturas</h1>
+                    <p class="ap-subtitle">Consulta, edita o regulariza registros de apertura de caja.</p>
+                </div>
             </div>
-            <div>
-                <h1>Historial de Aperturas</h1>
-                <p class="ap-subtitle">Consulta, edita o elimina registros de apertura de caja.</p>
-            </div>
+            <button class="btn-nueva-apertura" (click)="abrirNuevaApertura()" type="button">
+                <i class="pi pi-plus-circle"></i>
+                <span>Regularizar Apertura</span>
+            </button>
         </div>
     </div>
 
@@ -151,11 +157,142 @@
 
         <!-- Footer conteo -->
         <div class="ap-table-footer" *ngIf="!cargando && aperturas.length > 0">
-            <span>{{ aperturas.length }} registro{{ aperturas.length !== 1 ? 's' : '' }} encontrado{{ aperturas.length
-                !== 1 ? 's' : '' }}</span>
+            <span>{{ aperturas.length }} registro{{ aperturas.length !== 1 ? 's' : '' }} encontrado{{ aperturas.length !== 1 ? 's' : '' }}</span>
         </div>
     </div>
 </div>
+
+<!-- ── MODAL REGULARIZAR / NUEVA APERTURA ───────────────────── -->
+<p-dialog header="Regularizar Apertura de Caja" [(visible)]="nuevaAperturaVisible" [modal]="true"
+    [style]="{ width: '740px', maxWidth: '96vw' }" [draggable]="false" [resizable]="false">
+
+    <div class="edit-form" [formGroup]="nuevaForm">
+
+        <div class="regularizar-info-banner">
+            <div class="banner-icon"><i class="pi pi-info-circle"></i></div>
+            <div class="banner-text">
+                <strong>Registro Retroactivo / Regularización</strong>
+                <p>Ingresa los datos para regularizar la apertura de una jornada previa o registrar una apertura extraordinaria.</p>
+            </div>
+        </div>
+
+        <div class="form-grid-2">
+            <div class="form-field">
+                <label>Fecha de Apertura <span class="req">*</span></label>
+                <input type="date" class="field-input" formControlName="fecha" (change)="onFechaNuevaChange($any($event.target).value)">
+                <span class="field-help-text" *ngIf="nuevaForm.get('fecha')?.value">
+                    <i class="pi pi-calendar-plus"></i> {{ getDiaSemana(nuevaForm.get('fecha')?.value) }}
+                </span>
+            </div>
+            <div class="form-field">
+                <label>Turno <span class="req">*</span></label>
+                <div class="turnos-row">
+                    <button type="button" class="turno-btn" [class.active]="nuevaForm.get('turno')?.value === 'Mañana'"
+                        (click)="nuevaForm.get('turno')?.setValue('Mañana')">
+                        <i class="pi pi-sun"></i> Mañana
+                    </button>
+                    <button type="button" class="turno-btn" [class.active]="nuevaForm.get('turno')?.value === 'Tarde'"
+                        (click)="nuevaForm.get('turno')?.setValue('Tarde')">
+                        <i class="pi pi-cloud"></i> Tarde
+                    </button>
+                    <button type="button" class="turno-btn" [class.active]="nuevaForm.get('turno')?.value === 'Noche'"
+                        (click)="nuevaForm.get('turno')?.setValue('Noche')">
+                        <i class="pi pi-moon"></i> Noche
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-grid-2">
+            <div class="form-field">
+                <label>Responsable <span class="req">*</span></label>
+                <select class="field-input" formControlName="responsable">
+                    <option value="">Seleccionar responsable...</option>
+                    <option *ngFor="let t of trabajadoresList" [value]="t.nombres">
+                        {{ t.nombres }} {{ t.apellidopat ? (' ' + t.apellidopat) : '' }}
+                    </option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label>Monto Inicial (S/) <span class="req">*</span></label>
+                <div class="monto-wrap">
+                    <span class="currency">S/</span>
+                    <input type="number" class="field-input" formControlName="total" min="0" step="0.50" placeholder="0.00">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-grid-2">
+            <div class="form-field">
+                <label>Estado de la Caja <span class="req">*</span></label>
+                <select class="field-input" formControlName="estado">
+                    <option [ngValue]="1">🟢 Abierta (En curso)</option>
+                    <option [ngValue]="2">🔴 Cerrada (Finalizada / Regularizada)</option>
+                </select>
+                <span class="field-help-text" *ngIf="nuevaForm.get('estado')?.value === 2">
+                    <i class="pi pi-check"></i> Recomendado para jornadas pasadas regularizadas.
+                </span>
+            </div>
+            <div class="form-field">
+                <!-- Espacio de apoyo visual -->
+            </div>
+        </div>
+
+        <!-- Personal en Campo con multiselect -->
+        <div class="form-field form-field-personal">
+            <div class="field-header-row">
+                <label class="personal-label">
+                    <i class="pi pi-users"></i> Personal en Campo <span class="req">*</span>
+                </label>
+                <span class="personal-count-badge" *ngIf="nuevaForm.get('trabajadores')?.value?.length">
+                    <i class="pi pi-check-circle"></i> {{ nuevaForm.get('trabajadores')?.value?.length }} seleccionado(s)
+                </span>
+            </div>
+            <p-multiSelect formControlName="trabajadores"
+                [options]="trabajadoresList"
+                optionLabel="nombres"
+                optionValue="idpersona"
+                placeholder="Seleccione los trabajadores asignados a esta jornada..."
+                [showToggleAll]="true"
+                [filter]="true"
+                filterPlaceholder="Buscar trabajador por nombre..."
+                display="chip"
+                appendTo="body"
+                scrollHeight="320px"
+                [panelStyle]="{ 'min-width': '420px', 'max-width': '96vw' }"
+                [style]="{ width: '100%' }"
+                styleClass="personal-multiselect-lg"
+                [maxSelectedLabels]="trabajadoresList.length"
+                selectedItemsLabel="{0} trabajadores seleccionados">
+                <ng-template let-worker pTemplate="item">
+                    <div class="worker-option-item">
+                        <img [src]="'https://ui-avatars.com/api/?name=' + worker.nombres + '+' + (worker.apellidopat || '') + '&background=0284c7&color=fff&bold=true'" 
+                             alt="Avatar" class="worker-item-avatar" />
+                        <div class="worker-item-info">
+                            <span class="worker-item-name">{{ worker.nombres }} {{ worker.apellidopat || '' }}</span>
+                            <span class="worker-item-sub" *ngIf="worker.celular">
+                                <i class="pi pi-phone"></i> {{ worker.celular }}
+                            </span>
+                        </div>
+                    </div>
+                </ng-template>
+            </p-multiSelect>
+            <span class="field-hint-personal">
+                <i class="pi pi-info-circle"></i> Selecciona los colaboradores del turno. No se cerrará al marcar o desmarcar.
+            </span>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <button class="btn-cancel" type="button" (click)="nuevaAperturaVisible = false">
+            <i class="pi pi-times"></i> Cancelar
+        </button>
+        <button class="btn-save" type="button" (click)="guardarNuevaApertura()" [disabled]="guardandoNueva">
+            <i class="pi" [class.pi-check]="!guardandoNueva" [class.pi-spin]="guardandoNueva" [class.pi-spinner]="guardandoNueva"></i>
+            {{ guardandoNueva ? 'Registrando...' : 'Registrar Apertura' }}
+        </button>
+    </ng-template>
+</p-dialog>
 
 <!-- ── MODAL EDITAR ────────────────────────────────────────── -->
 <p-dialog header="Editar Apertura" [(visible)]="editVisible" [modal]="true"

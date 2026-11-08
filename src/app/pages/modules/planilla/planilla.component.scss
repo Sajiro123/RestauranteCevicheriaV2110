@@ -1338,3 +1338,139 @@ tfoot td {
         &:hover { background: #fecaca; transform: scale(1.1); }
     }
 }
+
+// ── Autocomplete Empleados ──────────────────────────────────────────
+.autocomplete-container {
+    position: relative;
+}
+
+.btn-sync-saas {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: $navy;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(4, 22, 50, 0.08);
+        color: $gold;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.autocomplete-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        color: $text-muted;
+        font-size: 0.8rem;
+        pointer-events: none;
+    }
+
+    .emp-search-input {
+        width: 260px;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+
+    .btn-clear-search {
+        position: absolute;
+        right: 8px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: $text-muted;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        border-radius: 50%;
+
+        &:hover {
+            color: #dc2626;
+            background: rgba(186, 26, 26, 0.08);
+        }
+    }
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 320px;
+    max-height: 280px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid $border;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    z-index: 1050;
+    padding: 4px;
+
+    .autocomplete-item {
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+
+        &:hover {
+            background: $surface-low;
+        }
+
+        &.all-item {
+            border-bottom: 1px solid $border;
+            margin-bottom: 4px;
+            font-weight: 600;
+            color: $navy;
+        }
+
+        .item-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: $text-main;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-subtitle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+            font-size: 0.72rem;
+            color: $text-muted;
+
+            .role-tag {
+                display: inline-flex;
+                align-items: center;
+                gap: 3px;
+                color: $navy-light;
+                font-weight: 500;
+            }
+
+            .doc-tag {
+                background: #f1f5f9;
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-size: 0.68rem;
+                font-family: monospace;
+            }
+        }
+    }
+}

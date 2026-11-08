@@ -146,7 +146,18 @@ export class SaasMasterService {
                     params: { negocioId: id }
                 })
             );
-            return res.data || [];
+            const todos = res.data || [];
+            // Filtrar perfiles: excluir perfiles de farmacia y conservar exclusivamente perfiles del restaurante
+            const perfilesNegocio = todos.filter((p: any) => {
+                const cod = (p.codigo || '').toUpperCase();
+                const nom = (p.nombre || '').toUpperCase();
+                const desc = (p.descripcion || '').toUpperCase();
+                const esFarmacia = cod.includes('FARMAC') || cod.includes('DISPENS') || cod.includes('QUIMICO') || cod.includes('BOTICA') ||
+                                   nom.includes('FARMAC') || nom.includes('QUÍMICO') || nom.includes('QUIMICO') || nom.includes('DISPENSADOR') ||
+                                   desc.includes('DIGEMID') || desc.includes('PSICOTRÓPICOS') || desc.includes('LABORATORIOS');
+                return !esFarmacia;
+            });
+            return perfilesNegocio;
         } catch (error) {
             console.error('[SaasMasterService] Error al listar perfiles:', error);
             throw error;
