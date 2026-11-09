@@ -461,7 +461,7 @@ export class HomeComponent {
         if (mesa.numero == '0') {
             var status_array = this.Pedidos.filter((p) => p.idpedido === NuevoPedido.idpedido);
         } else {
-            var status_array = this.Pedidos.filter((p) => p.mesa == mesa.numero);
+            var status_array = this.Pedidos.filter((p) => String(p.mesa).trim() === String(mesa.numero).trim() && ((p as any).estado == 1 || p.estado === true));
             this.mesaSeleccionada = mesa;
         }
         if (status_array.length > 0) {
@@ -1019,6 +1019,45 @@ export class HomeComponent {
                 return;
             }
 
+            // 🛡️ Protección contra pedidos duplicados en una misma mesa
+            if (this.mesaSeleccionada.numero != '0') {
+                const pedidoExistente = this.Pedidos.find((p) =>
+                    String(p.mesa).trim() === String(this.mesaSeleccionada?.numero).trim() &&
+                    ((p as any).estado == 1 || p.estado === true)
+                );
+                if (pedidoExistente) {
+                    this.messageService.add({
+                        severity: 'info',
+                        summary: 'Agregando a pedido activo',
+                        detail: `La Mesa ${this.mesaSeleccionada.numero} ya tiene el pedido #${pedidoExistente.idpedido}. Se anexan los platos al pedido existente.`,
+                        life: 4000
+                    });
+                    this.NuevoPedido.idpedido = pedidoExistente.idpedido;
+                    this.tipomodal = 'Editar';
+                    const idsNuevos = new Set(this.NuevoPedido.pedidodetalle.map((d: any) => d.idpedidodetalle).filter(Boolean));
+                    const platosExistentes = (pedidoExistente.pedidodetalle || []).filter((d: any) => !idsNuevos.has(d.idpedidodetalle)).map((det: any) => ({
+                        idpedidodetalle: det.idpedidodetalle || 0,
+                        idpedido: pedidoExistente.idpedido,
+                        nombre: det.producto?.nombre || det.nombre || 'PLATO',
+                        idproducto: det.idproducto,
+                        preciounitario: det.precioU != null ? Number(det.precioU) : (Number(det.preciounitario) || 0),
+                        cantidad: Number(det.cantidad) || 1,
+                        descripcion: det.descripcion || '',
+                        total: det.total != null ? Number(det.total) : ((Number(det.cantidad) || 1) * (Number(det.precioU) || 0)),
+                        estado: det.estado || false,
+                        lugarpedido: det.lugarpedido || '',
+                        comentario: det.comentario || '',
+                        idtoppings: [],
+                        id_created_at: 1,
+                        pedido_estado: undefined,
+                        producto: det.producto
+                    }));
+                    this.NuevoPedido.pedidodetalle = [...platosExistentes, ...this.NuevoPedido.pedidodetalle];
+                    await this.EditarPedido();
+                    return;
+                }
+            }
+
             try {
                 // 1️⃣ Preparamos los datos
                 const pedido = this.NuevoPedido;
@@ -1144,10 +1183,13 @@ export class HomeComponent {
         this.buscarPlato = '';
         this.pedido_mesa_status = false;
         this.isOrderViewActive = true;
+        this.tipomodal = 'Editar'; // Asegurar que el modal quede en modo Editar
+        this.mesaSeleccionada = mesa;
+        let status_array: any[] = [];
         if (mesa.numero == '0') {
-            var status_array = this.Pedidos.filter((p) => p.idpedido === pedido.idpedido);
+            status_array = this.Pedidos.filter((p) => p.idpedido === pedido.idpedido);
         } else {
-            var status_array = this.Pedidos.filter((p) => p.mesa == mesa.numero);
+            status_array = this.Pedidos.filter((p) => String(p.mesa).trim() === String(mesa.numero).trim() && ((p as any).estado == 1 || p.estado === true));
         }
         this.NuevoPedido = this.getPedidoClick(status_array);
         this.BuscarPlatoSearchText('');
@@ -1158,48 +1200,58 @@ export class HomeComponent {
         if (status_array.length > 0) {
             this.selectedMozo = status_array[0]?.persona;
 
+            // Recopilar todos los detalles si hubiera más de 1 pedido activo para la misma mesa
+            let todosDetalles: any[] = [];
+            status_array.forEach((p: any) => {
+                if (p.pedidodetalle && p.pedidodetalle.length > 0) {
+                    todosDetalles.push(...p.pedidodetalle);
+                }
+            });
+
+            const detallesMapeados = todosDetalles.map((pedido: any) => ({
+                idpedidodetalle: pedido.idpedidodetalle || 0,
+                idpedido: pedido.idpedido || status_array[0]?.idpedido || 0,
+                nombre: pedido.producto?.nombre || pedido.nombre || 'PLATO',
+                idproducto: pedido.idproducto || 0,
+                preciounitario: pedido.precioU != null ? Number(pedido.precioU) : (Number(pedido.preciounitario) || 0),
+                cantidad: Number(pedido.cantidad) || 0,
+                descripcion: pedido.descripcion || '',
+                total: pedido.total != null ? Number(pedido.total) : ((Number(pedido.cantidad) || 0) * (Number(pedido.precioU) || 0)),
+                estado: pedido.estado || false,
+                lugarpedido: pedido.lugarpedido || '',
+                comentario: pedido.comentario || '',
+                idtoppings: [],
+                id_created_at: undefined,
+                pedido_estado: undefined,
+                producto: pedido.producto
+            }));
+
+            const sumaTotal = detallesMapeados.reduce((sum: number, product: any) => sum + (Number(product.preciounitario || 0) * Number(product.cantidad || 0)), 0);
+
             this.NuevoPedido = {
                 idpedido: status_array[0]?.idpedido || 0,
                 lugarpedido: undefined,
                 pedido_estado: undefined,
                 nombre: undefined,
-                cantidad: status_array.length,
+                cantidad: detallesMapeados.length,
                 descripcion: '',
                 estado: false,
                 lugar: '',
                 preciounitario: 0,
-                total: this.NuevoPedido.pedidodetalle.reduce((sum: number, product: { preciounitario: number; cantidad: number }) => sum + product.preciounitario * product.cantidad, 0),
-                descuento: 0,
-                comentario: '',
-                pedidodetalle: [],
-                visa: 0,
-                yape: 0,
-                plin: 0,
-                efectivo: 0,
+                total: sumaTotal,
+                descuento: Number(status_array[0]?.descuento) || 0,
+                comentario: status_array[0]?.comentario || '',
+                pedidodetalle: detallesMapeados,
+                visa: Number(status_array[0]?.visa) || 0,
+                yape: Number(status_array[0]?.yape) || 0,
+                plin: Number(status_array[0]?.plin) || 0,
+                efectivo: Number(status_array[0]?.efectivo) || 0,
                 cliente: status_array[0]?.cliente || '',
                 idmozo: status_array[0]?.persona == undefined ? null : status_array[0]?.persona.idpersona,
                 fecha: status_array[0]?.fecha ? String(status_array[0].fecha).slice(0, 10) : undefined
             };
-            this.NuevoPedido.pedidodetalle = status_array[0].pedidodetalle.map(
-                (pedido: { producto: any; idpedidodetalle: number; idpedido: any; nombre: any; idproducto: any; precioU: any; cantidad: any; descripcion: any; total: any; estado: any; lugarpedido: any; comentario: any }) => ({
-                    idpedidodetalle: pedido.idpedidodetalle || 0,
-                    idpedido: pedido.idpedido || 0,
-                    nombre: pedido.producto.nombre || '',
-                    idproducto: pedido.idproducto || 0,
-                    preciounitario: pedido.precioU || 0,
-                    cantidad: pedido.cantidad || 0,
-                    descripcion: pedido.descripcion || '',
-                    total: pedido.total || 0,
-                    estado: pedido.estado || false,
-                    lugarpedido: pedido.lugarpedido || '',
-                    comentario: pedido.comentario || '',
-                    idtoppings: idtoppingsArray || [],
-                    id_created_at: undefined,
-                    pedido_estado: undefined
-                })
-            );
 
-            status_array[0].pedidodetalle.forEach((element: any) => {
+            todosDetalles.forEach((element: any) => {
                 var toppings = element.toppings;
                 if (toppings) {
                     var topings_ = toppings.split(',');
@@ -1208,7 +1260,6 @@ export class HomeComponent {
                         const topping = this.multiselectToppings.find((t: any) => t.idtoppings == elementopping);
                         if (topping) idtoppingsArray.push({ idtoppings: topping.idtoppings, nombre: topping.nombre });
                         const lastDetalle = this.NuevoPedido.pedidodetalle.find((detalle) => detalle.idpedidodetalle == element.idpedidodetalle);
-                        // Asegurarse de que lastDetalle no sea undefined
                         if (lastDetalle) {
                             lastDetalle.idtoppings = [...idtoppingsArray];
                         }
@@ -1216,7 +1267,7 @@ export class HomeComponent {
                 }
             });
 
-            this.comentarios = status_array[0].comentario;
+            this.comentarios = status_array[0].comentario || '';
         } else {
             // alert(2)
             // alert('No hay pedidos en esta mesa');
@@ -1320,8 +1371,7 @@ export class HomeComponent {
     }
 
     getTiempoTranscurrido(numeroMesa: string): string {
-        // Find the pedido for this mesa
-        const pedido = this.Pedidos.find((p) => p.mesa == numeroMesa);
+        const pedido = this.Pedidos.find((p) => String(p.mesa).trim() === String(numeroMesa).trim() && ((p as any).estado == 1 || p.estado === true));
         if (pedido && pedido['created_at']) {
             const createdTime = new Date(pedido['created_at']);
             const currentTime = new Date();
@@ -1333,9 +1383,12 @@ export class HomeComponent {
 
     // Helper method to get number of pedidos for a mesa
     getNumeroPedidos(numeroMesa: string): number {
-        // Count pedidos for this mesa
-        const pedidos = this.Pedidos.filter((p) => p.mesa == numeroMesa) as any;
-        return pedidos[0].pedidodetalle.reduce((sum: number, element: any) => sum + element.cantidad, 0);
+        const pedidos = this.Pedidos.filter((p) => String(p.mesa).trim() === String(numeroMesa).trim() && ((p as any).estado == 1 || p.estado === true));
+        if (pedidos.length === 0) return 0;
+        return pedidos.reduce((total: number, p: any) => {
+            const sumP = (p.pedidodetalle || []).reduce((sum: number, element: any) => sum + (Number(element.cantidad) || 0), 0);
+            return total + sumP;
+        }, 0);
     }
 
     isEntregando(idpedido: number): boolean {
@@ -2922,7 +2975,14 @@ export class HomeComponent {
 
         if (status_array.length != 0) {
             const pedidoActual = status_array[0];
-            const detalles = pedidoActual.pedidodetalle || [];
+            // Si por contingencia hubiera más de 1 pedido activo para la misma mesa, consolidar todos los detalles
+            let detalles: any[] = [];
+            status_array.forEach((p: any) => {
+                if (p.pedidodetalle && p.pedidodetalle.length > 0) {
+                    detalles.push(...p.pedidodetalle);
+                }
+            });
+            const sumaTotal = status_array.reduce((sum: number, p: any) => sum + (Number(p.total) || 0), 0);
 
             this.NuevoPedido = {
                 idpedido: pedidoActual.idpedido || 0,
@@ -2934,7 +2994,7 @@ export class HomeComponent {
                 estado: false,
                 lugar: '',
                 preciounitario: 0,
-                total: Number(pedidoActual.total) || 0,
+                total: sumaTotal || Number(pedidoActual.total) || 0,
                 descuento: Number(pedidoActual.descuento) || 0,
                 comentario: pedidoActual.comentario || '',
                 pedidodetalle: detalles.map((det: any) => ({
