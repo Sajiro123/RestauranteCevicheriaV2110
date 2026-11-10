@@ -239,9 +239,9 @@
                     </div>
                     <div class="card-header-text">
                         <h2>Reportes</h2>
-                        <span class="card-header-sub">Estadísticas de ventas, platos y bebidas</span>
+                        <span class="card-header-sub">Estadísticas de ventas, comprobantes y platos</span>
                     </div>
-                    <span class="module-counter">2 módulos</span>
+                    <span class="module-counter">3 módulos</span>
                 </div>
 
                 <ul class="module-list">
@@ -265,6 +265,18 @@
                             <div class="module-text">
                                 <span class="module-title">Reporte de Platos Vendidos</span>
                                 <span class="module-desc">Ranking de platos, gaseosas y bebidas con mayor salida</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="module-item" tabindex="0" routerLink="/uikit/reportes" [queryParams]="{ tab: 'sunat' }">
+                            <div class="module-icon icon-emerald">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Comprobantes y Resúmenes SUNAT</span>
+                                <span class="module-desc">Boletas, facturas, notas de crédito, anulaciones y resúmenes diarios</span>
                             </div>
                             <i class="pi pi-chevron-right module-arrow"></i>
                         </div>

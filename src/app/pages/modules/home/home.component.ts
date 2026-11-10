@@ -25,6 +25,7 @@ import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../../services/supabase.service';
 import { EmpresaService, Empresa } from '../../service/empresa.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-home',
@@ -35,7 +36,6 @@ import { EmpresaService, Empresa } from '../../service/empresa.service';
     styleUrl: './home.component.scss'
 })
 export class HomeComponent {
-    [x: string]: any;
     empresaData: Empresa | null = null;
     products: Products[] = [];
     @ViewChild('motivoTextarea') motivoTextarea!: ElementRef;
@@ -187,17 +187,28 @@ export class HomeComponent {
     tipoComprobante: '01' | '03' = '03';
     entornoSunat: 'produccion' | 'beta' = 'produccion';
     formatoComprobante: 'ticket' | 'a4' = 'ticket';
-    archivosComprobante: { pdf_ticket?: string; pdf_a4?: string; xml?: string; cdr?: string } | null = null;
+    archivosComprobante: { pdf?: string; pdf_ticket?: string; pdf_a4?: string; xml?: string; cdr?: string } | null = null;
     documentoBusqueda: string = '';
+    buscandoCliente: boolean = false;
     clienteEncontrado: any = null;
     mostrarFormNuevoCliente: boolean = false;
-    nuevoCliente = { tipo_doc: '1', num_doc: '', razon_social: '', direccion: '' };
+    nuevoCliente = { tipo_doc: '1', num_doc: '', razon_social: '', direccion: '', celular: '' };
     emitiendo: boolean = false;
     Comprobante_PDF_Dialog: boolean = false;
     historialComprobantesDialog: boolean = false;
     listaComprobantesSunat: any[] = [];
     cargandoHistorialSunat: boolean = false;
     anulandoComprobanteId: number | null = null;
+    whatsappNumero: string = '';
+    whatsappDialog: boolean = false;
+    whatsappComprobanteActual: {
+        numero: string;
+        tipo: string;
+        cliente: string;
+        total: number | string;
+        pdfUrl?: string;
+        xmlUrl?: string;
+    } | null = null;
 
     async verificarCajaAbierta(): Promise<void> {
         return new Promise((resolve) => {
@@ -586,9 +597,7 @@ export class HomeComponent {
         if (!query) {
             this.toppingsSugeridos = this.multiselectToppings.slice(0, 15);
         } else {
-            this.toppingsSugeridos = this.multiselectToppings.filter((t: any) =>
-                t.nombre && t.nombre.toLowerCase().includes(query)
-            ).slice(0, 15);
+            this.toppingsSugeridos = this.multiselectToppings.filter((t: any) => t.nombre && t.nombre.toLowerCase().includes(query)).slice(0, 15);
         }
         this.mostrarSugerenciasTopping = true;
     }
@@ -606,9 +615,7 @@ export class HomeComponent {
     existeCoincidenciaExactaTopping(): boolean {
         const query = (this.busquedaTopping || '').trim().toLowerCase();
         if (!query) return false;
-        return this.multiselectToppings.some((t: any) =>
-            t.nombre && t.nombre.trim().toLowerCase() === query
-        );
+        return this.multiselectToppings.some((t: any) => t.nombre && t.nombre.trim().toLowerCase() === query);
     }
 
     seleccionarToppingSugerido(t: any): void {
@@ -621,9 +628,7 @@ export class HomeComponent {
         const query = (this.busquedaTopping || '').trim();
         if (!query) return;
 
-        const matchExacto = this.multiselectToppings.find((t: any) =>
-            t.nombre && t.nombre.trim().toLowerCase() === query.toLowerCase()
-        );
+        const matchExacto = this.multiselectToppings.find((t: any) => t.nombre && t.nombre.trim().toLowerCase() === query.toLowerCase());
 
         if (matchExacto) {
             if (!this.isToppingSelected(matchExacto)) {
@@ -642,9 +647,7 @@ export class HomeComponent {
         const nombre = (nombreTopping || this.busquedaTopping || '').trim();
         if (!nombre) return;
 
-        const match = this.multiselectToppings.find((t: any) =>
-            t.nombre && t.nombre.trim().toLowerCase() === nombre.toLowerCase()
-        );
+        const match = this.multiselectToppings.find((t: any) => t.nombre && t.nombre.trim().toLowerCase() === nombre.toLowerCase());
 
         if (match) {
             if (!this.isToppingSelected(match)) {
@@ -1021,10 +1024,7 @@ export class HomeComponent {
 
             // 🛡️ Protección contra pedidos duplicados en una misma mesa
             if (this.mesaSeleccionada.numero != '0') {
-                const pedidoExistente = this.Pedidos.find((p) =>
-                    String(p.mesa).trim() === String(this.mesaSeleccionada?.numero).trim() &&
-                    ((p as any).estado == 1 || p.estado === true)
-                );
+                const pedidoExistente = this.Pedidos.find((p) => String(p.mesa).trim() === String(this.mesaSeleccionada?.numero).trim() && ((p as any).estado == 1 || p.estado === true));
                 if (pedidoExistente) {
                     this.messageService.add({
                         severity: 'info',
@@ -1035,23 +1035,25 @@ export class HomeComponent {
                     this.NuevoPedido.idpedido = pedidoExistente.idpedido;
                     this.tipomodal = 'Editar';
                     const idsNuevos = new Set(this.NuevoPedido.pedidodetalle.map((d: any) => d.idpedidodetalle).filter(Boolean));
-                    const platosExistentes = (pedidoExistente.pedidodetalle || []).filter((d: any) => !idsNuevos.has(d.idpedidodetalle)).map((det: any) => ({
-                        idpedidodetalle: det.idpedidodetalle || 0,
-                        idpedido: pedidoExistente.idpedido,
-                        nombre: det.producto?.nombre || det.nombre || 'PLATO',
-                        idproducto: det.idproducto,
-                        preciounitario: det.precioU != null ? Number(det.precioU) : (Number(det.preciounitario) || 0),
-                        cantidad: Number(det.cantidad) || 1,
-                        descripcion: det.descripcion || '',
-                        total: det.total != null ? Number(det.total) : ((Number(det.cantidad) || 1) * (Number(det.precioU) || 0)),
-                        estado: det.estado || false,
-                        lugarpedido: det.lugarpedido || '',
-                        comentario: det.comentario || '',
-                        idtoppings: [],
-                        id_created_at: 1,
-                        pedido_estado: undefined,
-                        producto: det.producto
-                    }));
+                    const platosExistentes = (pedidoExistente.pedidodetalle || [])
+                        .filter((d: any) => !idsNuevos.has(d.idpedidodetalle))
+                        .map((det: any) => ({
+                            idpedidodetalle: det.idpedidodetalle || 0,
+                            idpedido: pedidoExistente.idpedido,
+                            nombre: det.producto?.nombre || det.nombre || 'PLATO',
+                            idproducto: det.idproducto,
+                            preciounitario: det.precioU != null ? Number(det.precioU) : Number(det.preciounitario) || 0,
+                            cantidad: Number(det.cantidad) || 1,
+                            descripcion: det.descripcion || '',
+                            total: det.total != null ? Number(det.total) : (Number(det.cantidad) || 1) * (Number(det.precioU) || 0),
+                            estado: det.estado || false,
+                            lugarpedido: det.lugarpedido || '',
+                            comentario: det.comentario || '',
+                            idtoppings: [],
+                            id_created_at: 1,
+                            pedido_estado: undefined,
+                            producto: det.producto
+                        }));
                     this.NuevoPedido.pedidodetalle = [...platosExistentes, ...this.NuevoPedido.pedidodetalle];
                     await this.EditarPedido();
                     return;
@@ -1213,10 +1215,10 @@ export class HomeComponent {
                 idpedido: pedido.idpedido || status_array[0]?.idpedido || 0,
                 nombre: pedido.producto?.nombre || pedido.nombre || 'PLATO',
                 idproducto: pedido.idproducto || 0,
-                preciounitario: pedido.precioU != null ? Number(pedido.precioU) : (Number(pedido.preciounitario) || 0),
+                preciounitario: pedido.precioU != null ? Number(pedido.precioU) : Number(pedido.preciounitario) || 0,
                 cantidad: Number(pedido.cantidad) || 0,
                 descripcion: pedido.descripcion || '',
-                total: pedido.total != null ? Number(pedido.total) : ((Number(pedido.cantidad) || 0) * (Number(pedido.precioU) || 0)),
+                total: pedido.total != null ? Number(pedido.total) : (Number(pedido.cantidad) || 0) * (Number(pedido.precioU) || 0),
                 estado: pedido.estado || false,
                 lugarpedido: pedido.lugarpedido || '',
                 comentario: pedido.comentario || '',
@@ -1226,7 +1228,7 @@ export class HomeComponent {
                 producto: pedido.producto
             }));
 
-            const sumaTotal = detallesMapeados.reduce((sum: number, product: any) => sum + (Number(product.preciounitario || 0) * Number(product.cantidad || 0)), 0);
+            const sumaTotal = detallesMapeados.reduce((sum: number, product: any) => sum + Number(product.preciounitario || 0) * Number(product.cantidad || 0), 0);
 
             this.NuevoPedido = {
                 idpedido: status_array[0]?.idpedido || 0,
@@ -1341,10 +1343,7 @@ export class HomeComponent {
                         if (this.Pedidos.length > 0) {
                             Object.values(this.estadomesa).forEach((element: any) => {
                                 if (element.mesa != 0) {
-                                    const hayPedido = this.Pedidos.some((pedido: any) => 
-                                        String(pedido.mesa).trim() === String(element.mesa).trim() &&
-                                        (pedido.estado === '1' || pedido.estado === 1)
-                                    );
+                                    const hayPedido = this.Pedidos.some((pedido: any) => String(pedido.mesa).trim() === String(element.mesa).trim() && (pedido.estado === '1' || pedido.estado === 1));
                                     element.value = hayPedido ? 1 : 0;
                                 }
                             });
@@ -1442,15 +1441,11 @@ export class HomeComponent {
                 const cliente = String(p.cliente || '').toLowerCase();
                 const idpedido = String(p.idpedido || '').toLowerCase();
                 const tienePlato = p.pedidodetalle?.some((d: any) =>
-                    String(d.producto?.nombre || d.nombre || '').toLowerCase().includes(query)
+                    String(d.producto?.nombre || d.nombre || '')
+                        .toLowerCase()
+                        .includes(query)
                 );
-                return (
-                    mesa.includes(query) ||
-                    mozo.includes(query) ||
-                    cliente.includes(query) ||
-                    idpedido.includes(query) ||
-                    tienePlato
-                );
+                return mesa.includes(query) || mozo.includes(query) || cliente.includes(query) || idpedido.includes(query) || tienePlato;
             });
         }
 
@@ -1505,11 +1500,16 @@ export class HomeComponent {
         }
         const tStr = String(toppings).trim();
         if (!tStr || tStr === '0') return [];
-        const ids = tStr.split(',').map((id: string) => id.trim()).filter((id: string) => id !== '' && id !== '0');
-        return ids.map((id: string) => {
-            const found = this.multiselectToppings.find((t: any) => String(t.idtoppings) === id);
-            return found ? found.nombre : '';
-        }).filter(Boolean);
+        const ids = tStr
+            .split(',')
+            .map((id: string) => id.trim())
+            .filter((id: string) => id !== '' && id !== '0');
+        return ids
+            .map((id: string) => {
+                const found = this.multiselectToppings.find((t: any) => String(t.idtoppings) === id);
+                return found ? found.nombre : '';
+            })
+            .filter(Boolean);
     }
 
     irAMesaDePedido(pedido: any): void {
@@ -1535,9 +1535,7 @@ export class HomeComponent {
         const targetId = pedido?.idpedido;
 
         const renderDoc = (dataCocina: any) => {
-            const mesaValue = (dataCocina?.mesa !== undefined && dataCocina?.mesa !== null && dataCocina?.mesa !== '') 
-                ? dataCocina.mesa 
-                : pedido?.mesa;
+            const mesaValue = dataCocina?.mesa !== undefined && dataCocina?.mesa !== null && dataCocina?.mesa !== '' ? dataCocina.mesa : pedido?.mesa;
 
             const doc = this.generarComandaCocinaPdf({
                 idpedido: dataCocina?.idpedido || targetId,
@@ -1545,7 +1543,7 @@ export class HomeComponent {
                 cliente: dataCocina?.cliente || pedido?.cliente,
                 created_at: dataCocina?.created_at || pedido?.created_at,
                 comentario: dataCocina?.comentario || pedido?.comentario,
-                pedidodetalle: (dataCocina?.pedidodetalle && dataCocina.pedidodetalle.length > 0) ? dataCocina.pedidodetalle : (pedido?.pedidodetalle || [])
+                pedidodetalle: dataCocina?.pedidodetalle && dataCocina.pedidodetalle.length > 0 ? dataCocina.pedidodetalle : pedido?.pedidodetalle || []
             });
 
             const pdfBlob = doc.output('blob');
@@ -1657,12 +1655,7 @@ export class HomeComponent {
     }
 
     get totalCobradoIngresado(): number {
-        return +(
-            (Number(this.Pedido_cobrar?.efectivo) || 0) +
-            (Number(this.Pedido_cobrar?.visa) || 0) +
-            (Number(this.Pedido_cobrar?.yape) || 0) +
-            (Number(this.Pedido_cobrar?.plin) || 0)
-        ).toFixed(2);
+        return +((Number(this.Pedido_cobrar?.efectivo) || 0) + (Number(this.Pedido_cobrar?.visa) || 0) + (Number(this.Pedido_cobrar?.yape) || 0) + (Number(this.Pedido_cobrar?.plin) || 0)).toFixed(2);
     }
 
     get diferenciaCobro(): number {
@@ -1947,7 +1940,7 @@ export class HomeComponent {
             y += 3.5;
 
             doc.setFont('helvetica', 'bold');
-            const numMesaVal = ticketData.mesa != null ? ticketData.mesa : (this.mesaSeleccionada?.numero || '0');
+            const numMesaVal = ticketData.mesa != null ? ticketData.mesa : this.mesaSeleccionada?.numero || '0';
             if (numMesaVal == '0') {
                 doc.text('Cliente: ' + (ticketData.cliente || this.NuevoPedido?.cliente || 'Delivery / Llevar'), 5, y);
             } else {
@@ -1974,8 +1967,8 @@ export class HomeComponent {
             items.forEach((element: any) => {
                 const cant = Number(element.cantidad) || 1;
                 const prodNombre = (element.producto?.nombre || element.nombre || 'PLATO').toUpperCase();
-                const pUnit = element.precioU != null ? Number(element.precioU) : (Number(element.preciounitario) || 0);
-                const subtotal = element.total != null ? Number(element.total) : (cant * pUnit);
+                const pUnit = element.precioU != null ? Number(element.precioU) : Number(element.preciounitario) || 0;
+                const subtotal = element.total != null ? Number(element.total) : cant * pUnit;
                 totalCalculado += subtotal;
 
                 // Cantidad
@@ -1988,7 +1981,7 @@ export class HomeComponent {
                 doc.setFontSize(8.5);
                 const nameLines = doc.splitTextToSize(prodNombre, 43);
                 nameLines.forEach((line: string, idx: number) => {
-                    doc.text(line, 16, y + (idx * 3.8));
+                    doc.text(line, 16, y + idx * 3.8);
                 });
 
                 // Importe
@@ -2532,14 +2525,7 @@ export class HomeComponent {
         return `${dd}/${mm}/${yyyy}  ${pad(hours)}:${minutes} ${ampm}`;
     }
 
-    generarComandaCocinaPdf(input: {
-        idpedido?: any;
-        mesa: any;
-        cliente?: string | null;
-        created_at?: string;
-        comentario?: string | null;
-        pedidodetalle: any[];
-    }): jsPDF {
+    generarComandaCocinaPdf(input: { idpedido?: any; mesa: any; cliente?: string | null; created_at?: string; comentario?: string | null; pedidodetalle: any[] }): jsPDF {
         const items = input.pedidodetalle || [];
         const itemsMesa: any[] = [];
         const itemsLlevar: any[] = [];
@@ -2563,7 +2549,11 @@ export class HomeComponent {
                 const lines = Math.ceil(prodNom.length / 20) || 1;
                 h += Math.max(lines * 4.2, 4.5);
                 if (elem.toppings && elem.toppings != '0') {
-                    const tIds = elem.toppings.toString().split(',').map((id: string) => id.trim()).filter((id: string) => id !== '' && id !== '0');
+                    const tIds = elem.toppings
+                        .toString()
+                        .split(',')
+                        .map((id: string) => id.trim())
+                        .filter((id: string) => id !== '' && id !== '0');
                     h += tIds.length * 3.5;
                 }
                 h += 4.5;
@@ -2574,7 +2564,7 @@ export class HomeComponent {
         // Estimación de altura del badge footer inferior (visible al colgar en riel)
         let badgeH = 14;
         if (esDelivery) {
-            badgeH = (input.cliente && input.cliente.trim()) ? 18 : 15;
+            badgeH = input.cliente && input.cliente.trim() ? 18 : 15;
         } else if (esMixto) {
             let itemLinesCount = 0;
             itemsLlevar.forEach((elem: any) => {
@@ -2584,7 +2574,7 @@ export class HomeComponent {
                 const lines = Math.ceil(txt.length / 28) || 1;
                 itemLinesCount += lines;
             });
-            badgeH = 15 + (itemLinesCount * 4.2);
+            badgeH = 15 + itemLinesCount * 4.2;
         } else if (itemsMesa.length === 0 && itemsLlevar.length > 0) {
             badgeH = 16;
         } else {
@@ -2609,7 +2599,7 @@ export class HomeComponent {
 
         if (input.comentario && input.comentario.trim()) {
             const comLinesCount = Math.ceil(input.comentario.trim().length / 38) || 1;
-            calcHeight += 6 + (comLinesCount * 3.8) + 4;
+            calcHeight += 6 + comLinesCount * 3.8 + 4;
         }
 
         calcHeight += 6; // Total de platos
@@ -2680,7 +2670,7 @@ export class HomeComponent {
                 doc.setFontSize(10);
                 const nameLines = doc.splitTextToSize(prodNom, 43);
                 nameLines.forEach((nLine: string, idx: number) => {
-                    doc.text(nLine, 16, y + (idx * 4.2));
+                    doc.text(nLine, 16, y + idx * 4.2);
                 });
 
                 // Precio unitario alineado a la derecha
@@ -2692,7 +2682,11 @@ export class HomeComponent {
 
                 // Toppings / Modificadores
                 if (elem.toppings && elem.toppings != '0') {
-                    const tIds = elem.toppings.toString().split(',').map((id: string) => id.trim()).filter((id: string) => id !== '' && id !== '0');
+                    const tIds = elem.toppings
+                        .toString()
+                        .split(',')
+                        .map((id: string) => id.trim())
+                        .filter((id: string) => id !== '' && id !== '0');
                     tIds.forEach((tid: string) => {
                         const topping = this.multiselectToppings.find((t: any) => t.idtoppings == tid);
                         if (topping) {
@@ -2761,7 +2755,7 @@ export class HomeComponent {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             const comLines = doc.splitTextToSize(com, 64);
-            const boxH = 6 + (comLines.length * 3.8);
+            const boxH = 6 + comLines.length * 3.8;
 
             doc.setLineWidth(0.35);
             doc.setLineDashPattern([], 0);
@@ -2876,9 +2870,7 @@ export class HomeComponent {
         }
 
         const renderCocinaDoc = (dataCocina: any) => {
-            const mesaValue = (dataCocina?.mesa !== undefined && dataCocina?.mesa !== null && dataCocina?.mesa !== '') 
-                ? dataCocina.mesa 
-                : (pedido?.mesa !== undefined && pedido?.mesa !== null ? pedido.mesa : this.mesaSeleccionada?.numero);
+            const mesaValue = dataCocina?.mesa !== undefined && dataCocina?.mesa !== null && dataCocina?.mesa !== '' ? dataCocina.mesa : pedido?.mesa !== undefined && pedido?.mesa !== null ? pedido.mesa : this.mesaSeleccionada?.numero;
 
             const doc = this.generarComandaCocinaPdf({
                 idpedido: dataCocina?.idpedido || targetId,
@@ -2886,7 +2878,7 @@ export class HomeComponent {
                 cliente: dataCocina?.cliente || pedido?.cliente || this.NuevoPedido?.cliente,
                 created_at: dataCocina?.created_at || pedido?.created_at,
                 comentario: dataCocina?.comentario || pedido?.comentario || this.NuevoPedido?.comentario,
-                pedidodetalle: (dataCocina?.pedidodetalle && dataCocina.pedidodetalle.length > 0) ? dataCocina.pedidodetalle : (pedido?.pedidodetalle || [])
+                pedidodetalle: dataCocina?.pedidodetalle && dataCocina.pedidodetalle.length > 0 ? dataCocina.pedidodetalle : pedido?.pedidodetalle || []
             });
             const pdfBlob = doc.output('blob');
             const pdfUrl = URL.createObjectURL(pdfBlob);
@@ -3002,14 +2994,19 @@ export class HomeComponent {
                     idpedido: det.idpedido || pedidoActual.idpedido || 0,
                     nombre: det.producto?.nombre || det.nombre || 'PLATO',
                     idproducto: det.idproducto || 0,
-                    preciounitario: det.precioU != null ? Number(det.precioU) : (Number(det.preciounitario) || 0),
+                    preciounitario: det.precioU != null ? Number(det.precioU) : Number(det.preciounitario) || 0,
                     cantidad: Number(det.cantidad) || 1,
                     descripcion: det.descripcion || '',
-                    total: det.total != null ? Number(det.total) : ((Number(det.cantidad) || 1) * (Number(det.precioU) || 0)),
+                    total: det.total != null ? Number(det.total) : (Number(det.cantidad) || 1) * (Number(det.precioU) || 0),
                     estado: det.estado || false,
                     lugarpedido: det.lugarpedido || '',
                     comentario: det.comentario || '',
-                    idtoppings: det.toppings ? det.toppings.toString().split(',').filter((t: string) => t && t !== '0') : [],
+                    idtoppings: det.toppings
+                        ? det.toppings
+                              .toString()
+                              .split(',')
+                              .filter((t: string) => t && t !== '0')
+                        : [],
                     id_created_at: undefined,
                     pedido_estado: undefined,
                     producto: det.producto
@@ -3019,7 +3016,7 @@ export class HomeComponent {
                 plin: Number(pedidoActual.plin) || 0,
                 efectivo: Number(pedidoActual.efectivo) || 0,
                 cliente: (pedidoActual as any).cliente || '',
-                idmozo: pedidoActual.persona == null ? ((pedidoActual as any).idmozo || null) : pedidoActual.persona.idpersona,
+                idmozo: pedidoActual.persona == null ? (pedidoActual as any).idmozo || null : pedidoActual.persona.idpersona,
                 fecha: pedidoActual.fecha ? String(pedidoActual.fecha).slice(0, 10) : undefined
             };
 
@@ -3239,9 +3236,12 @@ export class HomeComponent {
     abrirComprobanteModal(tipo: '01' | '03') {
         this.tipoComprobante = tipo;
         this.documentoBusqueda = '';
+        this.buscandoCliente = false;
         this.clienteEncontrado = null;
         this.mostrarFormNuevoCliente = false;
-        this.nuevoCliente = { tipo_doc: tipo === '01' ? '6' : '1', num_doc: '', razon_social: '', direccion: '' };
+        this.whatsappNumero = '';
+        this.whatsappComprobanteActual = null;
+        this.nuevoCliente = { tipo_doc: tipo === '01' ? '6' : '1', num_doc: '', razon_social: '', direccion: '', celular: '' };
         this.emitiendo = false;
         this.comprobanteDialog = true;
     }
@@ -3250,19 +3250,27 @@ export class HomeComponent {
         this.tipoComprobante = tipo;
         this.clienteEncontrado = null;
         this.documentoBusqueda = '';
+        this.buscandoCliente = false;
+        this.whatsappNumero = '';
+        this.whatsappComprobanteActual = null;
         this.mostrarFormNuevoCliente = false;
         this.nuevoCliente.tipo_doc = tipo === '01' ? '6' : '1';
+        this.nuevoCliente.celular = '';
     }
 
     seleccionarClientesVarios() {
         this.tipoComprobante = '03';
         this.documentoBusqueda = '00000000';
+        this.buscandoCliente = false;
         this.mostrarFormNuevoCliente = false;
+        this.whatsappNumero = '';
+        this.whatsappComprobanteActual = null;
         this.clienteEncontrado = {
             tipo_doc: '0',
             num_doc: '00000000',
             razon_social: 'CLIENTES VARIOS',
-            direccion: ''
+            direccion: '',
+            celular: ''
         };
     }
 
@@ -3280,31 +3288,43 @@ export class HomeComponent {
     }
 
     async buscarClienteComprobante() {
-        if (!this.documentoBusqueda) {
+        if (this.buscandoCliente) return;
+
+        const numDoc = (this.documentoBusqueda || '').trim();
+        if (!numDoc) {
             this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'Ingrese un número de documento', life: 3000 });
             return;
         }
 
-        const numDoc = this.documentoBusqueda.trim();
+        // Si ya está seleccionado este mismo documento y cliente, no re-consultar
+        if (this.clienteEncontrado && this.clienteEncontrado.num_doc === numDoc) {
+            this.messageService.add({ severity: 'info', summary: 'Información', detail: 'El cliente ya se encuentra seleccionado', life: 2500 });
+            return;
+        }
+
+        this.buscandoCliente = true;
 
         try {
             // 1. Buscar en Supabase: persona con deleted IS NULL
             const { data, error } = await this.supabaseService.client.from('persona').select('*').is('deleted', null).eq('numerodoc', numDoc).maybeSingle();
 
-            if (error) throw error;
+            if (error) {
+                console.warn('Error buscando en Supabase:', error);
+            }
 
             if (data) {
-                const sunatTipoDoc = this.tipoComprobante === '01'
-                    ? '6'
-                    : (Number(data.tipodoc) === 2 ? '6' : '1');
+                const sunatTipoDoc = this.tipoComprobante === '01' ? '6' : Number(data.tipodoc) === 2 ? '6' : '1';
                 this.clienteEncontrado = {
                     num_doc: data.numerodoc,
                     razon_social: `${data.nombres} ${data.apellidopat || ''} ${data.apellidomat || ''}`.trim(),
                     direccion: data.direccion || '',
+                    celular: data.celular || '',
                     tipo_doc: sunatTipoDoc,
                     idpersona: data.idpersona
                 };
+                this.whatsappNumero = data.celular || '';
                 this.mostrarFormNuevoCliente = false;
+                this.buscandoCliente = false;
                 return;
             }
         } catch (error) {
@@ -3312,14 +3332,16 @@ export class HomeComponent {
         }
 
         // 2. Si no está en Supabase, consultar a sunat-api (/api/consultar-documento/{numDoc})
-        this.http.get<any>(`http://127.0.0.1:8000/api/consultar-documento/${encodeURIComponent(numDoc)}`).subscribe({
+        this.http.get<any>(`${environment.sunatApiUrl}/api/consultar-documento/${encodeURIComponent(numDoc)}`).subscribe({
             next: (res) => {
+                this.buscandoCliente = false;
                 if (res?.success && res?.data) {
                     this.nuevoCliente = {
                         tipo_doc: res.data.tipo_doc || (this.tipoComprobante === '01' ? '6' : '1'),
                         num_doc: res.data.num_doc || numDoc,
                         razon_social: res.data.razon_social || '',
-                        direccion: res.data.direccion || ''
+                        direccion: res.data.direccion || '',
+                        celular: ''
                     };
                     this.clienteEncontrado = null;
                     this.mostrarFormNuevoCliente = true;
@@ -3334,6 +3356,7 @@ export class HomeComponent {
                 }
             },
             error: () => {
+                this.buscandoCliente = false;
                 this.abrirFormRegistroManual(numDoc);
             }
         });
@@ -3344,6 +3367,7 @@ export class HomeComponent {
         this.nuevoCliente.num_doc = numDoc;
         this.nuevoCliente.razon_social = '';
         this.nuevoCliente.direccion = '';
+        this.nuevoCliente.celular = '';
         this.mostrarFormNuevoCliente = true;
         this.messageService.add({ severity: 'info', summary: 'No encontrado', detail: 'El cliente no está registrado. Complete los datos.', life: 4000 });
     }
@@ -3369,6 +3393,7 @@ export class HomeComponent {
                     apellidopat: '',
                     apellidomat: '',
                     direccion: this.nuevoCliente.direccion || '',
+                    celular: this.nuevoCliente.celular || '',
                     tipodoc: tipodoc,
                     tipo: 2,
                     idestado: 1
@@ -3382,15 +3407,18 @@ export class HomeComponent {
                 num_doc: data.numerodoc,
                 razon_social: data.nombres,
                 direccion: data.direccion || '',
+                celular: data.celular || this.nuevoCliente.celular || '',
                 tipo_doc: this.tipoComprobante === '01' ? '6' : '1',
                 idpersona: data.idpersona
             };
+            this.whatsappNumero = this.clienteEncontrado.celular;
             this.mostrarFormNuevoCliente = false;
             this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Cliente registrado correctamente', life: 3000 });
         } catch (error) {
             console.error('Error guardando cliente:', error);
             // Si falla, asignar localmente para poder continuar
             this.clienteEncontrado = { ...this.nuevoCliente };
+            this.whatsappNumero = this.nuevoCliente.celular || '';
             this.mostrarFormNuevoCliente = false;
             this.messageService.add({ severity: 'success', summary: 'Cliente asignado', detail: 'Cliente asignado localmente', life: 3000 });
         }
@@ -3411,11 +3439,31 @@ export class HomeComponent {
             cliente: this.clienteEncontrado
         };
 
-        this.http.post<any>('http://127.0.0.1:8000/api/emitir-comprobante-prueba', payload).subscribe({
+        this.http.post<any>(`${environment.sunatApiUrl}/api/emitir-comprobante-prueba`, payload).subscribe({
             next: (res) => {
                 this.emitiendo = false;
                 this.comprobanteDialog = false;
                 this.archivosComprobante = res.archivos || null;
+
+                const numComp = res.numero_comprobante || `${res.serie}-${res.correlativo}`;
+
+                // Generar URLs públicas permanentes de Supabase Storage (Bucket: Facturacion)
+                const urlPdfSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
+                const urlXmlSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+
+                this.whatsappComprobanteActual = {
+                    numero: numComp,
+                    tipo: this.tipoComprobante === '01' ? 'Factura' : 'Boleta',
+                    cliente: this.clienteEncontrado?.razon_social || 'Cliente',
+                    total: this.NuevoPedido?.total || 0,
+                    pdfUrl: urlPdfSupabase,
+                    xmlUrl: urlXmlSupabase
+                };
+
+                if (!this.whatsappNumero && this.clienteEncontrado?.celular) {
+                    this.whatsappNumero = this.clienteEncontrado.celular;
+                }
+
                 this.messageService.add({
                     severity: 'success',
                     summary: '¡Comprobante Emitido!',
@@ -3423,6 +3471,30 @@ export class HomeComponent {
                     life: 5000
                 });
                 console.log('Respuesta SUNAT:', res);
+
+                // Subida en segundo plano a Supabase Storage (Facturacion)
+                if (res.archivos?.pdf_ticket) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, res.archivos.pdf_ticket, 'application/pdf');
+                }
+                if (res.archivos?.pdf_a4) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-a4.pdf`, res.archivos.pdf_a4, 'application/pdf');
+                }
+                if (res.archivos?.xml) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, res.archivos.xml, 'application/xml');
+                }
+
+                // Guardar las URLs de Supabase en la tabla ventas de la base de datos
+                if (res.venta_id) {
+                    this.supabaseService.client
+                        .from('ventas')
+                        .update({
+                            pdf_path: urlPdfSupabase,
+                            xml_path: urlXmlSupabase,
+                            pedido_id: this.NuevoPedido?.idpedido || null
+                        })
+                        .eq('id', res.venta_id)
+                        .then();
+                }
 
                 // Abrir modal con el PDF si viene en la respuesta
                 const pdfInicial = res.archivos?.pdf || res.pdf;
@@ -3462,7 +3534,7 @@ export class HomeComponent {
 
     cargarHistorialComprobantes() {
         this.cargandoHistorialSunat = true;
-        this.http.get<any>('http://127.0.0.1:8000/api/comprobantes?limit=50').subscribe({
+        this.http.get<any>(`${environment.sunatApiUrl}/api/comprobantes?limit=50`).subscribe({
             next: (res) => {
                 this.cargandoHistorialSunat = false;
                 this.listaComprobantesSunat = res?.data || [];
@@ -3481,14 +3553,49 @@ export class HomeComponent {
     }
 
     verPdfDesdeHistorial(item: any, formato: 'ticket' | 'a4' = 'ticket') {
+        const numComp = item.numero_comprobante;
+        const supabasePdf = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
+        const supabaseXml = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+
+        // Subir en segundo plano si aún no estaba en Supabase
+        if (item.archivos?.pdf_ticket && !item.archivos.pdf_ticket.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, item.archivos.pdf_ticket, 'application/pdf');
+        }
+        if (item.archivos?.xml && !item.archivos.xml.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, item.archivos.xml, 'application/xml');
+        }
+
         this.archivosComprobante = {
-            pdf_ticket: item.archivos?.pdf_ticket || item.archivos?.pdf,
-            pdf_a4: item.archivos?.pdf,
-            xml: item.archivos?.xml,
+            pdf_ticket: item.archivos?.pdf_ticket || supabasePdf,
+            pdf_a4: item.archivos?.pdf_a4 || item.archivos?.pdf,
+            xml: item.archivos?.xml || supabaseXml,
             cdr: item.archivos?.cdr
         };
         this.formatoComprobante = formato;
-        const url = formato === 'ticket' ? (item.archivos?.pdf_ticket || item.archivos?.pdf) : item.archivos?.pdf;
+        this.whatsappComprobanteActual = {
+            numero: item.numero_comprobante,
+            tipo: item.tipo_doc === '01' ? 'Factura' : item.tipo_doc === '07' ? 'Nota de Crédito' : 'Boleta',
+            cliente: item.cliente_razon_social,
+            total: item.mto_imp_venta,
+            pdfUrl: supabasePdf,
+            xmlUrl: supabaseXml
+        };
+        this.whatsappNumero = item.cliente_celular || '';
+        if (!this.whatsappNumero && item.cliente_num_doc && item.cliente_num_doc !== '00000000') {
+            this.supabaseService.client
+                .from('persona')
+                .select('celular')
+                .eq('numerodoc', String(item.cliente_num_doc).trim())
+                .is('deleted', null)
+                .maybeSingle()
+                .then(({ data }) => {
+                    if (data?.celular) {
+                        this.whatsappNumero = data.celular;
+                    }
+                });
+        }
+
+        const url = formato === 'ticket' ? item.archivos?.pdf_ticket || item.archivos?.pdf : item.archivos?.pdf_a4 || item.archivos?.pdf;
         if (!url) return;
 
         this.http.get(url, { responseType: 'blob' }).subscribe({
@@ -3503,37 +3610,148 @@ export class HomeComponent {
         });
     }
 
+    abrirWhatsappDesdeHistorial(item: any) {
+        const numComp = item.numero_comprobante;
+        const supabasePdf = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
+        const supabaseXml = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+
+        // Subir en segundo plano si aún no estaba en Supabase
+        if (item.archivos?.pdf_ticket && !item.archivos.pdf_ticket.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, item.archivos.pdf_ticket, 'application/pdf');
+        }
+        if (item.archivos?.xml && !item.archivos.xml.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, item.archivos.xml, 'application/xml');
+        }
+
+        this.whatsappComprobanteActual = {
+            numero: item.numero_comprobante,
+            tipo: item.tipo_doc === '01' ? 'Factura' : item.tipo_doc === '07' ? 'Nota de Crédito' : 'Boleta',
+            cliente: item.cliente_razon_social,
+            total: item.mto_imp_venta,
+            pdfUrl: supabasePdf,
+            xmlUrl: supabaseXml
+        };
+        this.whatsappNumero = item.cliente_celular || '';
+        if (!this.whatsappNumero && item.cliente_num_doc && item.cliente_num_doc !== '00000000') {
+            this.supabaseService.client
+                .from('persona')
+                .select('celular')
+                .eq('numerodoc', String(item.cliente_num_doc).trim())
+                .is('deleted', null)
+                .maybeSingle()
+                .then(({ data }) => {
+                    if (data?.celular) {
+                        this.whatsappNumero = data.celular;
+                    }
+                });
+        }
+        this.whatsappDialog = true;
+    }
+
+    enviarComprobanteWhatsapp(compParam?: any) {
+        const comp = compParam || this.whatsappComprobanteActual;
+        if (!comp) {
+            this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'No hay datos del comprobante para enviar.', life: 3000 });
+            return;
+        }
+
+        let celular = (this.whatsappNumero || '').trim().replace(/\D/g, '');
+        if (celular.startsWith('51') && celular.length === 11) {
+            celular = celular.substring(2);
+        }
+
+        if (!celular || celular.length !== 9) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Celular inválido',
+                detail: 'Ingrese un número de celular de 9 dígitos para enviar por WhatsApp.',
+                life: 3500
+            });
+            return;
+        }
+
+        const tipo = comp.tipo || 'Comprobante';
+        const numero = comp.numero || '';
+        const cliente = comp.cliente || 'Estimado(a) Cliente';
+        const total = comp.total ? Number(comp.total).toFixed(2) : '';
+
+        const formatoActual = this.formatoComprobante === 'a4' ? 'A4' : 'Ticket 80mm';
+
+        // Enlaces públicos permanentes de Supabase Storage (Facturacion)
+        const pdfLink = this.formatoComprobante === 'a4' ? this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numero}-a4.pdf`) : this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numero}-ticket.pdf`);
+        const xmlLink = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numero}.xml`);
+
+        let msg = `¡Hola *${cliente}*! 👋\n`;
+        msg += `Gracias por visitarnos en *Cevichería Willy*. 🐟🦐\n\n`;
+        msg += `Adjuntamos tu comprobante de pago electrónico:\n`;
+        msg += `📋 *${tipo}:* ${numero}\n`;
+        if (total) {
+            msg += `💰 *Importe Total:* S/ ${total}\n\n`;
+        }
+        if (pdfLink) {
+            msg += `📄 *Descargar / Ver PDF (${formatoActual}):*\n${pdfLink}\n\n`;
+        }
+        if (xmlLink) {
+            msg += `📦 *Descargar XML Oficial SUNAT:*\n${xmlLink}\n\n`;
+        }
+        msg += `_Comprobante emitido válidamente ante SUNAT._\n`;
+        msg += `¡Buen provecho y vuelva pronto! ✨`;
+
+        const urlWa = `https://api.whatsapp.com/send?phone=51${celular}&text=${encodeURIComponent(msg)}`;
+        window.open(urlWa, '_blank');
+
+        if (this.whatsappDialog) {
+            this.whatsappDialog = false;
+        }
+
+        this.messageService.add({
+            severity: 'success',
+            summary: 'WhatsApp Abierto',
+            detail: `Abriendo chat con el número 9${celular.substring(1)}`,
+            life: 3500
+        });
+    }
+
     anularComprobanteConNotaCredito(item: any) {
-        if (!confirm(`¿Está seguro de anular el comprobante ${item.numero_comprobante} mediante una Nota de Crédito en SUNAT?`)) {
+        const esBoleta = item.tipo_doc === '03';
+        const msgConfirm = esBoleta
+            ? `¿Está seguro de anular la Boleta ${item.numero_comprobante} mediante Resumen Diario de Anulación en SUNAT?`
+            : `¿Está seguro de anular la Factura ${item.numero_comprobante} mediante una Nota de Crédito FC01 en SUNAT?`;
+
+        if (!confirm(msgConfirm)) {
             return;
         }
 
         this.anulandoComprobanteId = item.id;
-        this.http.post<any>('http://127.0.0.1:8000/api/comprobantes/nota-credito', {
-            venta_id: item.id,
-            motivo: 'ANULACION DE LA OPERACION'
-        }).subscribe({
-            next: (res) => {
-                this.anulandoComprobanteId = null;
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Nota de Crédito Emitida',
-                    detail: res.message || 'El comprobante fue anulado correctamente en SUNAT.',
-                    life: 5000
-                });
-                this.cargarHistorialComprobantes();
-            },
-            error: (err) => {
-                this.anulandoComprobanteId = null;
-                const msg = err?.error?.message || 'No se pudo emitir la Nota de Crédito.';
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error al anular',
-                    detail: msg,
-                    life: 6000
-                });
-            }
-        });
+        const endpoint = esBoleta ? `${environment.sunatApiUrl}/api/resumen-diario/anular-boleta` : `${environment.sunatApiUrl}/api/comprobantes/nota-credito`;
+
+        this.http
+            .post<any>(endpoint, {
+                venta_id: item.id,
+                motivo: 'ANULACION DE LA OPERACION'
+            })
+            .subscribe({
+                next: (res) => {
+                    this.anulandoComprobanteId = null;
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: esBoleta ? 'Resumen Diario SUNAT' : 'Nota de Crédito Emitida',
+                        detail: res.message || 'El comprobante fue anulado correctamente en SUNAT.',
+                        life: 5000
+                    });
+                    this.cargarHistorialComprobantes();
+                },
+                error: (err) => {
+                    this.anulandoComprobanteId = null;
+                    const msg = err?.error?.message || 'No se pudo anular el comprobante en SUNAT.';
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error al anular',
+                        detail: msg,
+                        life: 6000
+                    });
+                }
+            });
     }
 
     // ─── Floor Plan Grid Position Maps ────────────────────────────────────────
@@ -3544,15 +3762,32 @@ export class HomeComponent {
     //  Row3: Mesa1  Mesa6   [empty] Mesa7   Mesa12
 
     private readonly FLOOR1_COL: Record<number, number> = {
-        1:1, 2:1, 3:1,
-        4:2, 5:2, 6:2,
-        7:4, 8:4, 9:4,
-        10:5, 11:5, 12:5
+        1: 1,
+        2: 1,
+        3: 1,
+        4: 2,
+        5: 2,
+        6: 2,
+        7: 4,
+        8: 4,
+        9: 4,
+        10: 5,
+        11: 5,
+        12: 5
     };
     private readonly FLOOR1_ROW: Record<number, number> = {
-        3:1, 4:1, 9:1, 10:1,
-        2:2, 5:2, 8:2, 11:2,
-        1:3, 6:3, 7:3, 12:3
+        3: 1,
+        4: 1,
+        9: 1,
+        10: 1,
+        2: 2,
+        5: 2,
+        8: 2,
+        11: 2,
+        1: 3,
+        6: 3,
+        7: 3,
+        12: 3
     };
 
     // Piso 2 layout (4 cols × 3 rows):
@@ -3561,15 +3796,32 @@ export class HomeComponent {
     //  Row2: Mesa14  Mesa17  Mesa20  Mesa23
     //  Row3: Mesa15  Mesa18  Mesa21  Mesa24
     private readonly FLOOR2_COL: Record<number, number> = {
-        13:1, 14:1, 15:1,
-        16:2, 17:2, 18:2,
-        19:3, 20:3, 21:3,
-        22:4, 23:4, 24:4
+        13: 1,
+        14: 1,
+        15: 1,
+        16: 2,
+        17: 2,
+        18: 2,
+        19: 3,
+        20: 3,
+        21: 3,
+        22: 4,
+        23: 4,
+        24: 4
     };
     private readonly FLOOR2_ROW: Record<number, number> = {
-        13:1, 16:1, 19:1, 22:1,
-        14:2, 17:2, 20:2, 23:2,
-        15:3, 18:3, 21:3, 24:3
+        13: 1,
+        16: 1,
+        19: 1,
+        22: 1,
+        14: 2,
+        17: 2,
+        20: 2,
+        23: 2,
+        15: 3,
+        18: 3,
+        21: 3,
+        24: 3
     };
 
     getMesaGridCol(numero: string, piso: string): string {

@@ -2,12 +2,12 @@
 
 <div class="reportes-wrapper">
     <div class="reportes-card">
-        <p-tabView (onChange)="onTabChange($event)">
+        <p-tabView [(activeIndex)]="activeTabIndex" (onChange)="onTabChange($event)">
 
             <!-- ============================================================ -->
             <!-- PESTAÑA 1: REPORTE GENERAL -->
             <!-- ============================================================ -->
-            <p-tabPanel header="Reporte General" [selected]="true">
+            <p-tabPanel header="Reporte General">
                 <div class="tab-header-toolbar">
                     <div class="tab-header-title">
                         <i class="pi pi-chart-line"></i>
@@ -261,6 +261,7 @@
                                 <th pSortableColumn="plin" class="text-right">📱 Plin <p-sortIcon field="plin" /></th>
                                 <th pSortableColumn="visa" class="text-right">💳 Visa <p-sortIcon field="visa" /></th>
                                 <th pSortableColumn="total" class="text-right font-black">Total <p-sortIcon field="total" /></th>
+                                <th class="text-center" style="min-width: 150px;">Comprobante SUNAT</th>
                                 <th style="width: 4rem;" class="text-center">Editar</th>
                             </tr>
                         </ng-template>
@@ -289,6 +290,42 @@
                                 <td class="text-right font-semibold text-blue-700">S/ {{ (product.visa || 0) | number:'1.2-2' }}</td>
                                 <td class="text-right font-black text-gray-900">S/ {{ (product.total || 0) | number:'1.2-2' }}</td>
                                 <td class="text-center">
+                                    <!-- Si ya tiene comprobante emitido -->
+                                    <div *ngIf="comprobantesPorPedido[product.idpedido] as comp" class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold shadow-xs"
+                                            [ngClass]="comp.tipo_doc === '01' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'"
+                                            [title]="(comp.tipo_doc === '01' ? 'Factura: ' : 'Boleta: ') + comp.numero_comprobante">
+                                            <i class="pi" [ngClass]="comp.tipo_doc === '01' ? 'pi-building' : 'pi-receipt'"></i>
+                                            <span>{{ comp.numero_comprobante }}</span>
+                                        </span>
+                                        <button type="button" (click)="verPdfComprobante(comp, 'ticket')"
+                                            class="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-[11px] font-bold cursor-pointer transition-colors"
+                                            title="Ver PDF Ticket 80mm">
+                                            <i class="pi pi-receipt"></i>
+                                        </button>
+                                        <button type="button" (click)="verPdfComprobante(comp, 'a4')"
+                                            class="px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 rounded text-[11px] font-bold cursor-pointer transition-colors"
+                                            title="Ver PDF Formato A4">
+                                            <i class="pi pi-file-pdf"></i>
+                                        </button>
+                                        <button type="button" (click)="abrirWhatsappDesdeReporte(comp)"
+                                            class="px-1.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold cursor-pointer shadow-xs transition-colors"
+                                            title="Enviar Comprobante por WhatsApp">
+                                            <i class="pi pi-whatsapp"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Si aún NO tiene comprobante emitido -->
+                                    <div *ngIf="!comprobantesPorPedido[product.idpedido]">
+                                        <button type="button" (click)="abrirModalEmitirDesdePedido(product)"
+                                            class="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 mx-auto cursor-pointer"
+                                            title="Generar Boleta o Factura electrónica para este pedido cobrado">
+                                            <i class="pi pi-file-plus text-xs"></i>
+                                            <span>Emitir Comprobante</span>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="text-center">
                                     <button type="button" class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-emerald-700 transition-colors"
                                         (click)="Editar(product)" pTooltip="Editar Cobro" tooltipPosition="left">
                                         <i class="pi pi-cog text-base"></i>
@@ -300,8 +337,35 @@
                         <!-- Fila Expandible con Detalle de Productos -->
                         <ng-template #expandedrow let-product>
                             <tr>
-                                <td colspan="12" class="p-0">
+                                <td colspan="13" class="p-0">
                                     <div class="nested-subtable-container">
+                                        <!-- Banner de Comprobante vinculado si existe -->
+                                        <div *ngIf="comprobantesPorPedido[product.idpedido] as comp"
+                                            class="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between flex-wrap gap-2">
+                                            <div class="flex items-center gap-2">
+                                                <i class="pi pi-check-circle text-emerald-600 text-lg"></i>
+                                                <div>
+                                                    <span class="text-xs font-bold text-emerald-900">Comprobante SUNAT Emitido:</span>
+                                                    <strong class="ml-1 text-xs text-emerald-800 font-mono">{{ comp.numero_comprobante }} ({{ comp.tipo_doc === '01' ? 'Factura' : 'Boleta' }})</strong>
+                                                    <span *ngIf="comp.cliente_razon_social" class="text-xs text-slate-600 ml-2">— {{ comp.cliente_razon_social }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-1.5">
+                                                <button type="button" (click)="verPdfComprobante(comp, 'ticket')"
+                                                    class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-xs font-bold cursor-pointer">
+                                                    <i class="pi pi-receipt mr-1"></i>Ticket
+                                                </button>
+                                                <button type="button" (click)="verPdfComprobante(comp, 'a4')"
+                                                    class="px-2.5 py-1 bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 rounded text-xs font-bold cursor-pointer">
+                                                    <i class="pi pi-file-pdf mr-1"></i>A4
+                                                </button>
+                                                <button type="button" (click)="abrirWhatsappDesdeReporte(comp)"
+                                                    class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold flex items-center gap-1 cursor-pointer shadow-xs">
+                                                    <i class="pi pi-whatsapp"></i>WhatsApp
+                                                </button>
+                                            </div>
+                                        </div>
+
                                         <div class="nested-subtable-title">
                                             <i class="pi pi-shopping-bag"></i>
                                             <span>Detalle de Consumo — {{ product.mesa != 0 ? 'Mesa ' + product.mesa : 'Pedido Delivery' }} (ID #{{ product.idpedido }})</span>
@@ -337,7 +401,7 @@
 
                         <ng-template pTemplate="emptymessage">
                             <tr>
-                                <td colspan="12" class="empty-state">
+                                <td colspan="13" class="empty-state">
                                     <i class="pi pi-inbox"></i>
                                     <span>No hay pedidos registrados para la fecha seleccionada.</span>
                                 </td>
@@ -618,7 +682,12 @@
                             <p>Consulta por rango de fecha, serie, correlativo y cliente con UBL 2.1</p>
                         </div>
                     </div>
-                    <div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="btn-quick-date" style="border-color: #059669; color: #059669;"
+                            (click)="verificarTicketsPendientes()" title="Consultar tickets de Resumen Diario en SUNAT">
+                            <i class="pi pi-sync"></i>
+                            <span>Consultar Tickets</span>
+                        </button>
                         <button type="button" class="btn-quick-date" (click)="cargarReporteComprobantes()" [disabled]="cargandoComprobantes">
                             <i class="pi" [ngClass]="cargandoComprobantes ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
                             <span>{{ cargandoComprobantes ? 'Consultando...' : 'Actualizar' }}</span>
@@ -685,6 +754,14 @@
                         <input type="text" [(ngModel)]="filtroClienteComprobante" (keyup.enter)="cargarReporteComprobantes()"
                             placeholder="RUC, DNI o Nombre del Cliente..."
                             class="h-9 px-3 w-64 rounded-lg border border-slate-300 text-xs font-semibold bg-white text-slate-700 outline-none focus:border-blue-500" />
+                    </div>
+
+                    <!-- Filtro por Pedido -->
+                    <div class="filter-item">
+                        <label><i class="pi pi-shopping-bag"></i> # Pedido:</label>
+                        <input type="text" [(ngModel)]="filtroPedidoComprobante" (keyup.enter)="cargarReporteComprobantes()"
+                            placeholder="Ej. 2117"
+                            class="h-9 px-3 w-28 rounded-lg border border-slate-300 text-xs font-semibold bg-white text-slate-700 outline-none focus:border-blue-500" />
                     </div>
 
                     <!-- Botón Buscar y Limpiar -->
@@ -754,8 +831,8 @@
                                 <th pSortableColumn="tipo_doc" style="width: 10%;">
                                     Tipo <p-sortIcon field="tipo_doc" />
                                 </th>
-                                <th pSortableColumn="numero_comprobante" style="width: 14%;">
-                                    Comprobante <p-sortIcon field="numero_comprobante" />
+                                <th pSortableColumn="numero_comprobante" style="width: 15%;">
+                                    Comprobante / Pedido <p-sortIcon field="numero_comprobante" />
                                 </th>
                                 <th style="width: 12%;">Doc. Cliente</th>
                                 <th pSortableColumn="cliente_razon_social" style="width: 20%;">
@@ -798,8 +875,19 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="font-mono font-bold text-slate-900 text-xs">{{ comp.numero_comprobante }}</span>
-                                    <span *ngIf="comp.pedido_id" class="block text-[11px] text-slate-500">Pedido #{{ comp.pedido_id }}</span>
+                                    <div class="flex flex-col">
+                                        <span class="font-mono font-bold text-slate-900 text-xs tracking-wide">{{ comp.numero_comprobante }}</span>
+                                        <div *ngIf="comp.pedido_id" class="mt-1">
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200"
+                                                title="Comprobante generado a partir del Pedido #{{ comp.pedido_id }}">
+                                                <i class="pi pi-shopping-bag text-[10px]"></i>
+                                                <span>Pedido #{{ comp.pedido_id }}</span>
+                                            </span>
+                                        </div>
+                                        <span *ngIf="!comp.pedido_id" class="text-[10px] text-slate-400 italic mt-0.5">
+                                            Sin pedido vinculado
+                                        </span>
+                                    </div>
                                 </td>
                                 <td>
                                     <span class="font-mono text-xs font-semibold text-slate-700">
@@ -849,11 +937,22 @@
                                             title="Descargar XML UBL 2.1 firmado">
                                             XML
                                         </a>
+                                        <button type="button" (click)="abrirWhatsappDesdeReporte(comp)"
+                                            class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold transition-colors cursor-pointer shadow-sm flex items-center gap-1"
+                                            title="Enviar por WhatsApp">
+                                            <i class="pi pi-whatsapp"></i>
+                                        </button>
                                         <a *ngIf="comp.archivos?.cdr" [href]="comp.archivos.cdr" target="_blank"
                                             class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 rounded text-xs font-bold no-underline transition-colors"
                                             title="Descargar CDR de SUNAT">
                                             CDR
                                         </a>
+                                        <button *ngIf="comp.estado_sunat?.includes('En Proceso') && comp.ticket_sunat"
+                                            type="button" (click)="consultarTicketSunat(comp.ticket_sunat)"
+                                            class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-bold cursor-pointer transition-colors"
+                                            title="Consultar estado de este Ticket en SUNAT">
+                                            <i class="pi pi-sync text-[11px] mr-1"></i>Ticket
+                                        </button>
                                         <button *ngIf="(comp.tipo_doc === '01' || comp.tipo_doc === '03') && !comp.estado_sunat?.includes('Anulado')"
                                             type="button" (click)="anularComprobanteReporte(comp)"
                                             [disabled]="anulandoId === comp.id"
@@ -1219,10 +1318,269 @@
     </div>
 
     <ng-template pTemplate="footer">
-        <div class="flex justify-end gap-2 pt-2">
-            <button type="button" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition-colors cursor-pointer"
-                (click)="comprobantePdfDialog = false">
-                Cerrar
+        <div class="flex flex-wrap items-center justify-between gap-3 px-3 py-2 w-full bg-slate-50 border-t border-slate-200">
+            <!-- Enviar por WhatsApp -->
+            <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl">
+                <i class="pi pi-whatsapp text-emerald-600 text-base"></i>
+                <div class="flex items-center bg-white border border-emerald-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-emerald-400">
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-1 select-none border-r border-emerald-200">+51</span>
+                    <input type="text" [(ngModel)]="whatsappNumero" maxlength="9" placeholder="987654321"
+                        (keydown.enter)="enviarComprobanteWhatsapp()"
+                        class="w-28 px-2 py-1 text-xs text-slate-800 font-semibold outline-none" />
+                </div>
+                <button type="button" (click)="enviarComprobanteWhatsapp()"
+                    [disabled]="!whatsappNumero.trim()"
+                    class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm transition-all">
+                    <i class="pi pi-send text-xs"></i>
+                    <span>Enviar WhatsApp</span>
+                </button>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg transition-colors cursor-pointer"
+                    (click)="comprobantePdfDialog = false">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<!-- Modal Rápido: Enviar WhatsApp desde Reporte -->
+<p-dialog [(visible)]="whatsappDialog" [position]="'center'" header="Enviar Comprobante por WhatsApp"
+    [style]="{ width: '420px', maxWidth: '95vw' }" [modal]="true" [draggable]="false" [resizable]="false"
+    styleClass="p-fluid" [closeOnEscape]="true">
+    <ng-template pTemplate="content">
+        <div class="p-2 space-y-3" *ngIf="whatsappComprobanteActual">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1.5">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500 font-medium">Comprobante:</span>
+                    <strong class="text-slate-800 font-bold">{{ whatsappComprobanteActual.numero }}</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500 font-medium">Cliente:</span>
+                    <span class="text-slate-800 font-semibold truncate max-w-[200px]">{{ whatsappComprobanteActual.cliente }}</span>
+                </div>
+                <div class="flex justify-between items-center" *ngIf="whatsappComprobanteActual.total">
+                    <span class="text-slate-500 font-medium">Total:</span>
+                    <strong class="text-emerald-700 font-bold">S/ {{ whatsappComprobanteActual.total | number:'1.2-2' }}</strong>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                    Número de Celular / WhatsApp:
+                </label>
+                <div class="flex items-center bg-white border border-slate-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500">
+                    <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2.5 py-2 border-r border-slate-200 select-none">+51</span>
+                    <input type="text" [(ngModel)]="whatsappNumero" maxlength="9" placeholder="Ej: 987654321"
+                        (keydown.enter)="enviarComprobanteWhatsapp()"
+                        class="w-full px-3 py-2 text-sm text-slate-800 font-semibold outline-none" />
+                </div>
+                <span class="text-[11px] text-slate-500 mt-1 block">
+                    Se abrirá WhatsApp con el mensaje formateado y los enlaces de descarga del PDF y XML.
+                </span>
+            </div>
+        </div>
+    </ng-template>
+    <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-2 p-2">
+            <button type="button" (click)="whatsappDialog = false"
+                class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 cursor-pointer">
+                Cancelar
+            </button>
+            <button type="button" (click)="enviarComprobanteWhatsapp()"
+                [disabled]="!whatsappNumero.trim()"
+                class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm">
+                <i class="pi pi-whatsapp"></i>
+                <span>Abrir WhatsApp</span>
+            </button>
+        </div>
+    </ng-template>
+</p-dialog>
+
+<!-- Modal Emitir Comprobante (Boleta / Factura) desde Pedido Cobrado -->
+<p-dialog [(visible)]="comprobanteEmitirDialog" [position]="'top'"
+    [header]="'Emitir ' + (tipoComprobante === '01' ? 'Factura Electrónica' : 'Boleta de Venta') + (pedidoSeleccionadoParaComprobante ? ' — Pedido #' + pedidoSeleccionadoParaComprobante.idpedido : '')"
+    [style]="{ width: '95vw', maxWidth: '520px' }" [modal]="true"
+    [draggable]="false" [resizable]="false" styleClass="p-fluid comp-modal-dialog">
+    <ng-template pTemplate="content">
+        <div class="comp-modal" *ngIf="pedidoSeleccionadoParaComprobante">
+
+            <!-- Barra superior: Resumen del Pedido y Entorno -->
+            <div class="comp-modal__topbar">
+                <div class="comp-modal__order-info">
+                    <span class="comp-modal__order-label">
+                        {{ pedidoSeleccionadoParaComprobante.mesa != 0 ? 'Mesa ' + pedidoSeleccionadoParaComprobante.mesa : 'Delivery' }} — Pedido #{{ pedidoSeleccionadoParaComprobante.idpedido }}
+                    </span>
+                    <strong class="comp-modal__order-total text-emerald-700">
+                        Total: S/ {{ (pedidoSeleccionadoParaComprobante.total || 0) | number:'1.2-2' }}
+                    </strong>
+                </div>
+                <div class="comp-env-switch" title="Entorno de envío SUNAT">
+                    <button type="button" class="comp-env-btn"
+                        [class.comp-env-btn--active]="entornoSunat === 'produccion'"
+                        (click)="entornoSunat = 'produccion'">
+                        <span class="comp-env-dot comp-env-dot--prod"></span> Producción
+                    </button>
+                    <button type="button" class="comp-env-btn"
+                        [class.comp-env-btn--active]="entornoSunat === 'beta'"
+                        (click)="entornoSunat = 'beta'">
+                        <span class="comp-env-dot comp-env-dot--beta"></span> Pruebas
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selector de Tipo de Comprobante (Boleta / Factura) -->
+            <div class="comp-section">
+                <label class="comp-label">Tipo de comprobante</label>
+                <div class="comp-type-switch">
+                    <button type="button" class="comp-type-btn"
+                        [class.comp-type-btn--active]="tipoComprobante === '03'"
+                        (click)="seleccionarTipoComprobante('03')">
+                        <span class="comp-type-btn__icon">
+                            <i class="pi pi-receipt"></i>
+                        </span>
+                        <span class="comp-type-btn__text">
+                            <strong>Boleta de Venta</strong>
+                            <small>DNI o Clientes Varios</small>
+                        </span>
+                        <i class="pi pi-check-circle comp-type-btn__check" *ngIf="tipoComprobante === '03'"></i>
+                    </button>
+
+                    <button type="button" class="comp-type-btn"
+                        [class.comp-type-btn--active]="tipoComprobante === '01'"
+                        (click)="seleccionarTipoComprobante('01')">
+                        <span class="comp-type-btn__icon">
+                            <i class="pi pi-building"></i>
+                        </span>
+                        <span class="comp-type-btn__text">
+                            <strong>Factura</strong>
+                            <small>RUC 11 dígitos</small>
+                        </span>
+                        <i class="pi pi-check-circle comp-type-btn__check" *ngIf="tipoComprobante === '01'"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Búsqueda de cliente -->
+            <div class="comp-section">
+                <div class="comp-label-row">
+                    <label class="comp-label m-0">
+                        Buscar Cliente ({{ tipoComprobante === '01' ? 'RUC' : 'DNI' }})
+                    </label>
+                    <button *ngIf="tipoComprobante === '03'" type="button"
+                        class="comp-varios-btn"
+                        (click)="seleccionarClientesVarios()">
+                        <i class="pi pi-user"></i> Clientes Varios (Sin DNI)
+                    </button>
+                </div>
+
+                <div class="comp-search-row">
+                    <input type="text" [(ngModel)]="documentoBusqueda"
+                        [maxlength]="tipoComprobante === '01' ? 11 : 8"
+                        (keydown.enter)="buscarClienteComprobante()"
+                        [disabled]="buscandoCliente"
+                        [placeholder]="tipoComprobante === '01' ? 'Ingrese RUC de 11 dígitos...' : 'Ingrese DNI de 8 dígitos...'"
+                        class="comp-input" />
+                    <button type="button" 
+                        (click)="buscarClienteComprobante()" 
+                        [disabled]="buscandoCliente || !documentoBusqueda.trim()"
+                        class="comp-search-btn">
+                        <i class="pi" [ngClass]="buscandoCliente ? 'pi-spin pi-spinner' : 'pi-search'"></i>
+                        <span>{{ buscandoCliente ? 'Buscando...' : 'Buscar' }}</span>
+                    </button>
+                </div>
+                <div *ngIf="buscandoCliente" class="comp-searching-hint">
+                    <i class="pi pi-spin pi-spinner"></i>
+                    <span>Consultando base de datos y padrón SUNAT / RENIEC...</span>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Cliente Seleccionado -->
+            <div *ngIf="clienteEncontrado" class="comp-client-card">
+                <div class="comp-client-card__header">
+                    <div class="comp-client-card__title">
+                        <i class="pi pi-check-circle"></i>
+                        <span>Cliente seleccionado</span>
+                    </div>
+                    <button type="button" class="comp-client-card__clear"
+                        (click)="clienteEncontrado = null; documentoBusqueda = ''; buscandoCliente = false">
+                        Cambiar
+                    </button>
+                </div>
+                <div class="comp-client-card__body">
+                    <div class="comp-client-card__row">
+                        <span class="comp-client-card__lbl">{{ tipoComprobante === '01' ? 'RUC:' : 'Documento:' }}</span>
+                        <strong class="comp-client-card__val font-mono">{{ clienteEncontrado.num_doc }}</strong>
+                    </div>
+                    <div class="comp-client-card__row">
+                        <span class="comp-client-card__lbl">{{ tipoComprobante === '01' ? 'Razón Social:' : 'Cliente:' }}</span>
+                        <strong class="comp-client-card__val">{{ clienteEncontrado.razon_social }}</strong>
+                    </div>
+                    <div class="comp-client-card__row" *ngIf="clienteEncontrado.direccion || tipoComprobante === '01'">
+                        <span class="comp-client-card__lbl">Dirección:</span>
+                        <span class="comp-client-card__val">{{ clienteEncontrado.direccion || 'No registrada' }}</span>
+                    </div>
+                    <div class="comp-client-card__row" *ngIf="clienteEncontrado.celular">
+                        <span class="comp-client-card__lbl">WhatsApp:</span>
+                        <span class="comp-client-card__val font-semibold text-emerald-700">+51 {{ clienteEncontrado.celular }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario Registrar Nuevo Cliente -->
+            <div *ngIf="mostrarFormNuevoCliente" class="comp-new-client-card">
+                <div class="comp-new-client-card__header">
+                    <i class="pi pi-user-plus"></i>
+                    <span>Registrar Nuevo Cliente</span>
+                </div>
+                <div class="comp-new-client-card__form">
+                    <div class="comp-field">
+                        <label>Nro. {{ tipoComprobante === '01' ? 'RUC' : 'DNI' }}</label>
+                        <input type="text" [(ngModel)]="nuevoCliente.num_doc" class="comp-input comp-input--readonly" readonly />
+                    </div>
+                    <div class="comp-field">
+                        <label>{{ tipoComprobante === '01' ? 'Razón Social *' : 'Nombres Completos *' }}</label>
+                        <input type="text" [(ngModel)]="nuevoCliente.razon_social"
+                            [placeholder]="tipoComprobante === '01' ? 'Nombre de la empresa S.A.C.' : 'Nombres y apellidos del cliente'"
+                            class="comp-input" />
+                    </div>
+                    <div class="comp-field" *ngIf="tipoComprobante === '01'">
+                        <label>Dirección Fiscal * (Obligatorio para Factura)</label>
+                        <input type="text" [(ngModel)]="nuevoCliente.direccion"
+                            placeholder="Av. / Jr. / Calle - Distrito - Provincia"
+                            class="comp-input" />
+                    </div>
+                    <div class="comp-field">
+                        <label>Celular / WhatsApp (Opcional - Para envío del comprobante)</label>
+                        <input type="text" [(ngModel)]="nuevoCliente.celular" maxlength="9"
+                            placeholder="Ej: 987654321" class="comp-input" />
+                    </div>
+                    <div class="comp-new-client-card__actions">
+                        <button type="button" (click)="mostrarFormNuevoCliente = false" class="comp-btn comp-btn--ghost">
+                            Cancelar
+                        </button>
+                        <button type="button" (click)="guardarNuevoCliente()" class="comp-btn comp-btn--primary">
+                            Guardar y Seleccionar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <div class="comp-modal__footer">
+            <button type="button" class="comp-btn comp-btn--cancel" (click)="comprobanteEmitirDialog = false">
+                Cancelar
+            </button>
+            <button type="button" class="comp-btn comp-btn--submit"
+                [disabled]="!clienteEncontrado || emitiendoComprobante"
+                (click)="emitirComprobanteDesdePedido()">
+                <i class="pi" [ngClass]="emitiendoComprobante ? 'pi-spin pi-spinner' : 'pi-check'"></i>
+                <span>{{ emitiendoComprobante ? 'Emitiendo ante SUNAT...' : ('Emitir ' + (tipoComprobante === '01' ? 'Factura' : 'Boleta')) }}</span>
             </button>
         </div>
     </ng-template>
