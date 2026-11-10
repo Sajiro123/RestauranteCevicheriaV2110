@@ -982,4 +982,45 @@ export class SupabaseService {
             return { success: false, data: [], categorias: [], error: err };
         }
     }
+
+    // ============================================================
+    // SUPABASE STORAGE: FACTURACION ELECTRONICA
+    // ============================================================
+    async subirComprobanteStorage(path: string, blob: Blob, contentType: string = 'application/pdf'): Promise<string | null> {
+        try {
+            const { data, error } = await this.supabase.storage
+                .from('Facturacion')
+                .upload(path, blob, {
+                    contentType,
+                    upsert: true
+                });
+
+            if (error) {
+                console.warn('Error subiendo comprobante a Supabase Storage Facturacion:', error);
+                return null;
+            }
+
+            return this.obtenerUrlPublicaComprobante(path);
+        } catch (err) {
+            console.error('Excepción al subir archivo a Facturacion:', err);
+            return null;
+        }
+    }
+
+    async subirComprobanteDesdeUrl(path: string, urlLocal: string, contentType: string = 'application/pdf'): Promise<string | null> {
+        try {
+            const response = await fetch(urlLocal);
+            if (!response.ok) return null;
+            const blob = await response.blob();
+            return await this.subirComprobanteStorage(path, blob, contentType);
+        } catch (e) {
+            console.warn('No se pudo descargar archivo local para subir a Supabase:', e);
+            return null;
+        }
+    }
+
+    obtenerUrlPublicaComprobante(path: string): string {
+        const { data } = this.supabase.storage.from('Facturacion').getPublicUrl(path);
+        return data.publicUrl;
+    }
 }

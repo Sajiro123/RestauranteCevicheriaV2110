@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-emitir-comprobante',
@@ -58,7 +59,9 @@ export class EmitirComprobanteComponent {
 
         if (encontrado) {
             // Asignar datos si existe
-            this.clienteEncontrado = { /* datos de tu BD */ };
+            this.clienteEncontrado = {
+                /* datos de tu BD */
+            };
         } else {
             // Si no existe, pre-llenamos el modal y lo abrimos
             this.nuevoCliente.num_doc = this.documentoBusqueda;
@@ -91,24 +94,23 @@ export class EmitirComprobanteComponent {
         };
 
         // Llamada a la API de Laravel
-        this.http.post('http://127.0.0.1:8000/api/emitir-comprobante-prueba', payload)
-            .subscribe({
-                next: (res: any) => {
-                    console.log('¡Éxito!', res);
-                    const pdfLink = res.archivos?.pdf || res.pdf;
-                    if (res.success && pdfLink) {
-                        // Abrir modal con el PDF
-                        this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(pdfLink);
-                        this.comprobanteTicket = res.ticket || '';
-                        this.comprobanteMessage = res.message || 'Comprobante emitido';
-                        this.pdfDialog = true;
-                    }
-                },
-                error: (err) => {
-                    console.error('Error al emitir', err);
-                    alert(err?.error?.message || 'Hubo un error con SUNAT o la BD');
+        this.http.post(`${environment.sunatApiUrl}/api/emitir-comprobante-prueba`, payload).subscribe({
+            next: (res: any) => {
+                console.log('¡Éxito!', res);
+                const pdfLink = res.archivos?.pdf || res.pdf;
+                if (res.success && pdfLink) {
+                    // Abrir modal con el PDF
+                    this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(pdfLink);
+                    this.comprobanteTicket = res.ticket || '';
+                    this.comprobanteMessage = res.message || 'Comprobante emitido';
+                    this.pdfDialog = true;
                 }
-            });
+            },
+            error: (err) => {
+                console.error('Error al emitir', err);
+                alert(err?.error?.message || 'Hubo un error con SUNAT o la BD');
+            }
+        });
     }
 
     cerrarPdfDialog() {

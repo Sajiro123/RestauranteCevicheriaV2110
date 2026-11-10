@@ -11,9 +11,11 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import jsPDF from 'jspdf';
 import { AperturaService } from '../../service/apertura.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { validateSession } from '../../../model/util/functionscompartidas';
 import { PrimeNG } from 'primeng/config';
+import { SupabaseService } from '../../../services/supabase.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-reportes',
@@ -23,6 +25,7 @@ import { PrimeNG } from 'primeng/config';
     styleUrl: './reportes.component.scss'
 })
 export class ReportesComponent implements OnInit {
+    activeTabIndex: number = 0;
     selectedRange: Date[] | null = null;
     selectedRange2: Date | null = null;
     selectedRange3: Date[] | null = null;
@@ -56,6 +59,7 @@ export class ReportesComponent implements OnInit {
     filtroSerieComprobante: string = '';
     filtroNumeroComprobante: string = '';
     filtroClienteComprobante: string = '';
+    filtroPedidoComprobante: string = '';
     filtroSearchComprobante: string = '';
     cargandoComprobantes: boolean = false;
     listaComprobantes: any[] = [];
@@ -72,8 +76,33 @@ export class ReportesComponent implements OnInit {
     comprobantePdfDialog: boolean = false;
     comprobantePdfUrl: SafeResourceUrl | null = null;
     comprobanteFormato: 'ticket' | 'a4' = 'ticket';
+    formatoComprobante: 'ticket' | 'a4' = 'ticket';
     comprobanteArchivosActual: any = null;
     anulandoId: number | null = null;
+    whatsappNumero: string = '';
+    whatsappDialog: boolean = false;
+    whatsappComprobanteActual: any = null;
+
+    // Mapa de comprobantes vinculados a pedidos: { [idpedido: number]: any }
+    comprobantesPorPedido: { [idpedido: number]: any } = {};
+
+    // Modal de emisión de Boleta / Factura desde Reporte Detallado de Pedidos
+    comprobanteEmitirDialog: boolean = false;
+    pedidoSeleccionadoParaComprobante: any = null;
+    tipoComprobante: string = '03'; // '03' Boleta, '01' Factura
+    entornoSunat: string = 'beta'; // 'beta' o 'produccion'
+    buscandoCliente: boolean = false;
+    clienteEncontrado: any = null;
+    documentoBusqueda: string = '';
+    mostrarFormNuevoCliente: boolean = false;
+    nuevoCliente: any = {
+        tipo_doc: '1',
+        num_doc: '',
+        razon_social: '',
+        direccion: '',
+        celular: ''
+    };
+    emitiendoComprobante: boolean = false;
 
     // Estado de cierre de caja para el Reporte Consolidado
     cajaCerrada: boolean = false;
@@ -119,8 +148,10 @@ export class ReportesComponent implements OnInit {
         private AperturaService_: AperturaService,
         private messageService: MessageService,
         private router: Router,
+        private route: ActivatedRoute,
         private primeng: PrimeNG,
-        private http: HttpClient
+        private http: HttpClient,
+        private supabaseService: SupabaseService
     ) {
         // Establecer idioma español para PrimeNG
         this.primeng.setTranslation(ES_LOCALE);
@@ -162,6 +193,16 @@ export class ReportesComponent implements OnInit {
 
         // Validar si la caja del día ya fue cerrada para permitir el Reporte Consolidado
         this.verificarEstadoCaja();
+
+        // Si se ingresa desde el módulo Configuración con el queryParam ?tab=sunat
+        this.route.queryParams.subscribe((params) => {
+            if (params['tab'] === 'sunat') {
+                this.activeTabIndex = 4;
+                if (this.listaComprobantes.length === 0) {
+                    this.seleccionarMesActualComprobantes();
+                }
+            }
+        });
     }
 
     verificarEstadoCaja(): Promise<boolean> {
@@ -829,6 +870,12 @@ export class ReportesComponent implements OnInit {
                     response.data.sort((a: any, b: any) => (a.fecha || '').localeCompare(b.fecha || '') || (a.hora || '').localeCompare(b.hora || '') || (a.idpedido - b.idpedido));
                     this.PedidoReporte = response.data;
 
+                    // Cargar estado de comprobantes SUNAT para estos pedidos
+                    const pedidosIds = this.PedidoReporte.map((p: any) => p.idpedido).filter(Boolean);
+                    if (pedidosIds.length > 0) {
+                        this.cargarComprobantesDePedidos(pedidosIds);
+                    }
+
                     await this.PedidoService.ReporteProductoDetalle(parameters).subscribe((response2: { success: any; data: any[] }) => {
                         if (response2.success) {
                             this.PedidoReporte = this.PedidoReporte.map((pedido: any) => {
@@ -1016,7 +1063,7 @@ export class ReportesComponent implements OnInit {
     // ============================================================
     cargarReporteComprobantes() {
         this.cargandoComprobantes = true;
-        let url = 'http://127.0.0.1:8000/api/comprobantes?limit=250';
+        let url = `${environment.sunatApiUrl}/api/comprobantes?limit=250`;
 
         if (this.selectedRangeComprobantes && this.selectedRangeComprobantes[0]) {
             const fInicio = this.formatDateToMySQL(this.selectedRangeComprobantes[0]);
@@ -1041,6 +1088,9 @@ export class ReportesComponent implements OnInit {
         if (this.filtroClienteComprobante && this.filtroClienteComprobante.trim()) {
             url += `&cliente=${encodeURIComponent(this.filtroClienteComprobante.trim())}`;
         }
+        if (this.filtroPedidoComprobante && String(this.filtroPedidoComprobante).trim()) {
+            url += `&pedido_id=${encodeURIComponent(String(this.filtroPedidoComprobante).trim())}`;
+        }
         if (this.filtroSearchComprobante && this.filtroSearchComprobante.trim()) {
             url += `&search=${encodeURIComponent(this.filtroSearchComprobante.trim())}`;
         }
@@ -1049,6 +1099,12 @@ export class ReportesComponent implements OnInit {
             next: (res) => {
                 this.cargandoComprobantes = false;
                 this.listaComprobantes = res?.data || [];
+                // Sincronizar en el mapa de comprobantes vinculados a pedidos
+                this.listaComprobantes.forEach((c: any) => {
+                    if (c.pedido_id) {
+                        this.comprobantesPorPedido[c.pedido_id] = c;
+                    }
+                });
                 this.resumenComprobantes = res?.resumen || {
                     total_importe: 0,
                     total_igv: 0,
@@ -1100,13 +1156,48 @@ export class ReportesComponent implements OnInit {
         this.filtroSerieComprobante = '';
         this.filtroNumeroComprobante = '';
         this.filtroClienteComprobante = '';
+        this.filtroPedidoComprobante = '';
         this.filtroSearchComprobante = '';
         this.cargarReporteComprobantes();
     }
 
     verPdfComprobante(item: any, formato: 'ticket' | 'a4' = 'ticket') {
+        const numComp = item.numero_comprobante;
+        const supabasePdf = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
+        const supabaseXml = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+
+        // Subir en segundo plano a Supabase Storage (Facturacion) si no está allí
+        if (item.archivos?.pdf_ticket && !item.archivos.pdf_ticket.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, item.archivos.pdf_ticket, 'application/pdf');
+        }
+        if (item.archivos?.xml && !item.archivos.xml.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, item.archivos.xml, 'application/xml');
+        }
+
         this.comprobanteArchivosActual = item.archivos || null;
         this.comprobanteFormato = formato;
+        this.whatsappComprobanteActual = {
+            numero: item.numero_comprobante,
+            tipo: item.tipo_doc === '01' ? 'Factura' : (item.tipo_doc === '07' ? 'Nota de Crédito' : 'Boleta'),
+            cliente: item.cliente_razon_social,
+            total: item.mto_imp_venta,
+            pdfUrl: supabasePdf,
+            xmlUrl: supabaseXml
+        };
+        this.whatsappNumero = item.cliente_celular || '';
+        if (!this.whatsappNumero && item.cliente_num_doc && item.cliente_num_doc !== '00000000') {
+            this.supabaseService.client.from('persona')
+                .select('celular')
+                .eq('numerodoc', String(item.cliente_num_doc).trim())
+                .is('deleted', null)
+                .maybeSingle()
+                .then(({ data }) => {
+                    if (data?.celular) {
+                        this.whatsappNumero = data.celular;
+                    }
+                });
+        }
+
         const targetUrl = formato === 'ticket'
             ? (item.archivos?.pdf_ticket || item.archivos?.pdf)
             : (item.archivos?.pdf_a4 || item.archivos?.pdf);
@@ -1128,6 +1219,109 @@ export class ReportesComponent implements OnInit {
         });
     }
 
+    abrirWhatsappDesdeReporte(item: any) {
+        const numComp = item.numero_comprobante;
+        const supabasePdf = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
+        const supabaseXml = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+
+        // Subir en segundo plano a Supabase Storage (Facturacion) si no está allí
+        if (item.archivos?.pdf_ticket && !item.archivos.pdf_ticket.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, item.archivos.pdf_ticket, 'application/pdf');
+        }
+        if (item.archivos?.xml && !item.archivos.xml.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, item.archivos.xml, 'application/xml');
+        }
+
+        this.whatsappComprobanteActual = {
+            numero: item.numero_comprobante,
+            tipo: item.tipo_doc === '01' ? 'Factura' : (item.tipo_doc === '07' ? 'Nota de Crédito' : 'Boleta'),
+            cliente: item.cliente_razon_social,
+            total: item.mto_imp_venta,
+            pdfUrl: supabasePdf,
+            xmlUrl: supabaseXml
+        };
+        this.whatsappNumero = item.cliente_celular || '';
+        if (!this.whatsappNumero && item.cliente_num_doc && item.cliente_num_doc !== '00000000') {
+            this.supabaseService.client.from('persona')
+                .select('celular')
+                .eq('numerodoc', String(item.cliente_num_doc).trim())
+                .is('deleted', null)
+                .maybeSingle()
+                .then(({ data }) => {
+                    if (data?.celular) {
+                        this.whatsappNumero = data.celular;
+                    }
+                });
+        }
+        this.whatsappDialog = true;
+    }
+
+    enviarComprobanteWhatsapp(compParam?: any) {
+        const comp = compParam || this.whatsappComprobanteActual;
+        if (!comp) {
+            this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'No hay datos del comprobante para enviar.', life: 3000 });
+            return;
+        }
+
+        let celular = (this.whatsappNumero || '').trim().replace(/\D/g, '');
+        if (celular.startsWith('51') && celular.length === 11) {
+            celular = celular.substring(2);
+        }
+
+        if (!celular || celular.length !== 9) {
+            this.messageService.add({
+                severity: 'warn',
+                summary: 'Celular inválido',
+                detail: 'Ingrese un número de celular de 9 dígitos para enviar por WhatsApp.',
+                life: 3500
+            });
+            return;
+        }
+
+        const tipo = comp.tipo || 'Comprobante';
+        const numero = comp.numero || '';
+        const cliente = comp.cliente || 'Estimado(a) Cliente';
+        const total = comp.total ? Number(comp.total).toFixed(2) : '';
+
+        const formatoActual = this.comprobanteFormato === 'a4' ? 'A4' : 'Ticket 80mm';
+        
+        // Enlaces públicos de Supabase Storage (Facturacion)
+        const pdfLink = (this.comprobanteFormato === 'a4')
+            ? this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numero}-a4.pdf`)
+            : this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numero}-ticket.pdf`);
+        const xmlLink = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numero}.xml`);
+
+        let msg = `¡Hola *${cliente}*! 👋\n`;
+        msg += `Gracias por visitarnos en *Cevichería Willy*. 🐟🦐\n\n`;
+        msg += `Adjuntamos tu comprobante de pago electrónico:\n`;
+        msg += `📋 *${tipo}:* ${numero}\n`;
+        if (total) {
+            msg += `💰 *Importe Total:* S/ ${total}\n\n`;
+        }
+        if (pdfLink) {
+            msg += `📄 *Descargar / Ver PDF (${formatoActual}):*\n${pdfLink}\n\n`;
+        }
+        if (xmlLink) {
+            msg += `📦 *Descargar XML Oficial SUNAT:*\n${xmlLink}\n\n`;
+        }
+        msg += `_Comprobante emitido válidamente ante SUNAT._\n`;
+        msg += `¡Buen provecho y vuelva pronto! ✨`;
+
+        const urlWa = `https://api.whatsapp.com/send?phone=51${celular}&text=${encodeURIComponent(msg)}`;
+        window.open(urlWa, '_blank');
+
+        if (this.whatsappDialog) {
+            this.whatsappDialog = false;
+        }
+
+        this.messageService.add({
+            severity: 'success',
+            summary: 'WhatsApp Abierto',
+            detail: `Abriendo chat con el número 9${celular.substring(1)}`,
+            life: 3500
+        });
+    }
+
     cambiarFormatoPdfComprobante(formato: 'ticket' | 'a4') {
         this.comprobanteFormato = formato;
         const targetUrl = formato === 'ticket'
@@ -1145,31 +1339,417 @@ export class ReportesComponent implements OnInit {
     }
 
     anularComprobanteReporte(item: any) {
-        if (!confirm(`¿Está seguro de anular el comprobante ${item.numero_comprobante} de ${item.cliente_razon_social} mediante una Nota de Crédito en SUNAT?`)) {
+        const esBoleta = (item.tipo_doc === '03');
+        const mensajeConfirm = esBoleta
+            ? `¿Está seguro de anular la Boleta ${item.numero_comprobante} de ${item.cliente_razon_social} mediante el Resumen Diario de Anulación (Baja Oficial en SUNAT)?`
+            : `¿Está seguro de anular la Factura ${item.numero_comprobante} de ${item.cliente_razon_social} mediante una Nota de Crédito FC01 ante SUNAT?`;
+
+        if (!confirm(mensajeConfirm)) {
             return;
         }
 
         this.anulandoId = item.id;
-        this.http.post<any>('http://127.0.0.1:8000/api/comprobantes/nota-credito', {
+        const endpoint = esBoleta
+            ? `${environment.sunatApiUrl}/api/resumen-diario/anular-boleta`
+            : `${environment.sunatApiUrl}/api/comprobantes/nota-credito`;
+
+        this.http.post<any>(endpoint, {
             venta_id: item.id,
             motivo: 'ANULACION DE LA OPERACION'
         }).subscribe({
             next: (res) => {
                 this.anulandoId = null;
+                const titulo = esBoleta ? 'Resumen Diario SUNAT' : 'Nota de Crédito SUNAT';
                 this.messageService.add({
                     severity: 'success',
-                    summary: 'Nota de Crédito Emitida',
+                    summary: titulo,
                     detail: res.message || 'El comprobante fue anulado con éxito en SUNAT.',
-                    life: 5000
+                    life: 6000
                 });
                 this.cargarReporteComprobantes();
             },
             error: (err) => {
                 this.anulandoId = null;
-                const msg = err?.error?.message || 'No se pudo emitir la Nota de Crédito.';
+                const msg = err?.error?.message || 'No se pudo anular el comprobante en SUNAT.';
                 this.messageService.add({
                     severity: 'error',
-                    summary: 'Error al anular',
+                    summary: 'Aviso SUNAT',
+                    detail: msg,
+                    life: 7000
+                });
+            }
+        });
+    }
+
+    consultarTicketSunat(ticket: string) {
+        if (!ticket) return;
+        this.http.get<any>(`${environment.sunatApiUrl}/api/resumen-diario/ticket/${ticket}`).subscribe({
+            next: (res) => {
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Ticket SUNAT',
+                    detail: res.data?.descripcion || 'Ticket procesado por SUNAT.',
+                    life: 5000
+                });
+                this.cargarReporteComprobantes();
+            },
+            error: (err) => {
+                const msg = err?.error?.data?.message || err?.error?.message || 'El ticket aún se encuentra en procesamiento por SUNAT.';
+                this.messageService.add({
+                    severity: 'info',
+                    summary: 'Procesando en SUNAT',
+                    detail: msg,
+                    life: 4000
+                });
+            }
+        });
+    }
+
+    verificarTicketsPendientes() {
+        const enProceso = this.listaComprobantes.filter((c: any) => c.estado_sunat?.includes('En Proceso') && c.ticket_sunat);
+        if (enProceso.length === 0) {
+            this.messageService.add({
+                severity: 'info',
+                summary: 'Tickets SUNAT',
+                detail: 'No hay tickets de Resumen Diario pendientes de confirmación.',
+                life: 3000
+            });
+            this.cargarReporteComprobantes();
+            return;
+        }
+
+        enProceso.forEach((c: any) => {
+            this.consultarTicketSunat(c.ticket_sunat);
+        });
+    }
+
+    // ============================================================
+    // EMISIÓN DE BOLETA / FACTURA DESDE REPORTE DETALLE DE PEDIDOS
+    // ============================================================
+    cargarComprobantesDePedidos(pedidosIds: number[]) {
+        if (!pedidosIds || pedidosIds.length === 0) return;
+
+        this.supabaseService.client
+            .from('ventas')
+            .select('*')
+            .in('pedido_id', pedidosIds)
+            .is('deleted', null)
+            .then(({ data, error }) => {
+                if (!error && data) {
+                    data.forEach((v: any) => {
+                        const numComp = `${v.serie}-${String(v.correlativo).padStart(8, '0')}`;
+                        const supabasePdf = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
+                        const supabaseXml = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+
+                        this.comprobantesPorPedido[v.pedido_id] = {
+                            ...v,
+                            numero_comprobante: numComp,
+                            tipo_doc_nombre: v.tipo_doc === '01' ? 'Factura' : 'Boleta',
+                            cliente_celular: v.cliente_celular || null,
+                            archivos: {
+                                pdf: v.pdf_path || supabasePdf,
+                                pdf_ticket: v.pdf_path ? v.pdf_path.replace('-a4.pdf', '-ticket.pdf') : supabasePdf,
+                                pdf_a4: v.pdf_path ? v.pdf_path.replace('-ticket.pdf', '-a4.pdf') : supabasePdf.replace('-ticket.pdf', '-a4.pdf'),
+                                xml: v.xml_path || supabaseXml,
+                                cdr: v.cdr_path
+                            }
+                        };
+                    });
+                }
+            });
+    }
+
+    abrirModalEmitirDesdePedido(pedido: any) {
+        this.pedidoSeleccionadoParaComprobante = pedido;
+        this.tipoComprobante = '03'; // Boleta por defecto
+        this.entornoSunat = 'beta';
+        this.formatoComprobante = 'ticket';
+        this.buscandoCliente = false;
+        this.clienteEncontrado = null;
+        this.documentoBusqueda = '';
+        this.mostrarFormNuevoCliente = false;
+        this.whatsappNumero = pedido.telefono || '';
+        this.nuevoCliente = {
+            tipo_doc: '1',
+            num_doc: '',
+            razon_social: '',
+            direccion: '',
+            celular: pedido.telefono || ''
+        };
+
+        // En Boleta, pre-seleccionar Clientes Varios (00000000) de inmediato
+        this.seleccionarClientesVarios();
+        this.comprobanteEmitirDialog = true;
+    }
+
+    seleccionarTipoComprobante(tipo: '01' | '03') {
+        this.tipoComprobante = tipo;
+        this.clienteEncontrado = null;
+        this.documentoBusqueda = '';
+        this.buscandoCliente = false;
+        this.mostrarFormNuevoCliente = false;
+        this.nuevoCliente.tipo_doc = tipo === '01' ? '6' : '1';
+        this.nuevoCliente.celular = this.whatsappNumero || '';
+
+        if (tipo === '03') {
+            this.seleccionarClientesVarios();
+        }
+    }
+
+    seleccionarClientesVarios() {
+        this.documentoBusqueda = '00000000';
+        this.buscandoCliente = false;
+        this.mostrarFormNuevoCliente = false;
+        this.clienteEncontrado = {
+            tipo_doc: '0',
+            num_doc: '00000000',
+            razon_social: 'CLIENTES VARIOS',
+            direccion: '-',
+            celular: this.whatsappNumero || ''
+        };
+    }
+
+    async buscarClienteComprobante() {
+        if (this.buscandoCliente) return;
+
+        const numDoc = (this.documentoBusqueda || '').trim();
+        if (!numDoc) {
+            this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'Ingrese un número de documento', life: 3000 });
+            return;
+        }
+
+        if (this.clienteEncontrado && this.clienteEncontrado.num_doc === numDoc) {
+            this.messageService.add({ severity: 'info', summary: 'Información', detail: 'El cliente ya se encuentra seleccionado', life: 2500 });
+            return;
+        }
+
+        this.buscandoCliente = true;
+
+        try {
+            const { data, error } = await this.supabaseService.client
+                .from('persona')
+                .select('*')
+                .is('deleted', null)
+                .eq('numerodoc', numDoc)
+                .maybeSingle();
+
+            if (data) {
+                const sunatTipoDoc = this.tipoComprobante === '01'
+                    ? '6'
+                    : (Number(data.tipodoc) === 2 ? '6' : '1');
+                this.clienteEncontrado = {
+                    num_doc: data.numerodoc,
+                    razon_social: `${data.nombres} ${data.apellidopat || ''} ${data.apellidomat || ''}`.trim(),
+                    direccion: data.direccion || '',
+                    celular: data.celular || '',
+                    tipo_doc: sunatTipoDoc,
+                    idpersona: data.idpersona
+                };
+                if (data.celular) {
+                    this.whatsappNumero = data.celular;
+                }
+                this.mostrarFormNuevoCliente = false;
+                this.buscandoCliente = false;
+                return;
+            }
+        } catch (error) {
+            console.error('Error buscando cliente en Supabase:', error);
+        }
+
+        // Si no está en BD local, consultar API padrón SUNAT / RENIEC
+        this.http.get<any>(`${environment.sunatApiUrl}/api/consultar-documento/${encodeURIComponent(numDoc)}`).subscribe({
+            next: (res) => {
+                this.buscandoCliente = false;
+                if (res?.success && res?.data) {
+                    this.nuevoCliente = {
+                        tipo_doc: res.data.tipo_doc || (this.tipoComprobante === '01' ? '6' : '1'),
+                        num_doc: res.data.num_doc || numDoc,
+                        razon_social: res.data.razon_social || '',
+                        direccion: res.data.direccion || '',
+                        celular: this.whatsappNumero || ''
+                    };
+                    this.clienteEncontrado = null;
+                    this.mostrarFormNuevoCliente = true;
+                    this.messageService.add({
+                        severity: 'info',
+                        summary: 'Datos encontrados en Padrón',
+                        detail: 'Verifique los datos autocompletados y haga clic en Guardar y Seleccionar.',
+                        life: 4000
+                    });
+                } else {
+                    this.abrirFormRegistroManual(numDoc);
+                }
+            },
+            error: () => {
+                this.buscandoCliente = false;
+                this.abrirFormRegistroManual(numDoc);
+            }
+        });
+    }
+
+    abrirFormRegistroManual(numDoc: string) {
+        this.nuevoCliente = {
+            tipo_doc: this.tipoComprobante === '01' ? '6' : '1',
+            num_doc: numDoc,
+            razon_social: '',
+            direccion: '',
+            celular: this.whatsappNumero || ''
+        };
+        this.clienteEncontrado = null;
+        this.mostrarFormNuevoCliente = true;
+        this.messageService.add({
+            severity: 'warn',
+            summary: 'Cliente no registrado',
+            detail: 'Complete los datos manualmente para registrar al cliente.',
+            life: 3500
+        });
+    }
+
+    async guardarNuevoCliente() {
+        if (!this.nuevoCliente.razon_social) {
+            this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'Ingrese el nombre o razón social', life: 3000 });
+            return;
+        }
+        if (this.tipoComprobante === '01' && !this.nuevoCliente.direccion) {
+            this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'La dirección fiscal es obligatoria para Factura', life: 3000 });
+            return;
+        }
+
+        try {
+            const tipodoc = this.tipoComprobante === '01' ? 2 : 1;
+            const { data, error } = await this.supabaseService.client
+                .from('persona')
+                .insert({
+                    numerodoc: this.nuevoCliente.num_doc,
+                    nombres: this.nuevoCliente.razon_social,
+                    apellidopat: '',
+                    apellidomat: '',
+                    direccion: this.nuevoCliente.direccion || '',
+                    celular: this.nuevoCliente.celular || '',
+                    tipodoc: tipodoc,
+                    tipo: 2,
+                    idestado: 1
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            this.clienteEncontrado = {
+                num_doc: data.numerodoc,
+                razon_social: data.nombres,
+                direccion: data.direccion || '',
+                celular: data.celular || this.nuevoCliente.celular || '',
+                tipo_doc: this.tipoComprobante === '01' ? '6' : '1',
+                idpersona: data.idpersona
+            };
+            this.whatsappNumero = this.clienteEncontrado.celular;
+            this.mostrarFormNuevoCliente = false;
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Cliente registrado correctamente', life: 3000 });
+        } catch (error) {
+            console.error('Error guardando cliente:', error);
+            this.clienteEncontrado = { ...this.nuevoCliente };
+            this.whatsappNumero = this.nuevoCliente.celular || '';
+            this.mostrarFormNuevoCliente = false;
+            this.messageService.add({ severity: 'success', summary: 'Cliente asignado', detail: 'Cliente asignado localmente', life: 3000 });
+        }
+    }
+
+    emitirComprobanteDesdePedido() {
+        if (!this.clienteEncontrado) {
+            this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'Debe seleccionar o registrar un cliente primero', life: 3000 });
+            return;
+        }
+        if (!this.pedidoSeleccionadoParaComprobante) {
+            this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'No hay pedido seleccionado para facturar', life: 3000 });
+            return;
+        }
+
+        this.emitiendoComprobante = true;
+        const pedidoId = this.pedidoSeleccionadoParaComprobante.idpedido;
+        const payload = {
+            idpedido: pedidoId,
+            tipo_doc: this.tipoComprobante,
+            entorno: this.entornoSunat,
+            formato: this.comprobanteFormato,
+            cliente: this.clienteEncontrado
+        };
+
+        this.http.post<any>(`${environment.sunatApiUrl}/api/emitir-comprobante-prueba`, payload).subscribe({
+            next: (res) => {
+                this.emitiendoComprobante = false;
+                this.comprobanteEmitirDialog = false;
+
+                const numComp = res.numero_comprobante || `${res.serie}-${res.correlativo}`;
+                const urlPdfSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
+                const urlA4Supabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-a4.pdf`);
+                const urlXmlSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+
+                // Subida en segundo plano a Supabase Storage (Facturacion)
+                if (res.archivos?.pdf_ticket) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, res.archivos.pdf_ticket, 'application/pdf');
+                }
+                if (res.archivos?.pdf_a4) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-a4.pdf`, res.archivos.pdf_a4, 'application/pdf');
+                }
+                if (res.archivos?.xml) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, res.archivos.xml, 'application/xml');
+                }
+
+                // Guardar las URLs de Supabase en la tabla ventas de la base de datos
+                if (res.venta_id) {
+                    this.supabaseService.client.from('ventas').update({
+                        pdf_path: urlPdfSupabase,
+                        xml_path: urlXmlSupabase,
+                        pedido_id: pedidoId
+                    }).eq('id', res.venta_id).then();
+                }
+
+                // Actualizar inmediatamente en el mapa local de pedidos
+                const nuevoComp = {
+                    id: res.venta_id,
+                    pedido_id: pedidoId,
+                    tipo_doc: this.tipoComprobante,
+                    tipo_doc_nombre: this.tipoComprobante === '01' ? 'Factura' : 'Boleta',
+                    serie: res.serie,
+                    correlativo: res.correlativo,
+                    numero_comprobante: numComp,
+                    cliente_num_doc: this.clienteEncontrado.num_doc,
+                    cliente_razon_social: this.clienteEncontrado.razon_social,
+                    cliente_celular: this.clienteEncontrado.celular || this.whatsappNumero,
+                    mto_imp_venta: this.pedidoSeleccionadoParaComprobante.total,
+                    total: this.pedidoSeleccionadoParaComprobante.total,
+                    estado_sunat: res.estado_sunat || 'Aceptado',
+                    archivos: {
+                        pdf: urlPdfSupabase,
+                        pdf_ticket: urlPdfSupabase,
+                        pdf_a4: urlA4Supabase,
+                        xml: urlXmlSupabase,
+                        cdr: res.archivos?.cdr
+                    }
+                };
+                this.comprobantesPorPedido[pedidoId] = nuevoComp;
+
+                // Recargar el reporte de comprobantes
+                this.cargarReporteComprobantes();
+
+                this.messageService.add({
+                    severity: 'success',
+                    summary: '¡Comprobante Emitido!',
+                    detail: res.message || `${this.tipoComprobante === '01' ? 'Factura' : 'Boleta'} ${numComp} emitida con éxito`,
+                    life: 5000
+                });
+
+                // Abrir automáticamente el visor PDF del comprobante
+                this.verPdfComprobante(nuevoComp, this.comprobanteFormato);
+            },
+            error: (err) => {
+                this.emitiendoComprobante = false;
+                console.error('Error al emitir comprobante:', err);
+                const msg = err.error?.message || 'Error al comunicarse con SUNAT. Verifique la conexión.';
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error al emitir comprobante',
                     detail: msg,
                     life: 6000
                 });
