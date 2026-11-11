@@ -265,6 +265,27 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
         } catch {}
     }
 
+    private esPedidoChatbotValido(pedido: any): boolean {
+        if (!pedido) return false;
+        // Si explícitamente se marca es_chatbot como falso, es pedido manual de personal
+        if (pedido.es_chatbot === false || pedido.es_chatbot === 'false') {
+            return false;
+        }
+        // Solo aplica para delivery (mesa 0)
+        if (String(pedido.mesa) !== '0') {
+            return false;
+        }
+        // Confirmación directa por flag de base de datos
+        if (pedido.es_chatbot === true || pedido.es_chatbot === 'true') {
+            return true;
+        }
+        // Firma exclusiva generada por el bot de WhatsApp
+        if (pedido.comentario && pedido.comentario.includes('[PEDIDO WHATSAPP DELIVERY]')) {
+            return true;
+        }
+        return false;
+    }
+
     private iniciarListenerRealtime(): void {
         try {
             this.channel = this.supabaseService.client
@@ -275,18 +296,13 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
                     async (payload: any) => {
                         const nuevo = payload.new;
                         if (!nuevo?.idpedido) return;
+                        this.cargarPedidosSilenciados();
                         if (this.pedidosSilenciadosOCerrados.has(Number(nuevo.idpedido))) {
                             return;
                         }
 
-                        // Solo pedidos de Delivery (mesa 0) generados por el Chatbot
-                        const esChatbot = nuevo && (
-                            nuevo.es_chatbot === true ||
-                            nuevo.es_chatbot === 'true' ||
-                            (nuevo.comentario && nuevo.comentario.includes('WHATSAPP'))
-                        );
-
-                        if (String(nuevo.mesa) === '0' && esChatbot) {
+                        // Solo pedidos de Delivery generados auténticamente por el Chatbot
+                        if (this.esPedidoChatbotValido(nuevo)) {
                             await this.activarAlerta(nuevo);
                         }
                     }
@@ -297,18 +313,13 @@ export class AlertaWhatsappComponent implements OnInit, OnDestroy {
                     async (payload: any) => {
                         const nuevo = payload.new;
                         if (!nuevo?.idpedido) return;
+                        this.cargarPedidosSilenciados();
                         if (this.pedidosSilenciadosOCerrados.has(Number(nuevo.idpedido))) {
                             return;
                         }
 
-                        // Si se actualizó con es_chatbot = true y es mesa 0, y la alerta aún no se activó
-                        const esChatbot = nuevo && (
-                            nuevo.es_chatbot === true ||
-                            nuevo.es_chatbot === 'true' ||
-                            (nuevo.comentario && nuevo.comentario.includes('WHATSAPP'))
-                        );
-
-                        if (String(nuevo.mesa) === '0' && esChatbot) {
+                        // Si se actualizó con es_chatbot = true y la alerta aún no se activó
+                        if (this.esPedidoChatbotValido(nuevo)) {
                             if (!this.visible && (!this.pedido || this.pedido.idpedido !== nuevo.idpedido)) {
                                 await this.activarAlerta(nuevo);
                             }

@@ -986,6 +986,14 @@ export class SupabaseService {
     // ============================================================
     // SUPABASE STORAGE: FACTURACION ELECTRONICA
     // ============================================================
+    normalizarUrlSegura(url: string | null | undefined): string {
+        if (!url) return '';
+        if (/^http:\/\/(?!localhost|127\.0\.0\.1)/i.test(url)) {
+            return url.replace(/^http:\/\//i, 'https://');
+        }
+        return url;
+    }
+
     async subirComprobanteStorage(path: string, blob: Blob, contentType: string = 'application/pdf'): Promise<string | null> {
         try {
             const { data, error } = await this.supabase.storage
@@ -1009,7 +1017,9 @@ export class SupabaseService {
 
     async subirComprobanteDesdeUrl(path: string, urlLocal: string, contentType: string = 'application/pdf'): Promise<string | null> {
         try {
-            const response = await fetch(urlLocal);
+            const urlSegura = this.normalizarUrlSegura(urlLocal);
+            if (!urlSegura) return null;
+            const response = await fetch(urlSegura);
             if (!response.ok) return null;
             const blob = await response.blob();
             return await this.subirComprobanteStorage(path, blob, contentType);

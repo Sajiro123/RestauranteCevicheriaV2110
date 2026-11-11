@@ -15,6 +15,7 @@ import { RouterModule } from '@angular/router';
 import { AperturasComponent } from './aperturas/aperturas.component';
 import { ComprasComponent } from './compras/compras.component';
 import { ReportePlatosComponent } from './reporte-platos/reporte-platos.component';
+import { AjustesImpresionComponent } from './ajustes/ajustes-impresion.component';
 
 @Component({
     selector: 'app-configuracion',
@@ -30,6 +31,7 @@ import { ReportePlatosComponent } from './reporte-platos/reporte-platos.componen
         AperturasComponent,
         ComprasComponent,
         ReportePlatosComponent,
+        AjustesImpresionComponent,
         CommonModule,
         FormsModule,
         ImportsModule,

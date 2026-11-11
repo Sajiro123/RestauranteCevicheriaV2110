@@ -25,6 +25,7 @@ import { AuthService } from '../../../services/auth.service';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../../services/supabase.service';
 import { EmpresaService, Empresa } from '../../service/empresa.service';
+import { ImpresoraService } from '../../service/impresora.service';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -54,6 +55,7 @@ export class HomeComponent {
     private timeUpdateSubscription: Subscription | undefined;
     private pedidoWhatsAppSub: Subscription | undefined;
     private seleccionarEImprimirSub: Subscription | undefined;
+    private pedidosRealtimeChannel: any = null;
 
     // Active orders (pedidos activos) state
     entregandoPedidos: Set<number> = new Set();
@@ -207,6 +209,7 @@ export class HomeComponent {
         cliente: string;
         total: number | string;
         pdfUrl?: string;
+        pdfA4Url?: string;
         xmlUrl?: string;
     } | null = null;
 
@@ -245,7 +248,8 @@ export class HomeComponent {
         private aperturaService: AperturaService,
         private http: HttpClient,
         private supabaseService: SupabaseService,
-        private empresaService: EmpresaService
+        private empresaService: EmpresaService,
+        private impresoraService: ImpresoraService
     ) {
         this.voucherForm = this.fb.group({
             descripcion: ['Vale de delivery'],
@@ -354,6 +358,9 @@ export class HomeComponent {
                 this.cd.detectChanges();
             }, 350);
         });
+
+        // Iniciar sincronización en tiempo real para todos los pedidos de salón y delivery
+        this.iniciarRealtimePedidos();
     }
 
     ngOnDestroy(): void {
@@ -368,6 +375,39 @@ export class HomeComponent {
         }
         if (this.seleccionarEImprimirSub) {
             this.seleccionarEImprimirSub.unsubscribe();
+        }
+        if (this.pedidosRealtimeChannel) {
+            try {
+                this.supabaseService.client.removeChannel(this.pedidosRealtimeChannel);
+            } catch {}
+        }
+    }
+
+    private iniciarRealtimePedidos(): void {
+        try {
+            this.pedidosRealtimeChannel = this.supabaseService.client
+                .channel('realtime-pedidos-home-global')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'pedido' },
+                    async (payload: any) => {
+                        console.log('Sincronización Realtime (pedido):', payload.eventType, payload.new?.idpedido || payload.old?.idpedido);
+                        await this.ListarPedidos();
+                        this.cd.detectChanges();
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'pedidodetalle' },
+                    async (payload: any) => {
+                        console.log('Sincronización Realtime (pedidodetalle):', payload.eventType);
+                        await this.ListarPedidos();
+                        this.cd.detectChanges();
+                    }
+                )
+                .subscribe();
+        } catch (err) {
+            console.error('Error suscribiendo realtime de pedidos:', err);
         }
     }
 
@@ -876,6 +916,17 @@ export class HomeComponent {
                 throw new Error(data?.error || error?.message || 'Error al editar pedido');
             }
 
+            if (pedido.idpedido) {
+                try {
+                    const silenciadosStr = sessionStorage.getItem('pedidos_wa_silenciados');
+                    const silenciados = silenciadosStr ? JSON.parse(silenciadosStr) : [];
+                    if (!silenciados.includes(Number(pedido.idpedido))) {
+                        silenciados.push(Number(pedido.idpedido));
+                        sessionStorage.setItem('pedidos_wa_silenciados', JSON.stringify(silenciados));
+                    }
+                } catch {}
+            }
+
             // Reset estado_cocina to 0
             this.PedidoService.updateEstadoCocina(pedido.idpedido, 0).subscribe({
                 next: () => {},
@@ -1068,6 +1119,7 @@ export class HomeComponent {
                 this.NuevoPedido.comentario = this.comentarios;
                 this.NuevoPedido.fecha = fechaPeru;
                 this.NuevoPedido.mesa = this.mesaSeleccionada.numero;
+                (this.NuevoPedido as any).es_chatbot = false;
 
                 const detalles = this.NuevoPedido.pedidodetalle.map((element) => ({
                     ...element,
@@ -1079,6 +1131,16 @@ export class HomeComponent {
                 const { data, error } = await this.PedidoService.insertarPedidoCompleto(pedido, detalles);
                 if (error || !data?.success) {
                     throw new Error(data?.error || error?.message || 'Error al registrar pedido');
+                }
+
+                // Silenciar este pedido para que no dispare alerta de nuevo pedido en este navegador
+                if (data?.idpedido) {
+                    try {
+                        const silenciadosStr = sessionStorage.getItem('pedidos_wa_silenciados');
+                        const silenciados = silenciadosStr ? JSON.parse(silenciadosStr) : [];
+                        silenciados.push(Number(data.idpedido));
+                        sessionStorage.setItem('pedidos_wa_silenciados', JSON.stringify(silenciados));
+                    } catch {}
                 }
                 await this.cargarMesas();
                 setTimeout(() => {
@@ -1547,9 +1609,26 @@ export class HomeComponent {
             });
 
             const pdfBlob = doc.output('blob');
-            const pdfBlobUrl = URL.createObjectURL(pdfBlob);
-            this.PDFdescargar(pdfBlobUrl, 'Imprimir Comanda Cocina');
-            this.isLoading = false;
+            const targetMesa = mesaValue ? (String(mesaValue) === '0' ? 'Delivery' : `Mesa_${mesaValue}`) : 'Cocina';
+
+            this.impresoraService.imprimirEnCocina(pdfBlob, `Comanda_${targetMesa}`).then((res) => {
+                if (res.success) {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Comanda en Cocina',
+                        detail: res.message || 'Comanda enviada a la impresora de Cocina',
+                        life: 3000
+                    });
+                } else if (res.fallback) {
+                    const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+                    this.PDFdescargar(pdfBlobUrl, 'Imprimir Comanda Cocina');
+                }
+            }).catch(() => {
+                const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+                this.PDFdescargar(pdfBlobUrl, 'Imprimir Comanda Cocina');
+            }).finally(() => {
+                this.isLoading = false;
+            });
         };
 
         if (!targetId) {
@@ -1725,11 +1804,14 @@ export class HomeComponent {
         this.comentarios = '';
         this.pedido_mesa_status = false;
         this.mesaSeleccionada = mesa;
+        (this.NuevoPedido as any).es_chatbot = false;
         if (mesa.numero == '0') {
             this.BuscarPlatoSearchText('');
 
             // Delivery
             this.NuevoPedido.delivery = 1;
+            (this.NuevoPedido as any).es_chatbot = false;
+            this.NuevoPedido.comentario = '';
             if (mesa.idpedido && mesa.idpedido > 0) {
                 var status_array = this.Pedidos.filter((p) => p.idpedido == mesa.idpedido);
                 if (status_array.length > 0) {
@@ -2014,9 +2096,26 @@ export class HomeComponent {
             doc.text('Documento de control interno', centerX, y, { align: 'center' });
 
             const pdfBlob = doc.output('blob');
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            this.PDFdescargar(pdfUrl, 'Imprimir Ticket');
-            this.isLoading = false;
+            const targetMesa = ticketData.mesa ? (String(ticketData.mesa) === '0' ? 'Delivery' : `Mesa_${ticketData.mesa}`) : 'Caja';
+
+            this.impresoraService.imprimirEnCaja(pdfBlob, `Precuenta_${targetMesa}`).then((res) => {
+                if (res.success) {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Ticket en Caja',
+                        detail: res.message || 'Ticket enviado a la impresora de Caja',
+                        life: 3000
+                    });
+                } else if (res.fallback) {
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    this.PDFdescargar(pdfUrl, 'Imprimir Ticket');
+                }
+            }).catch(() => {
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                this.PDFdescargar(pdfUrl, 'Imprimir Ticket');
+            }).finally(() => {
+                this.isLoading = false;
+            });
         };
 
         if (!targetId) {
@@ -2546,15 +2645,15 @@ export class HomeComponent {
             let h = 0;
             list.forEach((elem: any) => {
                 const prodNom = (elem.producto?.nombre || elem.nombre || 'PLATO').toUpperCase();
-                const lines = Math.ceil(prodNom.length / 20) || 1;
-                h += Math.max(lines * 4.2, 4.5);
+                const lines = Math.ceil(prodNom.length / 15) || 1;
+                h += Math.max(lines * 5.0, 5.5);
                 if (elem.toppings && elem.toppings != '0') {
                     const tIds = elem.toppings
                         .toString()
                         .split(',')
                         .map((id: string) => id.trim())
                         .filter((id: string) => id !== '' && id !== '0');
-                    h += tIds.length * 3.5;
+                    h += tIds.length * 4;
                 }
                 h += 4.5;
             });
@@ -2583,10 +2682,9 @@ export class HomeComponent {
 
         // Estimación dinámica de altura total para formato 80mm
         let calcHeight = 8;
-        calcHeight += 4; // Título comanda
-        calcHeight += 4; // Fecha y hora
-        calcHeight += 4; // Referencia superior
-        calcHeight += 8; // Cabecera de columnas
+        calcHeight += 4.5; // Título comanda
+        calcHeight += 6;   // Fecha y hora grande
+        calcHeight += 4;   // Línea divisoria
 
         if (esMixto) {
             calcHeight += 5 + calcItemsH(itemsMesa);
@@ -2618,67 +2716,49 @@ export class HomeComponent {
 
         // Título superior
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
+        doc.setFontSize(10.5);
         doc.text('*** COMANDA DE COCINA ***', centerX, y, { align: 'center' });
-        y += 4;
+        y += 4.5;
 
-        // Fecha y hora: hora a la que entra a cocina (momento exacto de emisión o actualización)
+        // Fecha y hora en grande y destacado
         const fechaStr = this.formatFechaPeruTicket(new Date());
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8.5);
-        doc.text(fechaStr, centerX, y, { align: 'center' });
-        y += 3.5;
-
-        // Referencia compacta arriba (Pedido y Mesa/Llevar)
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        const refMesaTxt = !esDelivery ? `Mesa: ${input.mesa}` : 'PARA LLEVAR';
-        const pedidoTxt = input.idpedido ? `Pedido #${input.idpedido}  |  ${refMesaTxt}` : refMesaTxt;
-        doc.text(pedidoTxt, centerX, y, { align: 'center' });
-        y += 3.5;
+        doc.setFontSize(12.5);
+        doc.text(fechaStr, centerX, y, { align: 'center' });
+        y += 4.5;
 
         // Línea divisoria principal
         doc.setLineWidth(0.4);
         doc.line(5, y, 75, y);
-        y += 3.5;
+        y += 4;
 
-        // Cabecera de columnas
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        doc.text('CANT', 5, y);
-        doc.text('DESCRIPCIÓN / PLATO', 16, y);
-        doc.text('P.UNIT', 75, y, { align: 'right' });
-        y += 1.5;
-        doc.setLineWidth(0.2);
-        doc.line(5, y, 75, y);
-        y += 3.5;
-
-        // Función para renderizar filas de platos
+        // Función para renderizar filas de platos (plato grande, con precio a la derecha, sin cabecera)
         const renderItemList = (list: any[]) => {
             list.forEach((elem: any) => {
                 const cant = elem.cantidad || 1;
                 const prodNom = (elem.producto?.nombre || elem.nombre || 'PLATO').toUpperCase();
-                const precioU = elem.precioU != null ? Number(elem.precioU).toFixed(2) : '0.00';
+                const pUnit = elem.precioU != null ? Number(elem.precioU) : (elem.preciounitario != null ? Number(elem.preciounitario) : (elem.producto?.precio != null ? Number(elem.producto.precio) : 0));
+                const precioStr = `S/${pUnit.toFixed(2)}`;
 
-                // Cantidad en negrita destacada con espacio seguro
+                // Cantidad en negrita destacada (izquierda)
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11.5);
-                doc.text(`${cant}x`, 5, y);
+                doc.setFontSize(13.5);
+                doc.text(`${cant}x`, 5, y + 0.5);
 
-                // Nombre del plato con ajuste de línea (nunca choca con la cantidad ni con el precio)
+                // Precio unitario a la derecha en negrita
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10);
-                const nameLines = doc.splitTextToSize(prodNom, 43);
+                doc.setFontSize(11);
+                doc.text(precioStr, 75, y + 0.5, { align: 'right' });
+
+                // Nombre del plato en grande y negrita (entre 15mm y 57mm para no solapar con el precio)
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                const nameLines = doc.splitTextToSize(prodNom, 42);
                 nameLines.forEach((nLine: string, idx: number) => {
-                    doc.text(nLine, 16, y + idx * 4.2);
+                    doc.text(nLine, 15, y + idx * 4.8);
                 });
 
-                // Precio unitario alineado a la derecha
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(8.5);
-                doc.text(`S/${precioU}`, 75, y, { align: 'right' });
-
-                y += Math.max(nameLines.length * 4.2, 4.5);
+                y += Math.max(nameLines.length * 4.8, 5.2);
 
                 // Toppings / Modificadores
                 if (elem.toppings && elem.toppings != '0') {
@@ -2698,9 +2778,9 @@ export class HomeComponent {
                             else if (esExtra) prefix = '  [+] ';
 
                             doc.setFont('helvetica', esSin ? 'bold' : 'normal');
-                            doc.setFontSize(8.5);
-                            doc.text(`${prefix}${nom}`, 16, y);
-                            y += 3.5;
+                            doc.setFontSize(9.5);
+                            doc.text(`${prefix}${nom}`, 15, y);
+                            y += 4;
                         }
                     });
                 }
@@ -2881,9 +2961,26 @@ export class HomeComponent {
                 pedidodetalle: dataCocina?.pedidodetalle && dataCocina.pedidodetalle.length > 0 ? dataCocina.pedidodetalle : pedido?.pedidodetalle || []
             });
             const pdfBlob = doc.output('blob');
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            this.PDFdescargar(pdfUrl, 'Imprimir Comanda Cocina');
-            this.isLoading = false;
+            const targetMesa = mesaValue ? (String(mesaValue) === '0' ? 'Delivery' : `Mesa_${mesaValue}`) : 'Cocina';
+
+            this.impresoraService.imprimirEnCocina(pdfBlob, `Comanda_${targetMesa}`).then((res) => {
+                if (res.success) {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Comanda en Cocina',
+                        detail: res.message || 'Comanda enviada a la impresora de Cocina',
+                        life: 3000
+                    });
+                } else if (res.fallback) {
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    this.PDFdescargar(pdfUrl, 'Imprimir Comanda Cocina');
+                }
+            }).catch(() => {
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                this.PDFdescargar(pdfUrl, 'Imprimir Comanda Cocina');
+            }).finally(() => {
+                this.isLoading = false;
+            });
         };
 
         if (!targetId) {
@@ -3443,21 +3540,29 @@ export class HomeComponent {
             next: (res) => {
                 this.emitiendo = false;
                 this.comprobanteDialog = false;
-                this.archivosComprobante = res.archivos || null;
 
                 const numComp = res.numero_comprobante || `${res.serie}-${res.correlativo}`;
+                const pdfTicketApi = this.supabaseService.normalizarUrlSegura(res.archivos?.pdf_ticket || res.archivos?.pdf || res.pdf);
+                const pdfA4Api = this.supabaseService.normalizarUrlSegura(res.archivos?.pdf_a4 || res.archivos?.pdf || res.pdf);
+                const xmlApi = this.supabaseService.normalizarUrlSegura(res.archivos?.xml);
+                const cdrApi = this.supabaseService.normalizarUrlSegura(res.archivos?.cdr);
 
-                // Generar URLs públicas permanentes de Supabase Storage (Bucket: Facturacion)
-                const urlPdfSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
-                const urlXmlSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+                this.archivosComprobante = {
+                    pdf: this.formatoComprobante === 'a4' ? pdfA4Api : pdfTicketApi,
+                    pdf_ticket: pdfTicketApi,
+                    pdf_a4: pdfA4Api,
+                    xml: xmlApi,
+                    cdr: cdrApi
+                };
 
                 this.whatsappComprobanteActual = {
                     numero: numComp,
                     tipo: this.tipoComprobante === '01' ? 'Factura' : 'Boleta',
                     cliente: this.clienteEncontrado?.razon_social || 'Cliente',
                     total: this.NuevoPedido?.total || 0,
-                    pdfUrl: urlPdfSupabase,
-                    xmlUrl: urlXmlSupabase
+                    pdfUrl: pdfTicketApi,
+                    pdfA4Url: pdfA4Api,
+                    xmlUrl: xmlApi
                 };
 
                 if (!this.whatsappNumero && this.clienteEncontrado?.celular) {
@@ -3472,32 +3577,50 @@ export class HomeComponent {
                 });
                 console.log('Respuesta SUNAT:', res);
 
-                // Subida en segundo plano a Supabase Storage (Facturacion)
-                if (res.archivos?.pdf_ticket) {
-                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, res.archivos.pdf_ticket, 'application/pdf');
-                }
-                if (res.archivos?.pdf_a4) {
-                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-a4.pdf`, res.archivos.pdf_a4, 'application/pdf');
-                }
-                if (res.archivos?.xml) {
-                    this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, res.archivos.xml, 'application/xml');
-                }
-
-                // Guardar las URLs de Supabase en la tabla ventas de la base de datos
-                if (res.venta_id) {
+                // Vincular pedido_id en la tabla ventas
+                if (res.venta_id && this.NuevoPedido?.idpedido) {
                     this.supabaseService.client
                         .from('ventas')
-                        .update({
-                            pdf_path: urlPdfSupabase,
-                            xml_path: urlXmlSupabase,
-                            pedido_id: this.NuevoPedido?.idpedido || null
-                        })
+                        .update({ pedido_id: this.NuevoPedido.idpedido })
                         .eq('id', res.venta_id)
                         .then();
                 }
 
+                // Subida en segundo plano a Supabase Storage (Facturacion) solo actualizando BD si la subida es exitosa
+                if (pdfTicketApi) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, pdfTicketApi, 'application/pdf').then((urlSubida) => {
+                        if (urlSubida) {
+                            if (this.whatsappComprobanteActual && this.whatsappComprobanteActual.numero === numComp) {
+                                this.whatsappComprobanteActual.pdfUrl = urlSubida;
+                            }
+                            if (res.venta_id) {
+                                this.supabaseService.client.from('ventas').update({ pdf_path: urlSubida }).eq('id', res.venta_id).then();
+                            }
+                        }
+                    });
+                }
+                if (pdfA4Api) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-a4.pdf`, pdfA4Api, 'application/pdf').then((urlSubidaA4) => {
+                        if (urlSubidaA4 && this.whatsappComprobanteActual && this.whatsappComprobanteActual.numero === numComp) {
+                            this.whatsappComprobanteActual.pdfA4Url = urlSubidaA4;
+                        }
+                    });
+                }
+                if (xmlApi) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, xmlApi, 'application/xml').then((urlSubidaXml) => {
+                        if (urlSubidaXml) {
+                            if (this.whatsappComprobanteActual && this.whatsappComprobanteActual.numero === numComp) {
+                                this.whatsappComprobanteActual.xmlUrl = urlSubidaXml;
+                            }
+                            if (res.venta_id) {
+                                this.supabaseService.client.from('ventas').update({ xml_path: urlSubidaXml }).eq('id', res.venta_id).then();
+                            }
+                        }
+                    });
+                }
+
                 // Abrir modal con el PDF si viene en la respuesta
-                const pdfInicial = res.archivos?.pdf || res.pdf;
+                const pdfInicial = this.formatoComprobante === 'a4' ? pdfA4Api : pdfTicketApi;
                 if (res.success && pdfInicial) {
                     setTimeout(() => {
                         this.http.get(pdfInicial, { responseType: 'blob' }).subscribe({
@@ -3552,24 +3675,30 @@ export class HomeComponent {
         });
     }
 
+    private obtenerUrlApiFallback(item: any, formato: 'ticket' | 'a4' = 'ticket'): string {
+        const ruc = '20614776928';
+        const sufijo = formato === 'a4' ? '' : '-ticket';
+        const ruta = `facturacion/pdf/${ruc}-${item.tipo_doc}-${item.serie}-${item.correlativo}${sufijo}.pdf`;
+        return `${environment.sunatApiUrl}/api/descargar-archivo?ruta=${encodeURIComponent(ruta)}`;
+    }
+
     verPdfDesdeHistorial(item: any, formato: 'ticket' | 'a4' = 'ticket') {
         const numComp = item.numero_comprobante;
-        const supabasePdf = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
-        const supabaseXml = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+        const apiTicketUrl = this.obtenerUrlApiFallback(item, 'ticket');
+        const apiA4Url = this.obtenerUrlApiFallback(item, 'a4');
 
-        // Subir en segundo plano si aún no estaba en Supabase
-        if (item.archivos?.pdf_ticket && !item.archivos.pdf_ticket.includes('supabase.co')) {
-            this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, item.archivos.pdf_ticket, 'application/pdf');
-        }
-        if (item.archivos?.xml && !item.archivos.xml.includes('supabase.co')) {
-            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, item.archivos.xml, 'application/xml');
-        }
+        const rawTicket = this.supabaseService.normalizarUrlSegura(item.archivos?.pdf_ticket || item.archivos?.pdf) || apiTicketUrl;
+        const rawA4 = this.supabaseService.normalizarUrlSegura(item.archivos?.pdf_a4 || item.archivos?.pdf) || apiA4Url;
+        const rawXml = this.supabaseService.normalizarUrlSegura(item.archivos?.xml);
+
+        const pdfTicketPreferido = rawTicket.includes('supabase.co') ? apiTicketUrl : rawTicket;
+        const pdfA4Preferido = rawA4.includes('supabase.co') ? apiA4Url : rawA4;
 
         this.archivosComprobante = {
-            pdf_ticket: item.archivos?.pdf_ticket || supabasePdf,
-            pdf_a4: item.archivos?.pdf_a4 || item.archivos?.pdf,
-            xml: item.archivos?.xml || supabaseXml,
-            cdr: item.archivos?.cdr
+            pdf_ticket: pdfTicketPreferido,
+            pdf_a4: pdfA4Preferido,
+            xml: rawXml,
+            cdr: this.supabaseService.normalizarUrlSegura(item.archivos?.cdr)
         };
         this.formatoComprobante = formato;
         this.whatsappComprobanteActual = {
@@ -3577,9 +3706,25 @@ export class HomeComponent {
             tipo: item.tipo_doc === '01' ? 'Factura' : item.tipo_doc === '07' ? 'Nota de Crédito' : 'Boleta',
             cliente: item.cliente_razon_social,
             total: item.mto_imp_venta,
-            pdfUrl: supabasePdf,
-            xmlUrl: supabaseXml
+            pdfUrl: pdfTicketPreferido,
+            pdfA4Url: pdfA4Preferido,
+            xmlUrl: rawXml
         };
+
+        // Subir en segundo plano a Supabase y usar la URL de Supabase solo si la subida tiene éxito
+        this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, pdfTicketPreferido, 'application/pdf').then((urlSubida) => {
+            if (urlSubida && this.whatsappComprobanteActual && this.whatsappComprobanteActual.numero === numComp) {
+                this.whatsappComprobanteActual.pdfUrl = urlSubida;
+            }
+        });
+        if (rawXml && !rawXml.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, rawXml, 'application/xml').then((urlSubidaXml) => {
+                if (urlSubidaXml && this.whatsappComprobanteActual && this.whatsappComprobanteActual.numero === numComp) {
+                    this.whatsappComprobanteActual.xmlUrl = urlSubidaXml;
+                }
+            });
+        }
+
         this.whatsappNumero = item.cliente_celular || '';
         if (!this.whatsappNumero && item.cliente_num_doc && item.cliente_num_doc !== '00000000') {
             this.supabaseService.client
@@ -3595,7 +3740,8 @@ export class HomeComponent {
                 });
         }
 
-        const url = formato === 'ticket' ? item.archivos?.pdf_ticket || item.archivos?.pdf : item.archivos?.pdf_a4 || item.archivos?.pdf;
+        const url = formato === 'ticket' ? pdfTicketPreferido : pdfA4Preferido;
+        const fallbackUrl = formato === 'ticket' ? apiTicketUrl : apiA4Url;
         if (!url) return;
 
         this.http.get(url, { responseType: 'blob' }).subscribe({
@@ -3605,32 +3751,55 @@ export class HomeComponent {
                 this.Comprobante_PDF_Dialog = true;
             },
             error: () => {
-                window.open(url, '_blank');
+                if (url !== fallbackUrl) {
+                    this.http.get(fallbackUrl, { responseType: 'blob' }).subscribe({
+                        next: (blob) => {
+                            const blobUrl = URL.createObjectURL(blob);
+                            this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+                            this.Comprobante_PDF_Dialog = true;
+                        },
+                        error: () => window.open(fallbackUrl, '_blank')
+                    });
+                } else {
+                    window.open(fallbackUrl, '_blank');
+                }
             }
         });
     }
 
     abrirWhatsappDesdeHistorial(item: any) {
         const numComp = item.numero_comprobante;
-        const supabasePdf = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
-        const supabaseXml = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+        const apiTicketUrl = this.obtenerUrlApiFallback(item, 'ticket');
+        const apiA4Url = this.obtenerUrlApiFallback(item, 'a4');
+        const rawTicket = this.supabaseService.normalizarUrlSegura(item.archivos?.pdf_ticket || item.archivos?.pdf) || apiTicketUrl;
+        const rawA4 = this.supabaseService.normalizarUrlSegura(item.archivos?.pdf_a4 || item.archivos?.pdf) || apiA4Url;
+        const rawXml = this.supabaseService.normalizarUrlSegura(item.archivos?.xml);
 
-        // Subir en segundo plano si aún no estaba en Supabase
-        if (item.archivos?.pdf_ticket && !item.archivos.pdf_ticket.includes('supabase.co')) {
-            this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, item.archivos.pdf_ticket, 'application/pdf');
-        }
-        if (item.archivos?.xml && !item.archivos.xml.includes('supabase.co')) {
-            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, item.archivos.xml, 'application/xml');
-        }
+        const pdfTicketPreferido = rawTicket.includes('supabase.co') ? apiTicketUrl : rawTicket;
+        const pdfA4Preferido = rawA4.includes('supabase.co') ? apiA4Url : rawA4;
 
         this.whatsappComprobanteActual = {
             numero: item.numero_comprobante,
             tipo: item.tipo_doc === '01' ? 'Factura' : item.tipo_doc === '07' ? 'Nota de Crédito' : 'Boleta',
             cliente: item.cliente_razon_social,
             total: item.mto_imp_venta,
-            pdfUrl: supabasePdf,
-            xmlUrl: supabaseXml
+            pdfUrl: pdfTicketPreferido,
+            pdfA4Url: pdfA4Preferido,
+            xmlUrl: rawXml
         };
+
+        this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, pdfTicketPreferido, 'application/pdf').then((urlSubida) => {
+            if (urlSubida && this.whatsappComprobanteActual && this.whatsappComprobanteActual.numero === numComp) {
+                this.whatsappComprobanteActual.pdfUrl = urlSubida;
+            }
+        });
+        if (rawXml && !rawXml.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, rawXml, 'application/xml').then((urlSubidaXml) => {
+                if (urlSubidaXml && this.whatsappComprobanteActual && this.whatsappComprobanteActual.numero === numComp) {
+                    this.whatsappComprobanteActual.xmlUrl = urlSubidaXml;
+                }
+            });
+        }
         this.whatsappNumero = item.cliente_celular || '';
         if (!this.whatsappNumero && item.cliente_num_doc && item.cliente_num_doc !== '00000000') {
             this.supabaseService.client
@@ -3677,9 +3846,11 @@ export class HomeComponent {
 
         const formatoActual = this.formatoComprobante === 'a4' ? 'A4' : 'Ticket 80mm';
 
-        // Enlaces públicos permanentes de Supabase Storage (Facturacion)
-        const pdfLink = this.formatoComprobante === 'a4' ? this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numero}-a4.pdf`) : this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numero}-ticket.pdf`);
-        const xmlLink = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numero}.xml`);
+        // Usar URL verificada (Supabase si subió con éxito, o endpoint HTTPS de sunat-api)
+        const pdfLink = this.formatoComprobante === 'a4'
+            ? (comp.pdfA4Url || comp.pdfUrl)
+            : (comp.pdfUrl || comp.pdfA4Url);
+        const xmlLink = comp.xmlUrl || '';
 
         let msg = `¡Hola *${cliente}*! 👋\n`;
         msg += `Gracias por visitarnos en *Cevichería Willy*. 🐟🦐\n\n`;

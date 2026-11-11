@@ -33,6 +33,7 @@ export class ReportesComponent implements OnInit {
     expandedRows = {};
     expandedRowsEliminados = {};
     expandedRowsSinCobrar = {};
+    pedidosDetalleMap: { [pedidoId: number]: any } = {};
     esLocale = ES_LOCALE;
     selectedDates: Date[] = [];
     @ViewChild('dt') dt!: Table;
@@ -1105,6 +1106,41 @@ export class ReportesComponent implements OnInit {
                         this.comprobantesPorPedido[c.pedido_id] = c;
                     }
                 });
+
+                // Cargar los detalles de todos los pedidos vinculados a los comprobantes
+                const pedidoIds = this.listaComprobantes
+                    .map((c: any) => c.pedido_id)
+                    .filter((id: any) => id != null && !this.pedidosDetalleMap[id]);
+
+                if (pedidoIds.length > 0) {
+                    this.supabaseService.client
+                        .from('pedido')
+                        .select(`
+                            idpedido,
+                            mesa,
+                            total,
+                            fecha,
+                            persona:idpersona(nombres, apellidopat, numerodoc, celular),
+                            pedidodetalle:pedidodetalle(
+                                idpedidodetalle,
+                                idproducto,
+                                cantidad,
+                                preciounitario,
+                                toppings,
+                                lugarpedido,
+                                producto:idproducto(nombre, precio)
+                            )
+                        `)
+                        .in('idpedido', pedidoIds)
+                        .is('pedidodetalle.deleted', null)
+                        .then(({ data, error }) => {
+                            if (!error && data) {
+                                data.forEach((p: any) => {
+                                    this.pedidosDetalleMap[p.idpedido] = p;
+                                });
+                            }
+                        });
+                }
                 this.resumenComprobantes = res?.resumen || {
                     total_importe: 0,
                     total_igv: 0,
@@ -1126,6 +1162,43 @@ export class ReportesComponent implements OnInit {
                 });
             }
         });
+    }
+
+    onRowExpandComprobante(event: any) {
+        const comp = event?.data;
+        if (comp && comp.pedido_id && !this.pedidosDetalleMap[comp.pedido_id]) {
+            this.cargarDetallePedidoSiFalta(comp.pedido_id);
+        }
+    }
+
+    cargarDetallePedidoSiFalta(pedidoId: number) {
+        if (!pedidoId || this.pedidosDetalleMap[pedidoId]) return;
+        this.supabaseService.client
+            .from('pedido')
+            .select(`
+                idpedido,
+                mesa,
+                total,
+                fecha,
+                persona:idpersona(nombres, apellidopat, numerodoc, celular),
+                pedidodetalle:pedidodetalle(
+                    idpedidodetalle,
+                    idproducto,
+                    cantidad,
+                    preciounitario,
+                    toppings,
+                    lugarpedido,
+                    producto:idproducto(nombre, precio)
+                )
+            `)
+            .eq('idpedido', pedidoId)
+            .is('pedidodetalle.deleted', null)
+            .maybeSingle()
+            .then(({ data, error }) => {
+                if (!error && data) {
+                    this.pedidosDetalleMap[pedidoId] = data;
+                }
+            });
     }
 
     seleccionarHoyComprobantes() {
@@ -1161,29 +1234,70 @@ export class ReportesComponent implements OnInit {
         this.cargarReporteComprobantes();
     }
 
+    private obtenerUrlApiFallback(item: any, formato: 'ticket' | 'a4' = 'ticket'): string {
+        const ruc = '20614776928';
+        const sufijo = formato === 'a4' ? '' : '-ticket';
+        const ruta = `facturacion/pdf/${ruc}-${item.tipo_doc}-${item.serie}-${item.correlativo}${sufijo}.pdf`;
+        return `${environment.sunatApiUrl}/api/descargar-archivo?ruta=${encodeURIComponent(ruta)}`;
+    }
+
     verPdfComprobante(item: any, formato: 'ticket' | 'a4' = 'ticket') {
         const numComp = item.numero_comprobante;
-        const supabasePdf = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
-        const supabaseXml = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+        const apiTicketUrl = this.obtenerUrlApiFallback(item, 'ticket');
+        const apiA4Url = this.obtenerUrlApiFallback(item, 'a4');
 
-        // Subir en segundo plano a Supabase Storage (Facturacion) si no está allí
-        if (item.archivos?.pdf_ticket && !item.archivos.pdf_ticket.includes('supabase.co')) {
-            this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, item.archivos.pdf_ticket, 'application/pdf');
-        }
-        if (item.archivos?.xml && !item.archivos.xml.includes('supabase.co')) {
-            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, item.archivos.xml, 'application/xml');
-        }
+        // URLs públicas permanentes en Supabase Storage (Facturacion)
+        const urlPdfTicketSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
+        const urlPdfA4Supabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-a4.pdf`);
+        const urlXmlSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
 
-        this.comprobanteArchivosActual = item.archivos || null;
+        // Resolver Ticket y A4 prefiriendo siempre Supabase Storage
+        const rawTicket = item.archivos?.pdf_ticket || item.archivos?.pdf;
+        const pdfTicketPreferido = (rawTicket && String(rawTicket).includes('supabase.co'))
+            ? rawTicket
+            : (urlPdfTicketSupabase || apiTicketUrl);
+
+        const rawA4 = item.archivos?.pdf_a4;
+        const pdfA4Preferido = (rawA4 && String(rawA4).includes('supabase.co'))
+            ? rawA4
+            : (urlPdfA4Supabase || apiA4Url);
+
+        const rawXml = (item.archivos?.xml && String(item.archivos.xml).includes('supabase.co'))
+            ? item.archivos.xml
+            : (urlXmlSupabase || item.archivos?.xml);
+
+        this.comprobanteArchivosActual = {
+            pdf: formato === 'a4' ? pdfA4Preferido : pdfTicketPreferido,
+            pdf_ticket: pdfTicketPreferido,
+            pdf_a4: pdfA4Preferido,
+            xml: rawXml,
+            cdr: this.supabaseService.normalizarUrlSegura(item.archivos?.cdr)
+        };
         this.comprobanteFormato = formato;
         this.whatsappComprobanteActual = {
             numero: item.numero_comprobante,
             tipo: item.tipo_doc === '01' ? 'Factura' : (item.tipo_doc === '07' ? 'Nota de Crédito' : 'Boleta'),
             cliente: item.cliente_razon_social,
             total: item.mto_imp_venta,
-            pdfUrl: supabasePdf,
-            xmlUrl: supabaseXml
+            pdfUrl: pdfTicketPreferido,
+            pdfA4Url: pdfA4Preferido,
+            xmlUrl: rawXml
         };
+
+        // Subir en segundo plano a Supabase Storage (Facturacion) y usar la URL de Supabase solo si la subida tiene éxito
+        this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, pdfTicketPreferido, 'application/pdf').then((urlSubida) => {
+            if (urlSubida && this.whatsappComprobanteActual?.numero === numComp) {
+                this.whatsappComprobanteActual.pdfUrl = urlSubida;
+            }
+        });
+        if (rawXml && !rawXml.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, rawXml, 'application/xml').then((urlSubidaXml) => {
+                if (urlSubidaXml && this.whatsappComprobanteActual?.numero === numComp) {
+                    this.whatsappComprobanteActual.xmlUrl = urlSubidaXml;
+                }
+            });
+        }
+
         this.whatsappNumero = item.cliente_celular || '';
         if (!this.whatsappNumero && item.cliente_num_doc && item.cliente_num_doc !== '00000000') {
             this.supabaseService.client.from('persona')
@@ -1198,9 +1312,8 @@ export class ReportesComponent implements OnInit {
                 });
         }
 
-        const targetUrl = formato === 'ticket'
-            ? (item.archivos?.pdf_ticket || item.archivos?.pdf)
-            : (item.archivos?.pdf_a4 || item.archivos?.pdf);
+        const targetUrl = formato === 'ticket' ? pdfTicketPreferido : pdfA4Preferido;
+        const fallbackUrl = formato === 'ticket' ? apiTicketUrl : apiA4Url;
 
         if (!targetUrl) {
             this.messageService.add({ severity: 'warn', summary: 'Aviso', detail: 'El archivo PDF no está disponible para este comprobante', life: 3000 });
@@ -1214,32 +1327,68 @@ export class ReportesComponent implements OnInit {
                 this.comprobantePdfDialog = true;
             },
             error: () => {
-                window.open(targetUrl, '_blank');
+                if (targetUrl !== fallbackUrl) {
+                    this.http.get(fallbackUrl, { responseType: 'blob' }).subscribe({
+                        next: (blob) => {
+                            const blobUrl = URL.createObjectURL(blob);
+                            this.comprobantePdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+                            this.comprobantePdfDialog = true;
+                        },
+                        error: () => window.open(fallbackUrl, '_blank')
+                    });
+                } else {
+                    window.open(fallbackUrl, '_blank');
+                }
             }
         });
     }
 
     abrirWhatsappDesdeReporte(item: any) {
         const numComp = item.numero_comprobante;
-        const supabasePdf = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
-        const supabaseXml = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+        const apiTicketUrl = this.obtenerUrlApiFallback(item, 'ticket');
+        const apiA4Url = this.obtenerUrlApiFallback(item, 'a4');
 
-        // Subir en segundo plano a Supabase Storage (Facturacion) si no está allí
-        if (item.archivos?.pdf_ticket && !item.archivos.pdf_ticket.includes('supabase.co')) {
-            this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, item.archivos.pdf_ticket, 'application/pdf');
-        }
-        if (item.archivos?.xml && !item.archivos.xml.includes('supabase.co')) {
-            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, item.archivos.xml, 'application/xml');
-        }
+        // URLs de Supabase Storage
+        const urlPdfTicketSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
+        const urlPdfA4Supabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-a4.pdf`);
+        const urlXmlSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+
+        const rawTicket = item.archivos?.pdf_ticket || item.archivos?.pdf;
+        const pdfTicketPreferido = (rawTicket && String(rawTicket).includes('supabase.co'))
+            ? rawTicket
+            : (urlPdfTicketSupabase || apiTicketUrl);
+
+        const rawA4 = item.archivos?.pdf_a4;
+        const pdfA4Preferido = (rawA4 && String(rawA4).includes('supabase.co'))
+            ? rawA4
+            : (urlPdfA4Supabase || apiA4Url);
+
+        const rawXml = (item.archivos?.xml && String(item.archivos.xml).includes('supabase.co'))
+            ? item.archivos.xml
+            : (urlXmlSupabase || item.archivos?.xml);
 
         this.whatsappComprobanteActual = {
             numero: item.numero_comprobante,
             tipo: item.tipo_doc === '01' ? 'Factura' : (item.tipo_doc === '07' ? 'Nota de Crédito' : 'Boleta'),
             cliente: item.cliente_razon_social,
             total: item.mto_imp_venta,
-            pdfUrl: supabasePdf,
-            xmlUrl: supabaseXml
+            pdfUrl: pdfTicketPreferido,
+            pdfA4Url: pdfA4Preferido,
+            xmlUrl: rawXml
         };
+
+        this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, pdfTicketPreferido, 'application/pdf').then((urlSubida) => {
+            if (urlSubida && this.whatsappComprobanteActual?.numero === numComp) {
+                this.whatsappComprobanteActual.pdfUrl = urlSubida;
+            }
+        });
+        if (rawXml && !rawXml.includes('supabase.co')) {
+            this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, rawXml, 'application/xml').then((urlSubidaXml) => {
+                if (urlSubidaXml && this.whatsappComprobanteActual?.numero === numComp) {
+                    this.whatsappComprobanteActual.xmlUrl = urlSubidaXml;
+                }
+            });
+        }
         this.whatsappNumero = item.cliente_celular || '';
         if (!this.whatsappNumero && item.cliente_num_doc && item.cliente_num_doc !== '00000000') {
             this.supabaseService.client.from('persona')
@@ -1285,11 +1434,11 @@ export class ReportesComponent implements OnInit {
 
         const formatoActual = this.comprobanteFormato === 'a4' ? 'A4' : 'Ticket 80mm';
         
-        // Enlaces públicos de Supabase Storage (Facturacion)
+        // Usar URL verificada (Supabase si subió con éxito, o endpoint HTTPS de sunat-api)
         const pdfLink = (this.comprobanteFormato === 'a4')
-            ? this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numero}-a4.pdf`)
-            : this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numero}-ticket.pdf`);
-        const xmlLink = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numero}.xml`);
+            ? (comp.pdfA4Url || comp.pdfUrl)
+            : (comp.pdfUrl || comp.pdfA4Url);
+        const xmlLink = comp.xmlUrl || '';
 
         let msg = `¡Hola *${cliente}*! 👋\n`;
         msg += `Gracias por visitarnos en *Cevichería Willy*. 🐟🦐\n\n`;
@@ -1324,9 +1473,10 @@ export class ReportesComponent implements OnInit {
 
     cambiarFormatoPdfComprobante(formato: 'ticket' | 'a4') {
         this.comprobanteFormato = formato;
-        const targetUrl = formato === 'ticket'
+        const rawUrl = formato === 'ticket'
             ? (this.comprobanteArchivosActual?.pdf_ticket || this.comprobanteArchivosActual?.pdf)
             : (this.comprobanteArchivosActual?.pdf_a4 || this.comprobanteArchivosActual?.pdf);
+        const targetUrl = this.supabaseService.normalizarUrlSegura(rawUrl);
 
         if (targetUrl) {
             this.http.get(targetUrl, { responseType: 'blob' }).subscribe({
@@ -1681,31 +1831,19 @@ export class ReportesComponent implements OnInit {
                 this.comprobanteEmitirDialog = false;
 
                 const numComp = res.numero_comprobante || `${res.serie}-${res.correlativo}`;
-                const urlPdfSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-ticket.pdf`);
-                const urlA4Supabase = this.supabaseService.obtenerUrlPublicaComprobante(`pdf/${numComp}-a4.pdf`);
-                const urlXmlSupabase = this.supabaseService.obtenerUrlPublicaComprobante(`xml/${numComp}.xml`);
+                const pdfTicketApi = this.supabaseService.normalizarUrlSegura(res.archivos?.pdf_ticket || res.archivos?.pdf || res.pdf);
+                const pdfA4Api = this.supabaseService.normalizarUrlSegura(res.archivos?.pdf_a4 || res.archivos?.pdf || res.pdf);
+                const xmlApi = this.supabaseService.normalizarUrlSegura(res.archivos?.xml);
+                const cdrApi = this.supabaseService.normalizarUrlSegura(res.archivos?.cdr);
 
-                // Subida en segundo plano a Supabase Storage (Facturacion)
-                if (res.archivos?.pdf_ticket) {
-                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, res.archivos.pdf_ticket, 'application/pdf');
-                }
-                if (res.archivos?.pdf_a4) {
-                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-a4.pdf`, res.archivos.pdf_a4, 'application/pdf');
-                }
-                if (res.archivos?.xml) {
-                    this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, res.archivos.xml, 'application/xml');
-                }
-
-                // Guardar las URLs de Supabase en la tabla ventas de la base de datos
+                // Vincular pedido_id en la tabla ventas
                 if (res.venta_id) {
                     this.supabaseService.client.from('ventas').update({
-                        pdf_path: urlPdfSupabase,
-                        xml_path: urlXmlSupabase,
                         pedido_id: pedidoId
                     }).eq('id', res.venta_id).then();
                 }
 
-                // Actualizar inmediatamente en el mapa local de pedidos
+                // Actualizar inmediatamente en el mapa local de pedidos usando las URLs HTTPS de sunat-api
                 const nuevoComp = {
                     id: res.venta_id,
                     pedido_id: pedidoId,
@@ -1721,14 +1859,33 @@ export class ReportesComponent implements OnInit {
                     total: this.pedidoSeleccionadoParaComprobante.total,
                     estado_sunat: res.estado_sunat || 'Aceptado',
                     archivos: {
-                        pdf: urlPdfSupabase,
-                        pdf_ticket: urlPdfSupabase,
-                        pdf_a4: urlA4Supabase,
-                        xml: urlXmlSupabase,
-                        cdr: res.archivos?.cdr
+                        pdf: this.comprobanteFormato === 'a4' ? pdfA4Api : pdfTicketApi,
+                        pdf_ticket: pdfTicketApi,
+                        pdf_a4: pdfA4Api,
+                        xml: xmlApi,
+                        cdr: cdrApi
                     }
                 };
                 this.comprobantesPorPedido[pedidoId] = nuevoComp;
+
+                // Subida en segundo plano a Supabase Storage (Facturacion) solo actualizando BD si la subida es exitosa
+                if (pdfTicketApi) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-ticket.pdf`, pdfTicketApi, 'application/pdf').then((urlSubida) => {
+                        if (urlSubida && res.venta_id) {
+                            this.supabaseService.client.from('ventas').update({ pdf_path: urlSubida }).eq('id', res.venta_id).then();
+                        }
+                    });
+                }
+                if (pdfA4Api) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`pdf/${numComp}-a4.pdf`, pdfA4Api, 'application/pdf');
+                }
+                if (xmlApi) {
+                    this.supabaseService.subirComprobanteDesdeUrl(`xml/${numComp}.xml`, xmlApi, 'application/xml').then((urlSubidaXml) => {
+                        if (urlSubidaXml && res.venta_id) {
+                            this.supabaseService.client.from('ventas').update({ xml_path: urlSubidaXml }).eq('id', res.venta_id).then();
+                        }
+                    });
+                }
 
                 // Recargar el reporte de comprobantes
                 this.cargarReporteComprobantes();
