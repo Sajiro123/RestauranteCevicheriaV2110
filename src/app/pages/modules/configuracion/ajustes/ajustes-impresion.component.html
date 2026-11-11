@@ -1,0 +1,239 @@
+<p-toast position="top-right" styleClass="text-2xl" />
+
+<div class="ajustes-impresion-wrapper animate-fadein">
+
+    <!-- ── CABECERA DEL MÓDULO ── -->
+    <header class="module-header">
+        <div class="header-main-row">
+            <button type="button" class="btn-back" (click)="volver()" pTooltip="Volver a Configuración" tooltipPosition="bottom">
+                <i class="pi pi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
+
+            <div class="header-identity">
+                <div class="header-icon-circle">
+                    <i class="fa-solid fa-print"></i>
+                </div>
+                <div class="header-title-box">
+                    <div class="title-with-badge">
+                        <h1>Ajustes de Impresoras (Cocina y Caja)</h1>
+                        <span class="live-badge" [ngClass]="agenteConectado ? 'badge-online' : 'badge-offline'">
+                            <i [ngClass]="agenteConectado ? 'pi pi-check-circle' : 'pi pi-exclamation-triangle'"></i>
+                            {{ agenteConectado ? 'Servicio Activo' : 'Servicio Desconectado' }}
+                        </span>
+                    </div>
+                    <p class="subtitle">Enrutamiento automático a 1 clic: comanda a la impresora de Cocina (Bluetooth) y tickets a la impresora de Caja (USB)</p>
+                </div>
+            </div>
+
+            <!-- Botón de guardar en cabecera -->
+            <div class="header-actions">
+                <button type="button" class="btn-guardar" (click)="guardarAjustes()" [disabled]="guardando">
+                    <i class="pi pi-save"></i>
+                    <span>{{ guardando ? 'Guardando...' : 'Guardar Ajustes' }}</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ── CONTENIDO PRINCIPAL EN GRID ── -->
+    <div class="content-grid">
+
+        <!-- 1. ESTADO DEL AGENTE LOCAL -->
+        <div class="card-section card-agente">
+            <div class="card-header">
+                <div class="icon-box icon-agente">
+                    <i class="fa-solid fa-server"></i>
+                </div>
+                <div>
+                    <h2>Agente Local de Impresión Silenciosa</h2>
+                    <p>Microservicio en Windows (localhost:3333) para disparar el papel en 1 segundo sin abrir ventanas</p>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="agente-status-bar" [ngClass]="agenteConectado ? 'agente-online' : 'agente-offline'">
+                    <div class="flex items-center gap-3">
+                        <span class="status-indicator"></span>
+                        <div>
+                            <strong>{{ agenteConectado ? 'Agente de impresión detectado y listo' : 'Agente no detectado en este equipo' }}</strong>
+                            <small class="block text-slate-500 font-mono">{{ config.agenteUrl }}</small>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-check-agent" (click)="comprobarAgenteYListarImpresoras()" [disabled]="verificandoAgente">
+                        <i class="pi" [ngClass]="verificandoAgente ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
+                        <span>{{ verificandoAgente ? 'Comprobando...' : 'Verificar Conexión' }}</span>
+                    </button>
+                </div>
+
+                <div class="help-box" *ngIf="!agenteConectado">
+                    <div class="help-icon"><i class="pi pi-info-circle"></i></div>
+                    <div class="help-text">
+                        <strong>¿Cómo iniciar el agente en la PC de Caja?</strong>
+                        <p>Abre la carpeta <code>print-agent</code> en tu proyecto y haz doble clic sobre <code>iniciar_impresora.bat</code>. Si la ventana queda abierta, el sistema imprimirá al instante.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CONFIGURACIÓN DE IMPRESORA COCINA (BLUETOOTH) -->
+        <div class="card-section card-cocina">
+            <div class="card-header">
+                <div class="icon-box icon-cocina">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2>1. Impresora de Cocina</h2>
+                        <span class="badge-tag tag-cocina">Comandas Salón y Delivery</span>
+                    </div>
+                    <p>Recibe los platos a preparar, notas de cocina y modificaciones sin precios</p>
+                </div>
+            </div>
+
+            <div class="card-body form-grid">
+                <!-- Tipo de Conexión -->
+                <div class="form-group">
+                    <label>Tipo de Conexión:</label>
+                    <div class="pills-container">
+                        <button type="button" *ngFor="let tipo of tiposConexionCocina"
+                            class="pill-choice" [class.pill-active]="config.tipoConexionCocina === tipo.value"
+                            (click)="config.tipoConexionCocina = $any(tipo.value)">
+                            {{ tipo.label }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Selector de Impresora Windows -->
+                <div class="form-group">
+                    <label>Impresora en Windows (Bluetooth / Sistema):</label>
+                    <div class="flex gap-2">
+                        <select *ngIf="impresorasDisponibles.length > 0" [(ngModel)]="config.impresoraCocina" class="select-printer flex-1">
+                            <option value="">-- Seleccionar impresora detectada --</option>
+                            <option *ngFor="let imp of impresorasDisponibles" [value]="imp.value">
+                                {{ imp.label }}
+                            </option>
+                        </select>
+                        <input *ngIf="impresorasDisponibles.length === 0" type="text" [(ngModel)]="config.impresoraCocina"
+                            placeholder="Ej. POS-80 Cocina o MTP-II" class="input-printer flex-1" />
+
+                        <button type="button" class="btn-test btn-test--cocina" (click)="probarImpresoraCocina()" [disabled]="probandoCocina">
+                            <i class="pi" [ngClass]="probandoCocina ? 'pi-spin pi-spinner' : 'pi-print'"></i>
+                            <span>{{ probandoCocina ? 'Imprimiendo...' : 'Probar Cocina' }}</span>
+                        </button>
+                    </div>
+                    <small class="helper-text">
+                        <i class="pi pi-lightbulb"></i>
+                        Para conectar por <b>Bluetooth</b>: Enciende la impresora, emparéjala en Windows (PIN 0000 o 1234) e instala su driver. Aparecerá en esta lista.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. CONFIGURACIÓN DE IMPRESORA CAJA (USB) -->
+        <div class="card-section card-caja">
+            <div class="card-header">
+                <div class="icon-box icon-caja">
+                    <i class="fa-solid fa-cash-register"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2>2. Impresora de Caja (Cajera)</h2>
+                        <span class="badge-tag tag-caja">Tickets, Pre-cuentas y SUNAT</span>
+                    </div>
+                    <p>Imprime pre-cuentas de mesa, tickets de venta para el cliente y comprobantes electrónicos</p>
+                </div>
+            </div>
+
+            <div class="card-body form-grid">
+                <!-- Tipo de Conexión -->
+                <div class="form-group">
+                    <label>Tipo de Conexión:</label>
+                    <div class="pills-container">
+                        <button type="button" *ngFor="let tipo of tiposConexionCaja"
+                            class="pill-choice" [class.pill-active]="config.tipoConexionCaja === tipo.value"
+                            (click)="config.tipoConexionCaja = $any(tipo.value)">
+                            {{ tipo.label }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Selector de Impresora Windows -->
+                <div class="form-group">
+                    <label>Impresora en Windows (Cable USB):</label>
+                    <div class="flex gap-2">
+                        <select *ngIf="impresorasDisponibles.length > 0" [(ngModel)]="config.impresoraCaja" class="select-printer flex-1">
+                            <option value="">-- Seleccionar impresora detectada --</option>
+                            <option *ngFor="let imp of impresorasDisponibles" [value]="imp.value">
+                                {{ imp.label }}
+                            </option>
+                        </select>
+                        <input *ngIf="impresorasDisponibles.length === 0" type="text" [(ngModel)]="config.impresoraCaja"
+                            placeholder="Ej. POS-80 Caja o EPSON TM-T20" class="input-printer flex-1" />
+
+                        <button type="button" class="btn-test btn-test--caja" (click)="probarImpresoraCaja()" [disabled]="probandoCaja">
+                            <i class="pi" [ngClass]="probandoCaja ? 'pi-spin pi-spinner' : 'pi-print'"></i>
+                            <span>{{ probandoCaja ? 'Imprimiendo...' : 'Probar Caja' }}</span>
+                        </button>
+                    </div>
+                    <small class="helper-text">
+                        <i class="pi pi-check"></i>
+                        Impresora térmica estándar de 80mm conectada por cable USB a la computadora de la cajera.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. AUTOMATIZACIONES Y MODOS DE TRABAJO -->
+        <div class="card-section card-opciones">
+            <div class="card-header">
+                <div class="icon-box icon-opciones">
+                    <i class="fa-solid fa-sliders"></i>
+                </div>
+                <div>
+                    <h2>3. Opciones de Automatización</h2>
+                    <p>Personalice cómo interactúan los botones con las impresoras</p>
+                </div>
+            </div>
+
+            <div class="card-body toggles-list">
+                <div class="toggle-item">
+                    <div class="toggle-info">
+                        <strong>Impresión Silenciosa Directa (1 Clic)</strong>
+                        <span>Envía el trabajo inmediatamente a la impresora sin mostrar el cuadro emergente de Chrome.</span>
+                    </div>
+                    <p-inputSwitch [(ngModel)]="config.impresionDirecta"></p-inputSwitch>
+                </div>
+
+                <div class="toggle-item">
+                    <div class="toggle-info">
+                        <strong>Enviar Comanda a Cocina automáticamente al registrar pedido</strong>
+                        <span>Al pulsar "Registrar Pedido" en salón o delivery, expulsa el ticket en Cocina sin clics extras.</span>
+                    </div>
+                    <p-inputSwitch [(ngModel)]="config.imprimirCocinaAutoAlRegistrar"></p-inputSwitch>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── FOOTER BAR FLOTANTE DE GUARDADO ── -->
+    <div class="floating-footer">
+        <div class="flex items-center gap-3">
+            <i class="pi pi-info-circle text-slate-400"></i>
+            <span class="text-sm text-slate-600 font-medium">Los cambios se guardan localmente para este navegador y terminal de venta.</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" class="btn-cancelar" (click)="volver()">
+                Cancelar
+            </button>
+            <button type="button" class="btn-guardar" (click)="guardarAjustes()" [disabled]="guardando">
+                <i class="pi pi-save"></i>
+                <span>{{ guardando ? 'Guardando...' : 'Guardar Configuración' }}</span>
+            </button>
+        </div>
+    </div>
+
+</div>
+

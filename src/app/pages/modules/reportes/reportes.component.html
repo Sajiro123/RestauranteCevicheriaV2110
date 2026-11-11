@@ -289,9 +289,9 @@
                                 <td class="text-right font-semibold text-cyan-700">S/ {{ (product.plin || 0) | number:'1.2-2' }}</td>
                                 <td class="text-right font-semibold text-blue-700">S/ {{ (product.visa || 0) | number:'1.2-2' }}</td>
                                 <td class="text-right font-black text-gray-900">S/ {{ (product.total || 0) | number:'1.2-2' }}</td>
-                                <td class="text-center">
+                                <td class="text-center whitespace-nowrap">
                                     <!-- Si ya tiene comprobante emitido -->
-                                    <div *ngIf="comprobantesPorPedido[product.idpedido] as comp" class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                                    <div *ngIf="comprobantesPorPedido[product.idpedido] as comp" class="inline-flex items-center gap-1.5 flex-nowrap whitespace-nowrap justify-center">
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold shadow-xs"
                                             [ngClass]="comp.tipo_doc === '01' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'"
                                             [title]="(comp.tipo_doc === '01' ? 'Factura: ' : 'Boleta: ') + comp.numero_comprobante">
@@ -817,8 +817,9 @@
 
                 <!-- Tabla de Comprobantes SUNAT -->
                 <div class="custom-table-darkgreen">
-                    <p-table #dtComp [value]="listaComprobantes" dataKey="id" [rows]="15" [paginator]="true"
+                    <p-table #dtComp [expandedRowKeys]="expandedRowsComprobantes" [value]="listaComprobantes" dataKey="id" [rows]="15" [paginator]="true"
                         [rowsPerPageOptions]="[10, 15, 25, 50, 100]" [rowHover]="true" [loading]="cargandoComprobantes"
+                        (onRowExpand)="onRowExpandComprobante($event)"
                         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} comprobantes"
                         [showCurrentPageReport]="true">
 
@@ -842,17 +843,20 @@
                                     Total <p-sortIcon field="total" />
                                 </th>
                                 <th style="width: 12%; text-align: center;">Estado SUNAT</th>
-                                <th style="width: 14%; text-align: center;">Acciones</th>
+                                <th style="min-width: 320px; text-align: center;">Acciones</th>
                             </tr>
                         </ng-template>
 
                         <ng-template pTemplate="body" let-comp let-expanded="expanded">
                             <tr>
-                                <td>
-                                    <button type="button" pButton [pRowToggler]="comp"
-                                        class="p-button-text p-button-rounded p-button-plain p-button-sm"
-                                        [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'">
+                                <td class="text-center">
+                                    <button *ngIf="comp.pedido_id || (comp.detalles && comp.detalles.length > 0)"
+                                        type="button" pRipple [pRowToggler]="comp"
+                                        class="p-1.5 rounded-full hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer"
+                                        [title]="comp.pedido_id ? 'Ver detalle del Pedido #' + comp.pedido_id + ' y del comprobante' : 'Ver detalle del comprobante'">
+                                        <i class="pi" [ngClass]="expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
                                     </button>
+                                    <span *ngIf="!comp.pedido_id && (!comp.detalles || comp.detalles.length === 0)" class="text-slate-300 text-xs select-none">—</span>
                                 </td>
                                 <td>
                                     <div class="flex flex-col">
@@ -920,38 +924,43 @@
                                         <i class="pi pi-info-circle text-xs text-amber-600"></i> {{ comp.estado_sunat || 'Pendiente' }}
                                     </span>
                                 </td>
-                                <td class="text-center">
-                                    <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                <td class="text-center whitespace-nowrap">
+                                    <div class="inline-flex items-center justify-center gap-1.5 flex-nowrap whitespace-nowrap">
                                         <button type="button" (click)="verPdfComprobante(comp, 'ticket')"
-                                            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-xs font-bold transition-colors cursor-pointer"
+                                            class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
                                             title="Ver PDF Ticket 80mm">
-                                            <i class="pi pi-receipt text-[11px] mr-1"></i>Ticket
+                                            <i class="pi pi-receipt text-[11px]"></i>
+                                            <span>Ticket</span>
                                         </button>
                                         <button type="button" (click)="verPdfComprobante(comp, 'a4')"
-                                            class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 rounded text-xs font-bold transition-colors cursor-pointer"
+                                            class="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 rounded text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
                                             title="Ver PDF Formato A4">
-                                            <i class="pi pi-file-pdf text-[11px] mr-1"></i>A4
+                                            <i class="pi pi-file-pdf text-[11px]"></i>
+                                            <span>A4</span>
                                         </button>
                                         <a *ngIf="comp.archivos?.xml" [href]="comp.archivos.xml" target="_blank"
-                                            class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded text-xs font-bold no-underline transition-colors"
+                                            class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded text-xs font-bold no-underline transition-colors inline-flex items-center gap-1"
                                             title="Descargar XML UBL 2.1 firmado">
-                                            XML
+                                            <i class="pi pi-code text-[11px]"></i>
+                                            <span>XML</span>
                                         </a>
                                         <button type="button" (click)="abrirWhatsappDesdeReporte(comp)"
-                                            class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold transition-colors cursor-pointer shadow-sm flex items-center gap-1"
+                                            class="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold transition-colors cursor-pointer shadow-sm inline-flex items-center gap-1"
                                             title="Enviar por WhatsApp">
                                             <i class="pi pi-whatsapp"></i>
                                         </button>
                                         <a *ngIf="comp.archivos?.cdr" [href]="comp.archivos.cdr" target="_blank"
-                                            class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 rounded text-xs font-bold no-underline transition-colors"
-                                            title="Descargar CDR de SUNAT">
-                                            CDR
+                                            class="px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 rounded text-xs font-bold no-underline transition-colors inline-flex items-center gap-1"
+                                            title="Descargar CDR de SUNAT (Constancia de Recepción)">
+                                            <i class="pi pi-verified text-[11px]"></i>
+                                            <span>CDR</span>
                                         </a>
                                         <button *ngIf="comp.estado_sunat?.includes('En Proceso') && comp.ticket_sunat"
                                             type="button" (click)="consultarTicketSunat(comp.ticket_sunat)"
-                                            class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-bold cursor-pointer transition-colors"
+                                            class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-bold cursor-pointer transition-colors inline-flex items-center gap-1"
                                             title="Consultar estado de este Ticket en SUNAT">
-                                            <i class="pi pi-sync text-[11px] mr-1"></i>Ticket
+                                            <i class="pi pi-sync text-[11px]"></i>
+                                            <span>Ticket</span>
                                         </button>
                                         <button *ngIf="(comp.tipo_doc === '01' || comp.tipo_doc === '03') && !comp.estado_sunat?.includes('Anulado')"
                                             type="button" (click)="anularComprobanteReporte(comp)"
@@ -965,35 +974,114 @@
                             </tr>
                         </ng-template>
 
-                        <!-- Fila Expandida: Detalles de platos/productos del comprobante -->
-                        <ng-template pTemplate="rowexpansion" let-comp>
+                        <!-- Fila Expandida: Detalle del Pedido y de los Ítems Facturados -->
+                        <ng-template #expandedrow let-comp>
                             <tr>
-                                <td colspan="9" class="p-3 bg-slate-50/70 border-y border-slate-200">
-                                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-xs font-bold text-slate-700">
-                                                <i class="pi pi-list mr-1"></i> Detalles del Comprobante {{ comp.numero_comprobante }}
-                                            </span>
-                                            <span class="text-[11px] font-mono text-slate-500">Hash: {{ comp.hash_sunat }}</span>
+                                <td colspan="9" class="p-4 bg-slate-50/90 border-y border-slate-200">
+                                    <div class="space-y-4">
+
+                                        <!-- 1. Si existe Pedido Vinculado -->
+                                        <div *ngIf="comp.pedido_id" class="bg-white p-4 rounded-xl border border-blue-200 shadow-xs">
+                                            <div class="flex items-center justify-between pb-3 mb-3 border-b border-blue-100 flex-wrap gap-2">
+                                                <div class="flex items-center gap-2 flex-wrap">
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-600 text-white font-bold rounded-lg text-xs shadow-xs">
+                                                        <i class="pi pi-shopping-bag text-xs"></i>
+                                                        Pedido #{{ comp.pedido_id }}
+                                                    </span>
+                                                    <span *ngIf="pedidosDetalleMap[comp.pedido_id] as ped" class="text-xs text-slate-700">
+                                                        <strong>Lugar:</strong> {{ ped.mesa == '0' ? '🛵 Delivery' : ('🍽️ Mesa ' + ped.mesa) }}
+                                                        <span *ngIf="ped.persona?.nombres" class="text-slate-500 ml-2">
+                                                            • <strong>Cliente:</strong> {{ ped.persona.nombres }} {{ ped.persona.apellidopat || '' }}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                                <span *ngIf="pedidosDetalleMap[comp.pedido_id] as ped" class="text-xs font-black text-blue-900 font-mono">
+                                                    Total Pedido: S/ {{ (ped.total || 0) | number:'1.2-2' }}
+                                                </span>
+                                            </div>
+
+                                            <!-- Tabla de platos del pedido original -->
+                                            <div *ngIf="pedidosDetalleMap[comp.pedido_id]?.pedidodetalle as items; else cargandoPedido">
+                                                <table class="w-full text-xs text-left border-collapse">
+                                                    <thead>
+                                                        <tr class="bg-blue-50 text-blue-900 font-bold border-b border-blue-200">
+                                                            <th class="p-2 text-center" style="width: 8%;">Cant.</th>
+                                                            <th class="p-2">Plato / Bebida (Pedido Original)</th>
+                                                            <th class="p-2 text-center" style="width: 15%;">Modalidad</th>
+                                                            <th class="p-2 text-right" style="width: 15%;">P. Unitario</th>
+                                                            <th class="p-2 text-right" style="width: 15%;">Importe Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-blue-50">
+                                                        <tr *ngFor="let item of items" class="hover:bg-blue-50/40">
+                                                            <td class="p-2 text-center font-bold text-slate-800">{{ item.cantidad }}</td>
+                                                            <td class="p-2 text-slate-900 font-medium">
+                                                                {{ item.producto?.nombre || 'Producto' }}
+                                                                <span *ngIf="item.toppings" class="text-[11px] text-amber-700 ml-1">({{ item.toppings }})</span>
+                                                            </td>
+                                                            <td class="p-2 text-center">
+                                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                                                    [ngClass]="item.lugarpedido == '1' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'">
+                                                                    {{ item.lugarpedido == '1' ? 'Para llevar' : 'En salón' }}
+                                                                </span>
+                                                            </td>
+                                                            <td class="p-2 text-right text-slate-600">S/ {{ (item.preciounitario || 0) | number:'1.2-2' }}</td>
+                                                            <td class="p-2 text-right font-bold text-slate-900">S/ {{ ((item.preciounitario || 0) * (item.cantidad || 0)) | number:'1.2-2' }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <ng-template #cargandoPedido>
+                                                <p class="text-xs text-blue-600 italic m-0 flex items-center gap-1.5 py-2">
+                                                    <i class="pi pi-spin pi-spinner"></i> Consultando detalle del pedido #{{ comp.pedido_id }}...
+                                                </p>
+                                            </ng-template>
                                         </div>
-                                        <table class="w-full text-xs text-left border-collapse">
-                                            <thead>
-                                                <tr class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
-                                                    <th class="p-2 text-center" style="width: 10%;">Cant.</th>
-                                                    <th class="p-2">Descripción</th>
-                                                    <th class="p-2 text-right" style="width: 15%;">P. Unitario</th>
-                                                    <th class="p-2 text-right" style="width: 15%;">Importe Total</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-slate-100">
-                                                <tr *ngFor="let det of comp.detalles">
-                                                    <td class="p-2 text-center font-bold text-slate-700">{{ det.cantidad }}</td>
-                                                    <td class="p-2 text-slate-800">{{ det.descripcion }}</td>
-                                                    <td class="p-2 text-right text-slate-600">S/ {{ det.mto_precio_unitario | number:'1.2-2' }}</td>
-                                                    <td class="p-2 text-right font-bold text-slate-900">S/ {{ det.total | number:'1.2-2' }}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+
+                                        <!-- 2. ÍTEMS DECLARADOS ANTE SUNAT -->
+                                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+                                            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 flex-wrap gap-2">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600 text-white font-bold rounded-lg text-xs shadow-xs">
+                                                        <i class="pi pi-file-check text-xs"></i>
+                                                        Ítems del Comprobante {{ comp.numero_comprobante }}
+                                                    </span>
+                                                    <span class="text-xs text-slate-500 font-semibold">
+                                                        ({{ comp.detalles?.length || 0 }} ítem{{ (comp.detalles?.length || 0) === 1 ? '' : 's' }})
+                                                    </span>
+                                                </div>
+                                                <span *ngIf="comp.hash_sunat" class="text-[11px] font-mono text-slate-400">
+                                                    Hash: {{ comp.hash_sunat }}
+                                                </span>
+                                            </div>
+
+                                            <div *ngIf="comp.detalles && comp.detalles.length > 0; else sinDetallesComp">
+                                                <table class="w-full text-xs text-left border-collapse">
+                                                    <thead>
+                                                        <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                                                            <th class="p-2 text-center" style="width: 8%;">Cant.</th>
+                                                            <th class="p-2 text-center" style="width: 10%;">Unidad</th>
+                                                            <th class="p-2">Descripción Fiscal SUNAT</th>
+                                                            <th class="p-2 text-right" style="width: 15%;">P. Unitario</th>
+                                                            <th class="p-2 text-right" style="width: 15%;">Importe Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-100">
+                                                        <tr *ngFor="let det of comp.detalles" class="hover:bg-slate-50/60">
+                                                            <td class="p-2 text-center font-bold text-slate-800">{{ det.cantidad }}</td>
+                                                            <td class="p-2 text-center text-slate-500 font-mono">{{ det.unidad || 'NIU' }}</td>
+                                                            <td class="p-2 text-slate-900 font-medium">{{ det.descripcion }}</td>
+                                                            <td class="p-2 text-right text-slate-600">S/ {{ (det.mto_precio_unitario || 0) | number:'1.2-2' }}</td>
+                                                            <td class="p-2 text-right font-bold text-slate-900">S/ {{ (det.total || 0) | number:'1.2-2' }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <ng-template #sinDetallesComp>
+                                                <p class="text-xs text-slate-400 italic m-0 py-1">No se encontraron ítems desglosados en el registro fiscal.</p>
+                                            </ng-template>
+                                        </div>
+
                                     </div>
                                 </td>
                             </tr>

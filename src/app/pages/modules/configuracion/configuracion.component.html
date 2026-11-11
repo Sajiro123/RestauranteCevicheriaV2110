@@ -34,10 +34,22 @@
                         <h2>Restaurante</h2>
                         <span class="card-header-sub">Operativa gastronómica y atención</span>
                     </div>
-                    <span class="module-counter">6 módulos</span>
+                    <span class="module-counter">7 módulos</span>
                 </div>
 
                 <ul class="module-list">
+                    <li>
+                        <div class="module-item" tabindex="0" (click)="seleccciontext = 'ajustes-impresion'; selector = true">
+                            <div class="module-icon icon-blue">
+                                <i class="fa-solid fa-print"></i>
+                            </div>
+                            <div class="module-text">
+                                <span class="module-title">Ajustes de Impresoras</span>
+                                <span class="module-desc">Configuración 1-clic: Cocina (Bluetooth) y Caja (USB)</span>
+                            </div>
+                            <i class="pi pi-chevron-right module-arrow"></i>
+                        </div>
+                    </li>
                     <li>
                         <div class="module-item" tabindex="0" (click)="seleccciontext = 'toppings'; selector = true">
                             <div class="module-icon icon-teal">
@@ -297,4 +309,5 @@
     <app-aperturas *ngIf="seleccciontext == 'aperturas'" (backToMain)="selector = false; seleccciontext = ''"></app-aperturas>
     <app-compras *ngIf="seleccciontext == 'compras'" (backToMain)="selector = false; seleccciontext = ''"></app-compras>
     <app-reporte-platos *ngIf="seleccciontext == 'reporte-platos'" (backToMain)="selector = false; seleccciontext = ''"></app-reporte-platos>
+    <app-ajustes-impresion *ngIf="seleccciontext == 'ajustes-impresion'" (backToMain)="selector = false; seleccciontext = ''"></app-ajustes-impresion>
 </div>
